@@ -102,7 +102,7 @@ class br_device : public br_object_container {
 	public:
 };
 
-// Some facility that a device supports 
+// Some facility that a device supports
 
 class br_facility : public br_object_container {
 	public:
@@ -167,7 +167,7 @@ class br_device_pixelmap : public br_object {
 		virtual br_error BR_METHOD rectangleStretchCopy(br_rectangle *r,class br_device_pixelmap *s,br_rectangle *q);
 		virtual br_error BR_METHOD rectangleStretchCopyTo(br_rectangle *r,class br_device_pixelmap *s,br_rectangle *q);
 		virtual br_error BR_METHOD rectangleStretchCopyFrom(br_rectangle *r,class br_device_pixelmap *s,br_rectangle *q);
-	
+
 		virtual br_error BR_METHOD rectangleFill(br_rectangle *rect, br_uint_32 colour);
 
 		virtual br_error BR_METHOD pixelSet(br_point *point, br_uint_32 colour);
@@ -413,22 +413,22 @@ class br_geometry_primitives : public br_geometry {
 
 class br_geometry_v1_model : public br_geometry {
 	public:
-		virtual br_error BR_METHOD CG_F(render)(class br_renderer *r, struct v1model_f *model,
+		virtual br_error BR_METHOD CG_F(render)(class br_renderer *r, struct v11model_f *model,
 			class br_renderer_state_stored *default_state,
 			br_token type);
-		virtual br_error BR_METHOD CG_X(render)(class br_renderer *r, struct v1model_x *model,
+		virtual br_error BR_METHOD CG_X(render)(class br_renderer *r, struct v11model_x *model,
 			class br_renderer_state_stored *default_state,
 			br_token type);
-		virtual br_error BR_METHOD CG_F(renderOnScreen)(class br_renderer *r, struct v1model_f *model,
+		virtual br_error BR_METHOD CG_F(renderOnScreen)(class br_renderer *r, struct v11model_f *model,
 			class br_renderer_state_stored *default_state,
 			br_token type);
-		virtual br_error BR_METHOD CG_X(renderOnScreen)(class br_renderer *r, struct v1model_x *model,
+		virtual br_error BR_METHOD CG_X(renderOnScreen)(class br_renderer *r, struct v11model_x *model,
 			class br_renderer_state_stored *default_state,
 			br_token type);
 		virtual br_error BR_METHOD CG_F(storedNew)(class br_renderer *r, class br_geometry_stored **psg,
-				struct v1model_f *model, br_token type, br_token_value *tv);
+				struct v11model_f *model, br_token type, br_token_value *tv);
 		virtual br_error BR_METHOD CG_X(storedNew)(class br_renderer *r, class br_geometry_stored **psg,
-				struct v1model_x *model, br_token type, br_token_value *tv);
+				struct v11model_x *model, br_token type, br_token_value *tv);
 
 		virtual br_error BR_METHOD storedAvail(br_int_32 *psize, br_token_value *tv);
 }
@@ -506,7 +506,7 @@ class br_primitive_state : public br_object {
 
 	// Copy parts of state from one to another
 		virtual br_error BR_METHOD stateCopy(class br_primitive_state *source, br_uint_32 mask);
-	
+
 	// Get a pointer to a primitive block representing the current state
 	//
 		virtual br_error BR_METHOD renderBegin(class brp_block **rpb,
@@ -525,4 +525,3 @@ class br_primitive_state : public br_object {
 			br_size_t buffer_size);
 		virtual br_error BR_METHOD stateQueryPerformance(br_fixed_lu *speed);
 };
-

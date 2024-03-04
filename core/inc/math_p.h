@@ -99,7 +99,7 @@ br_fixed_ls BR_ASM_CALL BrFixedRLength3(br_fixed_ls a,
 br_fixed_ls BR_ASM_CALL BrFixedRLength4(br_fixed_ls a,
 										br_fixed_ls b,
 										br_fixed_ls c,
-										br_fixed_ls d);			
+										br_fixed_ls d);
 
 /* result = a/b
  */
@@ -113,7 +113,7 @@ br_fixed_ls BR_ASM_CALL BrFixedDivF(br_fixed_ls a, br_fixed_ls b);
  */
 br_fixed_ls BR_ASM_CALL BrFixedDivR(br_fixed_ls a, br_fixed_ls b);
 
-/* 
+/*
  */
 br_fixed_ls BR_ASM_CALL _FixedDivP(br_fixed_ls a, br_fixed_ls b);
 
@@ -274,7 +274,7 @@ br_scalar BR_PUBLIC_ENTRY BrMatrix4Inverse(br_matrix4 *A, br_matrix4 *B);
 void BR_PUBLIC_ENTRY BrMatrix4Adjoint(br_matrix4 *A, br_matrix4 *B);
 br_scalar BR_PUBLIC_ENTRY BrMatrix4Determinant(br_matrix4 *mat);
 
-void BR_PUBLIC_ENTRY BrMatrix4Perspective(br_matrix4 *mat, 
+void BR_PUBLIC_ENTRY BrMatrix4Perspective(br_matrix4 *mat,
 		br_angle field_of_view,
 		br_scalar aspect,
 		br_scalar hither,
@@ -483,11 +483,11 @@ void BR_PUBLIC_ENTRY BrMatrix23LPNormalise(br_matrix23 *A, br_matrix23 *B);
 #endif
 #endif
 
-/*
- * Extra compiler specific prototype info.
- */
-#ifndef _MATH_X_H_
-#include "math_x.h"
-#endif
+// /*
+//  * Extra compiler specific prototype info.
+//  */
+// #ifndef _MATH_X_H_
+// #include "math_x.h"
+// #endif
 
 #endif

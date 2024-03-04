@@ -9,6 +9,9 @@
 #ifndef _COMPILER_H_
 #define _COMPILER_H_
 
+#include <stdint.h>
+#include <stddef.h>
+
 /*
  * Fixed bitsize integers
  */
@@ -30,6 +33,11 @@ typedef unsigned int br_size_t;
  * Boolean type
  */
 typedef int br_boolean;
+
+// https://github.com/crocguy0688/CrocDE-BRender
+typedef intptr_t br_intptr_t;
+typedef uintptr_t br_uintptr_t;
+typedef ptrdiff_t br_ptrdiff_t;
 
 #define BR_TRUE		1
 #define BR_FALSE	0
@@ -220,19 +228,19 @@ typedef float br_float;
 /*
  * Public entry point into library
  */
-#define BR_PUBLIC		
+#define BR_PUBLIC
 #define BR_PUBLIC_VA	/* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
-#define BR_EXPORT		
+#define BR_EXPORT
 #define BR_EXPORT_VA 	/* varargs version */
 
 /*
  * A driver object method
  */
-#define BR_METHOD		
+#define BR_METHOD
 #define BR_METHOD_VA	/* varargs version */
 
 /*
@@ -241,8 +249,8 @@ typedef float br_float;
 #define BR_CALLBACK
 
 #define BR_ASM_DATA
-#define BR_ASM_CALL 
-#define BR_ASM_CALLBACK 
+#define BR_ASM_CALL
+#define BR_ASM_CALLBACK
 
 #define BR_SUFFIX_HOST "-GCC"
 
