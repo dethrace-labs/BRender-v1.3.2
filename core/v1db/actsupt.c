@@ -4,7 +4,7 @@
  * $Id: actsupt.c 1.4 1998/11/17 16:01:01 nikh Exp $
  * $Locker: $
  *
- * Actor support routines 
+ * Actor support routines
  */
 #include "v1db.h"
 #include "shortcut.h"
@@ -118,7 +118,7 @@ br_actor * BR_PUBLIC_ENTRY BrActorSearch(br_actor *root, char *pattern)
 /*
  * Recursive function to propgate depth number down a hierachy
  */
-STATIC void RenumberActor(br_actor *a,int d)
+static void RenumberActor(br_actor *a,int d)
 {
 	br_actor *ac;
 
@@ -167,7 +167,7 @@ br_actor * BR_PUBLIC_ENTRY BrActorAdd(br_actor *parent, br_actor *a)
 
 	BR_FOR_SIMPLELIST(&a->children,ac)
 		RenumberActor(ac,a->depth+1);
-	
+
 	return a;
 }
 
@@ -188,7 +188,7 @@ br_actor * BR_PUBLIC_ENTRY BrActorRemove(br_actor *a)
 
 	UASSERT_MESSAGE("NULL pointer to the hierrachy to remove", a != NULL);
 	UASSERT(a->prev != NULL);
-	
+
 	BrActorRemoveNoRenumber(a);
 	/*
 	 * Renumber the removed hierachy
@@ -334,7 +334,7 @@ br_actor * BR_PUBLIC_ENTRY BrActorAllocate(br_uint_8 type, void *type_data)
 /*
  * Free an actor
  */
-STATIC void InternalActorFree(br_actor *a)
+static void InternalActorFree(br_actor *a)
 {
 
     UASSERT_MESSAGE("NULL actor pointer", a !=NULL);
@@ -443,7 +443,7 @@ br_boolean ActorToRootTyped(br_actor *a, br_actor *world, br_matrix34 *m, br_int
 	return (a == world);
 }
 
-void Matrix4PerspectiveNew(br_matrix4 *mat, 
+void Matrix4PerspectiveNew(br_matrix4 *mat,
 		br_angle field_of_view,
 		br_scalar aspect,
 		br_scalar hither,
@@ -488,7 +488,7 @@ br_token CameraToScreenMatrix4(br_matrix4 *mat, br_actor *camera)
 	UASSERT_MESSAGE("NULL pointer to the camera", camera != NULL);
 	UASSERT_MESSAGE("Invalid camera", camera->type == BR_ACTOR_CAMERA);
 	UASSERT_MESSAGE("Invalid camera data", camera->type_data != NULL);
-	
+
 	camera_type = camera->type_data;
 
 	UASSERT_MESSAGE("Invalid camera data range", camera_type->hither_z > S0);
@@ -593,7 +593,7 @@ br_uint_16 BR_PUBLIC_ENTRY BrActorToActorMatrix34(br_matrix34 *m, br_actor *a, b
 	  */
 	if(a == b) {
 		BrMatrix34Identity(m);
-		return BR_TRANSFORM_IDENTITY;		
+		return BR_TRANSFORM_IDENTITY;
 	}
 
 	 /*
@@ -722,9 +722,9 @@ void BR_PUBLIC_ENTRY BrActorToScreenMatrix4(br_matrix4 *m, br_actor *a, br_actor
 /*
  * Find the bounding box of an actor and all it's children
  *
- * 
+ *
  */
-STATIC void ActorToBounds(br_bounds *dest, br_actor *ap, br_model *model)
+static void ActorToBounds(br_bounds *dest, br_actor *ap, br_model *model)
 {
 	br_actor *a;
 	br_bounds new;
@@ -810,4 +810,3 @@ br_bounds * BR_PUBLIC_ENTRY BrActorToBounds( br_bounds *b, br_actor *ap)
 	v1db.model_to_view = m2v;
 	return b;
 }
-

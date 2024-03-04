@@ -16,7 +16,7 @@ BR_RCS_ID("$Id: savescr.c 1.2 1998/03/05 20:24:07 jon Exp $")
  */
 extern br_material _DefaultScriptMaterial;
 
-STATIC struct {
+static struct {
 	char *name;
 	int value;
 } MaterialFlagNames[] = {
@@ -41,7 +41,7 @@ STATIC struct {
     { "inhibit_depth_write" , BR_MATF_INHIBIT_DEPTH_WRITE},
 };
 
-STATIC struct {
+static struct {
 	char *name;
 	int value;
 } DepthTestNames[] = {
@@ -55,7 +55,7 @@ STATIC struct {
     { "al" , BR_MATM_DEPTH_TEST_AL },
 };
 
-STATIC struct {
+static struct {
 	char *name;
 	int value;
 } BlendModeNames[] = {
@@ -65,7 +65,7 @@ STATIC struct {
     { "premultiplied" , BR_MATM_BLEND_MODE_PREMULTIPLIED },
 };
 
-STATIC struct {
+static struct {
 	char *name;
 	int value;
 } WidthLimitNames[] = {
@@ -74,7 +74,7 @@ STATIC struct {
     { "mirror" , BR_MATM_MAP_WIDTH_LIMIT_MIRROR },
 };
 
-STATIC struct {
+static struct {
 	char *name;
 	int value;
 } HeightLimitNames[] = {
@@ -83,12 +83,12 @@ STATIC struct {
     { "mirror" , BR_MATM_MAP_HEIGHT_LIMIT_MIRROR },
 };
 
-STATIC void WriteScriptMaterial(br_material *mat, void *df)
+static void WriteScriptMaterial(br_material *mat, void *df)
 {
 	int i,j;
 
 	BrFilePrintf(df,"\nmaterial = [\n");
-	
+
 	if(mat->identifier)
 		BrFilePrintf(df,"    identifier = \"%s\";\n",mat->identifier);
 
@@ -121,7 +121,7 @@ STATIC void WriteScriptMaterial(br_material *mat, void *df)
 
 	if(mat->ka != _DefaultScriptMaterial.ka)
 		BrFilePrintf(df,"    ambient = %f;\n",BrScalarToFloat(BrUFractionToScalar(mat->ka)));
-		
+
 	if(mat->kd != _DefaultScriptMaterial.kd)
 		BrFilePrintf(df,"    diffuse = %f;\n",BrScalarToFloat(BrUFractionToScalar(mat->kd)));
 
@@ -188,7 +188,7 @@ STATIC void WriteScriptMaterial(br_material *mat, void *df)
 			}
 
 	/*
-	 * Maps and Tables 
+	 * Maps and Tables
 	 */
 	if(mat->colour_map && mat->colour_map->identifier)
 		BrFilePrintf(df,"    colour_map = \"%s\";\n",mat->colour_map->identifier);
@@ -227,12 +227,12 @@ br_uint_32 BR_PUBLIC_ENTRY BrFmtScriptMaterialSaveMany(char *filename,br_materia
 	BrFilePutLine("# BRender Material Script",df);
 	BrFilePutLine("#",df);
 
-	if(materials) { 
+	if(materials) {
 		for(i=0; i<num; i++)
 			WriteScriptMaterial(materials[i],df);
 		count = num;
 	} else {
-		BrMaterialEnum(NULL,(br_material_enum_cbfn *)WriteScriptMaterial,df); 
+		BrMaterialEnum(NULL,(br_material_enum_cbfn *)WriteScriptMaterial,df);
 		count = BrMaterialCount(NULL);
 	}
 

@@ -23,7 +23,7 @@ BR_RCS_ID("$Id: query.c 1.1 1997/12/10 16:41:33 jon Exp $")
  * Searches for token in tokens.
  * If found, returns pointer to token, else returns NULL
  */
-STATIC br_token_value *CheckTokenPresence(br_token_value *tokens, br_token token)
+static br_token_value *CheckTokenPresence(br_token_value *tokens, br_token token)
 {
     br_token_value *tvp = tokens;
 
@@ -639,6 +639,3 @@ br_error BR_PUBLIC_ENTRY BrQueryMaterialCapability(br_material *mat,
 
     return BRE_OK;
 }
-
-
-

@@ -22,7 +22,7 @@ br_material _DefaultScriptMaterial = {
 	BR_UFRACTION(0.10),			/* Indexed ka		*/
 	BR_UFRACTION(0.70),			/*         kd		*/
 	BR_UFRACTION(0.0),			/*         ks		*/
-	
+
 	BR_SCALAR(20),				/* power			*/
 	BR_MATF_LIGHT,				/* flags			*/
 	{{
@@ -219,7 +219,7 @@ static void BrLexerPrintPos(struct br_lexer *l)
         BR_WARNING1("In file %s", pos);
 }
 
-STATIC br_uint_32 ParseMatFlags(br_lexer *l)
+static br_uint_32 ParseMatFlags(br_lexer *l)
 {
 	br_uint_32 f = 0;
 
@@ -273,11 +273,11 @@ STATIC br_uint_32 ParseMatFlags(br_lexer *l)
 	return f;
 }
 
-STATIC br_material *ParseMaterial(br_lexer *l)
+static br_material *ParseMaterial(br_lexer *l)
 {
 	br_material *mat;
 	br_vector3 v3;
-#if 0 
+#if 0
 	br_token_value token_buffer[512];
 	int i;
 #endif
@@ -560,7 +560,7 @@ br_uint_32 BR_PUBLIC_ENTRY BrFmtScriptMaterialLoadMany(char *filename,br_materia
 	l = BrLexerAllocate(keywords, BR_ASIZE(keywords));
 	if(l == NULL)
 		return 0;
-		
+
 	BrLexerCommentSet(l,'#');
 	BrLexerErrorSet(l,lexerError);
 #if 0

@@ -18,7 +18,7 @@ BR_RCS_ID("$Id: clip.c 1.2 1998/07/20 14:45:10 jon Exp $");
  *
  * Clip a polygon to an arbitary plane eqn.
  */
-STATIC int ClipFaceToPlane(
+static int ClipFaceToPlane(
 		union brp_vertex *vp,
 		union brp_vertex *verts_out,
 		int num_in,
@@ -105,7 +105,7 @@ STATIC int ClipFaceToPlane(
 				continue;
 
 			/*
-			 * Edge crosses in to out, add intersection 
+			 * Edge crosses in to out, add intersection
 			 */
 
 			t = BR_DIVR(tu,(tu-tv));
@@ -130,7 +130,7 @@ STATIC int ClipFaceToPlane(
 /*
  * Special case of sign = 1, k = 1.0
  */
-STATIC int ClipFaceToPlus1(
+static int ClipFaceToPlus1(
 		union brp_vertex *vp,
 		union brp_vertex *verts_out,
 		int num_in,
@@ -210,7 +210,7 @@ STATIC int ClipFaceToPlus1(
 				continue;
 
 			/*
-			 * Edge crosses in to out, add intersection 
+			 * Edge crosses in to out, add intersection
 			 */
 
 			t = BR_DIVR(tu,(tu-tv));
@@ -236,7 +236,7 @@ STATIC int ClipFaceToPlus1(
 /*
  * Special case of sign = -1, k = 1.0
  */
-STATIC int ClipFaceToMinus1(
+static int ClipFaceToMinus1(
 		union brp_vertex *vp,
 		union brp_vertex *verts_out,
 		int num_in,
@@ -316,7 +316,7 @@ STATIC int ClipFaceToMinus1(
 				continue;
 
 			/*
-			 * Edge crosses in to out, add intersection 
+			 * Edge crosses in to out, add intersection
 			 */
 
 			t = BR_DIVR(tu,(tu-tv));
@@ -648,4 +648,3 @@ void ClippedRenderLine(struct br_renderer *renderer, brp_block *block, union brp
 	 */
 	block->render(block,&cp_in[0],&cp_in[1]);
 }
-

@@ -11,7 +11,7 @@
  *		A size
  *		A block of memory of 'size' bytes
  *		0 or more child resources
- * 
+ *
  * XXX
  *	Add optional source file/line tracking
  */
@@ -84,7 +84,7 @@ struct resource_header {
 /*
  * Align the resource pointer
  */
-STATIC void *ResToUser(struct resource_header *r)
+static void *ResToUser(struct resource_header *r)
 {
 	br_int_32 align;
 
@@ -117,7 +117,7 @@ STATIC void *ResToUser(struct resource_header *r)
 /*
  * Unalign the resource pointer
  */
-STATIC struct resource_header *UserToRes(void *r)
+static struct resource_header *UserToRes(void *r)
 {
 	br_uint_8 *p = r;
 
@@ -136,11 +136,11 @@ STATIC struct resource_header *UserToRes(void *r)
 /*
  * Create a new resource block of the given class, with 'size' bytes associated
  * with it.
- * 
+ *
  * If parent is not NULL it adds the new resource as a child
  *
  * Returns a pointer to the first byte of the resource data
- */ 
+ */
 void * BR_RESIDENT_ENTRY BrResAllocate(void *vparent, br_size_t size, br_uint_8 res_class)
 {
 	struct resource_header *res;
@@ -219,7 +219,7 @@ void * BR_RESIDENT_ENTRY BrResAllocate(void *vparent, br_size_t size, br_uint_8 
  *
  * If the resource class has a destructor, that function is called
  */
-STATIC void BrResInternalFree(struct resource_header *res, br_boolean callback)
+static void BrResInternalFree(struct resource_header *res, br_boolean callback)
 {
 	int c;
 	void *r;
@@ -488,7 +488,7 @@ char * BR_RESIDENT_ENTRY BrResStrDup(void *vparent, char *str)
  *
  * Invokes a callback with each text line of the dump
  */
-STATIC void InternalResourceDump(struct resource_header *res, br_putline_cbfn *putline, void *arg, int level)
+static void InternalResourceDump(struct resource_header *res, br_putline_cbfn *putline, void *arg, int level)
 {
 	int i;
 	char *cp = BrScratchString();
@@ -544,5 +544,3 @@ char * BR_RESIDENT_ENTRY BrResClassIdentifier(br_uint_8 res_class)
 	return rclass?rclass->identifier:"<NULL>";
 
 }
-
-

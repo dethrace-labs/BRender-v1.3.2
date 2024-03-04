@@ -187,12 +187,12 @@ static struct v11group bounds_face_groups[] = {
         {NULL,bounds_vertex_numbers,bounds_edges,bounds_plane_equation,bounds_colours, NULL, 0,bounds_position,bounds_map,bounds_normal, bounds_colours, NULL, 12, 8, 18}
 };
 
-STATIC struct v11model bounds_prepared = {
+static struct v11model bounds_prepared = {
 	0,0,1,BR_VECTOR3(0,0,0),
 	bounds_face_groups
 };
 
-STATIC struct br_model bounds_model = {
+static struct br_model bounds_model = {
 	0,
 	"Bounds",
 	NULL,
@@ -241,7 +241,7 @@ static struct br_model * makeMeshFromBounds(br_bounds *b)
 	 * Fill in bounds
 	 */
 	bounds_model.bounds = *b;
-	
+
 	return &bounds_model;
 }
 

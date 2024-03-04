@@ -67,7 +67,7 @@ float tri_filter(float t)
 #define	B	(1.0F / 3.0F)
 #define	C	(1.0F / 3.0F)
 
-STATIC float Mitchell_filter(float t)
+static float Mitchell_filter(float t)
 {
 	float tt;
 
@@ -97,7 +97,7 @@ br_pixelmap *BR_PUBLIC_ENTRY BrPixelmapScale(br_pixelmap *src,br_uint_32 new_x,b
 	br_pixelmap *temp;
 	char *identifier;
 	int i,j,k,n;
-	
+
 	char *src_pixels,*pm_pixels;
 
 	if(src->type != BR_PMT_RGB_888)
@@ -257,7 +257,7 @@ br_pixelmap *BR_PUBLIC_ENTRY BrPixelmapScale(br_pixelmap *src,br_uint_32 new_x,b
 				contrib[i].p[k].pixel = n;
 				contrib[i].p[k].weight = weight;
 			}
-		}		
+		}
 	}
 	else
 	{
@@ -290,7 +290,7 @@ br_pixelmap *BR_PUBLIC_ENTRY BrPixelmapScale(br_pixelmap *src,br_uint_32 new_x,b
 			}
 		}
 	}
-	
+
 	/*
 	 * set src to temp
 	 * Apply filter to zoom vertically from src to temp

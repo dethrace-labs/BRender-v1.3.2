@@ -52,7 +52,7 @@ void BR_PUBLIC_ENTRY BrPoolFree(br_pool *pool)
  * adds them to the free list
  */
 
-STATIC int BR_CALLBACK PoolBlockRelink(char *chunk, br_pool *pool)
+static int BR_CALLBACK PoolBlockRelink(char *chunk, br_pool *pool)
 {
 	br_uint_32 size;
 	br_pool_block *free_ptr;
@@ -62,7 +62,7 @@ STATIC int BR_CALLBACK PoolBlockRelink(char *chunk, br_pool *pool)
 	 */
 	if(BrResClass(chunk) != (br_uint_8) pool->mem_type)
 		return 0;
-	
+
 	/*
 	 * Go through block linking it into free list
 	 */

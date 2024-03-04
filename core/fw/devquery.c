@@ -12,7 +12,7 @@
 
 BR_RCS_ID("$Id: devquery.c 1.2 1997/12/11 13:34:07 jon Exp $")
 
-STATIC br_boolean deviceEnum(br_device *dev, br_device_enum_cbfn *cbfn,
+static br_boolean deviceEnum(br_device *dev, br_device_enum_cbfn *cbfn,
                              void *args)
 {
     br_size_t s;
@@ -81,13 +81,13 @@ br_error BR_PUBLIC_ENTRY BrDeviceEnum(br_device_enum_cbfn *cbfn, void *args)
 
 	// If BRENDER_DEVICES is not set, use whatever value is
 	// in BRENDER_DEFAULT_DEVICE instead.
-	
+
 	if (*devices_str == '\0') {
-		BrSystemConfigQueryString(BRT_DEFAULT_DEVICE_STR, 
+		BrSystemConfigQueryString(BRT_DEFAULT_DEVICE_STR,
 		                          devices_str, BR_ASIZE(devices_str));
 		pass_args = BR_FALSE;
 	}
-	
+
 	for (device_name = devices_str; !terminate && *device_name != '\0'; device_name = next_device) {
 
 		/*
@@ -152,7 +152,7 @@ br_error BR_PUBLIC_ENTRY BrDeviceEnum(br_device_enum_cbfn *cbfn, void *args)
     return BRE_OK;
 }
 
-STATIC br_boolean outfctyEnum(br_object *outfcty, br_outfcty_enum_cbfn *cbfn,
+static br_boolean outfctyEnum(br_object *outfcty, br_outfcty_enum_cbfn *cbfn,
                               void *args)
 {
     br_size_t s;
@@ -266,5 +266,3 @@ br_error BR_PUBLIC_ENTRY BrOutputFacilityEnum(char *name,
 
     return BRE_OK;
 }
-
-
