@@ -33,7 +33,7 @@ typedef struct br_primitive_library {
     * Pointer to the colour buffer being rendered into.
     */
 
-   br_device_pixelmap *colour_buffer ;  
+   br_device_pixelmap *colour_buffer ;
 
 	/*
 	 * List of objects associated with this renderer
@@ -56,6 +56,3 @@ typedef struct br_primitive_library {
 };
 #endif
 #endif
-
-
-

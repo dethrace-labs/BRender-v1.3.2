@@ -273,23 +273,23 @@ void BR_ASM_CALL _MemRectFill_A(char *dest,
 	br_int_32 d_stride, br_uint_32 bpp, br_uint_32 colour);
 
 void BR_ASM_CALL _MemRectCopy_A(char *dest,
-	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, 
+	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
 	br_uint_32 pwidth, br_uint_32 pheight,
 	br_int_32 d_stride,br_int_32 s_stride,
 	br_uint_32 bpp);
 
 void BR_ASM_CALL _MemCopy_A(char *dest,
-	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, 
+	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
 	 br_uint_32 pixels, br_uint_32 bpp);
 
 void BR_ASM_CALL _MemRectCopySourceColourKey0_A(char *dest,
-	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, 
+	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
 	br_uint_32 pwidth, br_uint_32 pheight,
 	br_int_32 d_stride,br_int_32 s_stride,
 	br_uint_32 bpp);
 
 void BR_ASM_CALL _MemCopySourceColourKey0_A(char *dest,
-	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, 
+	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
 	 br_uint_32 pixels, br_uint_32 bpp);
 
 void BR_ASM_CALL _MemPixelSet(char *dest,
@@ -300,22 +300,22 @@ br_uint_32 BR_ASM_CALL _MemPixelGet(char *dest,
 
 br_uint_16 BR_ASM_CALL _GetSysQual(void);
 
-void BR_ASM_CALL _MemFillFPU_A(char *dest,
-	br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp,
-	br_uint_32 colour);
+// void BR_ASM_CALL _MemFillFPU_A(char *dest,
+// 	br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp,
+// 	br_uint_32 colour);
 
-void BR_ASM_CALL _MemRectFillFPU_A(char *dest,
-	br_uint_32 dest_qual, br_uint_32 pwidth, br_uint_32 pheight,
-	br_uint_32 stride, br_uint_32 bpp, br_uint_32 colour);
+// void BR_ASM_CALL _MemRectFillFPU_A(char *dest,
+// 	br_uint_32 dest_qual, br_uint_32 pwidth, br_uint_32 pheight,
+// 	br_uint_32 stride, br_uint_32 bpp, br_uint_32 colour);
 
-void BR_ASM_CALL _MemCopyFPU_A(char *dest,
-	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, 
-	br_uint_32 pixels, br_uint_32 bpp);
+// void BR_ASM_CALL _MemCopyFPU_A(char *dest,
+// 	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
+// 	br_uint_32 pixels, br_uint_32 bpp);
 
-void BR_ASM_CALL _MemRectCopyFPU_A(char *dest,
-	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, 
-	br_uint_32 pwidth, br_uint_32 pheight,
-	br_uint_32 d_stride, br_uint_32 s_stride, br_uint_32 bpp);
+// void BR_ASM_CALL _MemRectCopyFPU_A(char *dest,
+// 	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
+// 	br_uint_32 pwidth, br_uint_32 pheight,
+// 	br_uint_32 d_stride, br_uint_32 s_stride, br_uint_32 bpp);
 
 
 /*
@@ -349,4 +349,3 @@ struct br_pixelmap_state * BR_RESIDENT_ENTRY PixelmapState();
 #endif
 #endif
 #endif
-

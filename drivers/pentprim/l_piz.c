@@ -8,7 +8,6 @@
  */
 #include "drv.h"
 #include "shortcut.h"
-#include "blockops.h"
 #include "brassert.h"
 
 static char rscid[] = "$Id: l_piz.c 1.1 1997/12/10 16:47:12 jon Exp $";
@@ -88,7 +87,7 @@ void BR_ASM_CALL LineRenderPIZ2I(struct brp_block *block, union brp_vertex *v0,u
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pi = v0->comp_x[C_I];
 
@@ -106,7 +105,7 @@ void BR_ASM_CALL LineRenderPIZ2I(struct brp_block *block, union brp_vertex *v0,u
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			    *(unsigned short *)zptr = pz >> 16;
 			    *ptr = (br_uint_8)BrFixedToInt(pi);
@@ -146,10 +145,10 @@ void BR_ASM_CALL LineRenderPIZ2I(struct brp_block *block, union brp_vertex *v0,u
 		dptr = work.colour.stride_b+(dx>0 ? 1 : -1);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pi = v0->comp_x[C_I];
 
@@ -167,7 +166,7 @@ void BR_ASM_CALL LineRenderPIZ2I(struct brp_block *block, union brp_vertex *v0,u
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			    *(unsigned short *)zptr = pz >> 16;
 			    *ptr = (br_uint_8)BrFixedToInt(pi);
@@ -263,7 +262,7 @@ void BR_ASM_CALL LineRenderPIZ2TI(struct brp_block *block, union brp_vertex *v0,
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pi = v0->comp_x[C_I];
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
@@ -296,7 +295,7 @@ void BR_ASM_CALL LineRenderPIZ2TI(struct brp_block *block, union brp_vertex *v0,
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			char texel;
 			texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
@@ -349,10 +348,10 @@ void BR_ASM_CALL LineRenderPIZ2TI(struct brp_block *block, union brp_vertex *v0,
 		dptr = work.colour.stride_b+(dx>0 ? 1 : -1);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pi = v0->comp_x[C_I];
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
@@ -385,7 +384,7 @@ void BR_ASM_CALL LineRenderPIZ2TI(struct brp_block *block, union brp_vertex *v0,
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			char texel;
 			texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
@@ -493,7 +492,7 @@ void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, union brp_vertex *v0,u
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -524,7 +523,7 @@ void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, union brp_vertex *v0,u
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 		      char texel;
 			texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
@@ -576,10 +575,10 @@ void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, union brp_vertex *v0,u
 		dptr = work.colour.stride_b+(dx>0 ? 1 : -1);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -610,7 +609,7 @@ void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, union brp_vertex *v0,u
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			char texel;
 			texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
@@ -717,7 +716,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_888(struct brp_block *block, union brp_vert
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = BrScalarToFixed(v0->comp_x[C_U]) % BrIntToFixed(width);
 		if (pu<0)
@@ -748,7 +747,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_888(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			char *texel;
 			texel = ((char *)work.texture.base)+(pv>>16)*stride+3*(pu>>16);
@@ -799,10 +798,10 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_888(struct brp_block *block, union brp_vert
 		dptr = work.colour.stride_b+(dx>0 ? 3 : -3);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -833,7 +832,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_888(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			char *texel;
 
@@ -937,7 +936,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_888(struct brp_block *block, union brp_vert
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
@@ -960,7 +959,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_888(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			*(unsigned short *)zptr = pz >> 16;
 			ptr[0] = pb >> 16;
@@ -1004,10 +1003,10 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_888(struct brp_block *block, union brp_vert
 		dptr = work.colour.stride_b+(dx>0 ? 3 : -3);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
@@ -1029,7 +1028,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_888(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			*(unsigned short *)zptr = pz >> 16;
 			ptr[0] = pb >> 16;
@@ -1128,7 +1127,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_555(struct brp_block *block, union brp_vert
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -1159,7 +1158,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_555(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			unsigned short texel;
 			texel = *(unsigned short *)(((char *)work.texture.base)+(pv>>16)*stride+2*(pu>>16));
@@ -1208,10 +1207,10 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_555(struct brp_block *block, union brp_vert
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -1242,7 +1241,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_555(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			unsigned short texel;
 
@@ -1342,7 +1341,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_555(struct brp_block *block, union brp_vert
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
@@ -1365,7 +1364,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_555(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			*(unsigned short *)zptr = pz >> 16;
 			*(unsigned short *)ptr = ScalarsToRGB15(pr,pg,pb);
@@ -1407,10 +1406,10 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_555(struct brp_block *block, union brp_vert
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
@@ -1432,7 +1431,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_555(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			*(unsigned short *)zptr = pz >> 16;
 			*(unsigned short *)ptr = ScalarsToRGB15(pr,pg,pb);
@@ -1529,7 +1528,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_565(struct brp_block *block, union brp_vert
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -1560,7 +1559,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_565(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			unsigned short texel;
 			texel = *(unsigned short *)(((char *)work.texture.base)+(pv>>16)*stride+2*(pu>>16));
@@ -1609,10 +1608,10 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_565(struct brp_block *block, union brp_vert
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -1643,7 +1642,7 @@ void BR_ASM_CALL LineRenderPIZ2T_RGB_565(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			unsigned short texel;
 
@@ -1743,7 +1742,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_565(struct brp_block *block, union brp_vert
 
 		if (dx<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
@@ -1766,7 +1765,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_565(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			*(unsigned short *)zptr = pz >> 16;
 			*(unsigned short *)ptr = ScalarsToRGB16(pr,pg,pb);
@@ -1808,10 +1807,10 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_565(struct brp_block *block, union brp_vert
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dzptr = work.depth.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pz = v0->comp_x[C_SZ] ^ 0x80000000;
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
@@ -1833,7 +1832,7 @@ void BR_ASM_CALL LineRenderPIZ2I_RGB_565(struct brp_block *block, union brp_vert
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    if (*(unsigned short *)zptr > (unsigned short)(pz >> 16)) {
 			*(unsigned short *)zptr = pz >> 16;
 			*(unsigned short *)ptr = ScalarsToRGB16(pr,pg,pb);

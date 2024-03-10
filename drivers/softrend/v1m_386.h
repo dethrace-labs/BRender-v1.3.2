@@ -9,29 +9,29 @@
 #ifndef _V1M_386_H_
 #define _V1M_386_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// #ifdef __cplusplus
+// extern "C" {
+// #endif
 
-void GEOMETRY_CALL V1Face_CullOneSidedPerspective_A(struct br_geometry *self, struct br_renderer *renderer);
-void GEOMETRY_CALL V1Face_CullOneSidedPerspective_P6_A(struct br_geometry *self, struct br_renderer *renderer);
-void GEOMETRY_CALL V1Face_OS_CullOneSidedPerspective_A(struct br_geometry *self, struct br_renderer *renderer);
+// void GEOMETRY_CALL V1Face_CullOneSidedPerspective_A(struct br_geometry *self, struct br_renderer *renderer);
+// void GEOMETRY_CALL V1Face_CullOneSidedPerspective_P6_A(struct br_geometry *self, struct br_renderer *renderer);
+// void GEOMETRY_CALL V1Face_OS_CullOneSidedPerspective_A(struct br_geometry *self, struct br_renderer *renderer);
 
-#if BASED_FLOAT
+// #if BASED_FLOAT
 
-#define V1Face_CullOneSidedPerspective	V1Face_CullOneSidedPerspective_A
-#define V1Face_CullOneSidedPerspective_P6	V1Face_CullOneSidedPerspective_P6_A
+// #define V1Face_CullOneSidedPerspective	V1Face_CullOneSidedPerspective_A
+// #define V1Face_CullOneSidedPerspective_P6	V1Face_CullOneSidedPerspective_P6_A
 
-#endif
+// #endif
 
-#if BASED_FIXED
+// #if BASED_FIXED
 
-#define V1Face_CullOneSidedPerspective	V1Face_CullOneSidedPerspective_A
-#define V1Face_OS_CullOneSidedPerspective	V1Face_OS_CullOneSidedPerspective_A
+// #define V1Face_CullOneSidedPerspective	V1Face_CullOneSidedPerspective_A
+// #define V1Face_OS_CullOneSidedPerspective	V1Face_OS_CullOneSidedPerspective_A
 
-#endif
+// #endif
 
-#ifdef __cplusplus
-};
-#endif
+// #ifdef __cplusplus
+// };
+// #endif
 #endif

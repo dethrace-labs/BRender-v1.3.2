@@ -30,30 +30,26 @@ option(BRENDER_BUILD_SOFT "Build Software Renderer" ON)
 #     message(FATAL_ERROR "Can only build the software renderer on 32-bit Windows using MSVC.")
 # endif ()
 
-
-
-#add_subdirectory(ddi_inc)
-
 add_subdirectory(core)
 
 if (BRENDER_BUILD_DRIVERS)
     add_subdirectory(drivers)
 endif ()
 
-# ##
-# # Core BRender, no drivers, no DDI.
-# ##
-# add_library(BRender::Core ALIAS brender)
+##
+# Core BRender, no drivers, no DDI.
+##
+add_library(BRender::Core ALIAS brender)
 
-# ##
-# # Full BRender, with drivers, no DDI.
-# ##
-# add_library(BRender::Full ALIAS brender-full)
+##
+# Full BRender, with drivers, no DDI.
+##
+add_library(BRender::Full ALIAS brender-full)
 
-# ##
-# # Core BRender, no drivers, with DDI.
-# ##
-# add_library(BRender::DDI ALIAS brender-ddi)
+##
+# Core BRender, no drivers, with DDI.
+##
+add_library(BRender::DDI ALIAS brender-ddi)
 
 
 option(BRENDER_BUILD_TOOLS "Build Tools" ON)
@@ -66,4 +62,8 @@ endif ()
 
 if (BRENDER_BUILD_EXAMPLES AND BRENDER_BUILD_DRIVERS AND TARGET SDL2::SDL2)
     add_subdirectory(examples)
+endif ()
+
+if (NOT BRENDER_DISABLE_INSTALL)
+    include(cmake/packaging.cmake)
 endif ()

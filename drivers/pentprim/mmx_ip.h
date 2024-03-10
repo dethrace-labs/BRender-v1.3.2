@@ -30,6 +30,7 @@ void BR_ASM_CALL RasteriseBufferDisable(void);
 #define RasteriseBufferBegin()
 #define RasteriseBufferEnd()
 #define RasteriseBufferFlush()
+#define RasteriseBufferDisable()
 #endif
 
 /*
@@ -188,4 +189,3 @@ void BR_ASM_CALL RasteriseMMX565_Z_UV_RGB_SD_RL(void);
 
 #endif
 #endif
-

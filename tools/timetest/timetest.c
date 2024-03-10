@@ -16,7 +16,6 @@
 
 #include "brender.h"
 #include "dosio.h"
-#include "blockops.h"
 
 #include "timing.h"
 
@@ -30,7 +29,7 @@
 #include <time.h>
 
 #define CLOCKREAD() clock()
-#define CLOCKINIT() 
+#define CLOCKINIT()
 #undef CLOCK_RATE
 #define CLOCK_RATE CLOCKS_PER_SEC
 
@@ -144,7 +143,7 @@ int main(int argc, char **argv)
 #endif
 
 	palette = BrPixelmapLoad("std.pal");
-	
+
 	if(palette)
 		BrPixelmapPaletteSet(screen,palette);
 
@@ -301,7 +300,7 @@ int main(int argc, char **argv)
 			time_count = TIMING_FRAMES;
 			total_faces = 0;
 			start_time = CLOCKREAD();
-	  				
+
 		} else
 			total_faces += scene_faces;
 
@@ -318,7 +317,7 @@ int main(int argc, char **argv)
 	 	 * Controls
 		 */
 		DOSMouseRead(&mouse_x,&mouse_y,&mouse_buttons);
-		
+
 		if(mouse_x || mouse_y) {
 			if(DOSKeyTest(SC_L,0,0))
 				ControlObject(observer, light1_t_actor, light1_actor, mouse_x, mouse_y);
@@ -390,7 +389,7 @@ int main(int argc, char **argv)
 		}
 
 		if(DOSKeyTest(SC_D,0,REPT_FIRST_DOWN)) {
-			
+
 			a = BrActorAdd(world,BrActorAllocate(BR_ACTOR_MODEL,NULL));
 			a->model = model_actor->model;
 			a->material = model_actor->material;
@@ -469,7 +468,7 @@ void ControlObject(br_actor *camera_actor, br_actor *translate_actor, br_actor *
 
 	} else {
 		BrMatrix34RollingBall(&mat_roll,mouse_x,-mouse_y,1000);
-	
+
 		BrMatrix34Post(&rotate_actor->t.t.mat, &mat_roll);
 	}
 }
@@ -494,7 +493,7 @@ void dprintf(int x, int y, char *fmt,...)
 	va_start(args,fmt);
 	vsprintf(temp,fmt,args);
 	va_end(args);
-	
+
 	BrPixelmapText(offscreen, x * 4, y * 6, 255, BrFontFixed3x5,  temp);
 }
 
@@ -572,7 +571,7 @@ void ViewDrawDirtyRectangles(br_pixelmap *pm)
 {
 	int i;
 	struct dirty_rect *dp;
-	
+
 	/*
 	 * Individual rectangles
 	 */
@@ -659,4 +658,3 @@ void DebugTimestamp(void)
 			(TS_Cull.time_l+TS_Transform.time_l+TS_Render.time_l));
 }
 #endif
-

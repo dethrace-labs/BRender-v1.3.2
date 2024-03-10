@@ -36,7 +36,7 @@ const br_token PrimPartsTokens[] = {
  * Primitive library info. template
  */
 #define F(f)	offsetof(br_primitive_library, f)
-#define P(f)	((br_int_32)(&(f)))
+#define P(f)	((br_intptr_t)(&(f)))
 
 static struct br_tv_template_entry primitiveLibraryTemplateEntries[] = {
 	{BRT(IDENTIFIER_CSTR),	F(identifier),		BRTV_QUERY | BRTV_ALL,	BRTV_CONV_COPY, },
@@ -231,12 +231,12 @@ static br_error BR_CMETHOD_DECL(br_primitive_library_soft, flush)(
     *	 Clear the primitive library colour buffer pointer to
     *  signify to br_primitive_state_soft::renderBegin that
     *  it must relock the pixelmap next time it is called -
-    *  next time it begins to render a model / scene. 
+    *  next time it begins to render a model / scene.
     */
 
        self->colour_buffer = NULL ;
    }
- 
+
    return BRE_OK;
 }
 
@@ -318,4 +318,3 @@ static const struct br_primitive_library_dispatch primitiveLibraryDispatch = {
 	BR_CMETHOD_REF(br_primitive_library_soft,	synchronise),
 	BR_CMETHOD_REF(br_primitive_library_soft,	mask),
 };
-

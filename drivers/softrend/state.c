@@ -23,13 +23,13 @@ BR_RCS_ID("$Id: state.c 1.6 1998/11/13 16:23:39 jon Exp $");
 
 #if BASED_FIXED
 #define AX BRTV_ALL
-#else 
+#else
 #define AX 0
 #endif
 
 #if BASED_FLOAT
 #define AF BRTV_ALL
-#else 
+#else
 #define AF 0
 #endif
 
@@ -60,7 +60,7 @@ BR_RCS_ID("$Id: state.c 1.6 1998/11/13 16:23:39 jon Exp $");
  **/
 
 #define F(f) offsetof(struct state_all,f)
-#define P(f)	((br_int_32)(&(f)))
+#define P(f)	((br_uintptr_t)(&(f)))
 
 static const br_tv_template_entry partCullTemplateEntries[] = {
 	{BRT(TYPE_T),			F(cull.type),			Q | S | A,	BRTV_CONV_COPY,				0,TM_PART|TM_INVALID_CC},
@@ -103,7 +103,7 @@ static const br_tv_template_entry partSurfaceTemplateEntries[] = {
 /**************************************************************************
  ** Light
  **/
-static br_error BR_CALLBACK customLightingVolumeSet(void *block, br_uint_32 *pvalue, struct br_tv_template_entry *tep);
+static br_error BR_CALLBACK customLightingVolumeSet(void *block, br_value *pvalue, struct br_tv_template_entry *tep);
 
 static const struct br_tv_custom customLightingVolumeConv = {
 	NULL,
@@ -293,7 +293,7 @@ static const struct state_matrix partMatrixDefault = {
 		BR_VECTOR3(0,0,1),
 		BR_VECTOR3(0,0,0)
 	}},
-	
+
 	{{
 		BR_VECTOR4(1,0,0,0),	/* view_to_screen */
 		BR_VECTOR4(0,1,0,0),
@@ -326,8 +326,8 @@ static const struct state_hidden partHiddenSurfaceDefault = {
 };
 
 static const struct state_bounds partBoundsDefault = {
-	{BR_SCALAR_MAX, BR_SCALAR_MAX},	
-	{BR_SCALAR_MIN, BR_SCALAR_MIN},	
+	{BR_SCALAR_MAX, BR_SCALAR_MAX},
+	{BR_SCALAR_MIN, BR_SCALAR_MIN},
 };
 
 /*
@@ -564,12 +564,12 @@ void TouchModelToView(br_renderer *self)
 }
 
 
-static br_error BR_CALLBACK customLightingVolumeSet(void *block, br_uint_32 *pvalue, struct br_tv_template_entry *tep)
+static br_error BR_CALLBACK customLightingVolumeSet(void *block, br_value *pvalue, struct br_tv_template_entry *tep)
 {
 	br_light_volume *volume, *new_volume;
 	br_uint_32 i;
-	
-	volume = (br_light_volume *)*pvalue;
+
+	volume = (br_light_volume *)pvalue->p;
 	new_volume = (br_light_volume *)((char *)block + tep->offset);
 
 	if (volume == NULL) {
@@ -582,7 +582,7 @@ static br_error BR_CALLBACK customLightingVolumeSet(void *block, br_uint_32 *pva
 	}
 
 	new_volume->falloff_distance = volume->falloff_distance;
-	
+
 	if (new_volume->regions != NULL)
 		BrResFree(new_volume->regions);
 
@@ -614,4 +614,3 @@ static br_error BR_CALLBACK customLightingVolumeSet(void *block, br_uint_32 *pva
 
 	return BRE_OK;
 }
-

@@ -248,3 +248,31 @@ br_uint_32 _MemPixelGet(const char *dest, br_uint_32 bytes)
             return 0;
     }
 }
+
+void _MemRectFill_A(char *dest,
+	br_uint_32 dest_qual, br_uint_32 pwidth, br_uint_32 pheight,
+	br_int_32 d_stride, br_uint_32 bpp, br_uint_32 colour) {
+
+    // Not implemented
+    BrAbort();
+}
+
+void _MemRectCopySourceColourKey0_A(char *dest,
+	br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier,
+	br_uint_32 pwidth, br_uint_32 pheight,
+	br_int_32 d_stride,br_int_32 s_stride,
+	br_uint_32 bpp) {
+
+    // Not implemented
+    BrAbort();
+}
+
+
+void _MemCopySourceColourKey0_A(char *dest, br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, br_uint_32 pixels, br_uint_32 bpp) {
+    // Not implemented
+    BrAbort();
+}
+
+br_uint_16 _GetSysQual(void) {
+    return 0;
+}

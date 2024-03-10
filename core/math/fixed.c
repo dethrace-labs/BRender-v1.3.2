@@ -27,6 +27,14 @@ br_fixed_ls BR_PUBLIC_ENTRY BrFixedPow(br_fixed_ls a, br_fixed_ls b)
 	return BrFloatToFixed(BrFloatPow(BrFixedToFloat(a),BrFixedToFloat(b)));
 }
 
+// JeffH added
+br_fixed_ls BR_PUBLIC_ENTRY BrFixedDiv(br_fixed_ls numerator, br_fixed_ls denominator)
+{
+    br_scalar n = BrFixedToScalar(numerator);
+    br_scalar d = BrFixedToScalar(denominator);
+    return BrScalarToFixed(n / d);
+}
+
 #if 0
 /*
  * Reciprocal table
@@ -292,4 +300,3 @@ unsigned long BR_ASM_DATA _reciprocal[2048] = {
 	0x00000020,0x000000020,0x000000020,0x000000020,0x000000020,0x000000020,0x000000020,0x000000020,
 };
 #endif
-

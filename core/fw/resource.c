@@ -73,7 +73,9 @@ struct resource_header {
 	(r)->size_h = (s) >> (16+BR_RES_GRANULARITY_SHIFT);	\
 	} while(0)
 
-#define ALIGN(ptr,a) (((br_int_32)(ptr)+((a)-1)) & ~((a)-1))
+// JeffH
+// #define ALIGN(ptr,a) (((br_int_32)(ptr)+((a)-1)) & ~((a)-1))
+#define ALIGN(ptr,a) (((br_uintptr_t)(ptr)+((a)-1)) & ~((a)-1))
 
 #if BR_RES_TAGGING
 #define ISRESOURCE(res) ((res->magic_ptr == res) && (res->magic_num == BR_RES_MAGIC))
@@ -186,7 +188,9 @@ void * BR_RESIDENT_ENTRY BrResAllocate(void *vparent, br_size_t size, br_uint_8 
 	/*
 	 * Check to see if memory allocator lied about alignment
 	 */
-	actual_pad = (ALIGN(res,calign)-((br_int_32)res));
+	// JeffH
+	// actual_pad = (ALIGN(res, calign) - ((br_uintptr_t)res));
+	actual_pad = (ALIGN(res, calign) - ((br_uintptr_t)res));
 	ASSERT(actual_pad <= pad);
 
 	if(actual_pad > pad)

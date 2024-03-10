@@ -12,12 +12,11 @@
 #include "drv.h"
 #include "shortcut.h"
 #include "brassert.h"
-#include "blockops.h"
 
 #include "vecifns.h"
 
 /*
- * Transform, project, outcode and update screen bounds of visible vertices 
+ * Transform, project, outcode and update screen bounds of visible vertices
  */
 #ifndef Vertex_TransformProjectOutcodeBounds
 static void GEOMETRY_CALL Vertex_TransformProjectOutcodeBounds(struct br_geometry *self, struct br_renderer *renderer)
@@ -57,7 +56,7 @@ static void GEOMETRY_CALL Vertex_TransformProjectOutcodeBounds(struct br_geometr
 #endif
 
 /*
- * Transform, project and outcode of visible vertices 
+ * Transform, project and outcode of visible vertices
  */
 #ifndef Vertex_TransformProjectOutcode
 static void GEOMETRY_CALL Vertex_TransformProjectOutcode(struct br_geometry *self, struct br_renderer *renderer)
@@ -95,7 +94,7 @@ static void GEOMETRY_CALL Vertex_TransformProjectOutcode(struct br_geometry *sel
 #endif
 
 /*
- * Transform, project and update screen bounds of visible vertices 
+ * Transform, project and update screen bounds of visible vertices
  */
 #ifndef Vertex_OS_TransformProjectBounds
 static void GEOMETRY_CALL Vertex_OS_TransformProjectBounds(struct br_geometry *self, struct br_renderer *renderer)
@@ -127,7 +126,7 @@ static void GEOMETRY_CALL Vertex_OS_TransformProjectBounds(struct br_geometry *s
 #endif
 
 /*
- * Transform and project visible vertices 
+ * Transform and project visible vertices
  */
 #ifndef Vertex_OS_TransformProject
 static void GEOMETRY_CALL Vertex_OS_TransformProject(struct br_geometry *self, struct br_renderer *renderer)
@@ -157,7 +156,7 @@ static void GEOMETRY_CALL Vertex_OS_TransformProject(struct br_geometry *self, s
 #endif
 
 /*
- * Transform, project, light and update screen bounds of visible vertices 
+ * Transform, project, light and update screen bounds of visible vertices
  */
 #ifndef Vertex_OS_TransformProjectBoundsSurf
 static void GEOMETRY_CALL Vertex_OS_TransformProjectBoundsSurf(struct br_geometry *self, struct br_renderer *renderer)
@@ -204,7 +203,7 @@ static void GEOMETRY_CALL Vertex_OS_TransformProjectBoundsSurf(struct br_geometr
 #endif
 
 /*
- * Transform, project and light visible vertices 
+ * Transform, project and light visible vertices
  */
 #ifndef Vertex_OS_TransformProjectSurf
 static void GEOMETRY_CALL Vertex_OS_TransformProjectSurf(struct br_geometry *self, struct br_renderer *renderer)
@@ -249,7 +248,7 @@ static void GEOMETRY_CALL Vertex_OS_TransformProjectSurf(struct br_geometry *sel
 #endif
 
 /*
- * Transform, project, light and update screen bounds of visible vertices 
+ * Transform, project, light and update screen bounds of visible vertices
  */
 #ifndef Vertex_OS_TransformProjectBoundsGeom
 static void GEOMETRY_CALL Vertex_OS_TransformProjectBoundsGeom(struct br_geometry *self, struct br_renderer *renderer)
@@ -296,7 +295,7 @@ static void GEOMETRY_CALL Vertex_OS_TransformProjectBoundsGeom(struct br_geometr
 #endif
 
 /*
- * Transform, project and light visible vertices 
+ * Transform, project and light visible vertices
  */
 #ifndef Vertex_OS_TransformProjectGeom
 static void GEOMETRY_CALL Vertex_OS_TransformProjectGeom(struct br_geometry *self, struct br_renderer *renderer)
@@ -580,7 +579,7 @@ static void GEOMETRY_CALL Vertex_DepthBias(struct br_geometry *self, struct br_r
 void GEOMETRY_CALL ScratchFree(struct br_geometry *self, struct br_renderer *renderer)
 {
 		BrScratchFree(rend.scratch);
-	
+
 		rend.scratch = NULL;
 }
 #endif

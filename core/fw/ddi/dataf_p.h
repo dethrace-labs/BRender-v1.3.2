@@ -14,21 +14,22 @@
 extern "C" {
 #endif
 
+
 /*
  * datafile.c
  */
 void *DfPop(int type, int *countp);
-void  DfPush(int type, void *value, int count);
+void DfPush(int type, void *value, int count);
 void *DfTop(int type, int *countp);
-int   DfTopType(void);
+int DfTopType(void);
 
 int DfChunksInterpret(struct br_datafile *df, struct br_chunks_table *table);
 
 br_uint_32 DfStructWriteArray(struct br_datafile *df, struct br_file_struct *str, void *base, int n);
-br_uint_32 DfStructReadArray(struct br_datafile *df, struct br_file_struct *str, void *base, int n);
+br_uint_32 DfStructReadArray(struct br_datafile *df, struct br_file_struct *str,void *base,  int n);
 
-struct br_datafile *DfOpen(const char *name, int write, br_token scalar_type);
-void                DfClose(struct br_datafile *df);
+struct br_datafile *DfOpen(char *name, int write, br_token scalar_type);
+void DfClose(struct br_datafile *df);
 
 /*
  * genfile.c

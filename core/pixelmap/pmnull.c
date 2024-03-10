@@ -143,4 +143,3 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_null, pixelAddressSet)(br_device_pix
 {
 	return BRE_OK;
 }
-

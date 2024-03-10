@@ -570,7 +570,7 @@ static void * functionPointers_BRCORE1[] = {
 	_BrExceptionThrow                                               , /* 171 */
 	_BrExceptionValueFetch                                          , /* 172 */
 	_BrUAssert                                                      , /* 173 */
-	_EPI                                                            , /* 174 */
+	//_EPI                                                            , /* 174 */
 	_M_br_object_container_addFront                                 , /* 175 */
 	_M_br_object_container_count                                    , /* 176 */
 	_M_br_object_container_find                                     , /* 177 */
@@ -586,7 +586,7 @@ static void * functionPointers_BRCORE1[] = {
 	_M_br_object_queryBuffer                                        , /* 187 */
 	_M_br_object_queryMany                                          , /* 188 */
 	_M_br_object_queryManySize                                      , /* 189 */
-	_PRO                                                            , /* 190 */
+	//_PRO                                                            , /* 190 */
 };
 
 static br_image Image_BRCORE1 = {
@@ -602,7 +602,7 @@ static br_image Image_BRCORE1 = {
 	BR_ASIZE(namePointers_BRCORE1),	/* Number of names			*/
 	namePointers_BRCORE1,				/* Table of names 			*/
 	nameOrdinals_BRCORE1,				/* Table of name ordinals	*/
-	
+
 	0,								/* Number of imports		*/
 	NULL,							/* Table of imports			*/
 
@@ -611,4 +611,3 @@ static br_image Image_BRCORE1 = {
 
 	NULL,							/* Type pointer				*/
 };
-

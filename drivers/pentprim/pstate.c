@@ -31,18 +31,19 @@ static const struct br_primitive_state_dispatch primitiveStateDispatch;
 
 #if BASED_FIXED
 #define AX BRTV_ALL
-#else 
+#else
 #define AX 0
 #endif
 
 #if BASED_FLOAT
 #define AF BRTV_ALL
-#else 
+#else
 #define AF 0
 #endif
 
 #define F(f)	offsetof(struct br_primitive_state, f)
-#define P(f)	((br_int_32)(&(f)))
+// JeffH: #define P(f)	((br_int_32)(&(f)))
+#define P(f)	((br_uintptr_t)(&(f)))
 
 static const struct br_tv_template_entry primitiveStateTemplateEntries[] = {
 	{BRT(IDENTIFIER_CSTR),		F(identifier),				Q | A,				BRTV_CONV_COPY,},
@@ -63,7 +64,7 @@ struct br_primitive_state * PrimitiveStateSoftAllocate(struct br_primitive_libra
 	struct br_primitive_state * self;
 
 	self = BrResAllocate(plib->device, sizeof(*self), BR_MEMORY_OBJECT);
-	
+
 	if(self == NULL)
 		return NULL;
 
@@ -126,7 +127,7 @@ static br_boolean inputSet(struct input_buffer *ib, br_buffer_stored *new)
 	 */
 	if(old == NULL && new == NULL)
 		return BR_FALSE;
-	
+
 	/*
 	 * If buffer is no longer being used
 	 */
@@ -134,7 +135,7 @@ static br_boolean inputSet(struct input_buffer *ib, br_buffer_stored *new)
 		ib->buffer = NULL;
 		return BR_TRUE;
 	}
-	
+
 	if(old != NULL) {
 		/*
 		 * See if new buffer has same character as old...
@@ -169,7 +170,7 @@ static br_boolean outputSet(struct output_buffer *ob, br_device_pixelmap *new)
 	 */
 	if(old == NULL && new == NULL)
 		return BR_FALSE;
-	
+
 	/*
 	 * If pixelmap is no longer being used
 	 */
@@ -181,7 +182,7 @@ static br_boolean outputSet(struct output_buffer *ob, br_device_pixelmap *new)
 
 		return BR_TRUE;
 	}
-	
+
 	if(old != NULL) {
 		/*
 		 * See if new pixelmap has same character as old...
@@ -210,15 +211,15 @@ static br_boolean outputSet(struct output_buffer *ob, br_device_pixelmap *new)
 }
 
 
-static br_error BR_CALLBACK customInputSet(void *block, br_uint_32 *pvalue, struct br_tv_template_entry *tep)
+static br_error BR_CALLBACK customInputSet(void *block, br_value *pvalue, struct br_tv_template_entry *tep)
 {
 	/*
 	 * XXX validate incoming object
 	 */
 
 	if(inputSet(
-		(struct input_buffer *)((char *)block + tep->offset), 
-		(br_buffer_stored *)*pvalue))
+		(struct input_buffer *)((char *)block + tep->offset),
+		(br_buffer_stored *)pvalue->o))
 		tep->mask = 1;
 	else
 		tep->mask = 0;
@@ -232,15 +233,15 @@ static struct br_tv_custom customInputConv = {
 	NULL,
 };
 
-static br_error BR_CALLBACK customOutputSet(void *block, br_uint_32 *pvalue, struct br_tv_template_entry *tep)
+static br_error BR_CALLBACK customOutputSet(void *block, br_value *pvalue, struct br_tv_template_entry *tep)
 {
 	/*
 	 * XXX validate incoming object
 	 */
 
 	if(outputSet(
-		(struct output_buffer *)((char *)block + tep->offset), 
-		(br_device_pixelmap *)*pvalue))
+		(struct output_buffer *)((char *)block + tep->offset),
+		(br_device_pixelmap *)pvalue->o))
 		tep->mask = 1;
 	else
 		tep->mask = 0;
@@ -258,7 +259,8 @@ static const struct br_tv_custom customOutputConv = {
  * Templates for state set/query
  */
 #define F(f) offsetof(struct br_primitive_state, f)
-#define P(f)	((br_int_32)(&(f)))
+// JeffH: #define P(f)	((br_int_32)(&(f)))
+#define P(f)	((br_uintptr_t)(&(f)))
 
 static br_tv_template_entry partPrimitiveTemplateEntries[] = {
 	{BRT(FORCE_FRONT_B),	F(prim.flags),			Q | S | A,	BRTV_CONV_BIT,	PRIMF_FORCE_FRONT,			1},
@@ -359,7 +361,7 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partSet)(
 	 * Do the set...
 	 */
 	m = 0;
-	r = BrTokenValueSet(self, &m, t, value, tp);
+	r = BrTokenValueSet(self, &m, t, (br_value) { .u32 = value }, tp);
 
 	/*
 	 * If unrecognised, no changes
@@ -455,7 +457,7 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partQuery)(
 	if(tp == NULL)
 		return BRE_FAIL;
 
-	return BrTokenValueQuery(pvalue, NULL, NULL, t,  self, tp);
+	return BrTokenValueQuery(pvalue, NULL, 0, t,  self, tp);
 }
 
 static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partQueryBuffer)(
@@ -680,4 +682,3 @@ static const struct br_primitive_state_dispatch primitiveStateDispatch = {
     BR_CMETHOD_REF(br_primitive_state_soft, partQueryCapability),
     BR_CMETHOD_REF(br_primitive_state_soft, stateQueryPerformance),
 };
-

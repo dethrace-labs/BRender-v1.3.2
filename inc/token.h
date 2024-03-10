@@ -63,7 +63,7 @@ typedef br_uint_32 br_token;
 
 #define BRT_AS_MATRIX23_SCALAR(tok)	BRT_AS_MATRIX23_FLOAT(tok)
 #define BRT_AS_MATRIX34_SCALAR(tok)	BRT_AS_MATRIX34_FLOAT(tok)
-#define BRT_AS_MATRIX4_SCALAR(tok)	BRT_AS_MATRIX4_FLOAT(tok)	
+#define BRT_AS_MATRIX4_SCALAR(tok)	BRT_AS_MATRIX4_FLOAT(tok)
 
 #define BRT_AS_VECTOR2_SCALAR(tok)	BRT_AS_VECTOR2_FLOAT(tok)
 #define BRT_AS_VECTOR3_SCALAR(tok)	BRT_AS_VECTOR3_FLOAT(tok)
@@ -126,4 +126,3 @@ typedef struct br_token_value {
 } br_token_value;
 
 #endif
-

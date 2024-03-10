@@ -70,4 +70,3 @@ typedef struct br_device {
 };
 #endif
 #endif
-

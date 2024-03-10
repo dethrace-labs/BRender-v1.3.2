@@ -8,50 +8,69 @@
 #ifndef _BRIMAGE_H_
 #define _BRIMAGE_H_
 
-typedef void *(*br_image_proc)(void *);
-
-#ifdef __H2INC__
-typedef void br_image_function_info;
-#else
-typedef struct br_image_function_info {
-    const char   *name;
-    br_image_proc proc;
-} br_image_function_info;
-#endif
+/*
+ * In-memory structure describing a loaded image
+ */
+typedef struct br_image_section {
+	char *name;
+	void *base;
+	br_size_t mem_offset;
+	br_size_t mem_size;
+	br_uint_32 data_offset;
+	br_uint_32 data_size;
+} br_image_section;
 
 typedef struct br_image {
-    /*
-     * Anchor block for list of images
-     */
-    br_node node;
+	/*
+	 * Anchor block for list of images
+	 */
+	br_node node;
 
-    /*
-     * DLL name
-     */
-    const char *identifier;
+	/*
+	 * DLL name
+	 */
+	char *identifier;
 
-    /*
-     * Type of DLL - Resident, Host, Framework
-     */
-    br_int_32 type;
+	/*
+	 * Type of DLL - Resident, Host, Framework
+	 */
+	br_int_32 type;
 
-    /*
-     * Number of references to this DLL
-     */
-    br_int_32 ref_count;
+	/*
+	 * Number of references to this DLL
+	 */
+	br_int_32 ref_count;
 
-    /*
-     * Table of exported functions. The ordinal is the function index.
-     * Must be sorted by name, suitable for BrStrCmp().
-     * Only valid if type != BR_IMG_HOST.
-     */
-    unsigned int                  n_functions;
-    const br_image_function_info *functions;
+	/*
+	 * Table of exported functions
+	 */
+	br_uint_32 ordinal_base;
+	br_uint_32 n_functions;
+	void ** functions;
 
-    /*
-     * Type specific pointer
-     */
-    void *type_pointer;
+	/*
+	 * Name -> ordinal lookup
+	 */
+	br_uint_32 n_names;
+	char		**names;
+	br_uint_16 *name_ordinals;
+
+	/*
+	 * Table of imported image pointers
+	 */
+	br_uint_16 n_imports;
+	struct br_image ** imports;
+
+	/*
+	 * Image sections
+	 */
+	br_uint_16 n_sections;
+	br_image_section *sections;
+
+	/*
+	 * Type specific pointer
+	 */
+	void	*type_pointer;
 
 } br_image;
 
@@ -59,22 +78,14 @@ typedef struct br_image {
  * Possible types of DLL
  */
 enum {
-    /*
-     * A library loaded by BRender itself.
-     * These are no longer used, this definition is only
-     * provided for compatibility.
-     */
-    BR_IMG_FRAMEWORK = 1,
-
-    /*
-     * A statically-linked, or memory-resident library.
-     */
-    BR_IMG_RESIDENT,
-
-    /*
-     * A host-loaded library, e.g. from LoadLibrary() or dlopen().
-     */
-    BR_IMG_HOST,
+	BR_IMG_FRAMEWORK = 1,
+	BR_IMG_RESIDENT,
+	BR_IMG_HOST,
 };
+
+/*
+ * Bogus type used to import functions
+ */
+typedef void BR_PUBLIC_ENTRY br_resident_fn();
 
 #endif

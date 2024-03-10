@@ -418,8 +418,8 @@ static void BR_ASM_CALL averageVerticesOnScreen(struct br_renderer *renderer, br
 #define SUBDIVIDE_THRESHOLD BR_SCALAR(0.9)
 
 
-#if 0
-static br_boolean subdivideCheck(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
+
+br_boolean subdivideCheck(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
 #if 0
     br_scalar lu,hu,lv,hv, q0,q1,q2;
@@ -477,7 +477,6 @@ static br_boolean subdivideCheck(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 
     return BR_TRUE;
 }
-#endif
 
 
 /*

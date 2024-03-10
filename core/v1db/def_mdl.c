@@ -11,7 +11,7 @@
 
 BR_RCS_ID("$Id: def_mdl.c 1.2 1998/05/20 11:57:10 jon Exp $")
 
-#define NULL 0
+// JeffH: #define NULL 0
 
 /*
  * 8 Vertices
@@ -65,4 +65,3 @@ br_model _BrDefaultModel = {
 	    BR_SCALAR( 1.0),
 	    BR_SCALAR( 1.0) } }
 };
-

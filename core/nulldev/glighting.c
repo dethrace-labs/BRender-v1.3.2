@@ -95,7 +95,7 @@ static struct br_tv_template *BR_CMETHOD_DECL(br_geometry_lighting_null, templat
  * Lighting function calling facility
  */
 br_error BR_CMETHOD_DECL(br_geometry_lighting_null,
-                         render)(struct br_geometry_lighting *self, struct br_renderer *renderer, br_vector3_f *points,
+                         renderF)(struct br_geometry_lighting *self, struct br_renderer *renderer, br_vector3_f *points,
                                  br_vector3_f *normals, br_colour *colour_in, br_colour *colour_out, br_uint_16 *redirect,
                                  int pstride, int nstride, int cinstride, int coutstride, int nvertices)
 {
@@ -125,5 +125,5 @@ static const struct br_geometry_lighting_dispatch geometryLightingDispatch = {
     ._queryAll      = BR_CMETHOD_REF(br_object, queryAll),
     ._queryAllSize  = BR_CMETHOD_REF(br_object, queryAllSize),
 
-    ._render = BR_CMETHOD_REF(br_geometry_lighting_null, render),
+    ._renderF = BR_CMETHOD_REF(br_geometry_lighting_null, renderF),
 };

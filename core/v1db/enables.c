@@ -174,13 +174,13 @@ void BR_PUBLIC_ENTRY BrClipPlaneEnable(br_actor *c)
 }
 
 /*
- * Remove a clip plane 
+ * Remove a clip plane
  */
 void BR_PUBLIC_ENTRY BrClipPlaneDisable(br_actor *c)
 {
 
     UASSERT_MESSAGE("BrClipPlaneDisable NULL pointer to a clip plane actor", c != NULL);
-	
+
 	actorDisable(&v1db.enabled_clip_planes,c);
 }
 
@@ -190,12 +190,12 @@ void BR_PUBLIC_ENTRY BrClipPlaneDisable(br_actor *c)
 void BR_PUBLIC_ENTRY BrHorizonPlaneEnable(br_actor *h)
 {
     UASSERT_MESSAGE("BrHorizonPlaneEnable NULL pointer to a horizon plane actor", h != NULL);
-	    
+
 	actorEnable(&v1db.enabled_horizon_planes,h);
 }
 
 /*
- * Remove a horizon plane 
+ * Remove a horizon plane
  */
 void BR_PUBLIC_ENTRY BrHorizonPlaneDisable(br_actor *h)
 {
@@ -227,7 +227,7 @@ br_actor * BR_PUBLIC_ENTRY BrEnvironmentSet(br_actor *a)
 static br_boolean setupView(
 	br_matrix34 *view_to_this,
 	br_matrix34 *this_to_view,
-	br_matrix34 *world_to_view, 
+	br_matrix34 *world_to_view,
 	br_int_32 w2vt,
 	br_actor *world, br_actor *a)
 {
@@ -497,7 +497,7 @@ void BrSetupLights(br_actor *world, br_matrix34 *world_to_view, br_int_32 w2vt)
 			temp_regions = NULL;
 			tvp->v.p = NULL;
 		}
-		
+
 		tvp++;
 
 		/*
@@ -567,7 +567,7 @@ void BrSetupClipPlanes(br_actor *world, br_matrix34 *world_to_view, br_int_32 w2
 		 * Make screen->plane
 		 */
 		BrMatrix4Copy34(&tmp4,&view_to_this);
-		
+
 		BrMatrix4Mul(&screen_to_this,&screen_to_view, &tmp4);
 
 		/*
@@ -577,12 +577,12 @@ void BrSetupClipPlanes(br_actor *world, br_matrix34 *world_to_view, br_int_32 w2
 
 		RendererPartSetMany(v1db.renderer, BRT_CLIP, clip_part, tv, NULL);
 		clip_part++;
-	}	
+	}
 
 	tv[0].t = BRT_TYPE_T;
 	tv[0].v.t = BRT_NONE;
 	tv[1].t = BR_NULL_TOKEN;
-	
+
 	for( ; clip_part < v1db.max_clip; clip_part++)
 		RendererPartSetMany(v1db.renderer, BRT_CLIP, clip_part, tv, NULL);
 
@@ -616,14 +616,15 @@ void BrSetupEnvironment(br_actor *world, br_matrix34 *world_to_view, br_int_32 w
 			h = BRT_NONE;
 		}
 
-	} 
+	}
 
 	/*
 	 * Send to renderer
 	 */
+	// JeffH: partSet now takes a br_value
 	if(h != BRT_DONT_CARE)
-		RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_MATRIX34_SCALAR(VIEW_TO_ENVIRONMENT), (br_uint_32)&view_to_this);
-	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_VIEW_TO_ENVIRONMENT_HINT_T, h);
+		RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_MATRIX34_SCALAR(VIEW_TO_ENVIRONMENT), (br_value){ .m34 = &view_to_this});
+	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_VIEW_TO_ENVIRONMENT_HINT_T, (br_value){.t = h});
 }
 
 /*
@@ -668,4 +669,3 @@ void BrActorEnableCheck(br_actor *a)
 		break;
 	}
 }
-

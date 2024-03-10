@@ -49,6 +49,9 @@
 #ifndef _DEV_OBJS_H_
 // FIXME: These really should go somewhere else, but I just need to shutup the compiler.
 struct v11model_f;
+struct v11model_x;
+struct v1model_f;
+struct v1model_x;
 struct brp_block;
 union brp_vertex;
 struct fmt_vertex;

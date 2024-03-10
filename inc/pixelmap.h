@@ -53,7 +53,7 @@ enum {
 	BR_PMT_ALPHA_8,
 
 	/*
-	 * Opacity + Index. 
+	 * Opacity + Index.
 	 */
 	BR_PMT_INDEXA_88,
 
@@ -131,26 +131,26 @@ enum {
  * Public structure that is comaptible with a device_pixelmap
  */
 typedef struct br_pixelmap {
-	br_uint_32 _reserved;
+	void* _reserved;
 
 	/*
 	 * Optional identifier (when maps used as textures/tables etc.)
 	 */
 	char *identifier;
 
-	/*																		
-	 * pointer to raw pixel data											
-	 */																		
-	void *  pixels;															
-																			
-	/*																		
-	 * Optional device speicific information								
-	 */																		
-	br_uint_32  pixels_qualifier;											
-																			
-	/*																		
-	 * Optional pixel map when pixels are indexed.							
-	 */																		
+	/*
+	 * pointer to raw pixel data
+	 */
+	void *  pixels;
+
+	/*
+	 * Optional device speicific information
+	 */
+	br_uint_32  pixels_qualifier;
+
+	/*
+	 * Optional pixel map when pixels are indexed.
+	 */
 	struct br_pixelmap * map;
 
 	/*
@@ -166,53 +166,53 @@ typedef struct br_pixelmap {
 
 	/*
 	 * Byte difference between pixels at same column of adjacent rows
-	 */																		
-	br_int_16	row_bytes;													
-																			
-	/*																		
+	 */
+	br_int_16	row_bytes;
+
+	/*
 	 * if ! 0, offset (in top level rows) from top map start to top-1 map
 	 */
-	br_int_16	mip_offset;													
-																			
-	/*																		
-	 * Type of pixels														
-	 */																		
-	br_uint_8	type;														
-																			
-	/*																		
-	 * Flags																
-	 */																		
-        br_uint_8       flags;                                                                                                   
+	br_int_16	mip_offset;
+
+	/*
+	 * Type of pixels
+	 */
+	br_uint_8	type;
+
+	/*
+	 * Flags
+	 */
+        br_uint_8       flags;
 
 	/*
 	 * Copy function
 	 */
 	br_uint_16	copy_function;
-																			
-	/*																		
-	 * top left visible region in pixels from pixel at 'pixel' pointer		
-	 */																		
-	br_uint_16	base_x;														
-	br_uint_16	base_y;														
-																			
-	/*																		
-	 * Width and height of bitmap in pixels									
-	 */																		
-	br_uint_16	width;														
-	br_uint_16	height;														
-																			
-	/*																		
-	 * Local origin for any graphics system rendering into map, relative	
-	 * to 'base'															
-	 */																		
-	br_int_16	origin_x;													
-	br_int_16	origin_y;													
-																			
-	/*																		
-	 * Workspace fields for user and database								
-	 */																		
-	void 		*user;														
-	void		*stored;													
+
+	/*
+	 * top left visible region in pixels from pixel at 'pixel' pointer
+	 */
+	br_uint_16	base_x;
+	br_uint_16	base_y;
+
+	/*
+	 * Width and height of bitmap in pixels
+	 */
+	br_uint_16	width;
+	br_uint_16	height;
+
+	/*
+	 * Local origin for any graphics system rendering into map, relative
+	 * to 'base'
+	 */
+	br_int_16	origin_x;
+	br_int_16	origin_y;
+
+	/*
+	 * Workspace fields for user and database
+	 */
+	void 		*user;
+	void		*stored;
 
 } br_pixelmap;
 

@@ -166,12 +166,12 @@ static br_boolean outfctyEnum(br_object *outfcty, br_outfcty_enum_cbfn *cbfn,
 	desc.output_facility = (struct br_output_facility *)outfcty;
 
     identifier = NULL;
-    desc.width = NULL;
-    desc.width_min = NULL;
-    desc.width_max = NULL;
-    desc.height = NULL;
-    desc.height_min = NULL;
-    desc.height_max = NULL;
+    desc.width = 0;
+    desc.width_min = 0;
+    desc.width_max = 0;
+    desc.height = 0;
+    desc.height_min = 0;
+    desc.height_max = 0;
     desc.pmtype = 0;
     desc.pmbits = 0;
     desc.indexed = BR_FALSE;

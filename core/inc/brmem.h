@@ -124,7 +124,8 @@ enum br_memory_classes {
 typedef void BR_CALLBACK br_resourcefree_cbfn(void *res, br_uint_8 res_class, br_size_t size);
 
 typedef struct br_resource_class {
-	br_uint_32 reserved;
+	// JeffH: br_uint_32 reserved;
+	br_uintptr_t reserved;
 	char *identifier;
 	br_uint_8 res_class;
 	br_resourcefree_cbfn *free_cb;
@@ -132,4 +133,3 @@ typedef struct br_resource_class {
 } br_resource_class;
 
 #endif
-

@@ -63,7 +63,7 @@ typedef br_uint_32 br_token;
 
 #define BRT_AS_MATRIX23_SCALAR(tok)	BRT_AS_MATRIX23_FLOAT(tok)
 #define BRT_AS_MATRIX34_SCALAR(tok)	BRT_AS_MATRIX34_FLOAT(tok)
-#define BRT_AS_MATRIX4_SCALAR(tok)	BRT_AS_MATRIX4_FLOAT(tok)	
+#define BRT_AS_MATRIX4_SCALAR(tok)	BRT_AS_MATRIX4_FLOAT(tok)
 
 #define BRT_AS_VECTOR2_SCALAR(tok)	BRT_AS_VECTOR2_FLOAT(tok)
 #define BRT_AS_VECTOR3_SCALAR(tok)	BRT_AS_VECTOR3_FLOAT(tok)
@@ -74,16 +74,19 @@ typedef br_uint_32 br_token;
 
 
 typedef union br_value_tag {
-		br_uint_32		u32;	/* unsigned long word at front for initialisation */
+		// JeffH: br_uint_32		u32;	/* unsigned long word at front for initialisation */
+		void                  *p;
+    	br_intptr_t            pi;
+    	br_uintptr_t           pu;
 
 		br_boolean		b;
-		void *			p;
 		br_token		t;
 		br_int_8		i8;
 		br_uint_8		u8;
 		br_int_16		i16;
 		br_uint_16		u16;
 		br_int_32		i32;
+		br_uint_32		u32;
 		br_fixed_ls		x;
 		br_float		f;
 		br_scalar		s;
@@ -106,6 +109,8 @@ typedef union br_value_tag {
 		br_matrix23_f	*m23_f;
 		br_matrix34_f	*m34_f;
 		br_matrix4_f	*m4_f;
+		br_matrix34 	*m34;  // JeffH
+		br_matrix23		*m23; // JeffH
 		char *			str;
 		char *			cstr;
 		struct br_object **ol;
@@ -126,4 +131,3 @@ typedef struct br_token_value {
 } br_token_value;
 
 #endif
-

@@ -25,7 +25,7 @@ BR_RCS_ID("$Id: pmdsptch.c 1.2 1998/08/10 16:12:21 johng Exp $")
 extern void _CheckDispatch(br_device_pixelmap *pm);
 #define CheckDispatch(x) _CheckDispatch((br_device_pixelmap *)(x))
 #else
-#define 
+#define
 CheckDispatch(x)
 #endif
 
@@ -57,7 +57,7 @@ void BR_PUBLIC_ENTRY BrPixelmapFree(br_pixelmap *src)
 	/*
 	 * Gross V1.1 compatibity problem
 	 *
- 	 * If user free's the current DosGfxBegin() pixelmap - 
+ 	 * If user free's the current DosGfxBegin() pixelmap -
 	 * mark it as unused
 	 */
 	if(BrDevLastBeginQuery() == src)
@@ -361,8 +361,11 @@ br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapClone(br_pixelmap *src)
 	br_pixelmap *new;
 
 	br_token_value tv[] = {
-		{BRT_USE_T,	BRT_CLONE},
-		{0}};
+		// JeffH : {BRT_USE_T,	BRT_CLONE},
+		// {0}};
+		{.t = BRT_USE_T,     .v = {.t = BRT_CLONE}},
+        {.t = BR_NULL_TOKEN, .v = 0               },
+	};
 
 	CheckDispatch(src);
 
@@ -606,7 +609,7 @@ void BR_PUBLIC_ENTRY BrPixelmapDirtyRectangleCopy(br_pixelmap *dst,
 		 * Spot case of copying from device (to addressable memory)
 		 */
 		DevicePixelmapCopyFromDirty(src, (br_device_pixelmap *)dst, &r, 1);
-	else 
+	else
 		/*
 		 * Otherwise use a general copy with intermediate buffer
 		 */
@@ -778,7 +781,7 @@ br_uint_16 BR_PUBLIC_ENTRY BrPixelmapTextWidth(br_pixelmap *dst,
 			w += font->width[*text]+1;
 
 		w -= 1;
-		return w; 
+		return w;
 	} else
 		return (font->glyph_x+1) * BrStrLen(text) -1;
 }
@@ -902,7 +905,7 @@ void BR_PUBLIC_ENTRY BrPixelmapPaletteSet(br_pixelmap *pm, br_pixelmap *pal)
 {
 	UASSERT(pal);
 	UASSERT(pm);
-	
+
 	CheckDispatch(pm);
 
 	BrPixelmapPaletteEntrySetMany(pm, 0, pal->height, (br_colour *)pal->pixels);

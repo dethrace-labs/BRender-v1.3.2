@@ -77,11 +77,11 @@ void BR_PUBLIC_ENTRY BrDbModelRender(br_actor *actor,
 			BrZsOrderTableClear(ot);
 			InsertOrderTableList(ot);
 		}
-	
+
 		ot->visits++;
 
 		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0,
-			BRT_V1ORDER_TABLE_P, (br_uint_32) ot);
+			BRT_V1ORDER_TABLE_P, (br_value){.p = ot});
 
 		/*
 		 * See if a 'primitive insertion' function needs to be added
@@ -225,7 +225,7 @@ static br_uint_16 prependActorTransform(br_actor *ap, br_uint_16 t)
 	t = BrTransformCombineTypes(t, ap->t.type);
 
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
-		BRT_MODEL_TO_VIEW_HINT_T, BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE);
+		BRT_MODEL_TO_VIEW_HINT_T, (br_value){.t = BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE});
 #endif
 
 	return t;
@@ -241,7 +241,7 @@ static br_uint_16 prependMatrix(br_matrix34 *mat, br_uint_16 mat_t, br_uint_16 t
 
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
 		BRT_MODEL_TO_VIEW_HINT_T,
-		BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE);
+		(br_value){.t = BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE});
 
 	return t;
 }
@@ -521,7 +521,7 @@ static void sceneRenderWorld(br_actor *world)
 }
 
 /*
- * Add a sub-tree to the current rendering pass - 
+ * Add a sub-tree to the current rendering pass -
  *
  * Walks up tree from provided actor to find the material, model and
  * style to inherit
@@ -535,7 +535,7 @@ static void sceneRenderAdd(br_actor *tree)
 	br_actor *a;
 	br_int_32 t;
 	br_matrix34 m;
-	
+
 	if(tree->parent == NULL) {
 		/*
 		 * Simple case for when added tree is unconnected
@@ -582,8 +582,8 @@ static void sceneRenderAdd(br_actor *tree)
 			break;
 
 		/*
-		 * Accumulate transform 
-		 */	
+		 * Accumulate transform
+		 */
 		if(a->t.type != BR_TRANSFORM_IDENTITY) {
 			BrMatrix34PostTransform(&m,&a->t);
 			t = BrTransformCombineTypes(t,a->t.type);
@@ -604,7 +604,7 @@ static void sceneRenderAdd(br_actor *tree)
 			(br_uint_16)v1db.ttype);
 	} else {
 		RendererStatePush(v1db.renderer, BR_STATE_MATRIX);
-	
+
 		t = prependMatrix(&m, (br_uint_16)t, (br_uint_16)v1db.ttype);
 
 		actorRender(tree, model, material, render_data, style,
@@ -650,7 +650,8 @@ void BR_PUBLIC_ENTRY BrDbSceneRenderBegin(br_actor *world,
 	br_actor *a;
 	int i;
 	br_token vtos_type;
-	br_uint_32 dummy;
+	// JeffH: br_uint_32 dummy;
+	br_uintptr_t dummy;
 
 	UASSERT_MESSAGE("No renderer present", v1db.renderer != NULL );
    UASSERT_MESSAGE("Invalid BrDbSceneRenderBegin pointer", world != NULL);
@@ -660,11 +661,11 @@ void BR_PUBLIC_ENTRY BrDbSceneRenderBegin(br_actor *world,
 	 * Work out View Transform from info. in camera actor
 	 */
 	vtos_type = CameraToScreenMatrix4(&vtos, camera);
-	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_MATRIX4_SCALAR(VIEW_TO_SCREEN), (br_uint_32)&vtos);
-	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_VIEW_TO_SCREEN_HINT_T, (br_uint_32)vtos_type);
+	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_MATRIX4_SCALAR(VIEW_TO_SCREEN), (br_value) {.p = &vtos});
+	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_VIEW_TO_SCREEN_HINT_T, (br_value) {.t = vtos_type});
 
-	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_SCALAR(HITHER_Z), *(br_uint_32 *)&((br_camera *)camera->type_data)->hither_z);
-	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_SCALAR(YON_Z), *(br_uint_32 *)&((br_camera *)camera->type_data)->yon_z);
+	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_SCALAR(HITHER_Z), (br_value){.s =((br_camera *)camera->type_data)->hither_z});
+	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_SCALAR(YON_Z), (br_value){.s = ((br_camera *)camera->type_data)->yon_z});
 
 	/*
 	 * Collect transforms from camera to root
@@ -690,7 +691,7 @@ void BR_PUBLIC_ENTRY BrDbSceneRenderBegin(br_actor *world,
 
 		v1db.camera_path[i].a = a;
 	}
-	
+
 	if(world != a)
 		BR_ERROR0("camera is not in world hierachy");
 
@@ -698,19 +699,19 @@ void BR_PUBLIC_ENTRY BrDbSceneRenderBegin(br_actor *world,
 	 * Make world->view as initial model->view
 	 */
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
-		BRT_AS_MATRIX34_SCALAR(MODEL_TO_VIEW), (br_uint_32)&v1db.camera_path[i].m);
+		BRT_AS_MATRIX34_SCALAR(MODEL_TO_VIEW), (br_value){ .m34 = &v1db.camera_path[i].m});
 
 	v1db.ttype = v1db.camera_path[i].transform_type;
 
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
-		BRT_MODEL_TO_VIEW_HINT_T, BrTransformTypeIsLP(v1db.ttype)?BRT_LENGTH_PRESERVING:BRT_NONE);
+		BRT_MODEL_TO_VIEW_HINT_T, (br_value){.t = BrTransformTypeIsLP(v1db.ttype)?BRT_LENGTH_PRESERVING:BRT_NONE});
 
 	RendererModelInvert(v1db.renderer);
 
 	/*
 	 * Setup active lights, clip planes, horizon and environment
 	 */
-	RendererPartQueryBuffer(v1db.renderer, BRT_MATRIX, 0, &dummy, (br_uint_32 *)&tfm, sizeof(tfm),
+	RendererPartQueryBuffer(v1db.renderer, BRT_MATRIX, 0, &dummy, &tfm, sizeof(tfm),
 		BRT_AS_MATRIX34_SCALAR(MODEL_TO_VIEW));
 
 	BrSetupLights(world, &tfm, v1db.ttype);
@@ -732,7 +733,7 @@ br_renderbounds_cbfn * BR_PUBLIC_ENTRY BrDbSetRenderBoundsCallback(br_renderboun
 	 * Enable or disable bounds in renderer
 	 */
 	if(v1db.renderer)
-		RendererPartSet(v1db.renderer, BRT_ENABLE, 0, BRT_BOUNDS_B, (v1db.bounds_call != NULL));
+		RendererPartSet(v1db.renderer, BRT_ENABLE, 0, BRT_BOUNDS_B, (br_value){.b = (v1db.bounds_call != NULL)});
 
 	return old_cbfn;
 }
@@ -801,8 +802,8 @@ void BR_PUBLIC_ENTRY BrZbSceneRenderBegin(br_actor *world,
 	SetOrigin(colour_buffer);
 	SetViewport(colour_buffer);
 
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_uint_32) colour_buffer);
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, (br_uint_32) depth_buffer);
+	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_value) {.p = colour_buffer});
+	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, (br_value) {.p = depth_buffer});
 
 	/*
 	 * Setup primitives heap and order table for deferred primitives
@@ -819,18 +820,18 @@ void BR_PUBLIC_ENTRY BrZbSceneRenderBegin(br_actor *world,
 
 		v1db.order_table_list = NULL;
 
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1ORDER_TABLE_P, (br_uint_32) v1db.default_order_table);
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1PRIMITIVE_HEAP_P, (br_uint_32) &v1db.heap);
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, BRT_BUCKET_SORT);
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, BRT_BLENDED);
+		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1ORDER_TABLE_P, (br_value) {.p = v1db.default_order_table});
+		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1PRIMITIVE_HEAP_P, (br_value) {.p = &v1db.heap});
+		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, (br_value){.t = BRT_BUCKET_SORT});
+        RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, (br_value){.t = BRT_BLENDED});
 
 		v1db.default_render_data = v1db.default_order_table;
 
 	} else {
 
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, BRT_NONE);
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, BRT_NONE);
-		
+		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, (br_value){.t = BRT_NONE});
+        RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, (br_value){.t = BRT_NONE});
+
 		v1db.default_render_data = NULL;
 	}
 
@@ -859,8 +860,8 @@ void BR_PUBLIC_ENTRY BrZbSceneRenderContinue(br_actor *world,
 	SetOrigin(colour_buffer);
 	SetViewport(colour_buffer);
 
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_uint_32) colour_buffer);
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, (br_uint_32) depth_buffer);
+	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1ORDER_TABLE_P, (br_value) {.p = v1db.default_order_table});
+	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1PRIMITIVE_HEAP_P, (br_value) {.p = &v1db.heap});
 
 	BrDbSceneRenderBegin(world, camera);
 }
@@ -925,7 +926,7 @@ void BR_PUBLIC_ENTRY BrZbSceneRender(
 	UASSERT_MESSAGE("Invalid BrZbSceneRender pixelmap pointer", depth_buffer != NULL);
 
 	// Stop BRender dying horribly when no renderer is loaded
- 
+
 	if (v1db.renderer) {
 
 		BrZbSceneRenderBegin(world, camera, colour_buffer, depth_buffer);
@@ -953,8 +954,9 @@ void BR_PUBLIC_ENTRY BrZsSceneRenderBegin(br_actor *world,
 	SetOrigin(colour_buffer);
 	SetViewport(colour_buffer);
 
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_uint_32) colour_buffer);
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, 0);
+	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_value){.p = colour_buffer});
+    RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, (br_value){.p = NULL});
+
 
 	/*
 	 * Setup primitives heap and order table
@@ -969,10 +971,10 @@ void BR_PUBLIC_ENTRY BrZsSceneRenderBegin(br_actor *world,
 
 	v1db.order_table_list = NULL;
 
-	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1ORDER_TABLE_P, (br_uint_32) v1db.default_order_table);
-	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1PRIMITIVE_HEAP_P, (br_uint_32) &v1db.heap);
-	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, BRT_BUCKET_SORT);
-	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, BRT_ALL);
+	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1ORDER_TABLE_P, (br_value){.p = v1db.default_order_table});
+	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1PRIMITIVE_HEAP_P, (br_value){.p = &v1db.heap});
+	RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, (br_value){.t = BRT_BUCKET_SORT});
+    RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, (br_value){.t = BRT_ALL});
 
 	v1db.default_render_data = v1db.default_order_table;
 
@@ -996,8 +998,8 @@ void BR_PUBLIC_ENTRY BrZsSceneRenderContinue(br_actor *world,
 	SetOrigin(colour_buffer);
 	SetViewport(colour_buffer);
 
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_uint_32) colour_buffer);
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, 0);
+	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_value){.p = colour_buffer});
+    RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_DEPTH_BUFFER_O, (br_value){.p = NULL});
 
 	BrDbSceneRenderBegin(world, camera);
 }
@@ -1013,7 +1015,7 @@ void BR_PUBLIC_ENTRY BrZsSceneRenderEnd(void)
 {
 	UASSERT(v1db.rendering == RENDERING_ZS);
 
-	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_uint_32) v1db.colour_buffer);
+	RendererPartSet(v1db.renderer, BRT_OUTPUT, 0, BRT_COLOUR_BUFFER_O, (br_value){.p = v1db.colour_buffer});
 
 	if(v1db.format_buckets == NULL)
 		BR_ERROR0("Renderer does not support buckets");
@@ -1127,7 +1129,7 @@ br_renderbounds_cbfn * BR_PUBLIC_ENTRY BrZbRenderBoundsCallbackSet(br_renderboun
 br_renderbounds_cbfn * BR_PUBLIC_ENTRY BrZsRenderBoundsCallbackSet(br_renderbounds_cbfn *new_cbfn)
 {
 	ASSERT(new_cbfn != NULL);
-	
+
 	if (!v1db.zs_active) {
 
 		BR_ERROR0("BrZsSetRenderBoundsCallback called before BrZsBegin");

@@ -16,7 +16,7 @@ BR_RCS_ID("$Id: rndstate.c 1.2 1998/08/03 13:16:53 jon Exp $");
 
 
 /*
- * This is a kludge to reduce the state copy overhead.  Only the 
+ * This is a kludge to reduce the state copy overhead.  Only the
  * model to view matrix information is copied, since we know that
  * that is the only bit that changes from model to model in the
  * current higher level system
@@ -60,7 +60,7 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,partSet)
 	br_uint_32 m = 0;
 
 	if(tp != NULL) {
-		r = BrTokenValueSet(sp, &m, t, value, tp);
+		r = BrTokenValueSet(sp, &m, t, (br_value) {.u32 = value}, tp);
 		if(m)
 			TemplateActions(&self->state, part, index, m);
 	} else {
@@ -251,7 +251,7 @@ br_error BR_CMETHOD_DECL(br_renderer_soft, partIndexQuery)(
 
 br_error BR_CMETHOD_DECL(br_renderer_soft, stateQueryPerformance)(
         struct br_renderer *self,
-        br_fixed_lu *speed)
+        br_uint_32 *speed)
 {
     return BRE_FAIL;
 }
@@ -287,7 +287,7 @@ br_error StateCopy(struct state_all *dest, struct state_all *src, br_uint_32 cop
 				PrimitiveStateStateCopy(dest->pstate, src->pstate, copy_mask);
 			else
 				PrimitiveStateStateDefault(dest->pstate, copy_mask);
-			
+
 		} else if(src->pstate) {
 			/*
 			 * Create new dest. state and copy into it
@@ -365,17 +365,17 @@ br_error StateCopy(struct state_all *dest, struct state_all *src, br_uint_32 cop
 	 * Copy cache, or mark destination's cache as invalid as necessary
 	 */
 	if (copy_mask & MASK_STATE_CACHE)
-		
+
 		if (src->cache.valid && dest->cull.timestamp == src->cull.timestamp &&
 			dest->surface.timestamp == src->surface.timestamp) {
-			
+
 			if (dest->timestamp_cache != src->timestamp_cache) {
 
 				dest->cache = src->cache;
 				dest->timestamp_cache = src->timestamp_cache;
 			}
 
-		} else 
+		} else
 
 			dest->cache.valid = BR_FALSE;
 
@@ -425,7 +425,7 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,modelMulF)
 	BrMatrix34Mul(&self->state.matrix.model_to_view, (br_matrix34 *)m, &om);
 
 	self->state.matrix.model_to_view_hint = BRT_NONE;
-	
+
 	TouchModelToView(self);
 
 	return BRE_OK;
@@ -445,9 +445,9 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,modelMulX)
 {
 	br_matrix34 om = self->state.matrix.model_to_view;
 	br_matrix34 cm;
-	
+
 	CONV(&cm,m);
-	
+
 	BrMatrix34Mul(&self->state.matrix.model_to_view, &cm, &om);
 
 	self->state.matrix.model_to_view_hint = BRT_NONE;
@@ -467,7 +467,7 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,modelPopPushMulX)
 #endif
 {
 	br_matrix34 cm;
-	
+
 	if(self->stack_top == 0)
 		return BRE_UNDERFLOW;
 
@@ -604,7 +604,7 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,boundsTestX)
 	 * XXX cache check
 	 */
 	ModelToScreenUpdate(self);
-	
+
 	*r = OnScreenCheck(self, &scache.model_to_screen, &bounds);
 
 	return BRE_OK;
@@ -626,7 +626,7 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,boundsTestF)
 		ModelToScreenUpdate(self);
 		scache.valid_m2s = BR_TRUE;
 	}
-	
+
 	*r = OnScreenCheck(self, &scache.model_to_screen, (br_bounds3 *)bounds);
 
 	return BRE_OK;
@@ -737,4 +737,3 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,stateMask)
 
 	return BRE_OK;
 }
-

@@ -90,7 +90,7 @@ static struct br_tv_template *BR_CMETHOD_DECL(br_geometry_primitives_null, templ
     return ((br_geometry_primitives *)self)->templates;
 }
 
-br_error BR_CMETHOD_DECL(br_geometry_primitives_null, render)(struct br_geometry_primitives *self,
+br_error BR_CMETHOD_DECL(br_geometry_primitives_null, renderF)(struct br_geometry_primitives *self,
                                                               struct br_renderer *renderer, struct fmt_vertex *vertices,
                                                               int nvertices, br_token type)
 {
@@ -98,14 +98,14 @@ br_error BR_CMETHOD_DECL(br_geometry_primitives_null, render)(struct br_geometry
 }
 
 br_error BR_CMETHOD_DECL(br_geometry_primitives_null,
-                         renderOnScreen)(struct br_geometry_primitives *self, struct br_renderer *renderer,
+                         renderOnScreenF)(struct br_geometry_primitives *self, struct br_renderer *renderer,
                                          struct fmt_vertex *vertices, int nvertices, br_token type)
 {
     return BRE_FAIL;
 }
 
 br_error BR_CMETHOD_DECL(br_geometry_primitives_null,
-                         storedNew)(struct br_geometry_primitives *self, struct br_renderer *renderer,
+                         storedNewF)(struct br_geometry_primitives *self, struct br_renderer *renderer,
                                     struct br_geometry_stored **psg, struct fmt_vertex *vertices, int nvertices,
                                     br_token type, br_token_value *tv)
 {
@@ -141,9 +141,9 @@ static const struct br_geometry_primitives_dispatch geometryPrimitivesDispatch =
     ._queryAll      = BR_CMETHOD_REF(br_object, queryAll),
     ._queryAllSize  = BR_CMETHOD_REF(br_object, queryAllSize),
 
-    ._render         = BR_CMETHOD_REF(br_geometry_primitives_null, render),
-    ._renderOnScreen = BR_CMETHOD_REF(br_geometry_primitives_null, renderOnScreen),
-    ._storedNew      = BR_CMETHOD_REF(br_geometry_primitives_null, storedNew),
+    ._renderF         = BR_CMETHOD_REF(br_geometry_primitives_null, renderF),
+    ._renderOnScreenF = BR_CMETHOD_REF(br_geometry_primitives_null, renderOnScreenF),
+    ._storedNewF      = BR_CMETHOD_REF(br_geometry_primitives_null, storedNewF),
 
     ._storedAvail = BR_CMETHOD_REF(br_geometry_primitives_null, storedAvail),
 };

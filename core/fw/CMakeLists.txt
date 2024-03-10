@@ -88,6 +88,7 @@ set(FW_FILES
         genfile.c
         image.c
         lexer.c
+        loader.c
         mem.c
         object.c
         objectc.c
@@ -125,6 +126,7 @@ target_sources(fw INTERFACE
 
 target_include_directories(fw PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(fw PRIVATE __BR_V1DB__=0)
+target_compile_options(fw PUBLIC "-Wno-switch")
 
 target_link_libraries(fw PRIVATE brender-inc-ddi)
 

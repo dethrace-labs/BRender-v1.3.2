@@ -8,7 +8,6 @@
  */
 #include "drv.h"
 #include "shortcut.h"
-#include "blockops.h"
 
 static char rscid[] = "$Id: p_piz.c 1.1 1997/12/10 16:48:01 jon Exp $";
 
@@ -61,7 +60,7 @@ void BR_ASM_CALL PointRenderPIZ2(struct brp_block *block, union brp_vertex *tvp)
 	unsigned short pz;
 
 	SETUP_POINT;
-	
+
 	pz = (unsigned short)(tvp->comp_x[C_SZ] >> 16) ^ 0x8000;
 
 	o = y0*work.colour.stride_b+x0;
@@ -116,7 +115,7 @@ void BR_ASM_CALL PointRenderPIZ2T(struct brp_block *block, union brp_vertex *tvp
 	SETUP_POINT;
 	SETUP_TEXTURE;
 	SETUP_UV;
-	
+
 	pz = (unsigned short)(tvp->comp_x[C_SZ] >> 16) ^ 0x8000;
 
 	o = y0*work.colour.stride_b+x0;
@@ -217,7 +216,7 @@ void BR_ASM_CALL PointRenderPIZ2_Generic_RGB_555(point_type mode,union brp_verte
 	unsigned short texel;
 
 	SETUP_POINT;
-	
+
 	if (mode==LINE_RGB) {
 	  SETUP_RGB;
 	}
@@ -284,7 +283,7 @@ void BR_ASM_CALL PointRenderPIZ2_Generic_RGB_565(point_type mode,union brp_verte
 	unsigned short texel;
 
 	SETUP_POINT;
-	
+
 	if (mode==LINE_RGB) {
 	  SETUP_RGB;
 	}

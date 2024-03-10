@@ -82,3 +82,31 @@ void * BR_RESIDENT_ENTRY HostImageLookupOrdinal(void *img, br_uint_32 ordinal)
 }
 #endif
 
+#if defined(__unix__) || defined(__linux__) || (defined (__APPLE__) && defined (__MACH__))
+
+#include <dlfcn.h>
+
+void *BR_RESIDENT_ENTRY HostImageLoad(char *name)
+{
+    return dlopen(name, RTLD_NOW);
+}
+
+void BR_RESIDENT_ENTRY HostImageUnload(void *image)
+{
+    dlclose(image);
+}
+
+void *BR_RESIDENT_ENTRY HostImageLookupName(void *img, char *name, br_uint_32 hint)
+{
+    (void)hint;
+    return dlsym(img, name);
+}
+
+void *BR_RESIDENT_ENTRY HostImageLookupOrdinal(void *img, br_uint_32 ordinal)
+{
+    (void)img;
+    (void)ordinal;
+    return NULL;
+}
+
+#endif

@@ -51,7 +51,11 @@ int BR_RESIDENT_ENTRY BrStrCmp( const char *s1, const char *s2 )
 
 int BR_RESIDENT_ENTRY BrStrICmp( const char *s1, const char *s2 )
 {
-	return stricmp(s1,s2);
+#ifdef _WIN32
+    return stricmp(s1, s2);
+#else
+    return strcasecmp(s1, s2);
+#endif
 }
 
 
@@ -75,7 +79,11 @@ int BR_RESIDENT_ENTRY BrStrNCmp( const char *s1, const char *s2, size_t n )
 
 int BR_RESIDENT_ENTRY BrStrNICmp( const char *s1, const char *s2, size_t n )
 {
-	return strnicmp(s1,s2,n);
+#ifdef _WIN32
+    return strnicmp(s1, s2, n);
+#else
+    return strncasecmp(s1, s2, n);
+#endif
 }
 
 
@@ -208,4 +216,3 @@ br_int_32 BR_RESIDENT_ENTRY BrVSScanf(char * buf, char *fmt, va_list args)
 	return vsscanf(buf, fmt, args);
 #endif
 }
-

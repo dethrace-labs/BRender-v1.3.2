@@ -20,7 +20,7 @@ BR_RCS_ID("$Id: prelight.c 1.2 1998/07/16 17:56:14 johng Exp $")
  * This must be called during rendering - eg: as part of a model callback.
  * If you simply want to light a few models, then sandwich the call between
  * ZbSceneRenderBegin() and ZbSceneRenderEnd()
- * 
+ *
  * If 'a' != NULL, The values are generated as if the model were attached to
  * the actor 'a', otherwise the model will be in the current frame
  */
@@ -58,7 +58,7 @@ void BR_PUBLIC_ENTRY BrSceneModelLight(br_model *model,
         BrMatrix34Pre(&m2v, &v1db.camera_path[0].m);
         RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
                         BRT_AS_MATRIX34_SCALAR(MODEL_TO_VIEW),
-                        (br_uint_32)&m2v);
+                        (br_value){.m34 = &m2v});
         RendererModelInvert(v1db.renderer);
     }
 
@@ -80,10 +80,9 @@ void BR_PUBLIC_ENTRY BrSceneModelLight(br_model *model,
             sizeof(*group->vertices),
             sizeof(*group->vertex_colours),
             sizeof(*model->vertices), group->nvertices);
-#endif 
+#endif
     }
 
     /* Restore previous state */
     RendererStatePop(v1db.renderer, BR_STATE_ALL);
 }
-

@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <malloc.h>
+// JeffH: #include <malloc.h>
 
 #include "brender.h"
 
@@ -43,15 +43,17 @@ static br_size_t BR_CALLBACK BrStdlibInquire(br_uint_8 type)
 
 static br_uint_32 BR_CALLBACK BrStdlibAlign(br_uint_8 type)
 {
-#if defined(__WATCOMC__)
-	return 4;
-#elif defined (_MSC_VER)
-	return 4;
-#elif defined (__BORLANDC__)
-	return 4;
-#else
-	return 1;
-#endif
+	// JeffH
+// #if defined(__WATCOMC__)
+// 	return 4;
+// #elif defined (_MSC_VER)
+// 	return 4;
+// #elif defined (__BORLANDC__)
+// 	return 4;
+// #else
+// 	return 1;
+// #endif
+	return sizeof(void*);
 }
 
 /*
@@ -69,4 +71,3 @@ br_allocator BrStdlibAllocator = {
  * Override global variable s.t. this is the default allocator
  */
 br_allocator * BR_ASM_DATA _BrDefaultAllocator = &BrStdlibAllocator;
-

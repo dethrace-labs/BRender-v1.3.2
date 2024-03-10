@@ -39,7 +39,7 @@ struct  br_object_dispatch;
 #ifndef BR_OBJECT_PRIVATE
 typedef struct br_object {
 	struct  br_object_dispatch *dispatch;
-	
+
 } br_object;
 #endif
 
@@ -101,7 +101,7 @@ struct  br_object_container_dispatch;
 #ifndef BR_OBJECT_CONTAINER_PRIVATE
 typedef struct br_object_container {
 	struct  br_object_container_dispatch *dispatch;
-	
+
 } br_object_container;
 #endif
 
@@ -205,7 +205,7 @@ struct  br_device_dispatch;
 #ifndef BR_DEVICE_PRIVATE
 typedef struct br_device {
 	struct  br_device_dispatch *dispatch;
-	
+
 } br_device;
 #endif
 
@@ -309,7 +309,7 @@ struct  br_facility_dispatch;
 #ifndef BR_FACILITY_PRIVATE
 typedef struct br_facility {
 	struct  br_facility_dispatch *dispatch;
-	
+
 } br_facility;
 #endif
 
@@ -413,7 +413,7 @@ struct  br_output_facility_dispatch;
 #ifndef BR_OUTPUT_FACILITY_PRIVATE
 typedef struct br_output_facility {
 	struct  br_output_facility_dispatch *dispatch;
-	
+
 } br_output_facility;
 #endif
 
@@ -770,7 +770,7 @@ struct  br_device_clut_dispatch;
 #ifndef BR_DEVICE_CLUT_PRIVATE
 typedef struct br_device_clut {
 	struct  br_device_clut_dispatch *dispatch;
-	
+
 } br_device_clut;
 #endif
 
@@ -850,7 +850,7 @@ struct  br_renderer_facility_dispatch;
 #ifndef BR_RENDERER_FACILITY_PRIVATE
 typedef struct br_renderer_facility {
 	struct  br_renderer_facility_dispatch *dispatch;
-	
+
 } br_renderer_facility;
 #endif
 
@@ -962,7 +962,7 @@ struct  br_renderer_dispatch;
 #ifndef BR_RENDERER_PRIVATE
 typedef struct br_renderer {
 	struct  br_renderer_dispatch *dispatch;
-	
+
 } br_renderer;
 #endif
 
@@ -1240,7 +1240,7 @@ struct  br_renderer_state_stored_dispatch;
 #ifndef BR_RENDERER_STATE_STORED_PRIVATE
 typedef struct br_renderer_state_stored {
 	struct  br_renderer_state_stored_dispatch *dispatch;
-	
+
 } br_renderer_state_stored;
 #endif
 
@@ -1302,7 +1302,7 @@ struct  br_geometry_dispatch;
 #ifndef BR_GEOMETRY_PRIVATE
 typedef struct br_geometry {
 	struct  br_geometry_dispatch *dispatch;
-	
+
 } br_geometry;
 #endif
 
@@ -1364,7 +1364,7 @@ struct  br_geometry_stored_dispatch;
 #ifndef BR_GEOMETRY_STORED_PRIVATE
 typedef struct br_geometry_stored {
 	struct  br_geometry_stored_dispatch *dispatch;
-	
+
 } br_geometry_stored;
 #endif
 
@@ -1432,7 +1432,7 @@ struct  br_geometry_primitives_dispatch;
 #ifndef BR_GEOMETRY_PRIMITIVES_PRIVATE
 typedef struct br_geometry_primitives {
 	struct  br_geometry_primitives_dispatch *dispatch;
-	
+
 } br_geometry_primitives;
 #endif
 
@@ -1538,7 +1538,7 @@ struct  br_geometry_v1_model_dispatch;
 #ifndef BR_GEOMETRY_V1_MODEL_PRIVATE
 typedef struct br_geometry_v1_model {
 	struct  br_geometry_v1_model_dispatch *dispatch;
-	
+
 } br_geometry_v1_model;
 #endif
 
@@ -1642,7 +1642,7 @@ struct  br_geometry_v1_buckets_dispatch;
 #ifndef BR_GEOMETRY_V1_BUCKETS_PRIVATE
 typedef struct br_geometry_v1_buckets {
 	struct  br_geometry_v1_buckets_dispatch *dispatch;
-	
+
 } br_geometry_v1_buckets;
 #endif
 
@@ -1714,7 +1714,7 @@ struct  br_geometry_lighting_dispatch;
 #ifndef BR_GEOMETRY_LIGHTING_PRIVATE
 typedef struct br_geometry_lighting {
 	struct  br_geometry_lighting_dispatch *dispatch;
-	
+
 } br_geometry_lighting;
 #endif
 
@@ -1802,7 +1802,7 @@ struct  br_buffer_stored_dispatch;
 #ifndef BR_BUFFER_STORED_PRIVATE
 typedef struct br_buffer_stored {
 	struct  br_buffer_stored_dispatch *dispatch;
-	
+
 } br_buffer_stored;
 #endif
 
@@ -1868,7 +1868,7 @@ struct  br_primitive_library_dispatch;
 #ifndef BR_PRIMITIVE_LIBRARY_PRIVATE
 typedef struct br_primitive_library {
 	struct  br_primitive_library_dispatch *dispatch;
-	
+
 } br_primitive_library;
 #endif
 
@@ -1998,7 +1998,7 @@ struct  br_primitive_state_dispatch;
 #ifndef BR_PRIMITIVE_STATE_PRIVATE
 typedef struct br_primitive_state {
 	struct  br_primitive_state_dispatch *dispatch;
-	
+
 } br_primitive_state;
 #endif
 

@@ -47,7 +47,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 	 */
 
 	if(flags & BR_MATU_MAP_TRANSFORM)
-		RendererPartSet(v1db.renderer, BRT_SURFACE, 0, BRT_AS_MATRIX23_SCALAR(MAP_MATRIX), (br_uint_32)&mat->map_transform);
+		RendererPartSet(v1db.renderer, BRT_SURFACE, 0, BRT_AS_MATRIX23_SCALAR(MAP_MATRIX), (br_value){.m23 = &mat->map_transform});
 
 	if(flags & BR_MATU_RENDERING) {
 		tvp = tva;
@@ -249,11 +249,11 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 		tvp->t = BRT_FOG_B;
 		tvp->v.b = !!(mat->flags & BR_MATF_FOG_LOCAL);
 		tvp++;
-	
+
 		tvp->t = BRT_FOG_T;
 		tvp->v.t = (mat->flags & BR_MATF_FOG_LOCAL)?BRT_LINEAR:BRT_NONE;
 		tvp++;
-	
+
 		if((mat->flags & BR_MATF_FOG_LOCAL)){
 			tvp->t = BRT_AS_SCALAR(FOG_MIN);
 			tvp->v.s = mat->fog_min;
@@ -300,7 +300,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 			t = BRT_TWO_SIDED;
 
 
-		RendererPartSet(v1db.renderer, BRT_CULL, 0, BRT_TYPE_T, t);
+		RendererPartSet(v1db.renderer, BRT_CULL, 0, BRT_TYPE_T, (br_value){.t = t});
 	}
 
 	if(flags & BR_MATU_LIGHTING) {
@@ -344,11 +344,11 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 		else
 			tvp->v.t = BRT_SURFACE;
 		tvp++;
-		
+
 		tvp->t = BRT_OPACITY_SOURCE_T;
 		tvp->v.t = (mat->flags & BR_MATF_PREALPHA)?BRT_GEOMETRY:BRT_SURFACE;
 		tvp++;
-		
+
 		tvp->t = BRT_MAPPING_SOURCE_T;
 		tvp->v.t = BRT_GEOMETRY_MAP;
 

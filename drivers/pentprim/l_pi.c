@@ -8,7 +8,6 @@
  */
 #include "drv.h"
 #include "shortcut.h"
-#include "blockops.h"
 #include "brassert.h"
 
 static char rscid[] = "$Id: l_pi.c 1.1 1997/12/10 16:47:11 jon Exp $";
@@ -89,7 +88,7 @@ void BR_ASM_CALL LineRenderPII(struct brp_block *block, union brp_vertex *v0,uni
 
 		if (dx<0)
 			return;
-			
+
                 pi = v0->comp_x[C_I];
 
 		if(dx > 0) {
@@ -104,7 +103,7 @@ void BR_ASM_CALL LineRenderPII(struct brp_block *block, union brp_vertex *v0,uni
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    *ptr = (br_uint_8)BrFixedToInt(pi);
 
 		    error += dy;
@@ -137,10 +136,10 @@ void BR_ASM_CALL LineRenderPII(struct brp_block *block, union brp_vertex *v0,uni
 
 		dptr = work.colour.stride_b+(dx>0 ? 1 : -1);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pi = v0->comp_x[C_I];
 
 		if(dy > 0) {
@@ -155,7 +154,7 @@ void BR_ASM_CALL LineRenderPII(struct brp_block *block, union brp_vertex *v0,uni
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    *ptr = (br_uint_8)BrFixedToInt(pi);
 
 		    error += dx;
@@ -217,7 +216,7 @@ void BR_ASM_CALL LineRenderPITI(struct brp_block *block, union brp_vertex *v0,un
 
 		if (dx<0)
 			return;
-			
+
                 pi = v0->comp_x[C_I];
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -247,7 +246,7 @@ void BR_ASM_CALL LineRenderPITI(struct brp_block *block, union brp_vertex *v0,un
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			char texel;
 			texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
@@ -290,10 +289,10 @@ void BR_ASM_CALL LineRenderPITI(struct brp_block *block, union brp_vertex *v0,un
 
 		dptr = work.colour.stride_b+(dx>0 ? 1 : -1);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pi = v0->comp_x[C_I];
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
@@ -323,7 +322,7 @@ void BR_ASM_CALL LineRenderPITI(struct brp_block *block, union brp_vertex *v0,un
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			char texel;
 			texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
@@ -396,7 +395,7 @@ void BR_ASM_CALL LineRenderPIT(struct brp_block *block, union brp_vertex *v0,uni
 
 		if (dx<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -424,7 +423,7 @@ void BR_ASM_CALL LineRenderPIT(struct brp_block *block, union brp_vertex *v0,uni
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
 		    *ptr = texel;
 
@@ -463,10 +462,10 @@ void BR_ASM_CALL LineRenderPIT(struct brp_block *block, union brp_vertex *v0,uni
 
 		dptr = work.colour.stride_b+(dx>0 ? 1 : -1);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -494,7 +493,7 @@ void BR_ASM_CALL LineRenderPIT(struct brp_block *block, union brp_vertex *v0,uni
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    texel = ((char *)work.texture.base)[(pv>>16)*stride+(pu>>16)];
 		    *ptr = texel;
 
@@ -561,7 +560,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_888(struct brp_block *block, union brp_vertex
 
 		if (dx<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -589,7 +588,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_888(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			char *texel;
 			texel = (char *)work.texture.base+(pv>>16)*stride+3*(pu>>16);
@@ -635,10 +634,10 @@ void BR_ASM_CALL LineRenderPIT_RGB_888(struct brp_block *block, union brp_vertex
 
 		dptr = work.colour.stride_b+(dx>0 ? 3 : -3);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -666,7 +665,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_888(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			char *texel;
 			texel = (char *)work.texture.base+(pv>>16)*stride+3*(pu>>16);
@@ -738,7 +737,7 @@ void BR_ASM_CALL LineRenderPII_RGB_888(struct brp_block *block, union brp_vertex
 
 		if (dx<0)
 			return;
-			
+
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
                 pb = v0->comp_x[C_B];
@@ -758,7 +757,7 @@ void BR_ASM_CALL LineRenderPII_RGB_888(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    ptr[0] = pb >> 16;
 		    ptr[1] = pg >> 16;
 		    ptr[2] = pr >> 16;
@@ -795,10 +794,10 @@ void BR_ASM_CALL LineRenderPII_RGB_888(struct brp_block *block, union brp_vertex
 
 		dptr = work.colour.stride_b+(dx>0 ? 3 : -3);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
                 pb = v0->comp_x[C_B];
@@ -817,7 +816,7 @@ void BR_ASM_CALL LineRenderPII_RGB_888(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    ptr[0] = pb >> 16;
 		    ptr[1] = pg >> 16;
 		    ptr[2] = pr >> 16;
@@ -882,7 +881,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_555(struct brp_block *block, union brp_vertex
 
 		if (dx<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -910,7 +909,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_555(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			unsigned short texel;
 			texel = *(unsigned short *)((char *)work.texture.base+(pv>>16)*stride+2*(pu>>16));
@@ -953,10 +952,10 @@ void BR_ASM_CALL LineRenderPIT_RGB_555(struct brp_block *block, union brp_vertex
 
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -984,7 +983,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_555(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			unsigned short texel;
 			texel = *(unsigned short *)((char *)work.texture.base+(pv>>16)*stride+2*(pu>>16));
@@ -1053,7 +1052,7 @@ void BR_ASM_CALL LineRenderPII_RGB_555(struct brp_block *block, union brp_vertex
 
 		if (dx<0)
 			return;
-			
+
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
                 pb = v0->comp_x[C_B];
@@ -1073,7 +1072,7 @@ void BR_ASM_CALL LineRenderPII_RGB_555(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    *(unsigned short *)ptr = ScalarsToRGB15(pr,pg,pb);
 
 		    error += dy;
@@ -1108,10 +1107,10 @@ void BR_ASM_CALL LineRenderPII_RGB_555(struct brp_block *block, union brp_vertex
 
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
                 pb = v0->comp_x[C_B];
@@ -1130,7 +1129,7 @@ void BR_ASM_CALL LineRenderPII_RGB_555(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    *(unsigned short *)ptr = ScalarsToRGB15(pr,pg,pb);
 
 		    error += dx;
@@ -1193,7 +1192,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_565(struct brp_block *block, union brp_vertex
 
 		if (dx<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -1221,7 +1220,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_565(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			unsigned short texel;
 			texel = *(unsigned short *)((char *)work.texture.base+(pv>>16)*stride+2*(pu>>16));
@@ -1264,10 +1263,10 @@ void BR_ASM_CALL LineRenderPIT_RGB_565(struct brp_block *block, union brp_vertex
 
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pu = v0->comp_x[C_U] % BrIntToFixed(width);
 		if (pu<0)
 		  pu += BrIntToFixed(width);
@@ -1295,7 +1294,7 @@ void BR_ASM_CALL LineRenderPIT_RGB_565(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    {
 			unsigned short texel;
 			texel = *(unsigned short *)((char *)work.texture.base+(pv>>16)*stride+2*(pu>>16));
@@ -1364,7 +1363,7 @@ void BR_ASM_CALL LineRenderPII_RGB_565(struct brp_block *block, union brp_vertex
 
 		if (dx<0)
 			return;
-			
+
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
                 pb = v0->comp_x[C_B];
@@ -1384,7 +1383,7 @@ void BR_ASM_CALL LineRenderPII_RGB_565(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    *(unsigned short *)ptr = ScalarsToRGB16(pr,pg,pb);
 
 		    error += dy;
@@ -1419,10 +1418,10 @@ void BR_ASM_CALL LineRenderPII_RGB_565(struct brp_block *block, union brp_vertex
 
 		dptr = work.colour.stride_b+(dx>0 ? 2 : -2);
 		dx = ABS(dx);
-		
+
 		if (dy<0)
 			return;
-			
+
                 pr = v0->comp_x[C_R];
                 pg = v0->comp_x[C_G];
                 pb = v0->comp_x[C_B];
@@ -1441,7 +1440,7 @@ void BR_ASM_CALL LineRenderPII_RGB_565(struct brp_block *block, union brp_vertex
 		    /*
 		     * plot pixel
 		     */
-	     
+
 		    *(unsigned short *)ptr = ScalarsToRGB16(pr,pg,pb);
 
 		    error += dx;

@@ -70,7 +70,7 @@ br_error BR_PUBLIC_ENTRY BrDevBeginVar(br_pixelmap **ppm, char *setup_string, ..
 }
 
 /*
- * Takes a setup string and produces a new output screen pixelmap 
+ * Takes a setup string and produces a new output screen pixelmap
  */
 br_error BR_PUBLIC_ENTRY BrDevBegin(br_pixelmap **ppm, char *setup_string)
 {
@@ -79,7 +79,7 @@ br_error BR_PUBLIC_ENTRY BrDevBegin(br_pixelmap **ppm, char *setup_string)
 
 /*
  * Takes a setup string and NULL terminated list of setup token-value pairs
- * and produces a new output screen pixelmap 
+ * and produces a new output screen pixelmap
  */
 br_error BR_PUBLIC_ENTRY BrDevBeginTV(br_pixelmap **ppm, char *setup_string, br_token_value *setup_tv)
 {
@@ -122,7 +122,7 @@ br_error BR_PUBLIC_ENTRY BrDevBeginTV(br_pixelmap **ppm, char *setup_string, br_
 		devname++;
 
 	n = BrStrLen(devname);
-			
+
 	if(n) {
 		while(BrIsSpace(devname[n-1])) {
 			devname[n-1] = '\0';
@@ -224,7 +224,7 @@ br_error BR_PUBLIC_ENTRY BrDevBeginTV(br_pixelmap **ppm, char *setup_string, br_
 						device_name++;
 
 					n = BrStrLen(device_name);
-			
+
 					if (n) {
 						while (BrIsSpace(device_name[n-1])) {
 							device_name[n-1] = '\0';
@@ -451,8 +451,8 @@ br_error BR_RESIDENT_ENTRY BrRendererFacilityListFind(br_renderer_facility **prf
 	char object_pattern[] = "*-Renderer-00000";
 	br_boolean scalar_is_valid = BR_FALSE;
 	br_token_value is_alternative[] = {
-		{ BRT_ALTERNATIVE_TO_DEFAULT_B, BR_TRUE },
-		{ BR_NULL_TOKEN }
+		{ BRT_ALTERNATIVE_TO_DEFAULT_B, (br_value) { .t = BR_TRUE } },
+		{ BR_NULL_TOKEN , (br_value) { .p = NULL }}
 	};
 	char *identifier;
 	br_size_t identifier_len;
@@ -648,6 +648,8 @@ br_error BR_RESIDENT_ENTRY BrPrimitiveLibraryFind(br_primitive_library **ppl,
 		image_name[sizeof(image_name)-2] = 'x';
 		scalar_is_valid = BR_TRUE;
 		break;
+	default:
+		BrAbort();
 	}
 
 	/*
@@ -720,8 +722,8 @@ br_error BR_RESIDENT_ENTRY BrPrimitiveLibraryListFind(br_primitive_library **ppl
 	char object_pattern[] = "*-Primitives-00000";
 	br_boolean scalar_is_valid = BR_FALSE;
 	br_token_value is_alternative[] = {
-		{ BRT_ALTERNATIVE_TO_DEFAULT_B, BR_TRUE },
-		{ BR_NULL_TOKEN }
+		{ BRT_ALTERNATIVE_TO_DEFAULT_B, (br_value) { .t = BR_TRUE } },
+		{ BR_NULL_TOKEN , (br_value) { .p = NULL }}
 	};
 	char *identifier;
 	br_size_t identifier_len;
@@ -978,7 +980,7 @@ br_error BR_RESIDENT_ENTRY BrGeometryFormatFind(br_geometry **pgf,
 		if(r == BRE_OK) {
 			*pgf = gf;
 			return BRE_OK;
-		}		
+		}
 	}
 
 	/*
@@ -990,9 +992,8 @@ br_error BR_RESIDENT_ENTRY BrGeometryFormatFind(br_geometry **pgf,
 	if(r == BRE_OK) {
 		*pgf = gf;
 		return BRE_OK;
-	}		
+	}
 
 	return BRE_FAIL;
 
 }
-

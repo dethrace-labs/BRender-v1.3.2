@@ -67,8 +67,8 @@ class br_object {
 		virtual	struct br_tv_template * BR_METHOD templateQuery(void) = 0;
 
 	public:
-		virtual	br_error BR_METHOD query(br_uint_32 *pvalue, br_token t);
-		virtual br_error BR_METHOD queryBuffer(br_uint_32 *pvalue, br_uint_32 *buffer, br_size_t buffer_size, br_token t);
+		virtual	br_error BR_METHOD query(void *pvalue, br_token t);
+		virtual br_error BR_METHOD queryBuffer(void *pvalue, void *buffer, br_size_t buffer_size, br_token t);
 		virtual	br_error BR_METHOD queryMany(br_token_value *tv, void *extra, br_size_t extra_size, br_int_32 *pcount);
 		virtual	br_error BR_METHOD queryManySize(br_size_t *pextra_size, br_token_value *tv);
 		virtual	br_error BR_METHOD queryAll(br_token_value *buffer, br_size_t buffer_size);
@@ -269,14 +269,14 @@ class br_renderer : public br_object_container {
 			br_token use, br_token_value *tv);
 
 	// Writing current state
-		virtual br_error BR_METHOD partSet(br_token part, br_int_32 index, br_token t, br_uint_32 pvalue);
+		virtual br_error BR_METHOD partSet(br_token part, br_int_32 index, br_token t, br_value pvalue);
 		virtual br_error BR_METHOD partSetMany(br_token part, br_int_32 index, br_token_value * tv, br_int_32 *pcount);
 
 	// Reading current state
 
-		virtual br_error BR_METHOD partQuery(br_token part, br_int_32 index, br_uint_32 *pvalue, br_token t);
-		virtual br_error BR_METHOD partQueryBuffer(br_token part, br_int_32 index, br_uint_32 *pvalue,
-			br_uint_32 *buffer, br_size_t buffer_size, br_token t);
+		virtual br_error BR_METHOD partQuery(br_token part, br_int_32 index, void *pvalue, br_token t);
+		virtual br_error BR_METHOD partQueryBuffer(br_token part, br_int_32 index, void *pvalue,
+			void *buffer, br_size_t buffer_size, br_token t);
 		virtual br_error BR_METHOD partQueryMany(br_token part, br_int_32 index,
 			br_token_value *tv, void *extra, br_size_t extra_size, br_int_32 *pcount);
 		virtual br_error BR_METHOD partQueryManySize(br_token part, br_int_32 index, br_size_t *pextra_size, br_token_value *tv);

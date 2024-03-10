@@ -28,7 +28,7 @@ static const struct br_renderer_facility_dispatch rendererFacilityDispatch;
 static const struct br_tv_template_entry rendererFacilityTemplateEntries[] = {
 	{BRT_IDENTIFIER_CSTR,	0,	F(identifier),		BRTV_QUERY | BRTV_ALL,	BRTV_CONV_COPY, },
 	{BRT_RENDERER_MAX_I32, 	0,	0,					BRTV_QUERY | BRTV_ALL,	BRTV_CONV_DIRECT, 1},
-	{BRT(PARTS_TL),				(br_int_32)&RendererPartsTokens,BRTV_QUERY | BRTV_ALL | BRTV_ABS,	BRTV_CONV_LIST, },
+	{BRT(PARTS_TL),				(br_uintptr_t)&RendererPartsTokens,BRTV_QUERY | BRTV_ALL | BRTV_ABS,	BRTV_CONV_LIST, },
 };
 #undef F
 
@@ -51,7 +51,7 @@ br_renderer_facility * RendererFacilitySoftAllocate(br_device *dev, char *identi
 	 * Create default state
 	 */
 	StateInitialise(&self->default_state);
-	
+
 	/*
 	 * Create geometry objects
 	 */
@@ -236,4 +236,3 @@ static const struct br_renderer_facility_dispatch rendererFacilityDispatch = {
 
 	BR_CMETHOD_REF(br_renderer_facility_soft,	rendererNew),
 };
-

@@ -41,7 +41,7 @@ const br_token RendererPartsTokens[] = {
 /*
  * Return a token list of ourself and that of the primitive library
  */
-static br_error BR_CALLBACK customPartsQuery(br_uint_32 *pvalue, void **pextra, br_size_t *pextra_size,
+static br_error BR_CALLBACK customPartsQuery(br_value *pvalue, void **pextra, br_size_t *pextra_size,
 	void *block, struct br_tv_template_entry *tep)
 {
 	struct br_renderer *self = block;
@@ -56,7 +56,7 @@ static br_error BR_CALLBACK customPartsQuery(br_uint_32 *pvalue, void **pextra, 
 	*((void **)pvalue) = *pextra;
 
 	/*
-	 * Check there is space 
+	 * Check there is space
 	 */
 	if(((BR_ASIZE(RendererPartsTokens)-1) * sizeof(br_token)) > *pextra_size)
 		return BRE_FAIL;
@@ -68,7 +68,7 @@ static br_error BR_CALLBACK customPartsQuery(br_uint_32 *pvalue, void **pextra, 
 		*(*ppt)++ = RendererPartsTokens[i];
 		*pextra_size -= sizeof(br_token);
 	}
-	
+
 	/*
 	 * Hand off to primitive library for rest of list
 	 */
@@ -82,12 +82,12 @@ static br_error BR_CALLBACK customPartsQuery(br_uint_32 *pvalue, void **pextra, 
 	 */
 	for(i = 0; (*ppt)[i] ; i++)
 		*pextra_size -= sizeof(br_token);
-		
+
 	/*
 	 * NULL
 	 */
 	*pextra_size -= sizeof(br_token);
-		
+
 	return BRE_OK;
 }
 
@@ -129,19 +129,19 @@ static struct br_tv_custom customPartsConv = {
 
 #if BASED_FIXED
 #define _AX BRTV_ALL
-#else 
+#else
 #define _AX 0
 #endif
 
 #if BASED_FLOAT
 #define _AF BRTV_ALL
-#else 
+#else
 #define _AF 0
 #endif
 
 static struct br_tv_template_entry rendererTemplateEntries[] = {
 	{BRT(IDENTIFIER_CSTR),		F(identifier),				_Q | _A,	BRTV_CONV_COPY, },
-	{BRT(PARTS_TL),				0,							_Q | _A,	BRTV_CONV_CUSTOM, (br_int_32)&customPartsConv},
+	{BRT(PARTS_TL),				0,							_Q | _A,	BRTV_CONV_CUSTOM, (br_uintptr_t)&customPartsConv},
 
 	{BRT(RENDERER_FACILITY_O),	F(renderer_facility),		_Q | _A,	BRTV_CONV_COPY, },
 
@@ -162,7 +162,7 @@ br_renderer * RendererSoftAllocate(br_device *dev, struct br_renderer_facility *
 	br_uint_32 m;
 
 	ASSERT(prims != NULL);
-	
+
 	self = BrResAllocate(dev, sizeof(*self), BR_MEMORY_OBJECT_DATA);
 
 	if(self == NULL)

@@ -86,4 +86,3 @@ void BR_RESIDENT_ENTRY _BrUAssert(char *condition, char *file, unsigned line)
 	BrSprintf(_diag_scratch,"ASSERTION FAILED %s:%d: \"%s\"\n",file,line,condition);
 	fw.diag->failure(_diag_scratch);
 }
-

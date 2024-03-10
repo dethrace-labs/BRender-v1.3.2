@@ -160,7 +160,7 @@ br_matrix34 * BR_PUBLIC_ENTRY BrQuatToMatrix34(br_matrix34 *mat,
 
         UASSERT_MESSAGE("Destination Matrix is NULL", mat != NULL);
         UASSERT_MESSAGE("Source Quaternion is NULL", q != NULL);
-        
+
 	/* NB: unit quat is assumed */
 
 	xs = BR_CONST_MUL(qX,2);
@@ -211,7 +211,7 @@ br_quat * BR_PUBLIC_ENTRY BrMatrix34ToQuat(br_quat *q, br_matrix34 *mat)
 		qZ = BR_MUL(M(0,1)-M(1,0),s);
 
 	} else {
-		static n[] = {1,2,0};
+		static int n[] = {1,2,0};
 
 		i = 0;
 		if(M(1,1) > M(0,0))
@@ -226,7 +226,7 @@ br_quat * BR_PUBLIC_ENTRY BrMatrix34ToQuat(br_quat *q, br_matrix34 *mat)
 		qi(i) = BR_CONST_DIV(s,2);
 
 		s = BR_DIV(BR_SCALAR(0.5),s);
-	
+
 		qW    = BR_MUL(M(j,k) - M(k,j),s);
 		qi(j) = BR_MUL(M(i,j) + M(j,i),s);
 		qi(k) = BR_MUL(M(i,k) + M(k,i),s);
@@ -254,7 +254,7 @@ br_quat * BR_PUBLIC_ENTRY BrMatrix4ToQuat(br_quat *q, br_matrix4 *mat)
 
         UASSERT_MESSAGE("Source Matrix is NULL", mat != NULL);
         UASSERT_MESSAGE("Destination Quaternion is NULL", q != NULL);
-      
+
 	BrMatrix34Copy4(&tmp,mat);
 
 	return BrMatrix34ToQuat(q,&tmp);

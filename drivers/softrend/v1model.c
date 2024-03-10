@@ -12,7 +12,6 @@
 #include "drv.h"
 #include "shortcut.h"
 #include "brassert.h"
-#include "blockops.h"
 
 #include "vecifns.h"
 
@@ -307,26 +306,28 @@ static void GEOMETRY_CALL V1Face_CullOneSided(struct br_geometry *self, struct b
 }
 #endif
 
-#if BASED_FLOAT
-#ifndef V1Face_CullOneSided_P6
-static void GEOMETRY_CALL V1Face_CullOneSided_P6(struct br_geometry *self, struct br_renderer *renderer)
-{
-	switch(renderer->state.matrix.view_to_screen_hint) {
-	case BRT_PERSPECTIVE:
-		V1Face_CullOneSidedPerspective_P6(self, renderer);
-		break;
 
-	case BRT_PARALLEL:
-		V1Face_CullOneSidedParallel(self, renderer);
-		break;
+// Special case handling for Pentium Pro
+// #if BASED_FLOAT
+// #ifndef V1Face_CullOneSided_P6
+// static void GEOMETRY_CALL V1Face_CullOneSided_P6(struct br_geometry *self, struct br_renderer *renderer)
+// {
+// 	switch(renderer->state.matrix.view_to_screen_hint) {
+// 	case BRT_PERSPECTIVE:
+// 		V1Face_CullOneSidedPerspective_P6(self, renderer);
+// 		break;
 
-	default:
-		V1Face_CullNone(self, renderer);
-		break;
-	}
-}
-#endif
-#endif
+// 	case BRT_PARALLEL:
+// 		V1Face_CullOneSidedParallel(self, renderer);
+// 		break;
+
+// 	default:
+// 		V1Face_CullNone(self, renderer);
+// 		break;
+// 	}
+// }
+// #endif
+// #endif
 
 #ifndef V1Face_OS_CullOneSided
 static void GEOMETRY_CALL V1Face_OS_CullOneSided(struct br_geometry *self, struct br_renderer *renderer)
@@ -554,11 +555,11 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsCull(struct br_renderer *renderer)
 
 	switch(renderer->state.cull.type) {
 	case BRT_ONE_SIDED:
-#if BASED_FLOAT
-		if (renderer->device->hostInfo.processor_type == BRT_INTEL_PENTIUM_PRO)
-			GeometryFunctionAdd(renderer, V1Face_CullOneSided_P6);
-		else
-#endif
+// #if BASED_FLOAT
+// 		if (renderer->device->hostInfo.processor_type == BRT_INTEL_PENTIUM_PRO)
+// 			GeometryFunctionAdd(renderer, V1Face_CullOneSided_P6);
+// 		else
+// #endif
 		GeometryFunctionAdd(renderer, V1Face_CullOneSided);
 		GeometryFunctionOnScreenAdd(renderer, V1Face_OS_CullOneSided);
 		break;
@@ -607,7 +608,7 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 	 */
 	renderer->state.cache.share_vertex_0 = rend.block->constant_components == 0;
 	renderer->state.cache.share_other_vertices = !(rend.block->flags & BR_PRIMF_CONST_DUPLICATE);
-	
+
 	/**
 	 ** Geometry operations
 	 **/
@@ -723,7 +724,7 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 				PrimBlockAddBoth(renderer, (brp_render_fn *)OpTriangleTwoSidedConstantSurf);
 			else
 				PrimBlockAddBoth(renderer, (brp_render_fn *)OpTriangleConstantSurf);
-		} 
+		}
 		break;
 
 	case BRT_LINE:
@@ -793,7 +794,7 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 		renderer->state.cache.share_vertex_0 = BR_FALSE;
 		renderer->state.cache.share_other_vertices = BR_FALSE;
 	}
-	
+
 	/*
 	 * Update cache comparison info.
 	 */
@@ -1002,4 +1003,3 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_model_soft, renderOnScreen)
 
 	return r;
 }
-

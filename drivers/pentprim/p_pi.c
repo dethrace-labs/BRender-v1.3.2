@@ -8,7 +8,6 @@
  */
 #include "drv.h"
 #include "shortcut.h"
-#include "blockops.h"
 
 static char rscid[] = "$Id: p_pi.c 1.1 1997/12/10 16:47:59 jon Exp $";
 
@@ -73,7 +72,7 @@ void BR_ASM_CALL PointRenderPITI(struct brp_block *block, union brp_vertex *tvp)
 
 	SETUP_POINT;
 	SETUP_TEXTURE;
-	
+
         pi = tvp->comp_x[C_I];
 
 	SETUP_UV;
@@ -119,7 +118,7 @@ void BR_ASM_CALL PointRenderPI_Generic_RGB_888(point_type mode,union brp_vertex 
 	char *texel;
 
 	SETUP_POINT;
-	
+
 	if (mode==LINE_RGB) {
           pr = tvp->comp_x[C_R];
           pg = tvp->comp_x[C_G];
@@ -173,7 +172,7 @@ void BR_ASM_CALL PointRenderPI_Generic_RGB_555(point_type mode,union brp_vertex 
 	unsigned short texel;
 
 	SETUP_POINT;
-	
+
 	if (mode==LINE_RGB) {
           pr = tvp->comp_x[C_R];
           pg = tvp->comp_x[C_G];
@@ -221,7 +220,7 @@ void BR_ASM_CALL PointRenderPI_Generic_RGB_565(point_type mode,union brp_vertex 
 	unsigned short texel;
 
 	SETUP_POINT;
-	
+
 	if (mode==LINE_RGB) {
           pr = tvp->comp_x[C_R];
           pg = tvp->comp_x[C_G];

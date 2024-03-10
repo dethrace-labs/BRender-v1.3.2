@@ -116,18 +116,6 @@ static const struct prim_info_table  primInfoTables[4][3] = {
 		{ primInfo_p8, BR_ASIZE(primInfo_p8), },
 		{ primInfo_l8, BR_ASIZE(primInfo_l8), },
 		{ primInfo_t8, BR_ASIZE(primInfo_t8), },
-	},{
-		{ primInfo_p15, BR_ASIZE(primInfo_p15), },
-		{ primInfo_l15, BR_ASIZE(primInfo_l15), },
-		{ primInfo_t15, BR_ASIZE(primInfo_t15), },
-	},{
-		{ primInfo_p16, BR_ASIZE(primInfo_p16), },
-		{ primInfo_l16, BR_ASIZE(primInfo_l16), },
-		{ primInfo_t16, BR_ASIZE(primInfo_t16), },
-	},{
-		{ primInfo_p24, BR_ASIZE(primInfo_p24), },
-		{ primInfo_l24, BR_ASIZE(primInfo_l24), },
-		{ primInfo_t24, BR_ASIZE(primInfo_t24), },
 	}
 };
 
@@ -320,7 +308,7 @@ static void updateRanges(struct br_primitive_state *self)
 	/*
 	 * R,G,B are pulled from current prim. block, unless 'rgb_shade' is true,
 	 * when the scales are from the shade tbale height
-	 */															   
+	 */
 	if(m & (CM_R | CM_G | CM_B)) {
 		if(self->cache.last_block->range_flags & RF_RGB_SHADE) {
 			self->cache.comp_scales[C_R] = BrIntToScalar(self->prim.index_shade.height-1);
@@ -464,7 +452,7 @@ br_error BR_CMETHOD_DECL(br_primitive_state_soft, renderBegin)(
 #endif
 
 	/*
-	 * XXX Validate the various buffers we are about to use 
+	 * XXX Validate the various buffers we are about to use
 	 */
 #if 0
 	if(self->colour) {
@@ -512,14 +500,14 @@ br_error BR_CMETHOD_DECL(br_primitive_state_soft, renderBegin)(
 
 		if(work.index_range == 0)
 			flags|=PRIMF_RANGE_ZERO;
-		
+
 		if(work.texture.type != PMT_NONE) {
 			/*
 			 * See if the stride is the same as the width
 			 */
 			if(work.texture.width_b == work.texture.stride_b)
 				flags |= PRIMF_NO_SKIP;
-        
+
             if(work.texture.stride_b>0)
                     flags |= PRIMF_STRIDE_POSITIVE;
 			/*
@@ -908,4 +896,3 @@ br_error BR_CMETHOD_DECL(br_primitive_state_soft, rangesQueryX)(
 void BR_ASM_CALL TriangleRenderNull(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
 }
-

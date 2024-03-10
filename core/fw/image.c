@@ -195,7 +195,7 @@ static void * imageLookupName(br_image *img, char *name, br_uint_32 hint)
 		return img->functions[img->name_ordinals[hint]];
 
 	/*
-	 * Binary search on name table	
+	 * Binary search on name table
 	 *
 	 * XXX
 	 */
@@ -207,7 +207,7 @@ static void * imageLookupName(br_image *img, char *name, br_uint_32 hint)
 		 * Compare with halfway point
 		 */
 		c = BrStrCmp(name, img->names[base+limit/2]);
-	
+
 		if(c < 0) {
 			/*
 			 * Lower
@@ -226,7 +226,7 @@ static void * imageLookupName(br_image *img, char *name, br_uint_32 hint)
 			return img->functions[img->name_ordinals[base+limit/2]];
 		}
 	}
-		
+
 	/*
 	 * No match
 	 */
@@ -333,7 +333,7 @@ void BR_RESIDENT_ENTRY BrImageDereference(br_image *image)
 	 * Unlink image
 	 */
 	BR_REMOVE(image);
-	
+
 	/*
 	 * Free resource
 	 */

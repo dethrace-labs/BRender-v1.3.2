@@ -42,4 +42,3 @@ void BR_RESIDENT_ENTRY _BrUAssert(char *condition, char *file, unsigned line);
 #define UASSERT_MESSAGE(ignore,ignoreMeToo)  ((void) 0)
 #define UVERIFY(f) (void)(f)
 #endif
-

@@ -75,7 +75,7 @@ static int addEdge(br_uint_16 first, br_uint_16 last)
 	 */
 	for(tep = pm_edge_hash[last]; tep; tep = tep->next) {
 
-		if(tep->last == first && tep->other == 0) { 
+		if(tep->last == first && tep->other == 0) {
 			/*
 			 * Yup, flag as used and return index
 			 */
@@ -94,7 +94,7 @@ static int addEdge(br_uint_16 first, br_uint_16 last)
 	tep->other = 0;
 	tep->next = pm_edge_hash[first];
 	pm_edge_hash[first] = tep;
-	
+
 	return num_edges++;
 }
 
@@ -144,17 +144,17 @@ static void prepareEdges(struct v11group *group, br_model *model)
 
 		if(!(mfp->flags & BR_FACEF_COPLANAR_0))
 			edges->v[0] = addEdge(vertex_numbers->v[0],vertex_numbers->v[1])+1;
-		else 
+		else
 			edges->v[0] = 0;
 
 		if(!(mfp->flags & BR_FACEF_COPLANAR_1))
 			edges->v[1] = addEdge(vertex_numbers->v[1],vertex_numbers->v[2])+1;
-		else 
+		else
 			edges->v[1] = 0;
 
 		if(!(mfp->flags & BR_FACEF_COPLANAR_2))
 			edges->v[2] = addEdge(vertex_numbers->v[2],vertex_numbers->v[0])+1;
-		else 
+		else
 			edges->v[2] = 0;
 	}
 
@@ -489,7 +489,7 @@ static void PrepareGroups(br_model *model)
 	}
 
 	/*
-	 * Select function for smoothing 
+	 * Select function for smoothing
 	 */
 	if(model->flags & BR_MODF_CREASE) {
 		crease_limit = BR_COS(model->crease_angle);
@@ -549,7 +549,7 @@ static void PrepareGroups(br_model *model)
 
 	ASSERT(i == ntemps);
 	ASSERT(gtvp == temp_verts + ntemps);
-	
+
 	/*
 	 * Sort face pointers by material
 	 */
@@ -654,7 +654,7 @@ static void PrepareGroups(br_model *model)
 
 	v11m->groups = v11g;
 	v11m->ngroups = ng;
-	
+
 	/*
 	 * Build prepared data
 	 */
@@ -686,7 +686,7 @@ static void PrepareGroups(br_model *model)
 			v11g[g].vertex_numbers=vertex_numbers+f+1;
 			v11g[g].edges=edges+f+1;
 			v11g[g].eqn=eqn+f+1;
-		
+
             v11g[g].face_colours = v11fcolours+f+1;
             v11g[g].face_user = v11fuser+f+1;
             v11g[g].face_flags = v11fflags+f+1;
@@ -870,7 +870,7 @@ void RegenerateFaceNormals(struct v11model *v11m)
 		eqn=v11m->groups[g].eqn;
 		vertex_numbers=v11m->groups[g].vertex_numbers;
 		for(f=0; f < v11m->groups[g].nfaces; f++, eqn++,vertex_numbers++) {
-			
+
 			BrPlaneEquation(eqn,
 					&v11m->groups[g].position[vertex_numbers->v[0]],
 					&v11m->groups[g].position[vertex_numbers->v[1]],
@@ -909,7 +909,7 @@ void RegenerateVertexNormals(struct v11model *v11m)
 			BrVector3Accumulate(normals+vertex_numbers->v[0],(br_vector3 *)eqn);
 			BrVector3Accumulate(normals+vertex_numbers->v[1],(br_vector3 *)eqn);
 			BrVector3Accumulate(normals+vertex_numbers->v[2],(br_vector3 *)eqn);
-			
+
 		}
 
 		/*
@@ -964,7 +964,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 		centre_valid=BR_TRUE; // assume the old radius is either correct or will be overwritten with a correct value
 	}
 
-				
+
 	/*
 	 * Re-copy the vertices if the pivot has moved
 	 */
@@ -990,7 +990,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 		centre.v[1]=BR_CONST_DIV(model->bounds.min.v[1]+model->bounds.max.v[1],2);
 		centre.v[2]=BR_CONST_DIV(model->bounds.min.v[2]+model->bounds.max.v[2],2);
 		centred_radius=PrepareCentredBoundingRadius(model,&centre);
-		centre_valid=BR_TRUE; 
+		centre_valid=BR_TRUE;
 	}else if((model->flags & BR_MODF_CUSTOM_BOUNDS) && (flags & (BR_MODU_VERTICES|BR_MODU_VERTEX_POSITIONS))) {
 		old_bounds=model->bounds;
 		PrepareBoundingBox(model);
@@ -1000,7 +1000,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 		centre.v[2]=BR_CONST_DIV(model->bounds.min.v[2]+model->bounds.max.v[2],2);
 		model->bounds=old_bounds;
 		centred_radius=PrepareCentredBoundingRadius(model,&centre);
-		centre_valid=BR_TRUE; 
+		centre_valid=BR_TRUE;
 	}
 
 	/*
@@ -1023,7 +1023,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 	/*
 	 * See if the only thing needed is to copy new parts over
 	 */
-	} else if (model->prepared && 
+	} else if (model->prepared &&
 		!(flags & ~(MODU_VERTEX_COPY_FLAGS | MODU_FACE_COPY_FLAGS)) &&
 		!(model->flags & BR_MODF_USED_PREPARED_USER)) {
 
@@ -1190,7 +1190,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 		struct br_geometry_stored *sg;
 		br_boolean b;
 		br_token_value tv[] = {
-			{BRT_CAN_SHARE_B, BR_TRUE},
+			{BRT_CAN_SHARE_B, { .b= BR_TRUE}},
 			{0},
 		};
 
@@ -1206,7 +1206,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 		 * Try and generate a stored version of the model (as faces)
 		 */
 		r = GeometryV1ModelStoredNew(v1db.format_model, v1db.renderer, &sg, model->prepared, BRT_TRIANGLE, tv);
-		
+
 		if((r == BRE_OK) && (sg != NULL)) {
 			/*
 			 * It worked, remember the pointer

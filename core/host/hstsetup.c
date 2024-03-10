@@ -28,7 +28,7 @@ void BR_PUBLIC_ENTRY HostEnd(void)
 
 static host_info hostInfo = {
 	sizeof(host_info),
-#if defined(__PHARLAP386__) 
+#if defined(__PHARLAP386__)
 	"Pharlap TNT",
 		HOST_CAPS_REAL_MEMORY
 		| HOST_CAPS_REAL_INT_CALL
@@ -46,8 +46,8 @@ static host_info hostInfo = {
 		| HOST_CAPS_PROTECTED_INT_HOOK
 		| HOST_CAPS_ALLOC_SELECTORS
 		| HOST_CAPS_PHYSICAL_MAP,
-	
-#elif defined(__DOS4G__) 
+
+#elif defined(__DOS4G__)
 	"Tenberry DOS4GW",
 		HOST_CAPS_REAL_MEMORY
 		| HOST_CAPS_REAL_INT_CALL
@@ -58,8 +58,8 @@ static host_info hostInfo = {
 		| HOST_CAPS_PHYSICAL_MAP
 		| HOST_CAPS_EXCEPTION_HOOK
 		| HOST_CAPS_BASE_SELECTORS_WRITE,
-	
-#elif defined(__POWERPACK__) 
+
+#elif defined(__POWERPACK__)
 	"Borland Powerpack",
 		HOST_CAPS_REAL_MEMORY
 		| HOST_CAPS_REAL_INT_CALL
@@ -70,7 +70,7 @@ static host_info hostInfo = {
 		| HOST_CAPS_PHYSICAL_MAP
 		| HOST_CAPS_EXCEPTION_HOOK
 		| HOST_CAPS_BASE_SELECTORS_WRITE,
-	
+
 #elif defined(__GO32__)
 	"DJGPP GO32",
 		HOST_CAPS_REAL_MEMORY
@@ -124,7 +124,6 @@ br_error BR_RESIDENT_ENTRY HostInfo(host_info *buffer, br_size_t buffersize)
     if (BrSystemConfigQuery(BRT_BRENDER_USE_CMOV_B, &use_cmov) == BRE_OK && !use_cmov.b)
 		buffer->capabilities &= ~HOST_CAPS_CMOV;
 
-	
+
 	return BRE_OK;
 }
-

@@ -284,7 +284,7 @@ typedef void BR_CALLBACK br_model_custom_cbfn(
  */
 
 typedef struct br_model {
-	br_uint_32 _reserved;
+	void* _reserved;
 
 	char *identifier;
 
@@ -429,9 +429,8 @@ enum br_fitmap_axis {
 
 #endif
 
-/* 
+/*
  * Local Variables:
  * tab-width: 4
  * End:
  */
-

@@ -22,6 +22,10 @@ set(HOST_FILES
         hostcfg.c
         hstsetup.c
         host_ip.h
+        hook.c
+        memmgmt.c
+
+        host_asm.c
         )
 
 add_library(host OBJECT ${HOST_FILES})
