@@ -1,4 +1,4 @@
-07A2403E project(pentprim C ASM_MASM)
+project(pentprim C ASM_MASM)
 
 include(h2inc)
 
@@ -72,7 +72,6 @@ function(add_prim base)
 endfunction()
 
 function(add_prim_suffixed base with_suffixes)
-	message("hello world ${base}")
 	set(input_file "${CMAKE_CURRENT_SOURCE_DIR}/${base}.ifg")
 	set(output_files "${base}f.c" "${base}x.c")
 	message("${input_file}")
@@ -189,6 +188,16 @@ add_library(pentprim
 		fpsetup.c
 		zb8awtm.c
 		sar16.c
+
+		ti8_pizp.c
+		t15_pizp.c
+		ti8_pi.c
+		ti8_piz.c
+
+		fti8_pip.c
+		fti8pizp.c
+		decal.c
+
 
 		#"${CMAKE_CURRENT_BINARY_DIR}/drv.inc"
 

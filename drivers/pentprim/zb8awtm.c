@@ -638,3 +638,50 @@ uPerLineNoWrapPositive:
 
     // endm
 }
+
+
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTIF_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTIF_I8_D16_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTIB_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTIFB_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTIFB_I8_D16_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+
+void BR_ASM_CALL TriangleRender_ZTF_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTB_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}
+void BR_ASM_CALL TriangleRender_ZTFB_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+    // Not implemented
+    BrAbort();
+}

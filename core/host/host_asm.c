@@ -87,18 +87,6 @@ br_error BR_RESIDENT_ENTRY HostRegistersGet(union host_regs *regs) {
     return BRE_FAIL;
 }
 
-br_error BR_RESIDENT_ENTRY HostLock(br_uint_32 offset, br_uint_16 sel, br_size_t size) {
-    // Not implemented
-    BrAbort();
-    return BRE_FAIL;
-}
-
-br_error BR_RESIDENT_ENTRY HostUnlock(br_uint_32 offset, br_uint_16 sel, br_size_t size) {
-    // Not implemented
-    BrAbort();
-    return BRE_FAIL;
-}
-
 br_error BR_RESIDENT_ENTRY HostInterruptGet(br_uint_8 vector, br_uint_32 *offp, br_uint_16 *selp) {
     // Not implemented
     BrAbort();
