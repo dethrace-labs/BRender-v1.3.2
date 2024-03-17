@@ -60,16 +60,16 @@ br_error CheckPrimitiveState(struct br_renderer *self);
 
 br_error BR_CMETHOD_DECL(br_renderer_soft,partSet)
 		(struct br_renderer *self, br_token part, br_int_32 index,
-		br_token t, br_uint_32 value);
+		br_token t, br_value value);
 br_error BR_CMETHOD_DECL(br_renderer_soft,partSetMany)
 		(struct br_renderer *self, br_token part, br_int_32 index,
 		br_token_value * tv, br_int_32 *pcount);
 br_error BR_CMETHOD_DECL(br_renderer_soft,partQuery)
 		(struct br_renderer *self, br_token part, br_int_32 index,
-		br_uint_32 *pvalue, br_token t);
+		void *pvalue, br_token t);
 br_error BR_CMETHOD_DECL(br_renderer_soft,partQueryBuffer)
 		(struct br_renderer *self, br_token part, br_int_32 index,
-		br_uint_32 *pvalue, br_uint_32 *buffer, br_size_t buffer_size, br_token t);
+		void *pvalue, void *buffer, br_size_t buffer_size, br_token t);
 br_error BR_CMETHOD_DECL(br_renderer_soft,partQueryMany)(struct br_renderer *self,
 		br_token part, br_int_32 index,
 		br_token_value *tv, void *extra, br_size_t extra_size, br_int_32 *pcount);

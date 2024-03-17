@@ -39,7 +39,7 @@ struct token_type {
 	br_token	type;
 	int			length;
 	// CrocDE
-	br_size_t size;
+	br_size_t	size;
 };
 
 static struct token_type tokenTypes[] = {

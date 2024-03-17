@@ -345,7 +345,7 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partSet)(
 		br_token part,
 		br_int_32 index,
 		br_token t,
-		br_uint_32 value)
+		br_value value)
 {
 	br_error r;
 	br_tv_template *tp = findTemplate(self, part);
@@ -361,7 +361,7 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partSet)(
 	 * Do the set...
 	 */
 	m = 0;
-	r = BrTokenValueSet(self, &m, t, (br_value) { .u32 = value }, tp);
+	r = BrTokenValueSet(self, &m, t, value, tp);
 
 	/*
 	 * If unrecognised, no changes
@@ -449,7 +449,7 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partQuery)(
 		struct br_primitive_state *self,
 		br_token part,
 		br_int_32 index,
-		br_uint_32 *pvalue,
+		void *pvalue,
 		br_token t)
 {
 	br_tv_template *tp = findTemplate(self, part);
@@ -464,8 +464,8 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partQueryBuffer)(
 		struct br_primitive_state *self,
 		br_token part,
 		br_int_32 index,
-		br_uint_32 *pvalue,
-		br_uint_32 *buffer,
+		void *pvalue,
+		void *buffer,
 		br_size_t buffer_size,
 		br_token t)
 {

@@ -485,13 +485,13 @@ class br_primitive_state : public br_object {
 	public:
 
 	// Writing current state
-		virtual br_error BR_METHOD partSet(br_token part, br_int_32 index, br_token t, br_uint_32 value);
+		virtual br_error BR_METHOD partSet(br_token part, br_int_32 index, br_token t, br_value value);
 		virtual br_error BR_METHOD partSetMany(br_token part, br_int_32 index, br_token_value * tv, br_int_32 *pcount);
 
 	// Reading current state
-		virtual br_error BR_METHOD partQuery(br_token part, br_int_32 index, br_uint_32 *pvalue, br_token t);
-		virtual br_error BR_METHOD partQueryBuffer(br_token part, br_int_32 index, br_uint_32 *pvalue,
-			br_uint_32 *buffer, br_size_t buffer_size, br_token t);
+		virtual br_error BR_METHOD partQuery(br_token part, br_int_32 index, void *pvalue, br_token t);
+		virtual br_error BR_METHOD partQueryBuffer(br_token part, br_int_32 index, void *pvalue,
+			void *buffer, br_size_t buffer_size, br_token t);
 		virtual br_error BR_METHOD partQueryMany(br_token part, br_int_32 index,
 			br_token_value *tv, void *extra, br_size_t extra_size, br_int_32 *pcount);
 		virtual br_error BR_METHOD partQueryManySize(br_token part, br_int_32 index, br_size_t *pextra_size, br_token_value *tv);

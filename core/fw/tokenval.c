@@ -232,7 +232,7 @@ static br_uint_32 * ConvertLongCopy(br_uint_32 **pextra, br_uint_32 *src, br_int
  * This is required for 64-bit, as not everything is 4 bytes.
  * CrocDE
  */
-static void BrTokenCopy(void *mem, const br_token_value *tv, br_boolean flip)
+static void BrTokenCopy(void *mem, br_token_value *tv, br_boolean flip)
 {
     br_size_t s;
     /*
@@ -289,11 +289,14 @@ static br_error ValueQuery(
 	else
 		mem = (char *)block + tep->offset;
 
-	tv->t = tep->token;
+	/*
+     * Store the token
+     */
+    tv->t = tep->token;
 
 	switch(tep->conv) {
 	case BRTV_CONV_COPY:
-		// tv->v.i32 = MEM(br_int_32);
+		//tv->v.i32 = MEM(br_int_32);
 		BrTokenCopy(mem, tv, BR_TRUE);
 		break;
 
@@ -504,7 +507,7 @@ static br_error ValueSet(
 
 	switch(tep->conv) {
 	case BRTV_CONV_COPY:
-		// MEM(br_int_32) = tv->v.i32;
+		//MEM(br_int_32) = tv->v.i32;
 		BrTokenCopy(mem, tv, BR_FALSE);
 		break;
 
@@ -758,7 +761,7 @@ static br_size_t ValueExtraSize(void *block, br_tv_template_entry *tep)
  * Get the value coresponding to one token
  */
 br_error BR_RESIDENT_ENTRY BrTokenValueQuery(
-	void *pvalue, br_uint_32 *extra, br_size_t extra_size,
+	void *pvalue, void *extra, br_size_t extra_size,
 	br_token t,
 	void *block,
 	br_tv_template *template)
@@ -1016,7 +1019,6 @@ br_error BR_RESIDENT_ENTRY BrTokenValueSet(
 	br_token_value tv;
 
 	tv.t = t;
-	// JeffH: tv.v.u32 = value;
 	tv.v = value;
 
 	/*
