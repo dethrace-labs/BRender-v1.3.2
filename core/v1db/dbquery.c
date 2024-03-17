@@ -24,7 +24,7 @@ static br_boolean rendfctyEnum(br_object *rendfcty, br_rendfcty_enum_cbfn *cbfn,
 	desc.renderer_facility = (struct br_renderer_facility *)rendfcty;
 
 	desc.uses_primitive_library = BR_TRUE;
-	ObjectQuery(rendfcty, (br_uint_32 *)&desc.uses_primitive_library, BRT_USES_PRIMITIVE_LIBRARY_B);
+	ObjectQuery(rendfcty, &desc.uses_primitive_library, BRT_USES_PRIMITIVE_LIBRARY_B);
 
 	return cbfn(identifier, &desc, args);
 }

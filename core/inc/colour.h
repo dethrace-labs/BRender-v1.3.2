@@ -10,7 +10,8 @@
 #ifndef _COLOUR_H_
 #define _COLOUR_H_
 
-typedef unsigned long int br_colour;
+// CrocDE
+typedef br_uint_32 br_colour;
 
 /*
  * N.B. Colour ranges are specified in the format of the pixelmap to which
@@ -27,21 +28,21 @@ typedef struct br_colour_range {
 } br_colour_range;
 
 #define BR_COLOUR_RGB(r,g,b) \
-		((((unsigned int)(r))<<16) |\
-		(((unsigned int)(g))<<8) |\
-		((unsigned int)(b)))
+		((((br_colour)(r))<<16) |\
+		(((br_colour)(g))<<8) |\
+		((br_colour)(b)))
 
 #define BR_COLOUR_RGBA(r,g,b,a) \
-		((((unsigned int)(a))<<24) |\
-		(((unsigned int)(r))<<16) |\
-		(((unsigned int)(g))<<8) |\
-		((unsigned int)(b)))
+		((((br_colour)(a))<<24) |\
+		(((br_colour)(r))<<16) |\
+		(((br_colour)(g))<<8) |\
+		((br_colour)(b)))
 
 #define BR_COLOUR_ARGB(a,r,g,b) \
-		((((unsigned int)(a))<<24) |\
-		(((unsigned int)(r))<<16) |\
-		(((unsigned int)(g))<<8) |\
-		((unsigned int)(b)))
+		((((br_colour)(a))<<24) |\
+		(((br_colour)(r))<<16) |\
+		(((br_colour)(g))<<8) |\
+		((br_colour)(b)))
 
 #define BR_COLOUR_565(r,g,b) \
 		((((unsigned int)(r))<<11) |\
@@ -58,4 +59,3 @@ typedef struct br_colour_range {
 #define BR_BLU_565(c) ((c) & 31)
 
 #endif
-

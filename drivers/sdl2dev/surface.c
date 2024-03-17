@@ -186,6 +186,7 @@ br_error DeviceSDL2SetPalette(SDL_Palette *pal, br_int_32 index, br_int_32 count
             .b = BR_BLU(entries[i]),
             .a = has_alpha ? BR_ALPHA(entries[i]) : 0xFF,
         };
+        printf("%d: %d %d %d\n", i, cols[i].r, cols[i].g, cols[i].b);
     }
 
     if(SDL_SetPaletteColors(pal, cols, index, count) < 0)

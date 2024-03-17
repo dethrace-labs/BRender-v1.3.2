@@ -273,7 +273,7 @@ void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_1024(brp_block *block, brp_vertex *
  */
 
 void BR_ASM_CALL LineRenderPIZ2I(brp_block *block, brp_vertex *v0,brp_vertex *v1);
-void BR_ASM_CALL LineRenderPIZ2T(brp_block *block, brp_vertex *v0,brp_vertex *v1);
+void BR_ASM_CALL LineRenderPIZ2T(brp_block *block, ...);
 void BR_ASM_CALL LineRenderPIZ2TI(brp_block *block, brp_vertex *v0,brp_vertex *v1);
 
 void BR_ASM_CALL LineRenderPFZ2I(brp_block *block, brp_vertex *v0,brp_vertex *v1);
@@ -350,7 +350,7 @@ void BR_ASM_CALL TriangleRenderPII_RGB_888(brp_block *block, brp_vertex *v0, brp
 	 */
 void BR_ASM_CALL TriangleRenderPI_RGB_555(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void BR_ASM_CALL TriangleRenderPII_RGB_555(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-	
+
 /*
  * tt16_pi.asm
  */
@@ -359,7 +359,7 @@ void BR_ASM_CALL TriangleRenderPII_RGB_555(brp_block *block, brp_vertex *v0, brp
 	 */
 void BR_ASM_CALL TriangleRenderPI_RGB_565(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void BR_ASM_CALL TriangleRenderPII_RGB_565(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-	
+
 /*
  * persp.c
  */
@@ -519,4 +519,3 @@ void BR_ASM_CALL TriangleRenderNull(brp_block *block, brp_vertex *v0, brp_vertex
 
 #endif
 #endif
-

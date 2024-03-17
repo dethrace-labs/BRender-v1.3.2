@@ -900,13 +900,18 @@ br_uint_16 BR_RESIDENT_ENTRY BrPixelmapChannels(br_pixelmap *pm)
 
 	return DevicePixelmapChannels(pm);
 }
-
+#include <stdio.h>
 void BR_PUBLIC_ENTRY BrPixelmapPaletteSet(br_pixelmap *pm, br_pixelmap *pal)
 {
 	UASSERT(pal);
 	UASSERT(pm);
 
 	CheckDispatch(pm);
+
+	br_colour *cols = pal->pixels;
+	for(br_int_32 i = 0; i < 256; ++i) {
+        printf("%d: %d %d %d\n", i, BR_RED(cols[i]), BR_GRN(cols[i]), BR_BLU(cols[i]));
+    }
 
 	BrPixelmapPaletteEntrySetMany(pm, 0, pal->height, (br_colour *)pal->pixels);
 }
@@ -920,7 +925,7 @@ void BR_PUBLIC_ENTRY BrPixelmapPaletteEntrySet(br_pixelmap *pm, br_int_32 index,
 	/*
 	 * See if pixelmap has CLUT attached...
 	 */
-	if(ObjectQuery(pm, (br_uint_32 *)&clut, BRT_CLUT_O) != BRE_OK)
+	if(ObjectQuery(pm, &clut, BRT_CLUT_O) != BRE_OK)
 		return;
 
 	if(clut == NULL)
@@ -938,7 +943,7 @@ void BR_PUBLIC_ENTRY BrPixelmapPaletteEntrySetMany(br_pixelmap *pm, br_int_32 in
 	/*
 	 * See if pixelmap has CLUT attached...
 	 */
-	if(ObjectQuery(pm, (br_uint_32 *)&clut, BRT_CLUT_O) != BRE_OK)
+	if(ObjectQuery(pm, &clut, BRT_CLUT_O) != BRE_OK)
 		return;
 
 	if(clut == NULL)

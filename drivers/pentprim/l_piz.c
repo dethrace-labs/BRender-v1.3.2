@@ -428,7 +428,7 @@ void BR_ASM_CALL LineRenderPIZ2TI(struct brp_block *block, union brp_vertex *v0,
 /*
  * Arbitrary size textured line drawer
  */
-void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, union brp_vertex *v0,union brp_vertex *v1)
+void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, ...)
 {
 	br_fixed_ls dx,dy;
 	br_fixed_ls pm,dm,pz,dz,x0,x1,y0,y1;
@@ -439,6 +439,15 @@ void BR_ASM_CALL LineRenderPIZ2T(struct brp_block *block, union brp_vertex *v0,u
 	char *ptr,*zptr;
 	int dptr,dzptr;
 	int width,height,stride;
+
+	va_list va;
+	brp_vertex *v0;
+    brp_vertex *v1;
+
+    va_start(va, block);
+    v0          = va_arg(va, brp_vertex *);
+    v1          = va_arg(va, brp_vertex *);
+	va_end(va);
 
     width = work.texture.width_p;
     height = work.texture.height;

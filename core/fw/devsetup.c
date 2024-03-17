@@ -395,14 +395,14 @@ br_error BR_RESIDENT_ENTRY BrRendererFacilityFind(br_renderer_facility **prf,
  	 */
 
 	if(!renderer_facility && destination)
-		ObjectQuery(destination, (br_uint_32 *)&renderer_facility, BRT_RENDERER_FACILITY_O);
+		ObjectQuery(destination, &renderer_facility, BRT_RENDERER_FACILITY_O);
 
 	if(!renderer_facility && destination) {
 		ot = NULL;
-		r = ObjectQuery(destination, (br_uint_32 *)&ot, BRT_OUTPUT_FACILITY_O);
+		r = ObjectQuery(destination, &ot, BRT_OUTPUT_FACILITY_O);
 
 		if(r == BRE_OK && ot)
-			ObjectQuery(ot, (br_uint_32 *)&renderer_facility, BRT_RENDERER_FACILITY_O);
+			ObjectQuery(ot, &renderer_facility, BRT_RENDERER_FACILITY_O);
 	}
 
 	if(scalar_is_valid) {
@@ -491,14 +491,14 @@ br_error BR_RESIDENT_ENTRY BrRendererFacilityListFind(br_renderer_facility **prf
 	 *     a scalar specific version exists with the same base)
 	 */
 	if(!renderer_facility && destination)
-		ObjectQuery(destination, (br_uint_32 *)&renderer_facility, BRT_RENDERER_FACILITY_OL);
+		ObjectQuery(destination, &renderer_facility, BRT_RENDERER_FACILITY_OL);
 
 	if(!renderer_facility && destination) {
 		ot = NULL;
-		r = ObjectQuery(destination, (br_uint_32 *)&ot, BRT_OUTPUT_FACILITY_O);
+		r = ObjectQuery(destination, &ot, BRT_OUTPUT_FACILITY_O);
 
 		if(r == BRE_OK && ot)
-			ObjectQuery(ot, (br_uint_32 *)&renderer_facility, BRT_RENDERER_FACILITY_OL);
+			ObjectQuery(ot, &renderer_facility, BRT_RENDERER_FACILITY_OL);
 	}
 
 	/*
@@ -666,14 +666,14 @@ br_error BR_RESIDENT_ENTRY BrPrimitiveLibraryFind(br_primitive_library **ppl,
  	 */
 
 	if(!primitive_library && destination)
-		ObjectQuery(destination, (br_uint_32 *)&primitive_library, BRT_PRIMITIVE_LIBRARY_O);
+		ObjectQuery(destination, &primitive_library, BRT_PRIMITIVE_LIBRARY_O);
 
 	if(!primitive_library && destination) {
 		ot = NULL;
-		r = ObjectQuery(destination, (br_uint_32 *)&ot, BRT_OUTPUT_FACILITY_O);
+		r = ObjectQuery(destination, &ot, BRT_OUTPUT_FACILITY_O);
 
 		if(r == BRE_OK && ot)
-			ObjectQuery(ot, (br_uint_32 *)&primitive_library, BRT_PRIMITIVE_LIBRARY_O);
+			ObjectQuery(ot, &primitive_library, BRT_PRIMITIVE_LIBRARY_O);
 	}
 
 	if(scalar_is_valid) {
@@ -762,14 +762,14 @@ br_error BR_RESIDENT_ENTRY BrPrimitiveLibraryListFind(br_primitive_library **ppl
 	 *     a scalar specific version exists with the same base)
 	 */
 	if(!primitive_library && destination)
-		ObjectQuery(destination, (br_uint_32 *)&primitive_library, BRT_PRIMITIVE_LIBRARY_OL);
+		ObjectQuery(destination, &primitive_library, BRT_PRIMITIVE_LIBRARY_OL);
 
 	if(!primitive_library && destination) {
 		ot = NULL;
-		r = ObjectQuery(destination, (br_uint_32 *)&ot, BRT_OUTPUT_FACILITY_O);
+		r = ObjectQuery(destination, &ot, BRT_OUTPUT_FACILITY_O);
 
 		if(r == BRE_OK && ot)
-			ObjectQuery(ot, (br_uint_32 *)&primitive_library, BRT_PRIMITIVE_LIBRARY_OL);
+			ObjectQuery(ot, &primitive_library, BRT_PRIMITIVE_LIBRARY_OL);
 	}
 
 	/*
@@ -934,7 +934,7 @@ br_error BR_RESIDENT_ENTRY BrGeometryFormatFind(br_geometry **pgf,
 	 * Find the renderer facility, if we don't know it already
 	 */
 	if(!renderer_facility)
-		ObjectQuery(renderer, (br_uint_32 *)&renderer_facility, BRT_RENDERER_FACILITY_O);
+		ObjectQuery(renderer, &renderer_facility, BRT_RENDERER_FACILITY_O);
 
 	if(renderer_facility) {
 		/*

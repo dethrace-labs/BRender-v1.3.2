@@ -1216,7 +1216,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 			/*
 			 * If the resulting buffer does not share any of the prepared data, ditch it
 			 */
-			r = ObjectQuery(sg,(br_uint_32 *)&b,BRT_SHARED_B);
+			r = ObjectQuery(sg,&b,BRT_SHARED_B);
 
 			if(r==BRE_OK && b == BR_FALSE) {
 				BrResFree(model->prepared);

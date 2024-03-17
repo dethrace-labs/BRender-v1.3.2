@@ -224,8 +224,7 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_model_soft, renderOnScreen)
  */
 void BR_ASM_CALL RenderConvert1(struct brp_block *block,
 	brp_vertex *v0);
-void BR_ASM_CALL RenderConvert2(struct brp_block *block,
-	brp_vertex *v0, brp_vertex *v1);
+void BR_ASM_CALL RenderConvert2(struct brp_block *block, ...);
 void BR_ASM_CALL RenderConvert3(struct brp_block *block,
 	brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL RenderConvert4(struct brp_block *block,
