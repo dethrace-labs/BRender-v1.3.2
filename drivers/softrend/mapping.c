@@ -79,11 +79,11 @@ void SURFACE_CALL SurfaceMapEnvironmentLocal(br_renderer *self,
 	br_scalar d,cu,cv;
 
 	/*
-	 * Generate eye vector - 
+	 * Generate eye vector -
 	 */
 	BrVector3Sub(&eye,&scache.eye_m,p);
 	BrVector3Normalise(&eye, &eye);
-	
+
 	/*
 	 * Generate reflected vector
 	 *
@@ -190,6 +190,7 @@ void SURFACE_CALL SurfaceMapGeometryMapShift(br_renderer *self,
 void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, union brp_vertex *v0, union brp_vertex *v1, union brp_vertex *v2,
 	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
 {
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
 	br_vector2 *qv = (br_vector2 *)&rend.renderer->state.cache.quad_transformed;
 
 	switch (rend.face_flags[rend.current_index] & BR_FACEF_QUAD_MASK) {
@@ -278,6 +279,3 @@ void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, union brp_vertex *v0
 	block->chain->render(block->chain, v0,v1,v2, fp_vertices, fp_edges, fp_eqn, tfp);
 }
 #endif
-
-
-

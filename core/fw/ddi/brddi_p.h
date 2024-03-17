@@ -49,6 +49,7 @@ br_token BR_RESIDENT_ENTRY BrTokenCreate(char *identifier, br_token type);
 char * BR_RESIDENT_ENTRY BrTokenIdentifier(br_token t);
 br_token BR_RESIDENT_ENTRY BrTokenType(br_token t);
 br_int_32 BR_RESIDENT_ENTRY BrTokenCount(char *pattern);
+br_size_t BR_RESIDENT_ENTRY BrTokenSize(br_token t);
 br_token BR_RESIDENT_ENTRY BrTokenFind(char *pattern);
 br_int_32 BR_RESIDENT_ENTRY BrTokenFindMany(char *pattern, br_token *tokens, br_int_32 max_tokens);
 
@@ -60,7 +61,7 @@ br_tv_template * BR_RESIDENT_ENTRY BrTVTemplateAllocate(void *res, br_tv_templat
 void BR_RESIDENT_ENTRY BrTVTemplateFree(br_tv_template *t);
 
 br_error BR_RESIDENT_ENTRY BrTokenValueQuery(
-	br_uint_32 *pvalue, br_uint_32 *extra, br_size_t extra_size,
+	void *pvalue, void *extra, br_size_t extra_size,
 	br_token t,
 	void *block,
     br_tv_template *_template);
@@ -153,9 +154,9 @@ br_int_32 BR_RESIDENT_ENTRY BrParseMatrixFixed(struct br_lexer * l, br_fixed_ls 
 /*
  * object.c
  */
-br_error BR_CMETHOD_DECL(br_object,query)(struct br_object *self, br_uint_32 *pvalue, br_token t);
+br_error BR_CMETHOD_DECL(br_object,query)(struct br_object *self, void *pvalue, br_token t);
 br_error BR_CMETHOD_DECL(br_object,queryBuffer)
-	(struct br_object *self, br_uint_32 *pvalue, br_uint_32 *buffer, br_size_t buffer_size, br_token t);
+	(struct br_object *self, void *pvalue, void *buffer, br_size_t buffer_size, br_token t);
 br_error BR_CMETHOD_DECL(br_object,queryMany)
 	(struct br_object *self, br_token_value *tv, void *extra, br_size_t extra_size, br_int_32 *pcount);
 br_error BR_CMETHOD_DECL(br_object,queryManySize)

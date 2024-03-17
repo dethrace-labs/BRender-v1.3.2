@@ -266,20 +266,20 @@ static br_error BR_CMETHOD_DECL(br_output_facility_sdl2, pixelmapNew)(br_output_
 
     struct pixelmap_new_tokens pt = {
         .title      = NULL,
-        .width      = -1,
-        .height     = -1,
+        .width      = 640,
+        .height     = 480,
         .pixel_type = BR_PMT_MAX,
         .window     = NULL,
         .use_type   = BRT_NONE,
         .flags      = 0,
     };
 
-    if(self->device->templates.pixelmapNewTemplate == NULL) {
-        self->device->templates.pixelmapNewTemplate = BrTVTemplateAllocate(self->device, pixelmapNewTemplateEntries,
-                                                                           BR_ASIZE(pixelmapNewTemplateEntries));
-    }
+    // if(self->device->templates.pixelmapNewTemplate == NULL) {
+    //     self->device->templates.pixelmapNewTemplate = BrTVTemplateAllocate(self->device, pixelmapNewTemplateEntries,
+    //                                                                        BR_ASIZE(pixelmapNewTemplateEntries));
+    // }
 
-    BrTokenValueSetMany(&pt, &count, NULL, tv, self->device->templates.pixelmapNewTemplate);
+    // BrTokenValueSetMany(&pt, &count, NULL, tv, self->device->templates.pixelmapNewTemplate);
 
     /*
      * Four cases:

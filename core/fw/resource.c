@@ -132,7 +132,21 @@ static struct resource_header *UserToRes(void *r)
 	while(*(p - 1) == 0)
 		p--;
 
-	return ((struct resource_header *)p) - 1;
+	//return ((struct resource_header *)p) - 1;
+	// struct resource_header *res = (struct resource_header*)(p - (sizeof(struct resource_header) - 1));
+	//return
+	#if BR_RES_TAGGING
+    p -= offsetof(struct resource_header, magic_num) + sizeof(((struct resource_header *)NULL)->magic_num);
+#else
+    p -= offsetof(struct resource_header, class) + sizeof(((struct resource_header *)NULL)->class);
+#endif
+	struct resource_header *res = p;
+
+#if BR_RES_TAGGING
+    UASSERT(res->magic_ptr == res);
+    UASSERT(res->magic_num == BR_RES_MAGIC);
+#endif
+	return res;
 }
 
 /*

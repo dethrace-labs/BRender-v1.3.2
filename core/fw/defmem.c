@@ -38,5 +38,4 @@ br_allocator BrNullAllocator = {
 /*
  * Global variable that can be overridden by linking something first
  */
-br_allocator *_BrDefaultAllocator = &BrNullAllocator;
-
+//br_allocator *_BrDefaultAllocator = &BrNullAllocator;

@@ -14,13 +14,13 @@ BR_RCS_ID("$Id: object.c 1.1 1997/12/10 16:41:09 jon Exp $")
 /*
  * Token/Value support methods (via private templateQuery() method)
  */
-br_error BR_CMETHOD_DECL(br_object,query)(br_object *self, br_uint_32 *pvalue, br_token t)
+br_error BR_CMETHOD_DECL(br_object,query)(br_object *self, void *pvalue, br_token t)
 {
 	return BrTokenValueQuery(pvalue, NULL, 0, t, self, ObjectTemplateQuery(self));
 }
 
 br_error BR_CMETHOD_DECL(br_object,queryBuffer)
-	(br_object *self, br_uint_32 *pvalue, br_uint_32 *buffer, br_size_t buffer_size, br_token t)
+	(br_object *self, void *pvalue, void *buffer, br_size_t buffer_size, br_token t)
 {
 	return BrTokenValueQuery(pvalue, buffer, buffer_size, t, self, ObjectTemplateQuery(self));
 }
@@ -62,4 +62,3 @@ void BR_CALLBACK _BrObjectFree(void *res, br_uint_8 res_class, br_size_t size)
 	if(o && o->dispatch)
 		ObjectFree(o);
 }
-

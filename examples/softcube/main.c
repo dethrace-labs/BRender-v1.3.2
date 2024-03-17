@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
     BrBegin();
 
-    err = BrDevBeginVar(&screen, "SDL2", BRT_WIDTH_I32, 640, BRT_HEIGHT_I32, 480, BR_NULL_TOKEN);
+    err = BrDevBegin(&screen, "SDL2"); // , BRT_WIDTH_I32, 640, BRT_HEIGHT_I32, 480, BR_NULL_TOKEN);
 
     if(err != BRE_OK) {
         goto create_fail;

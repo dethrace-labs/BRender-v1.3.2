@@ -111,11 +111,14 @@ typedef union br_value_tag {
 		br_matrix4_f	*m4_f;
 		br_matrix34 	*m34;  // JeffH
 		br_matrix23		*m23; // JeffH
+
 		char *			str;
 		char *			cstr;
 		struct br_object **ol;
 		br_token		*tl;
 		void *			*pl;
+		br_int_64              i64;
+    br_uint_64             u64;
         struct br_token_value *tvl;
 } br_value ;
 

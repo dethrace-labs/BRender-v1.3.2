@@ -228,6 +228,37 @@ static br_uint_32 * ConvertLongCopy(br_uint_32 **pextra, br_uint_32 *src, br_int
 }
 
 /*
+ * Copy a token value to the given address.
+ * This is required for 64-bit, as not everything is 4 bytes.
+ * CrocDE
+ */
+static void BrTokenCopy(void *mem, const br_token_value *tv, br_boolean flip)
+{
+    br_size_t s;
+    /*
+    ** Get the token type. If we're BRT_NONE, we might be
+    ** something like BRT_COLOUR_RGB, which IS a token type, just use us.
+    **
+    ** Then get its size.
+    */
+    br_token ttype = BrTokenType(tv->t);
+    if(ttype == BRT_NONE)
+        s = BrTokenSize(tv->t);
+    else
+        s = BrTokenSize(ttype);
+
+    if(s == 0)
+        return;
+
+    if(flip) {
+        BrMemCpy(&tv->v, mem, s);
+    }
+    else {
+        BrMemCpy(mem, &tv->v, s);
+    }
+}
+
+/*
  * Fetch one value according to template information
  *
  * Returns:
@@ -258,9 +289,12 @@ static br_error ValueQuery(
 	else
 		mem = (char *)block + tep->offset;
 
+	tv->t = tep->token;
+
 	switch(tep->conv) {
 	case BRTV_CONV_COPY:
-		tv->v.i32 = MEM(br_int_32);
+		// tv->v.i32 = MEM(br_int_32);
+		BrTokenCopy(mem, tv, BR_TRUE);
 		break;
 
 	case BRTV_CONV_DIRECT:
@@ -470,7 +504,8 @@ static br_error ValueSet(
 
 	switch(tep->conv) {
 	case BRTV_CONV_COPY:
-		MEM(br_int_32) = tv->v.i32;
+		// MEM(br_int_32) = tv->v.i32;
+		BrTokenCopy(mem, tv, BR_FALSE);
 		break;
 
 	case BRTV_CONV_I32_I8:
@@ -723,7 +758,7 @@ static br_size_t ValueExtraSize(void *block, br_tv_template_entry *tep)
  * Get the value coresponding to one token
  */
 br_error BR_RESIDENT_ENTRY BrTokenValueQuery(
-	br_uint_32 *pvalue, br_uint_32 *extra, br_size_t extra_size,
+	void *pvalue, br_uint_32 *extra, br_size_t extra_size,
 	br_token t,
 	void *block,
 	br_tv_template *template)
@@ -754,7 +789,8 @@ br_error BR_RESIDENT_ENTRY BrTokenValueQuery(
 
 	if(tep) {
 		r = ValueQuery(&tv, &extra, &extra_size, block, tep);
-		*pvalue = tv.v.u32;
+		//*pvalue = tv.v.u32;
+		BrTokenCopy(pvalue, &tv, BR_FALSE);
 		return r;
 	} else
 		return BRE_UNKNOWN;

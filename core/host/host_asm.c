@@ -221,11 +221,9 @@ br_error BR_RESIDENT_ENTRY HostSelectorES(br_uint_16 *selp) {
 
 br_error BR_ASM_CALL RealSelectorBegin(void) {
     // Not implemented
-    BrAbort();
     return BRE_FAIL;
 }
 
 void BR_ASM_CALL RealSelectorEnd(void) {
     // Not implemented
-    BrAbort();
 }

@@ -76,6 +76,8 @@ void BR_ASM_CALL OpHeapAddTriangle(struct brp_block *block, brp_vertex *v0, brp_
 	br_primitive *p;
 	br_scalar zprim;
 
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
+
 	if(!heapCheck(rend.renderer->state.hidden.heap, sizeof(br_primitive) + 3 * sizeof(brp_vertex)))
 #if DEBUG
         BR_ERROR0("Primitive heap space overflow");
@@ -110,7 +112,7 @@ void BR_ASM_CALL OpHeapAddTriangle(struct brp_block *block, brp_vertex *v0, brp_
 		z[1] = VIEW_Z(v1);
 		z[2] = VIEW_Z(v2);
 
-		rend.renderer->state.hidden.insert_fn(p, 
+		rend.renderer->state.hidden.insert_fn(p,
 			rend.renderer->state.hidden.insert_arg1,
 			rend.renderer->state.hidden.insert_arg2,
 			rend.renderer->state.hidden.insert_arg3,
@@ -125,6 +127,8 @@ void BR_ASM_CALL OpHeapAddLine(struct brp_block *block, brp_vertex *v0, brp_vert
 {
 	br_primitive *p;
 	br_scalar zprim;
+
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
 
 	/*
 	 * Build primitive in heap
@@ -158,7 +162,7 @@ void BR_ASM_CALL OpHeapAddLine(struct brp_block *block, brp_vertex *v0, brp_vert
 		z[0] = VIEW_Z(v0);
 		z[1] = VIEW_Z(v1);
 
-		rend.renderer->state.hidden.insert_fn(p, 
+		rend.renderer->state.hidden.insert_fn(p,
 			rend.renderer->state.hidden.insert_arg1,
 			rend.renderer->state.hidden.insert_arg2,
 			rend.renderer->state.hidden.insert_arg3,
@@ -172,6 +176,8 @@ void BR_ASM_CALL OpHeapAddPoint(struct brp_block *block, brp_vertex *v0)
 {
 	br_primitive *p;
 	br_scalar zprim;
+
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
 
 	/*
 	 * Build primitive in heap
@@ -203,7 +209,7 @@ void BR_ASM_CALL OpHeapAddPoint(struct brp_block *block, brp_vertex *v0)
 		br_scalar z[1];
 		z[0] = VIEW_Z(v0);
 
-		rend.renderer->state.hidden.insert_fn(p, 
+		rend.renderer->state.hidden.insert_fn(p,
 			rend.renderer->state.hidden.insert_arg1,
 			rend.renderer->state.hidden.insert_arg2,
 			rend.renderer->state.hidden.insert_arg3,
@@ -222,6 +228,8 @@ void BR_ASM_CALL OpHeapAddTriangleConvert(struct brp_block *block, brp_vertex *v
 	br_primitive *p;
 	br_scalar zprim;
 	brp_vertex outv[3];
+
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
 
 	if(!heapCheck(rend.renderer->state.hidden.heap, sizeof(br_primitive) + 3 * sizeof(brp_vertex)))
 #if DEBUG
@@ -262,7 +270,7 @@ void BR_ASM_CALL OpHeapAddTriangleConvert(struct brp_block *block, brp_vertex *v
 		z[1] = VIEW_Z(v1);
 		z[2] = VIEW_Z(v2);
 
-		rend.renderer->state.hidden.insert_fn(p, 
+		rend.renderer->state.hidden.insert_fn(p,
 			rend.renderer->state.hidden.insert_arg1,
 			rend.renderer->state.hidden.insert_arg2,
 			rend.renderer->state.hidden.insert_arg3,
@@ -278,6 +286,8 @@ void BR_ASM_CALL OpHeapAddLineConvert(struct brp_block *block, brp_vertex *v0, b
 	br_primitive *p;
 	br_scalar zprim;
 	brp_vertex outv[2];
+
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
 
 	/*
 	 * Build primitive in heap
@@ -314,7 +324,7 @@ void BR_ASM_CALL OpHeapAddLineConvert(struct brp_block *block, brp_vertex *v0, b
 		z[0] = VIEW_Z(v0);
 		z[1] = VIEW_Z(v1);
 
-		rend.renderer->state.hidden.insert_fn(p, 
+		rend.renderer->state.hidden.insert_fn(p,
 			rend.renderer->state.hidden.insert_arg1,
 			rend.renderer->state.hidden.insert_arg2,
 			rend.renderer->state.hidden.insert_arg3,
@@ -329,6 +339,8 @@ void BR_ASM_CALL OpHeapAddPointConvert(struct brp_block *block, brp_vertex *v0)
 	br_primitive *p;
 	br_scalar zprim;
 	brp_vertex outv[1];
+
+	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
 
 	/*
 	 * Build primitive in heap
@@ -362,7 +374,7 @@ void BR_ASM_CALL OpHeapAddPointConvert(struct brp_block *block, brp_vertex *v0)
 		br_scalar z[1];
 		z[0] = VIEW_Z(v0);
 
-		rend.renderer->state.hidden.insert_fn(p, 
+		rend.renderer->state.hidden.insert_fn(p,
 			rend.renderer->state.hidden.insert_arg1,
 			rend.renderer->state.hidden.insert_arg2,
 			rend.renderer->state.hidden.insert_arg3,
@@ -372,4 +384,3 @@ void BR_ASM_CALL OpHeapAddPointConvert(struct brp_block *block, brp_vertex *v0)
 		INSERT_PRIMITIVE(rend.renderer->state.hidden.order_table, p, zprim);
 	}
 }
-

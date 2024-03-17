@@ -21,7 +21,7 @@ while (<DB>) {
 	}
 
 	# name type id
-	# 
+	#
 	if(/\s*(\w\w*)\s*(\w\w*)\s*(\w\w*)/) {
 		$token_val{$1} = $2;
 		$token_id{$1} = $3;
@@ -40,13 +40,15 @@ while (<>) {
 
 	# Look for a type definition
 	#
-	if(/^\$\s*(\w\w*)\s*(\w*)/) {
+	# if(/^\$\s*(\w\w*)\s*(\w*)/) {
+	if(/^\$\s*(\w+)(?:\s+(\w+)\s+(\w+)?)?$/) {
 		# Add type to type table
 		#
 		$name = "\U$1";
 
 		$type_ext{$1} = $2;
 		$type_tok{$1} = $name;
+		$type_member{$1} = $3;
 
 		# Create token for type
 		#
@@ -144,10 +146,18 @@ open(STDOUT,">toktype.c");
 
 foreach $t (sort({length($type_ext{$b}) <=> length($type_ext{$a})} keys %type_tok)) {
 
-	printf("\t{ %-24s%-12s%8d},\n",
+	# CrocDE
+	if($type_member{$t}) {
+		$tsize = "sizeof(((br_value*)0)->$type_member{$t})";
+	} else {
+		$tsize = "0";
+	}
+	printf("\t{ %-24s%-24s%8d, %-32s},\n",
 	    "\"$type_ext{$t}\",",
 	    "$token_prefix$type_tok{$t},",
-	    length($type_ext{$t}));
+	    length($type_ext{$t}),
+		$tsize
+	);
 }
 
 close(STDOUT);

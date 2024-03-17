@@ -51,7 +51,7 @@ br_error BR_CMETHOD_DECL(br_object_container, addFront)(struct br_object_contain
 
 	/*
 	 * Allocate a new list entry and add it to the list
-	 */	
+	 */
 	he = BrResAllocate(hl, sizeof(struct object_list_entry), BR_MEMORY_OBJECT_LIST_ENTRY);
 
 	if(he == NULL)
@@ -112,14 +112,14 @@ br_error BR_CMETHOD_DECL(br_object_container, removeFront)(struct br_object_cont
 	 */
 	he = BR_SIMPLEREMHEAD(&hl->l);
 
-	if(he == NULL) { 
+	if(he == NULL) {
 		*ph = NULL;
 		return BRE_FAIL;
 	}
 
 	/*
 	 * Return object pointer to caller
-	 */	
+	 */
 	*ph = he->h;
 	BrResFree(he);
 
@@ -165,9 +165,10 @@ br_error BR_CMETHOD_DECL(br_object_container, find)(br_object_container *self,
 	 * Find first matching object in list
 	 */
 	BR_FOR_SIMPLELIST(&hl->l, he) {
+		br_token t2 = ObjectType(he->h);
 		if((type == BR_NULL_TOKEN || type == ObjectType(he->h)) &&
 			BrNamePatternMatch(pattern,ObjectIdentifier(he->h))) {
-			
+
 			if(tv && !ObjectContainerTokensMatch(self, he->h, tvarg))
 				continue;
 
@@ -209,7 +210,7 @@ br_error BR_CMETHOD_DECL(br_object_container, findMany)(br_object_container *sel
 		 */
 		if((type == BR_NULL_TOKEN || type == ObjectType(he->h)) &&
 			BrNamePatternMatch(pattern, ObjectIdentifier(he->h))) {
-	
+
 			if(tv != NULL && ObjectContainerTokensMatch(self, he->h, tvarg) == BR_FALSE)
 				continue;
 
@@ -283,7 +284,7 @@ br_error BR_CMETHOD_DECL(br_object_container, count)(br_object_container *self,
  */
 struct token_match {
 	br_token_value *original;
-	br_token_value *query;	
+	br_token_value *query;
 	br_int_32 n;
 	void *extra;
 	br_size_t extra_size;
@@ -332,7 +333,7 @@ br_boolean BR_CMETHOD_DECL(br_object_container, tokensMatch)
 		tm->extra =	BrResAllocate(tm, s, BR_MEMORY_APPLICATION);
 		tm->extra_size = s;
 	}
-	
+
 	ObjectQueryMany(h, tm->query, tm->extra, tm->extra_size, &n);
 
 	/*
@@ -384,4 +385,3 @@ br_error BR_EXPORT BrObjectContainerFree(br_object_container *self, br_token typ
 
 	return BRE_OK;
 }
-
