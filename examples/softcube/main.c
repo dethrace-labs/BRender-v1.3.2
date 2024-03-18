@@ -65,19 +65,24 @@ int main(int argc, char **argv)
 
     BrBegin();
 
-    err = BrDevBegin(&screen, "SDL2"); // , BRT_WIDTH_I32, 640, BRT_HEIGHT_I32, 480, BR_NULL_TOKEN);
+    //BrLogSetLevel(BR_LOG_DEBUG);
+
+    err = BrDevBegin(&screen, "SDL2");
 
     if(err != BRE_OK) {
+        //BrLogError("APP", "BrDevBeginVar() failed");
         goto create_fail;
     }
 
     {
 #if defined(SOFTCUBE_16BIT)
+        //BrLogInfo("APP", "Running at 16-bpp");
         colour_buffer = BrPixelmapMatchTyped(screen, BR_PMMATCH_OFFSCREEN, BR_PMT_INDEX_8);
         ;
         clear_colour = BR_COLOUR_565(66, 0, 66);
 
 #else
+        //BrLogInfo("APP", "Running at 24-bpp");
         colour_buffer = BrPixelmapMatchTyped(screen, BR_PMMATCH_OFFSCREEN, BR_PMT_RGB_888);
         ;
         clear_colour = BR_COLOUR_RGB(66, 66, 66);
@@ -85,18 +90,23 @@ int main(int argc, char **argv)
     }
 
     if(colour_buffer == NULL) {
+        //BrLogError("APP", "BrPixelmapAllocate() failed");
         goto create_fail;
     }
 
     if((depth_buffer = BrPixelmapMatch(colour_buffer, BR_PMMATCH_DEPTH_16)) == NULL) {
+        //BrLogError("APP", "BrPixelmapMatch() failed");
         goto create_fail;
     }
+
+    BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
     colour_buffer->origin_x = depth_buffer->origin_x = colour_buffer->width >> 1;
     colour_buffer->origin_y = depth_buffer->origin_y = colour_buffer->height >> 1;
 
     br_pixelmap *pal_std;
     if((pal_std = BrPixelmapLoad("/opt/CARMA/DATA/REG/PALETTES/DRRENDER.PAL")) == NULL) {
+        //Error("APP", "Error loading std.pal");
         goto create_fail;
     }
 
@@ -111,7 +121,7 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(1));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(4));
 
         camera_data           = (br_camera *)camera->type_data;
         camera_data->aspect   = BR_DIV(BR_SCALAR(colour_buffer->width), BR_SCALAR(colour_buffer->height));
@@ -148,14 +158,15 @@ int main(int argc, char **argv)
     count = BrModelLoadMany("/opt/CARMA/DATA/MODELS/EAGLE.DAT", mod1, 1000);
     BrModelAddMany(mod1, count);
 
-    // cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
-    BrActorAdd(world, cube);
+     cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
+    //cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+    //BrActorAdd(world, cube);
     cube->t.type = BR_TRANSFORM_MATRIX34;
-    // cube->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
-    // cube->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
-    // BrMapUpdate(cube->material->colour_map, BR_MAPU_ALL);
-    // BrMaterialUpdate(cube->material, BR_MATU_ALL);
+    cube->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
+    BrModelUpdate(cube->model, BR_MODU_ALL);
+    cube->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
+    BrMapUpdate(cube->material->colour_map, BR_MAPU_ALL);
+    BrMaterialUpdate(cube->material, BR_MATU_ALL);
 
     // cube->model = BrModelFind("/opt/CARMA/DATA/MODELS/&00GAS.DAT");
     //  BrMatrix34Scale(&cube->t.t.mat, 5, 5, 5);
@@ -223,7 +234,7 @@ int main(int argc, char **argv)
 
         } else {
 
-            BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
+            //BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
             // BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -0.1);
 
             //  BrMatrix34PostRotateX(&cube2->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(25) * BR_SCALAR(dt)));

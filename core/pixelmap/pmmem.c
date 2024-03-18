@@ -17,11 +17,6 @@
 
 BR_RCS_ID("$Id: pmmem.c 1.5 1998/08/10 16:12:27 johng Exp $")
 
-#define _MemFillFPU_A _MemFill_A
-#define _MemCopyFPU_A _MemCopy_A
-#define _MemRectCopyFPU_A _MemRectCopy_A
-#define _MemRectFillFPU_A _MemRectFill_A
-
 /*
  * Useful info about each pixelmap type
  */
