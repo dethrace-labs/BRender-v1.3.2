@@ -255,7 +255,7 @@ typedef struct br_outfcty_desc {
 typedef br_boolean BR_CALLBACK br_outfcty_enum_cbfn(char *identifier,
     br_outfcty_desc *desc, void *args);
 
-// Jeff added from CrocDE-BRender
+// https://github.com/crocguy0688/CrocDE-BRender
 struct br_device_pixelmap;
 struct br_renderer;
 struct br_geometry;

@@ -1,55 +1,4 @@
-project(pentprim C ASM_MASM)
-
-include(h2inc)
-
-#make_h2inc(pentprim "${CMAKE_CURRENT_SOURCE_DIR}/drv.h" "${CMAKE_CURRENT_BINARY_DIR}/drv.inc")
-
-set(USE_MMX OFF)
-
-set(ASM_FILES
-	# magicsym.asm
-
-	# safediv.asm
-	# sar16.asm
-	# decal.asm
-
-	# t_piza.asm
-	# ti8_piz.asm
-	# ti8_pizp.asm
-	# t15_pizp.asm
-	# tt15_piz.asm
-	# tt16_piz.asm
-	# tt24_piz.asm
-
-	# t_pia.asm
-	# ti8_pi.asm
-	# ti8_pip.asm
-	# t15_pip.asm
-	# tt15_pi.asm
-	# tt16_pi.asm
-	# tt24_pi.asm
-
-	# zb8.asm
-	# zb8sh.asm
-	# zb8p2lit.asm
-	# zb8p2fla.asm
-	# zb8p2ulb.asm
-	# zb8p2ltb.asm
-	# zb8p2flb.asm
-	# zb8p2unl.asm
-	# zb8awtm.asm
-	# zs8.asm
-	# zs8p2unl.asm
-	# zs8awtm.asm
-	# fpsetup.asm
-	# fti8_piz.asm
-
-	# zb16p2ul.asm
-
-	# pfpsetup.asm
-	# fti8pizp.asm
-	# fti8_pip.asm
-)
+project(pentprim C)
 
 set(INFOGEN ${CMAKE_CURRENT_SOURCE_DIR}/infogen.pl)
 
@@ -74,8 +23,6 @@ endfunction()
 function(add_prim_suffixed base with_suffixes)
 	set(input_file "${CMAKE_CURRENT_SOURCE_DIR}/${base}.ifg")
 	set(output_files "${base}f.c" "${base}x.c")
-	message("${input_file}")
-	message("${output_files}")
 
 	set(args_float "")
 	set(argx_fixed "")
@@ -97,7 +44,6 @@ function(add_prim_suffixed base with_suffixes)
 
 	set(XXXX ${input_file} ${output_files})
 	set(PRIM_FILES ${PRIM_FILES} ${XXXX} PARENT_SCOPE)
-	message("prim files ${PRIM_FILES}")
 
 	#set_property(SOURCE match.c APPEND PROPERTY OBJECT_DEPENDS ${output_files})
 endfunction()
@@ -119,28 +65,6 @@ add_prim_suffixed(prim_t8 TRUE)
 # add_prim_suffixed(mmx_t16 FALSE)
 
 set_source_files_properties(${PRIM_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-
-if(USE_MMX)
-	list(APPEND ASM_FILES ./rastbuff.asm)
-	list(APPEND ASM_FILES ./setupdat.asm)
-
-	list(APPEND ASM_FILES ./gsetuptf.asm)
-	list(APPEND ASM_FILES ./gsetuptx.asm)
-
-	list(APPEND ASM_FILES ./rastrise.asm)
-	list(APPEND ASM_FILES ./xzuv.asm)
-	list(APPEND ASM_FILES ./xzuvc.asm)
-	list(APPEND ASM_FILES ./xzrgb.asm)
-	list(APPEND ASM_FILES ./xzuvrgb.asm)
-	list(APPEND ASM_FILES ./xzuv555.asm)
-	list(APPEND ASM_FILES ./xzuvc555.asm)
-	list(APPEND ASM_FILES ./xzrgb555.asm)
-	list(APPEND ASM_FILES ./xzuvrgb5.asm)
-endif()
-
-
-
-set_source_files_properties(${ASM_FILES} PROPERTIES COMPILE_OPTIONS "-safeseh")
 
 add_library(pentprim
         awtm.c
@@ -179,36 +103,24 @@ add_library(pentprim
         sbuffer.h
         template.h
         timestmp.h
-        work.c
+
+		work.c
         work.h
-
 		safediv.c
-
-		zb8awtm.c
 		sar16.c
-
+		decal.c
 		ti8_pizp.c
 		t15_pizp.c
 		ti8_pi.c
 		ti8_piz.c
-
 		fti8_pip.c
 		fti8pizp.c
-		decal.c
+		zb8awtm.c
 
-
-		#"${CMAKE_CURRENT_BINARY_DIR}/drv.inc"
-
-		${ASM_FILES}
 		${PRIM_FILES}
 )
 
-if(USE_MMX)
-	target_compile_definitions(pentprim PRIVATE "-DUSE_MMX=1")
-endif()
-
 target_compile_definitions(pentprim PRIVATE "-DPARTS=0xffff")
-set_source_files_properties(${ASM_FILES} PROPERTIES COMPILE_DEFINITIONS "PARTS=0ffffh")
 
 get_target_property(target_type pentprim TYPE)
 if(NOT target_type STREQUAL SHARED_LIBRARY)

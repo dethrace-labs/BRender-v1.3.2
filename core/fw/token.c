@@ -38,7 +38,7 @@ struct token_type {
 	char		*identifier;
 	br_token	type;
 	int			length;
-	// CrocDE
+	// https://github.com/crocguy0688/CrocDE-BRender
 	br_size_t	size;
 };
 
@@ -195,7 +195,7 @@ br_int_32 BR_RESIDENT_ENTRY BrTokenCount(char *pattern)
 
 /*
  * Get the minimum size required to the given token value
- * CrocDE
+ * // https://github.com/crocguy0688/CrocDE-BRender
  */
 br_size_t BR_RESIDENT_ENTRY BrTokenSize(br_token t)
 {

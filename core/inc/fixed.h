@@ -14,7 +14,7 @@
 /*
  * Fixed point types
  */
-// Thanks CrocDE!
+// Thanks // https://github.com/crocguy0688/CrocDE-BRender!
 typedef br_int_32 br_fixed_ls;  /* Long Signed fixed             15.16 */
 typedef br_int_16 br_fixed_lsf; /* Long Signed fraction           0.15 */
 

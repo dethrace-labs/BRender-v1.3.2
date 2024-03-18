@@ -146,7 +146,7 @@ open(STDOUT,">toktype.c");
 
 foreach $t (sort({length($type_ext{$b}) <=> length($type_ext{$a})} keys %type_tok)) {
 
-	# CrocDE
+	# https://github.com/crocguy0688/CrocDE-BRender adds size of each token type
 	if($type_member{$t}) {
 		$tsize = "sizeof(((br_value*)0)->$type_member{$t})";
 	} else {

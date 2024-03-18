@@ -10,7 +10,7 @@
 #ifndef _COLOUR_H_
 #define _COLOUR_H_
 
-// CrocDE
+// // https://github.com/crocguy0688/CrocDE-BRender
 typedef br_uint_32 br_colour;
 
 /*
