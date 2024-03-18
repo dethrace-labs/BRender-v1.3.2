@@ -131,7 +131,6 @@ enum {
  * Public structure that is comaptible with a device_pixelmap
  */
 typedef struct br_pixelmap {
-	// JeffH: br_uint_32 _reserved;
 	br_uintptr_t _reserved;
 
 	/*

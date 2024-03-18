@@ -73,8 +73,6 @@ struct resource_header {
 	(r)->size_h = (s) >> (16+BR_RES_GRANULARITY_SHIFT);	\
 	} while(0)
 
-// JeffH
-// #define ALIGN(ptr,a) (((br_int_32)(ptr)+((a)-1)) & ~((a)-1))
 #define ALIGN(ptr,a) (((br_uintptr_t)(ptr)+((a)-1)) & ~((a)-1))
 
 #if BR_RES_TAGGING
@@ -132,9 +130,7 @@ static struct resource_header *UserToRes(void *r)
 	while(*(p - 1) == 0)
 		p--;
 
-	//return ((struct resource_header *)p) - 1;
-	// struct resource_header *res = (struct resource_header*)(p - (sizeof(struct resource_header) - 1));
-	//return
+	// https://github.com/crocguy0688/CrocDE-BRender
 	#if BR_RES_TAGGING
     p -= offsetof(struct resource_header, magic_num) + sizeof(((struct resource_header *)NULL)->magic_num);
 #else
@@ -202,8 +198,6 @@ void * BR_RESIDENT_ENTRY BrResAllocate(void *vparent, br_size_t size, br_uint_8 
 	/*
 	 * Check to see if memory allocator lied about alignment
 	 */
-	// JeffH
-	// actual_pad = (ALIGN(res, calign) - ((br_uintptr_t)res));
 	actual_pad = (ALIGN(res, calign) - ((br_uintptr_t)res));
 	ASSERT(actual_pad <= pad);
 

@@ -621,7 +621,6 @@ void BrSetupEnvironment(br_actor *world, br_matrix34 *world_to_view, br_int_32 w
 	/*
 	 * Send to renderer
 	 */
-	// JeffH: partSet now takes a br_value
 	if(h != BRT_DONT_CARE)
 		RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_MATRIX34_SCALAR(VIEW_TO_ENVIRONMENT), (br_value){ .m34 = &view_to_this});
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_VIEW_TO_ENVIRONMENT_HINT_T, (br_value){.t = h});

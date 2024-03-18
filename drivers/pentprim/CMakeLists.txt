@@ -184,8 +184,6 @@ add_library(pentprim
 
 		safediv.c
 
-		x86emu.c
-		fpsetup.c
 		zb8awtm.c
 		sar16.c
 

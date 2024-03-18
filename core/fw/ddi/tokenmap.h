@@ -14,14 +14,10 @@
 typedef struct br_tv_template_entry {
 	br_token token;
 	char * name;
-	// JeffH: br_int_32 offset;
     br_uintptr_t offset;
 	br_int_16 flags;
 	br_int_16 conv;
-	// JeffH: br_int_32 conv_arg;
     br_uintptr_t conv_arg;
-
-	// JeffH: br_int_32 mask;
     br_uintptr_t mask;
 } br_tv_template_entry;
 

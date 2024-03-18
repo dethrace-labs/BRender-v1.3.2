@@ -284,7 +284,6 @@ typedef void BR_CALLBACK br_model_custom_cbfn(
  */
 
 typedef struct br_model {
-	// JeffH: br_uint_32 _reserved;
 	br_uintptr_t _reserved;
 
 	char *identifier;

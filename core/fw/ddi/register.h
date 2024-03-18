@@ -19,8 +19,6 @@
 typedef struct br_registry_entry {
 		struct br_node node;
 		struct {
-            // JeffH
-			// br_uint_32 reserved;
             br_uintptr_t reserved;
 			char *identifier;
 		} *item;

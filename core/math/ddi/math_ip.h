@@ -17,7 +17,7 @@ extern "C" {
 /*
  * matrix34.c
  */
-void BrMatrix34TApplyFV(br_vector3 *A, const br_vector3 *B, const br_matrix34 *C);
+void BrMatrix34TApplyFV(br_vector3 *A, br_vector3 *B, br_matrix34 *C);
 
 /*
  * matrix4.c

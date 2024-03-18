@@ -27,7 +27,6 @@ br_fixed_ls BR_PUBLIC_ENTRY BrFixedPow(br_fixed_ls a, br_fixed_ls b)
 	return BrFloatToFixed(BrFloatPow(BrFixedToFloat(a),BrFixedToFloat(b)));
 }
 
-// JeffH added
 br_fixed_ls BR_PUBLIC_ENTRY BrFixedDiv(br_fixed_ls numerator, br_fixed_ls denominator)
 {
     br_scalar n = BrFixedToScalar(numerator);

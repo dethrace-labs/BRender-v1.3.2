@@ -47,6 +47,8 @@
 #endif
 
 #ifndef _DEV_OBJS_H_
+
+// https://github.com/crocguy0688/CrocDE-BRender
 // FIXME: These really should go somewhere else, but I just need to shutup the compiler.
 struct v11model_f;
 struct v11model_x;

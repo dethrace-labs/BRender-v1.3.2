@@ -361,8 +361,6 @@ br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapClone(br_pixelmap *src)
 	br_pixelmap *new;
 
 	br_token_value tv[] = {
-		// JeffH : {BRT_USE_T,	BRT_CLONE},
-		// {0}};
 		{.t = BRT_USE_T,     .v = {.t = BRT_CLONE}},
         {.t = BR_NULL_TOKEN, .v = 0               },
 	};

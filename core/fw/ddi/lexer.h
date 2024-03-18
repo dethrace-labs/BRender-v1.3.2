@@ -83,8 +83,6 @@ typedef struct br_lexer_token {
 		/*
 		 * Integer
 		 */
-		//br_int_32		integer;
-        // JeffH
         br_uintptr_t integer;
 
 		/*

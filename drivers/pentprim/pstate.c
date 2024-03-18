@@ -42,7 +42,6 @@ static const struct br_primitive_state_dispatch primitiveStateDispatch;
 #endif
 
 #define F(f)	offsetof(struct br_primitive_state, f)
-// JeffH: #define P(f)	((br_int_32)(&(f)))
 #define P(f)	((br_uintptr_t)(&(f)))
 
 static const struct br_tv_template_entry primitiveStateTemplateEntries[] = {
@@ -259,7 +258,6 @@ static const struct br_tv_custom customOutputConv = {
  * Templates for state set/query
  */
 #define F(f) offsetof(struct br_primitive_state, f)
-// JeffH: #define P(f)	((br_int_32)(&(f)))
 #define P(f)	((br_uintptr_t)(&(f)))
 
 static br_tv_template_entry partPrimitiveTemplateEntries[] = {

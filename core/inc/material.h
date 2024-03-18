@@ -11,7 +11,6 @@
 #define _MATERIAL_H_
 
 typedef struct br_material {
-	// JeffH: br_uint_32 _reserved;
 	br_uintptr_t _reserved;
 
 	char *identifier;

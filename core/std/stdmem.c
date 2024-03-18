@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-// JeffH: #include <malloc.h>
 
 #include "brender.h"
 
@@ -43,16 +42,15 @@ static br_size_t BR_CALLBACK BrStdlibInquire(br_uint_8 type)
 
 static br_uint_32 BR_CALLBACK BrStdlibAlign(br_uint_8 type)
 {
-	// JeffH
-// #if defined(__WATCOMC__)
-// 	return 4;
-// #elif defined (_MSC_VER)
-// 	return 4;
-// #elif defined (__BORLANDC__)
-// 	return 4;
-// #else
-// 	return 1;
-// #endif
+	// #if defined(__WATCOMC__)
+	// 	return 4;
+	// #elif defined (_MSC_VER)
+	// 	return 4;
+	// #elif defined (__BORLANDC__)
+	// 	return 4;
+	// #else
+	// 	return 1;
+	// #endif
 	return sizeof(void*);
 }
 

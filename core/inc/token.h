@@ -72,13 +72,11 @@ typedef br_uint_32 br_token;
 #endif
 
 
-
+// Changes thanks to https://github.com/crocguy0688/CrocDE-BRender
 typedef union br_value_tag {
-		// JeffH: br_uint_32		u32;	/* unsigned long word at front for initialisation */
 		void                  *p;
     	br_intptr_t            pi;
     	br_uintptr_t           pu;
-
 		br_boolean		b;
 		br_token		t;
 		br_int_8		i8;
@@ -109,16 +107,15 @@ typedef union br_value_tag {
 		br_matrix23_f	*m23_f;
 		br_matrix34_f	*m34_f;
 		br_matrix4_f	*m4_f;
-		br_matrix34 	*m34;  // JeffH
-		br_matrix23		*m23; // JeffH
-
+		br_matrix34 	*m34;
+		br_matrix23		*m23;
 		char *			str;
 		char *			cstr;
 		struct br_object **ol;
 		br_token		*tl;
 		void *			*pl;
-		br_int_64              i64;
-    br_uint_64             u64;
+		br_int_64       i64;
+    	br_uint_64      u64;
         struct br_token_value *tvl;
 } br_value ;
 

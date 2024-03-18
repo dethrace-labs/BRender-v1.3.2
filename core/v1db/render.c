@@ -650,7 +650,6 @@ void BR_PUBLIC_ENTRY BrDbSceneRenderBegin(br_actor *world,
 	br_actor *a;
 	int i;
 	br_token vtos_type;
-	// JeffH: br_uint_32 dummy;
 	br_uintptr_t dummy;
 
 	UASSERT_MESSAGE("No renderer present", v1db.renderer != NULL );
