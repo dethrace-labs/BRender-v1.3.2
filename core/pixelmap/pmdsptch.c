@@ -908,11 +908,6 @@ void BR_PUBLIC_ENTRY BrPixelmapPaletteSet(br_pixelmap *pm, br_pixelmap *pal)
 
 	CheckDispatch(pm);
 
-	br_colour *cols = pal->pixels;
-	for(br_int_32 i = 0; i < 256; ++i) {
-        printf("%d: %d %d %d\n", i, BR_RED(cols[i]), BR_GRN(cols[i]), BR_BLU(cols[i]));
-    }
-
 	BrPixelmapPaletteEntrySetMany(pm, 0, pal->height, (br_colour *)pal->pixels);
 }
 

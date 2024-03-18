@@ -5,7 +5,6 @@
 #include <string.h>
 #include <brender.h>
 #include <brassert.h>
-//#include "memloops.h"
 
 br_uint_8 bit_to_mask_s[] = {
     0xFF, /* 0b11111111 */

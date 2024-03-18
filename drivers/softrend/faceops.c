@@ -336,7 +336,6 @@ void BR_ASM_CALL OpTriangleRelightTwoSided(struct brp_block *block, ...)
 /*
  * Convert a triangle to lines
  */
-#include <stdio.h>
 void BR_ASM_CALL OpTriangleToLines(struct brp_block *block, ...)
 {
 
@@ -355,12 +354,9 @@ void BR_ASM_CALL OpTriangleToLines(struct brp_block *block, ...)
     fp_edges    = va_arg(va, br_uint_16(*)[3]);
     va_end(va);
 
-    //printf("OpTriangleToLines v0 %d, v1 %d v2 %d %p\n", v0->flags, v1->flags, v2->flags, block->chain->render);
-
 	/*
 	 * Generate a line for each unrendered edge
 	 */
-
 	if(!rend.edge_flags[(*fp_edges)[0]]) {
 		block->chain->render(block->chain, v0, v1);
 		rend.edge_flags[(*fp_edges)[0]] = 1;
