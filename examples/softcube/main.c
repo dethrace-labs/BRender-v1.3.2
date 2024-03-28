@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(2));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(1));
 
         camera_data           = (br_camera *)camera->type_data;
         camera_data->aspect   = BR_DIV(BR_SCALAR(colour_buffer->width), BR_SCALAR(colour_buffer->height));
@@ -158,21 +158,23 @@ int main(int argc, char **argv)
     count = BrModelLoadMany("/opt/CARMA/DATA/MODELS/EAGLE.DAT", mod1, 1000);
     BrModelAddMany(mod1, count);
 
-     cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-    cube->t.type = BR_TRANSFORM_MATRIX34;
-    cube->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
-    BrModelUpdate(cube->model, BR_MODU_ALL);
-    cube->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
-    BrMapUpdate(cube->material->colour_map, BR_MAPU_ALL);
-    BrMaterialUpdate(cube->material, BR_MATU_ALL);
+cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+    BrActorAdd(world, cube);
+    //  cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
+    // cube->t.type = BR_TRANSFORM_MATRIX34;
+    // cube->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
+    // BrModelUpdate(cube->model, BR_MODU_ALL);
+    // cube->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
+    // BrMapUpdate(cube->material->colour_map, BR_MAPU_ALL);
+    // BrMaterialUpdate(cube->material, BR_MATU_ALL);
 
-  cube2           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-    cube2->t.type = BR_TRANSFORM_MATRIX34;
-    cube2->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
-    cube2->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
-    BrMapUpdate(cube2->material->colour_map, BR_MAPU_ALL);
-    BrMaterialUpdate(cube2->material, BR_MATU_ALL);
-    cube2->render_style = BR_RSTYLE_EDGES;
+//   cube2           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
+//     cube2->t.type = BR_TRANSFORM_MATRIX34;
+//     cube2->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
+//     cube2->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
+//     BrMapUpdate(cube2->material->colour_map, BR_MAPU_ALL);
+//     BrMaterialUpdate(cube2->material, BR_MATU_ALL);
+//     cube2->render_style = BR_RSTYLE_EDGES;
 
 
 #if defined(SOFTCUBE_16BIT)
@@ -190,7 +192,7 @@ int main(int argc, char **argv)
 
 //BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
     BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
-    BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
+    //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
     // light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
     //  BrLightEnable(light);
@@ -229,7 +231,7 @@ int main(int argc, char **argv)
 
         } else {
 
-            //BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
+            BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
             // BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -0.1);
 
             //  BrMatrix34PostRotateX(&cube2->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(25) * BR_SCALAR(dt)));

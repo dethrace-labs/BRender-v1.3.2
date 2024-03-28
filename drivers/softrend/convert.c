@@ -243,12 +243,21 @@ void BR_ASM_CALL RenderConvert2(struct brp_block *block, ...)
 	block->chain->render(block->chain, outv+0, outv+1);
 }
 
-void BR_ASM_CALL RenderConvert3(struct brp_block *block,
-	brp_vertex *v0, brp_vertex *v1,brp_vertex *v2)
+void BR_ASM_CALL RenderConvert3(struct brp_block *block, ...)
 {
 	int c;
 	br_uint_32 m;
 	brp_vertex outv[3];
+
+	va_list va;
+	brp_vertex *v0;
+    brp_vertex *v1;
+	brp_vertex *v2;
+    va_start(va, block);
+    v0          = va_arg(va, brp_vertex *);
+    v1          = va_arg(va, brp_vertex *);
+	v2          = va_arg(va, brp_vertex *);
+	va_end(va);
 
 #if BASED_FIXED
 	br_boolean has_q = (rend.block->constant_components | rend.block->vertex_components) & CM_Q;

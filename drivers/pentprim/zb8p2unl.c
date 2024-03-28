@@ -64,8 +64,10 @@ drawLine:
 	edi->uint_val += ebx->uint_val;
 
 // 	ror edx,16
-	ror(x86_op_reg(edx), 16);
-	// TODO!
+	int16_t tmp = edx->short_val[0];
+	edx->short_val[0] = edx->short_val[1];
+	edx->short_val[1] = tmp;
+
 // 	lea ebp,[ebp+2*ebx]
 	ebp->uint_val += ebx->uint_val * 2;
 
@@ -111,8 +113,6 @@ drawPixel:
 
 // 	mov al,[esi+eax]
 	eax->uint_val = ((uint8_t *)work.texture.base)[esi->uint_val + eax->uint_val];
-
-	eax->uint_val = 50;
 
 // 	test al,al
 // 	jz noPlot
@@ -299,7 +299,7 @@ lineDrawn:
 // 	mov workspace.&half&Count,ebp
 	*halfCount = ebp->uint_val;
 // 	jge drawLine
-	if (*halfCount > 0) {
+	if (*halfCount >= 0) {
 		goto drawLine;
 	}
 
@@ -405,7 +405,9 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 	eax->uint_val = workspace.flip;
 
 // 	ror edx,16
-	ror(x86_op_reg(edx), 16);
+	int16_t tmp = edx->short_val[0];
+	edx->short_val[0] = edx->short_val[1];
+	edx->short_val[1] = tmp;
 
 // 	test eax,eax
 
