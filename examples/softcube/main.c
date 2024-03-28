@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(4));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(2));
 
         camera_data           = (br_camera *)camera->type_data;
         camera_data->aspect   = BR_DIV(BR_SCALAR(colour_buffer->width), BR_SCALAR(colour_buffer->height));
@@ -159,8 +159,6 @@ int main(int argc, char **argv)
     BrModelAddMany(mod1, count);
 
      cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-    //cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
-    //BrActorAdd(world, cube);
     cube->t.type = BR_TRANSFORM_MATRIX34;
     cube->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
     BrModelUpdate(cube->model, BR_MODU_ALL);
@@ -168,19 +166,14 @@ int main(int argc, char **argv)
     BrMapUpdate(cube->material->colour_map, BR_MAPU_ALL);
     BrMaterialUpdate(cube->material, BR_MATU_ALL);
 
-    // cube->model = BrModelFind("/opt/CARMA/DATA/MODELS/&00GAS.DAT");
-    //  BrMatrix34Scale(&cube->t.t.mat, 5, 5, 5);
-    //  BrMatrix34Translate(&cube->t.t.mat, 0, -0.0, 1.5);
+  cube2           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
+    cube2->t.type = BR_TRANSFORM_MATRIX34;
+    cube2->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
+    cube2->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
+    BrMapUpdate(cube2->material->colour_map, BR_MAPU_ALL);
+    BrMaterialUpdate(cube2->material, BR_MATU_ALL);
+    cube2->render_style = BR_RSTYLE_EDGES;
 
-    // cube->model = BrModelFind("/opt/CARMA/DATA/MODELS/EAGLE.DAT");
-
-    // cube2           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-    // cube2->t.type   = BR_TRANSFORM_MATRIX34;
-    // cube2->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
-    // cube2->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
-    // BrMapUpdate(cube2->material->colour_map, BR_MAPU_ALL);
-    // BrMaterialUpdate(cube2->material, BR_MATU_ALL);
-    // // BrMatrix34Translate(&cube2->t.t.mat, 0, 0.5, 0.5);
 
 #if defined(SOFTCUBE_16BIT)
 
@@ -193,9 +186,11 @@ int main(int argc, char **argv)
     // cube->material->flags |= BR_MATF_SMOOTH; // Makes lighting look _much_ better.
     // cube->material->flags |= BR_MATF_DISABLE_COLOUR_KEY;  // Not supported by software.
     // cube->material->opacity = 255; // < 255 selects screendoor renderer
-    cube->render_style = BR_RSTYLE_EDGES;
+    //cube->render_style = BR_RSTYLE_EDGES;
 
+//BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
     BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
+    BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
     // light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
     //  BrLightEnable(light);

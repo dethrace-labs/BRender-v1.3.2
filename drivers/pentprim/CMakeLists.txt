@@ -109,6 +109,10 @@ add_library(pentprim
 		safediv.c
 		sar16.c
 		decal.c
+
+		fpsetup.c
+		x86emu.c
+
 		ti8_pizp.c
 		t15_pizp.c
 		ti8_pi.c
@@ -116,6 +120,7 @@ add_library(pentprim
 		fti8_pip.c
 		fti8pizp.c
 		zb8awtm.c
+		zb8p2unl.c
 
 		${PRIM_FILES}
 )

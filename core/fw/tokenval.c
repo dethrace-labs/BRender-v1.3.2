@@ -230,7 +230,7 @@ static br_uint_32 * ConvertLongCopy(br_uint_32 **pextra, br_uint_32 *src, br_int
 /*
  * Copy a token value to the given address.
  * This is required for 64-bit, as not everything is 4 bytes.
- * CrocDE
+ * // https://github.com/crocguy0688/CrocDE-BRender
  */
 static void BrTokenCopy(void *mem, br_token_value *tv, br_boolean flip)
 {

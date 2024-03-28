@@ -494,6 +494,9 @@ void GEOMETRY_CALL V1Face_OS_Render(struct br_geometry *self, struct br_renderer
 	for(f=0; f < rend.nfaces; f++,fp_vertices++, fp_edges++, fp_eqn++, tfp++) {
 		if(tfp->flag & TFF_VISIBLE) {
 
+			if (f != 1) {
+				continue;
+			}
 			rend.current_index = f;
 
 #if 1
