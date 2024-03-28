@@ -53,212 +53,10 @@ void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
         return;
     }
 
-    // assert(workspace.xm == 0x1011A80u);
-    // assert(workspace.d_xm == 0u);
-    // assert(workspace.x1 == 0x1010000u);
-    // assert(workspace.d_x1 == 0x10000u);
-    // assert(workspace.x2 == 0x173907Cu);
-    // assert(workspace.d_x2 == 0xFF7F3500u);
-
-    // assert(workspace.iarea == 0xB87CDB7Cu);
-    // assert(workspace.dx1_a == 0x3BFE6C80u);
-    // assert(workspace.dx2_a == 0x3BFE6C80u);
-    // assert(workspace.dy1_a == 0x3BFE6C80u);
-    // assert(workspace.dy2_a == 0x80000000u);
-    // assert(workspace.xstep_1 == 0x3F800000u);
-    // assert(workspace.xstep_0 == 0u);
-    // assert(workspace.t_dx == 0x3F658000u);
-    // assert(workspace.t_dy == 0x3F658000u);
-    // assert(workspace.t_y == 0xB1u);
-
     SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z, &workspace.d_z_x, fp_conv_d16, 1);
-
-    // assert(workspace.s_z == 0xDD3B5200u);
-    // assert(workspace.d_z_x == 0u);
-
     SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u, &workspace.d_u_x, fp_conv_d24, 0);
     SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
-
-    // assert(workspace.s_z == 0xDD3B5200u);
-
-    // assert(workspace.s_z == 3711652352u);
-    // assert(workspace.d_z_y_1 == 0u);
-    // assert(workspace.d_z_x == 0u);
-    // assert(workspace.d_z_y_0 == 0u);
-    // assert(workspace.s_i == 0u);
-    // assert(workspace.d_i_y_1 == 0u);
-    // assert(workspace.d_i_x == 0u);
-    // assert(workspace.d_i_y_0 == 0u);
-    // assert(workspace.s_u == 116781u);
-    // assert(workspace.d_u_y_1 == 130265u);
-    // assert(workspace.d_u_x == 130265u);
-    // assert(workspace.d_u_y_0 == 0u);
-    // assert(workspace.s_v == 16660435u);
-    // assert(workspace.d_v_y_1 == 4294837031u);
-    // assert(workspace.d_v_x == 0u);
-    // assert(workspace.d_v_y_0 == 4294837031u);
-    // assert(workspace.s_s == 0u);
-    // assert(workspace.d_s_y_1 == 0u);
-    // assert(workspace.d_s_x == 0u);
-    // assert(workspace.d_s_y_0 == 0u);
-
     ARBITRARY_SETUP();
-
-    // assert(workspace.xm == 16849536u);
-    // assert(workspace.d_xm == 0u);
-    // assert(workspace.x1 == 16842752u);
-    // assert(workspace.d_x1 == 65536u);
-    // assert(workspace.x2 == 24350844u);
-    // assert(workspace.d_x2 == 4286526720u);
-
-    // assert(workspace.d_u_x == 130265u);
-    // assert(workspace.d_u_y_1 == 130265u);
-
-    // assert(workspace.d_u_y_0 == 0u);
-    // assert(workspace.s_v == 16660435u);
-    // assert(workspace.d_v_y_1 == 4294837031u);
-    // assert(workspace.d_v_x == 0u);
-    // assert(workspace.d_v_y_0 == 4294837031u);
-    // assert(workspace.s_s == 0u);
-    // assert(workspace.d_s_y_1 == 0u);
-    // assert(workspace.d_s_x == 0u);
-    // assert(workspace.d_s_y_0 == 0u);
-
-    // assert(workspace.s_z == 3711652352u);
-    // assert(workspace.d_z_y_1 == 0u);
-    // assert(workspace.d_z_x == 0u);
-    // assert(workspace.d_z_y_0 == 0u);
-    // assert(workspace.s_i == 0u);
-    // assert(workspace.d_i_y_1 == 0u);
-    // assert(workspace.d_i_x == 0u);
-    // assert(workspace.d_i_y_0 == 0u);
-    // assert(workspace.s_u == 116781u);
-
-    // assert(workspace.scanAddress == 0);
-    // assert(workspace.scanAddressTrashed == 0u);
-    // assert(workspace.depthAddress == 0);
-    // assert(workspace.depthAddressTrashed == 0u);
-    // assert(workspace.iarea == 3095190396u);
-    // assert(workspace.dx1_a == 1006529664u);
-    // assert(workspace.dx2_a == 1006529664u);
-    // assert(workspace.dy1_a == 1006529664u);
-    // assert(workspace.dy2_a == 2147483648u);
-    // assert(workspace.xstep_1 == 1065353216);
-    // assert(workspace.xstep_0 == 0);
-    // assert(workspace.t_dx == 1063616512u);
-    // assert(workspace.t_dy == 1063616512u);
-    // assert(workspace.t_y == 177u);
-
-    // assert(workspace.scratch2 == 0u);
-    // assert(workspace.scratch3 == 0x42380000u);
-    // assert(workspace.scratch4 == 0x10000u);
-    // assert(workspace.scratch5 == 0x42380000u);
-    // assert(workspace.scratch6 == 0u);
-    // assert(workspace.scratch7 == 0x42380000u);
-    // assert(workspace.scratch8 == 0x10000u);
-    // assert(workspace.scratch9 == 0x42380000u);
-    // assert(workspace.scratch10 == 0u);
-    // assert(workspace.scratch11 == 0x42380000u);
-
-    // TILTED
-    // assert(workspace.xm == 0xFBBDA7u);
-    // assert(workspace.d_xm == 0x1664u);
-    // assert(workspace.x1 == 0xFAC913u);
-    // assert(workspace.d_x1 == 0x13113u);
-    // assert(workspace.x2 == 0x17B4AB5u);
-    // assert(workspace.d_x2 == 0xFFF49131u);
-    // assert(workspace.s_z == 0xDD3B5200u);
-    // assert(workspace.d_z_y_1 == 0u);
-    // assert(workspace.d_z_x == 0u);
-    // assert(workspace.d_z_y_0 == 0u);
-    // assert(workspace.s_i == 0u);
-    // assert(workspace.d_i_y_1 == 0u);
-    // assert(workspace.d_i_x == 0u);
-    // assert(workspace.d_i_y_0 == 0u);
-    // assert(workspace.s_u == 0x8361u);
-    // assert(workspace.d_u_y_1 == 0x1CE93u);
-    // assert(workspace.d_u_x == 0x1FAEAu);
-    // assert(workspace.d_u_y_0 == 0xFFFFD3A9u);
-    // assert(workspace.s_v == 0xFFDFDFu);
-    // assert(workspace.d_v_y_1 == 0xFFFDD8C0u);
-    // assert(workspace.d_v_x == 0xFFFFD3A9u);
-    // assert(workspace.d_v_y_0 == 0xFFFE0516u);
-    // assert(workspace.s_s == 0u);
-    // assert(workspace.d_s_y_1 == 0u);
-    // assert(workspace.d_s_x == 0u);
-    // assert(workspace.d_s_y_0 == 0u);
-    // assert(workspace.iarea == 0xB87CDB77u);
-    // assert(workspace.dx1_a == 0x3C09D006u);
-    // assert(workspace.dx2_a == 0x3BFD74C3u);
-    // assert(workspace.dy1_a == 0x3BE74979u);
-    // assert(workspace.dy2_a == 0xBA315A54u);
-    // assert(workspace.xstep_1 == 0x3F800000u);
-    // assert(workspace.xstep_0 == 0u);
-    // assert(workspace.t_dx == 0x3E868200u);
-    // assert(workspace.t_dy == 0x3D258000u);
-    // assert(workspace.t_y == 0xB6u);
-    // assert(workspace.flip == 0u);
-    // assert(workspace.c_z == 0u);
-    // assert(workspace.c_u == 0u);
-    // assert(workspace.c_v == 0u);
-    // assert(workspace.c_i == 0u);
-    // assert(workspace.v0_x == 0u);
-    // assert(workspace.v1_x == 0u);
-    // assert(workspace.v2_x == 0u);
-    // assert(workspace.v0_y == 0u);
-    // assert(workspace.v1_y == 0u);
-    // assert(workspace.v2_y == 0u);
-    // assert(workspace.top_vertex == 0u);
-    // assert(workspace.xm_f == 0u);
-    // assert(workspace.d_xm_f == 0u);
-    // assert(workspace.topCount == 0x75u);
-    // assert(workspace.bottomCount == 0xAu);
-    // assert(workspace.scratch0 == 0u);
-    // assert(workspace.scratch1 == 0x42380000u);
-    // assert(workspace.scratch2 == 0u);
-    // assert(workspace.scratch3 == 0x42380000u);
-    // assert(workspace.scratch4 == 0x10000u);
-    // assert(workspace.scratch5 == 0x42380000u);
-    // assert(workspace.scratch6 == 0u);
-    // assert(workspace.scratch7 == 0x42380000u);
-    // assert(workspace.scratch8 == 0x10000u);
-    // assert(workspace.scratch9 == 0x42380000u);
-
-    // assert(workspaceA.su == 8408u);
-    // assert(workspaceA.pad0 == 1136132096u);
-    // assert(workspaceA.dux == 32442u);
-    // assert(workspaceA.pad1 == 1136132096u);
-    // // assert(workspaceA.duy1 == 29604u);  //off by 1
-    // assert(workspaceA.pad2 == 1136132096u);
-    // assert(workspaceA.duy0 == 4294964458u);
-    // assert(workspaceA.pad3 == 1136132095u);
-    // assert(workspaceA.sv == 4032u);
-    // assert(workspaceA.pad4 == 1127743488u);
-    // // assert(workspaceA.dvy1 == 4294967232u);
-    // // assert(workspaceA.pad5 == 1127743487u);
-    // // assert(workspaceA.dvy1c == 0u);
-    // // assert(workspaceA.pad6 == 0u);
-    // assert(workspaceA.dvy0 == 4294967232u);
-    // assert(workspaceA.pad7 == 1127743487u);
-    // assert(workspaceA.dvy0c == 0u);
-    // assert(workspaceA.dvxc == 0u);
-    // assert(workspaceA.pad8 == 0u);
-    // assert(workspaceA.dvx == 4294967232u);
-    // assert(workspaceA.pad9 == 1127743487u);
-    // assert(workspaceA.svf == 4160159744u);
-    // assert(workspaceA.dvxf == 4108976128u);
-    // assert(workspaceA.dvy1f == 1982857216u);
-    // assert(workspaceA.dvy0f == 2168782848u);
-    // assert(workspaceA.uUpperBound == 0x400000);
-    // // vUpperBound = 0x7AD4FB8);
-
-    // workspaceA.su = 0x180Du, workspaceA.pad0 = 0x43B80000u, workspaceA.dux = 0x796Fu, workspaceA.pad1 = 0x43B80000u,
-    // workspaceA.duy1 = 0xBB7u, workspaceA.pad2 = 0x43B80000u, workspaceA.duy0 = 0xFFFF9248u,
-    // workspaceA.pad3 = 0x43B7FFFFu, workspaceA.sv = 0xFC0u, workspaceA.pad4 = 0x43380000u, workspaceA.dvy1 =
-    // 0xFFFFFFC0u, workspaceA.pad5 = 0x4337FFFFu, workspaceA.dvy1c = 0u, workspaceA.pad6 = 0u, workspaceA.dvy0 =
-    // 0xFFFFFFC0u, workspaceA.pad7 = 0x4337FFFFu, workspaceA.dvy0c = 0u, workspaceA.dvxc = 0x40u, workspaceA.pad8 = 0u,
-    // workspaceA.dvx = 0u, workspaceA.pad9 = 0x43380000u, workspaceA.svf = 0xE12D0000u, workspaceA.dvxf = 0u,
-    // workspaceA.dvy1f = 0x4BF60000u, workspaceA.dvy0f = 0x4BF60000u, workspaceA.uUpperBound = 0x400000;
 }
 
 int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
@@ -300,17 +98,16 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     fld(x87_op_i(4));                 //	dx2		dx1*dy2	dy1		dy2		dx1		dx2
     fmul_2(x87_op_i(0), x87_op_i(2)); //	dx2*dy1	dx1*dy2	dy1		dy2		dx1		dx2
 
-    mov(x86_op_reg(eax), x86_op_mem32(&((brp_vertex *)eax->ptr_val)->comp_f[C_SY]));
-
-    mov(x86_op_reg(ecx), x86_op_mem32(&((brp_vertex *)ecx->ptr_val)->comp_f[C_SY]));
+    eax->float_val = ((brp_vertex *)eax->ptr_val)->comp_f[C_SY];
+    ecx->float_val = ((brp_vertex *)ecx->ptr_val)->comp_f[C_SY];
 
     fsubp_2(x87_op_i(1), x87_op_i(0)); //	2area	dy1		dy2		dx1		dx2
 
-    xor_(x86_op_reg(ebx), x86_op_reg(ebx));
+    ebx->uint_val ^= ebx->uint_val;
     cmp(x86_op_reg(ecx), x86_op_reg(eax));
 
     rcl(x86_op_reg(ebx), 1);
-    mov(x86_op_reg(edx), x86_op_mem32(&((brp_vertex *)edx->ptr_val)->comp_f[C_SY]));
+    edx->float_val = ((brp_vertex *)edx->ptr_val)->comp_f[C_SY];
 
     fdivr(fp_one); //	1/2area	dy1		dy2		dx1		dx2
 
@@ -321,52 +118,43 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 
     rcl(x86_op_reg(ebx), 1); // ebx now has 3 bit number characterising the order of the vertices.
 
-    mov(x86_op_reg(eax), x86_op_mem32(&sort_table_0[ebx->uint_val]));
-    mov(x86_op_reg(edx), x86_op_mem32(&sort_table_2[ebx->uint_val]));
-
-    mov(x86_op_reg(esi), x86_op_mem32(&flip_table[ebx->uint_val]));
-    mov(x86_op_reg(ebx), x86_op_mem32(&sort_table_1[ebx->uint_val]));
+    eax->uint_val = sort_table_0[ebx->uint_val];
+    edx->uint_val = sort_table_2[ebx->uint_val];
+    esi->uint_val = flip_table[ebx->uint_val];
+    ebx->uint_val = sort_table_1[ebx->uint_val];
 
     // Load eax,ebx,edx with pointers to the three vertices in vertical order
-    mov(x86_op_reg(eax), x86_op_ptr(&workspace.v0_array[eax->uint_val]));
-    mov(x86_op_reg(edx), x86_op_ptr(&workspace.v0_array[edx->uint_val]));
-    mov(x86_op_reg(ebx), x86_op_ptr(&workspace.v0_array[ebx->uint_val]));
-    mov(x86_op_mem32(&workspace.flip), x86_op_reg(esi));
+    eax->ptr_val = workspace.v0_array[eax->uint_val];
+    edx->ptr_val = workspace.v0_array[edx->uint_val];
+    ebx->ptr_val = workspace.v0_array[ebx->uint_val];
+    workspace.flip = esi->uint_val;
 
     // Work out Y extents of triangle
     // ; Convert float to int using integer instructions, because FPU is in use doing division
-    mov(x86_op_reg(ebp), x86_op_mem32(&((brp_vertex *)eax->ptr_val)->comp_f[C_SY]));
-    mov(x86_op_reg(ecx), x86_op_imm(EXPONENT_OFFSET));
-
-    sub(x86_op_reg(ecx), x86_op_reg(ebp));           // Offset exponent to get shift value
-    and(x86_op_reg(ebp), x86_op_imm(MASK_MANTISSA)); // Mask out mantissa
-
-    shr(x86_op_reg(ecx), 23);                       //				; Move shift value to low bits
-    or (x86_op_reg(ebp), x86_op_imm(IMPLICIT_ONE)); //	; Put the 1 back in top of mantissa
-    // shr		 ebp,cl				; EBP = y_t
-    shr(x86_op_reg(ebp), ecx->uint_val & 0xff);
-
-    mov(x86_op_reg(esi), x86_op_mem32(&((brp_vertex *)ebx->ptr_val)->comp_f[C_SY]));
-    mov(x86_op_reg(ecx), x86_op_imm(EXPONENT_OFFSET));
-
-    sub(x86_op_reg(ecx), x86_op_reg(esi));           // Offset exponent to get shift value
-    and(x86_op_reg(esi), x86_op_imm(MASK_MANTISSA)); // Mask out mantissa
-
-    shr(x86_op_reg(ecx), 23);                       //				; Move shift value to low bits
-    or (x86_op_reg(esi), x86_op_imm(IMPLICIT_ONE)); //	; Put the 1 back in top of mantissa
+    ebp->float_val = ((brp_vertex *)eax->ptr_val)->comp_f[C_SY];
+    ecx->uint_val = EXPONENT_OFFSET;
+    ecx->uint_val -= ebp->uint_val;
+    ebp->uint_val &= MASK_MANTISSA;
+    ecx->uint_val >>= 23;
+    ebp->uint_val |= IMPLICIT_ONE;
+    ebp->uint_val >>= (ecx->uint_val & 0xff);
+    esi->float_val = ((brp_vertex *)ebx->ptr_val)->comp_f[C_SY];
+    ecx->uint_val = EXPONENT_OFFSET;
+    ecx->uint_val -= esi->uint_val;
+    esi->uint_val &= MASK_MANTISSA;
+    ecx->uint_val >>= 23;
+    esi->uint_val |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    shr(x86_op_reg(esi), ecx->uint_val & 0xff);
+    esi->uint_val >>= (ecx->uint_val & 0xff);
 
-    mov(x86_op_reg(edi), x86_op_mem32(&((brp_vertex *)edx->ptr_val)->comp_f[C_SY]));
-    mov(x86_op_reg(ecx), x86_op_imm(EXPONENT_OFFSET));
-
-    sub(x86_op_reg(ecx), x86_op_reg(edi));           // Offset exponent to get shift value
-    and(x86_op_reg(edi), x86_op_imm(MASK_MANTISSA)); // Mask out mantissa
-
-    shr(x86_op_reg(ecx), 23);                       //				; Move shift value to low bits
-    or (x86_op_reg(edi), x86_op_imm(IMPLICIT_ONE)); //	; Put the 1 back in top of mantissa
+    edi->float_val = ((brp_vertex *)edx->ptr_val)->comp_f[C_SY];
+    ecx->uint_val = EXPONENT_OFFSET;
+    ecx->uint_val -= edi->uint_val;
+    edi->uint_val &= MASK_MANTISSA;
+    ecx->uint_val >>= 23;
+    edi->uint_val |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    shr(x86_op_reg(edi), ecx->uint_val & 0xff);
+    edi->uint_val >>= (ecx->uint_val & 0xff);
 
     // Catch special cases of empty top or bottom trapezoids
 
@@ -416,7 +204,8 @@ count_cont:
     //; gradient_minor1 = dx1.dy2.dy3.R
     //; gradient_minor2 = dy1.dy2.dx3.R
     //;
-    // 													;	0		1		2		3		4		5		6 7 fld st(2) ;	dy3		dy1		dy2		dy3
+    // 													;	0		1		2		3		4		5		6 7
+    // fld st(2)                                        ;	dy3		dy1		dy2		dy3
     fld(x87_op_i(2));
     // 			fmul		st,st(2)					;	dy2*dy3	dy1		dy2		dy3
     fmul_2(x87_op_i(0), x87_op_i(2));
@@ -445,37 +234,37 @@ count_cont:
     // 		inc			ebp
     ebp->uint_val++;
     // 		mov			ecx,esi
-    mov(x86_op_reg(ecx), x86_op_reg(esi));
+    ecx->uint_val = esi->uint_val;
     // 		sub			ecx,ebp				;  count_t = (y_m-y_t)-1
-    sub(x86_op_reg(ecx), x86_op_reg(ebp));
+    ecx->uint_val -= ebp->uint_val;
     // 		mov			[workspace.t_y],ebp			; save for X intercept calcs
-    mov(x86_op_mem32(&workspace.t_y), x86_op_reg(ebp));
+    workspace.t_y = ebp->uint_val;
     // 		mov			[workspace.topCount],ecx
-    mov(x86_op_mem32(&workspace.topCount), x86_op_reg(ecx));
+    workspace.topCount = ecx->int_val;
     // 		inc			esi
     esi->uint_val++;
     // 		sub			edi,esi				;  count_b = (y_b-y_m)-1
-    sub(x86_op_reg(edi), x86_op_reg(esi));
+    edi->uint_val -= esi->uint_val;
     // 		mov			m_y,esi				; save for X intercept calcs
-    mov(x86_op_mem32(&m_y), x86_op_reg(esi));
+    m_y = esi->uint_val;
     // 		mov			[workspace].bottomCount,edi
-    mov(x86_op_mem32(&workspace.bottomCount), x86_op_reg(edi));
+    workspace.bottomCount = edi->int_val;
     // 		mov			esi,[workspace.flip]
-    mov(x86_op_reg(esi), x86_op_mem32(&workspace.flip));
+    esi->uint_val = workspace.flip;
 
     //     	; Generate LR/RL flag into esi (used to index convertion numbers below)
     // 	;
     // 			mov			edi,workspace.iarea
-    mov(x86_op_reg(edi), x86_op_mem32(&workspace.iarea));
+    edi->uint_val = workspace.iarea;
     // ;V
     // 			xor			esi,edi			; Build LR flag in bit 31
-    xor_(x86_op_reg(esi), x86_op_reg(edi));
+    esi->uint_val ^= edi->uint_val;
     // ;V
     // 			shr			esi,31			; move down to bit 0
-    shr(x86_op_reg(esi), 31);
+    esi->uint_val >>= 31;
     // ;V
     // 			mov			[workspace.flip],esi
-    mov(x86_op_mem32(&workspace.flip), x86_op_reg(esi));
+    workspace.flip = esi->uint_val;
 
     // ;XXX Setup screen pointers and strides
     // ;
@@ -610,42 +399,42 @@ count_cont:
     // 	; Load deltas back in registers
     // 	;
     // 		mov			edx,[workspace].xm	; read fixed d_xm
-    mov(x86_op_reg(edx), x86_op_mem32(&workspace.xm));
+    edx->uint_val = workspace.xm;
     // 		mov			esi,[workspace].x1	; read fixed d_x1
-    mov(x86_op_reg(esi), x86_op_mem32(&workspace.x1));
+    esi->uint_val = workspace.x1;
     // 		mov			edi,[workspace].x2	; read fixed d_x2
-    mov(x86_op_reg(edi), x86_op_mem32(&workspace.x2));
+    edi->uint_val = workspace.x2;
     // 		mov		ebx,[workspace.v0]				; Start preparing for parmeter setup
-    mov(x86_op_reg(ebx), x86_op_ptr(&workspace.v0));
+    ebx->ptr_val = workspace.v0;
     // 		fstp real8 ptr [workspace].xm			;	x_1+C	x_2+C
     fstp(x87_op_mem64(&workspace.xm));
     // 		fstp real8 ptr [workspace].x1			;	x_2+C
     fstp(x87_op_mem64(&workspace.x1));
 
     // 		mov			ecx,[workspace].xm
-    mov(x86_op_reg(ecx), x86_op_mem32(&workspace.xm));
+    ecx->uint_val = workspace.xm;
     // 		mov			[workspace].xm+4,edx
-    mov(x86_op_mem32(&workspace.d_xm), x86_op_reg(edx));
+    workspace.d_xm = edx->uint_val;
     // 		sar			ecx,16
     sar(x86_op_reg(ecx), 16);
     // 		mov			[workspace].x1+4,esi
-    mov(x86_op_mem32(&workspace.d_x1), x86_op_reg(esi));
+    workspace.d_x1 = esi->uint_val;
     // 		sar			edx,16			; get integer part of x delta down major edge
     sar(x86_op_reg(edx), 16);
     // 		mov			[workspace.t_dx],ecx
-    mov(x86_op_mem32(&workspace.t_dx), x86_op_reg(ecx));
+    workspace.t_dx = ecx->uint_val;
     // 		fild		[workspace.t_dx]			;	t_x		x_2+C
     fild(workspace.t_dx);
     // 	; Generate floating point versions of x delta and x delta+4
     // 	;
     // 		mov			[workspace.xstep_0],edx
-    mov(x86_op_mem32(&workspace.xstep_0), x86_op_reg(edx));
+    workspace.xstep_0 = edx->uint_val;
     // 		inc edx
     edx->uint_val++;
     // 		mov			[workspace.xstep_1],edx
-    mov(x86_op_mem32(&workspace.xstep_1), x86_op_reg(edx));
+    workspace.xstep_1 = edx->uint_val;
     // 		mov			edx,[workspace.v2]				; Start preparing for parmeter setup
-    mov(x86_op_reg(edx), x86_op_ptr(&workspace.v2));
+    edx->ptr_val = workspace.v2;
     // 												;	0		1		2		3		4		5		6		7
     // 		fsub		[eax].comp_f[C_SX*4]		;	t_dx	x_2+C
     fsub((((brp_vertex *)eax->ptr_val)->comp_f[C_SX]));
@@ -663,9 +452,9 @@ count_cont:
     // 		fstp		[workspace.t_dx]			;	xstep_0	xstep_1
     fstp(x87_op_mem32(&workspace.t_dx));
     // 		mov			[workspace].x2+4,edi
-    mov(x86_op_mem32(&workspace.d_x2), x86_op_reg(edi));
+    workspace.d_x2 = edi->uint_val;
     // 		mov		ecx,[workspace.v1]				; Start preparing for parmeter setup
-    mov(x86_op_reg(ecx), x86_op_ptr(&workspace.v1));
+    ecx->ptr_val = workspace.v1;
     // 		fstp		[workspace.xstep_0]			;	step_1
     fstp(x87_op_mem32(&workspace.xstep_0));
     // 		fstp		[workspace.xstep_1]			;
@@ -878,27 +667,30 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			fstp	real8 ptr d_p_x
     fstp(x87_op_mem64(d_p_x));
     // 			mov		esi,dword ptr s_p
-    mov(x86_op_reg(esi), x86_op_mem32(s_p));
+    esi->uint_val = *s_p;
     // 			mov		edi,dword ptr d_p_x
-    mov(x86_op_reg(edi), x86_op_mem32(d_p_x));
+    edi->uint_val = *d_p_x;
     // 			fstp	real8 ptr s_p	;
     fstp(x87_op_mem64(s_p));
     // 			fstp	real8 ptr d_p_x	;
     fstp(x87_op_mem64(d_p_x));
     // 			mov		dword ptr s_p+4,esi
     mov(x86_op_mem32(s_p + 1), x86_op_reg(esi));
+    *((uint32_t*)s_p + 1) = esi->uint_val;
     // 			mov		dword ptr d_p_x+4,edi
     mov(x86_op_mem32(d_p_x + 1), x86_op_reg(edi));
+    *((uint32_t*)d_p_x + 1) = edi->uint_val;
     // if unsigned
     if(is_unsigned) {
         // 	; Remap from -1 to 1 signed to 0 to 1 unsigned
         // 	;
         // 			mov		esi,dword ptr s_p
-        mov(x86_op_reg(esi), x86_op_mem32(s_p));
+        //mov(x86_op_reg(esi), x86_op_mem32(s_p));
+        esi->uint_val = *s_p;
         // 			xor		esi,080000000h
-        xor_(x86_op_reg(esi), x86_op_imm(0x080000000));
+        esi->uint_val ^= 0x080000000;
         // 			mov		dword ptr s_p,esi
-        mov(x86_op_mem32(s_p), x86_op_reg(esi));
+        *s_p = esi->uint_val;
         // endif
     }
 }
