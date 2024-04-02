@@ -24,175 +24,175 @@ void DRAW_ZT_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, i
 	MAKE_N_LOW_BIT_MASK(&mask,pow2);
 
 // 	mov ebp,workspace.&half&Count
-	ebp->uint_val = *halfCount;
+	ebp.uint_val = *halfCount;
 // 	mov edx,workspace.s_z
-	edx->uint_val = workspace.s_z;
+	edx.uint_val = workspace.s_z;
 
 // 	cmp ebp,0
 // 	jl done
-	if (ebp->int_val < 0) {
+	if (ebp.int_val < 0) {
 		goto done;
 	}
 
 // 	mov ebx,workspace.minorX
-	ebx->uint_val = *minorX;
+	ebx.uint_val = *minorX;
 // 	mov eax,workspace.s_u
-	eax->uint_val = workspace.s_u;
+	eax.uint_val = workspace.s_u;
 
 // 	mov ecx,workspace.xm
-	ecx->uint_val = workspace.xm;
+	ecx.uint_val = workspace.xm;
 // 	mov esi,workspace.s_v
-	esi->uint_val = workspace.s_v;
+	esi.uint_val = workspace.s_v;
 
 // 	mov workspace.c_u,eax
-	workspace.c_u = eax->uint_val;
+	workspace.c_u = eax.uint_val;
 // 	mov workspace.c_v,esi
-	workspace.c_v = esi->uint_val;
+	workspace.c_v = esi.uint_val;
 
 // 	mov edi,workspace.scanAddress
-	edi->uint_val = workspace.scanAddress;
+	edi.uint_val = workspace.scanAddress;
 // 	; unpaired instruction
 drawLine:
 // 	shr ebx,16
-	ebx->uint_val = ebx->uint_val >> 16;
+	ebx.uint_val = ebx.uint_val >> 16;
 // 	mov ebp,workspace.depthAddress
-	ebp->uint_val = workspace.depthAddress;
+	ebp.uint_val = workspace.depthAddress;
 
 // 	shr ecx,16
-	ecx->uint_val >>= 16;
+	ecx.uint_val >>= 16;
 // 	add edi,ebx
-	edi->uint_val += ebx->uint_val;
+	edi.uint_val += ebx.uint_val;
 
 // 	ror edx,16
-	int16_t tmp = edx->short_val[0];
-	edx->short_val[0] = edx->short_val[1];
-	edx->short_val[1] = tmp;
+	int16_t tmp = edx.short_val[0];
+	edx.short_val[0] = edx.short_val[1];
+	edx.short_val[1] = tmp;
 
 // 	lea ebp,[ebp+2*ebx]
-	ebp->uint_val += ebx->uint_val * 2;
+	ebp.uint_val += ebx.uint_val * 2;
 
 // 	sub ecx,ebx
-	ecx->uint_val -= ebx->uint_val;
+	ecx.uint_val -= ebx.uint_val;
 // 	jg_d lineDrawn,direction
 	if(direction == DRAW_LR) {
-		if (ecx->int_val > 0) {
+		if (ecx.int_val > 0) {
 			goto lineDrawn;
 		}
 	} else {
-		if (ecx->int_val < 0) {
+		if (ecx.int_val < 0) {
 			goto lineDrawn;
 		}
 	}
 
 drawPixel:
 // 	shr esi,16-pow2
-	esi->uint_val >>= (16 - pow2);
+	esi.uint_val >>= (16 - pow2);
 // 	mov bl,[ebp+2*ecx]
-	ebx->uint_val = ((uint16_t *)work.depth.base)[ebp->uint_val / 2 + ecx->int_val];
+	ebx.uint_val = ((uint16_t *)work.depth.base)[ebp.uint_val / 2 + ecx.int_val];
 
 // 	shr eax,16
-	eax->uint_val >>= 16;
+	eax.uint_val >>= 16;
 // 	and esi,mask shl pow2
-	esi->uint_val &= (mask << pow2);
+	esi.uint_val &= (mask << pow2);
 
 // 	and eax,mask
-	eax->uint_val &= mask;
+	eax.uint_val &= mask;
 // 	mov bh,[ebp+2*ecx+1]
 
 // 	or eax,esi
-	eax->uint_val |= esi->uint_val;
+	eax.uint_val |= esi.uint_val;
 // 	mov esi,work.texture.base
-	esi->uint_val = WORK_TEXTURE_BASE;
+	esi.uint_val = WORK_TEXTURE_BASE;
 
 // 	cmp dx,bx ;two cycles
 // 	ja noPlot
-    if(edx->short_val[0] > ebx->short_val[0]) {
+    if(edx.short_val[0] > ebx.short_val[0]) {
         goto noPlot;
     }
 
 
 // 	mov al,[esi+eax]
-	eax->uint_val = ((uint8_t *)work.texture.base)[esi->uint_val + eax->uint_val];
+	eax.uint_val = ((uint8_t *)work.texture.base)[esi.uint_val + eax.uint_val];
 
 // 	test al,al
 // 	jz noPlot
-	if(eax->uint_val == 0) {
+	if(eax.uint_val == 0) {
         goto noPlot;
     }
 
 // 	mov [ebp+2*ecx],dl
-	((uint16_t *)work.depth.base)[ebp->uint_val / 2 + ecx->int_val] = edx->short_val[0]; // *(uint16_t *)&edx->uint_val;
+	((uint16_t *)work.depth.base)[ebp.uint_val / 2 + ecx.int_val] = edx.short_val[0]; // *(uint16_t *)&edx.uint_val;
 // 	mov [edi+ecx],al
 // 	mov [ebp+2*ecx+1],dh
-	((uint8_t *)work.colour.base)[edi->uint_val + ecx->uint_val] = eax->bytes[0];
+	((uint8_t *)work.colour.base)[edi.uint_val + ecx.uint_val] = eax.bytes[0];
 
 noPlot:
 // 	mov ebx,workspace.d_z_x
-	ebx->uint_val = workspace.d_z_x;
+	ebx.uint_val = workspace.d_z_x;
 
 	cf = 0;
 // 	add_d edx,ebx,direction
 	if (direction == DRAW_LR) {
-		edx->uint_val += ebx->uint_val;
-		if(edx->uint_val < ebx->uint_val) {
+		edx.uint_val += ebx.uint_val;
+		if(edx.uint_val < ebx.uint_val) {
             cf = 1;
         }
 	} else {
-		if(ebx->uint_val > edx->uint_val) {
+		if(ebx.uint_val > edx.uint_val) {
             cf = 1;
         }
-		edx->uint_val -= ebx->uint_val;
+		edx.uint_val -= ebx.uint_val;
 	}
 // 	mov esi,workspace.c_v
-	esi->uint_val = workspace.c_v;
+	esi.uint_val = workspace.c_v;
 
 // 	adc_d edx,0,direction
 	if (direction == DRAW_LR) {
 		//adc(x86_op_reg(edx), x86_op_imm(0));
-		edx->uint_val += cf;
+		edx.uint_val += cf;
 	} else {
 		//sbb(x86_op_reg(edx), x86_op_imm(0));
-		edx->uint_val -= cf;
+		edx.uint_val -= cf;
 	}
 // 	mov ebx,workspace.d_v_x
-	ebx->uint_val = workspace.d_v_x;
+	ebx.uint_val = workspace.d_v_x;
 
 // 	add_d esi,ebx,direction
 	if (direction == DRAW_LR) {
-		esi->uint_val += ebx->uint_val;
+		esi.uint_val += ebx.uint_val;
 	} else {
-		esi->uint_val -= ebx->uint_val;
+		esi.uint_val -= ebx.uint_val;
 	}
 // 	mov eax,workspace.c_u
-	eax->uint_val = workspace.c_u;
+	eax.uint_val = workspace.c_u;
 
 // 	mov workspace.c_v,esi
-	workspace.c_v = esi->uint_val;
+	workspace.c_v = esi.uint_val;
 // 	mov ebx,workspace.d_u_x
-	ebx->uint_val = workspace.d_u_x;
+	ebx.uint_val = workspace.d_u_x;
 
 // 	add_d eax,ebx,direction
 	if (direction == DRAW_LR) {
-		eax->uint_val += ebx->uint_val;
+		eax.uint_val += ebx.uint_val;
 	} else {
-		eax->uint_val -= ebx->uint_val;
+		eax.uint_val -= ebx.uint_val;
 	}
 // 	inc_d ecx,direction
 	if (direction == DRAW_LR) {
-		ecx->uint_val++;
+		ecx.uint_val++;
 	} else {
-		ecx->uint_val--;
+		ecx.uint_val--;
 	}
 
 // 	mov workspace.c_u,eax
-	workspace.c_u = eax->uint_val;
+	workspace.c_u = eax.uint_val;
 // 	jle_d drawPixel,direction
 	if (direction == DRAW_LR) {
-		if (ecx->int_val <= 0) {
+		if (ecx.int_val <= 0) {
 			goto drawPixel;
 		}
 	} else {
-		if (ecx->int_val >= 0) {
+		if (ecx.int_val >= 0) {
 			goto drawPixel;
 		}
 	}
@@ -201,103 +201,103 @@ lineDrawn:
 // ;perform per line updates
 
 // 	mov ebp,workspace.xm_f
-	ebp->uint_val = workspace.xm_f;
+	ebp.uint_val = workspace.xm_f;
 // 	mov edi,workspace.d_xm_f
-	edi->uint_val = workspace.d_xm_f;
+	edi.uint_val = workspace.d_xm_f;
 
 // 	add ebp,edi
-	ebp->uint_val += edi->uint_val;
-	cf = ebp->uint_val < edi->uint_val;
+	ebp.uint_val += edi.uint_val;
+	cf = ebp.uint_val < edi.uint_val;
 
 // 	mov eax,workspace.s_u
-	eax->uint_val = workspace.s_u;
+	eax.uint_val = workspace.s_u;
 
 // 	sbb edx,edx
-	edx->uint_val = edx->uint_val - (edx->uint_val + cf);
+	edx.uint_val = edx.uint_val - (edx.uint_val + cf);
 // 	mov workspace.xm_f,ebp
-	workspace.xm_f = ebp->uint_val;
+	workspace.xm_f = ebp.uint_val;
 
 // 	mov ebp,workspace.depthAddress
-	ebp->uint_val = workspace.depthAddress;
+	ebp.uint_val = workspace.depthAddress;
 // 	mov ecx,work.depth.stride_b
-	ecx->uint_val = work.depth.stride_b;
+	ecx.uint_val = work.depth.stride_b;
 
 // 	add ebp,ecx
-	ebp->uint_val += ecx->uint_val;
+	ebp.uint_val += ecx.uint_val;
 // 	mov ecx,[workspace.d_u_y_0+edx*8]
-	ecx->uint_val = ((uint32_t *)&workspace.d_u_y_0)[2 * edx->int_val];
+	ecx.uint_val = ((uint32_t *)&workspace.d_u_y_0)[2 * edx.int_val];
 
 // 	mov workspace.depthAddress,ebp
-	workspace.depthAddress = ebp->uint_val;
+	workspace.depthAddress = ebp.uint_val;
 // 	mov esi,workspace.s_v
-	esi->uint_val = workspace.s_v;
+	esi.uint_val = workspace.s_v;
 
 // 	add eax,ecx
-	eax->uint_val += ecx->uint_val;
+	eax.uint_val += ecx.uint_val;
 // 	mov ebx,[workspace.d_v_y_0+edx*8]
-	ebx->uint_val = ((uint32_t *)&workspace.d_v_y_0)[2 * edx->int_val];
+	ebx.uint_val = ((uint32_t *)&workspace.d_v_y_0)[2 * edx.int_val];
 
 // 	mov workspace.s_u,eax
-	workspace.s_u = eax->uint_val;
+	workspace.s_u = eax.uint_val;
 // 	add esi,ebx
-	esi->uint_val += ebx->uint_val;
+	esi.uint_val += ebx.uint_val;
 
 // 	mov workspace.c_u,eax
-	workspace.c_u = eax->uint_val;
+	workspace.c_u = eax.uint_val;
 // 	mov workspace.c_v,esi
-	workspace.c_v = esi->uint_val;
+	workspace.c_v = esi.uint_val;
 
 // 	mov ebp,workspace.s_z
-	ebp->uint_val = workspace.s_z;
+	ebp.uint_val = workspace.s_z;
 // 	mov edx,[workspace.d_z_y_0+edx*8]
-	edx->uint_val = ((uint32_t *)&workspace.d_z_y_0)[2 * edx->int_val];
+	edx.uint_val = ((uint32_t *)&workspace.d_z_y_0)[2 * edx.int_val];
 
 // 	mov workspace.s_v,esi
-	workspace.s_v = esi->uint_val;
+	workspace.s_v = esi.uint_val;
 // 	add edx,ebp
-	edx->uint_val += ebp->uint_val;
+	edx.uint_val += ebp.uint_val;
 
 // 	mov workspace.s_z,edx
-	workspace.s_z = edx->uint_val;
+	workspace.s_z = edx.uint_val;
 // 	mov edi,workspace.scanAddress
-	edi->uint_val = workspace.scanAddress;
+	edi.uint_val = workspace.scanAddress;
 
 // 	mov ebx,work.colour.stride_b
-	ebx->uint_val = work.colour.stride_b;
+	ebx.uint_val = work.colour.stride_b;
 // 	mov ecx,workspace.d_&minorX
-	ecx->uint_val = *d_minorX;
+	ecx.uint_val = *d_minorX;
 
 // 	add edi,ebx
-	edi->uint_val += ebx->uint_val;
+	edi.uint_val += ebx.uint_val;
 // 	mov ebx,workspace.minorX
-	ebx->uint_val = *minorX;
+	ebx.uint_val = *minorX;
 
 // 	mov workspace.scanAddress,edi
-	workspace.scanAddress = edi->uint_val;
+	workspace.scanAddress = edi.uint_val;
 // 	add ebx,ecx
-	ebx->uint_val += ecx->uint_val;
+	ebx.uint_val += ecx.uint_val;
 
 // 	mov workspace.minorX,ebx
-	*minorX = ebx->uint_val;
+	*minorX = ebx.uint_val;
 // 	mov ecx,workspace.xm
-	ecx->uint_val = workspace.xm;
+	ecx.uint_val = workspace.xm;
 
 // 	mov ebp,workspace.d_xm
-	ebp->uint_val = workspace.d_xm;
+	ebp.uint_val = workspace.d_xm;
 // 	;unpaired instruction
 
 // 	add ecx,ebp
-	ecx->uint_val += ebp->uint_val;
+	ecx.uint_val += ebp.uint_val;
 // 	mov ebp,workspace.&half&Count
-	ebp->uint_val = *halfCount;
+	ebp.uint_val = *halfCount;
 
 // 	dec ebp
-	ebp->uint_val--;
+	ebp.uint_val--;
 // 	mov workspace.xm,ecx
-	workspace.xm = ecx->uint_val;
+	workspace.xm = ecx.uint_val;
 
 // 	mov workspace.&half&Count,ebp
-	*halfCount = ebp->uint_val;
+	*halfCount = ebp.uint_val;
 // 	jge drawLine
 	if (*halfCount >= 0) {
 		goto drawLine;
@@ -369,9 +369,9 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 	faddp(x87_op_i(2));
 // 	;x-stall
 // 	mov eax,workspace.xm
-    eax->uint_val = workspace.xm;
+    eax.uint_val = workspace.xm;
 // 	mov ebx,workspace.d_xm
-	ebx->uint_val = workspace.d_xm;
+	ebx.uint_val = workspace.d_xm;
 
 // 	faddp st(2),st					;	ca			da
 	faddp(x87_op_i(2));
@@ -379,14 +379,14 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 // 	;x-stall
 
 // 	shl eax,16
-	eax->uint_val <<= 16;
+	eax.uint_val <<= 16;
 // 	mov edx,workspace.d_z_x
-	edx->uint_val = workspace.d_z_x;
+	edx.uint_val = workspace.d_z_x;
 
 // 	shl ebx,16
-	ebx->uint_val <<= 16;
+	ebx.uint_val <<= 16;
 // 	mov workspace.xm_f,eax
-	workspace.xm_f = eax->uint_val;
+	workspace.xm_f = eax.uint_val;
 
 // 	fstp qword ptr workspace.scanAddress
 	fstp(x87_op_mem64(&workspace.scanAddress));
@@ -394,25 +394,25 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 	fstp(x87_op_mem64(&workspace.depthAddress));
 
 // 	mov workspace.d_xm_f,ebx
-	workspace.d_xm_f = ebx->uint_val;
+	workspace.d_xm_f = ebx.uint_val;
 // 	cmp edx,80000000
-	cmp(x86_op_reg(edx), x86_op_imm(80000000));
+	cmp(x86_op_reg(&edx), x86_op_imm(80000000));
 
 // 	adc edx,-1
-	adc(x86_op_reg(edx), x86_op_imm(-1));
+	adc(x86_op_reg(&edx), x86_op_imm(-1));
 
 // 	mov	eax,workspace.flip
-	eax->uint_val = workspace.flip;
+	eax.uint_val = workspace.flip;
 
 // 	ror edx,16
-	int16_t tmp = edx->short_val[0];
-	edx->short_val[0] = edx->short_val[1];
-	edx->short_val[1] = tmp;
+	int16_t tmp = edx.short_val[0];
+	edx.short_val[0] = edx.short_val[1];
+	edx.short_val[1] = tmp;
 
 // 	test eax,eax
 
 // 	mov workspace.d_z_x,edx
-	workspace.d_z_x = edx->uint_val;
+	workspace.d_z_x = edx.uint_val;
 // 	jnz	drawRL
 
 // 	DRAW_ZT_I8_D16_POW2 x1,DRAW_LR,top,pow2
@@ -424,7 +424,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 // 	DRAW_ZT_I8_D16_POW2 x2,DRAW_RL,bottom,pow2
 // 	ret
 // eax is 0, ZF=1
-	if (eax->uint_val == 0) {
+	if (eax.uint_val == 0) {
 		DRAW_ZT_I8_D16_POW2 (&workspace.x1, &workspace.d_x1, DRAW_LR,&workspace.topCount,pow2);
 		DRAW_ZT_I8_D16_POW2 (&workspace.x2, &workspace.d_x2, DRAW_LR,&workspace.bottomCount,pow2);
 	} else {

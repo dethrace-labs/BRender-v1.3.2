@@ -61,11 +61,10 @@ void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 
 int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
-    x86emu_init();
 
-    eax->ptr_val = v0;
-    ecx->ptr_val = v1;
-    edx->ptr_val = v2;
+    eax.ptr_val = v0;
+    ecx.ptr_val = v1;
+    edx.ptr_val = v2;
     // local count_cont,exit,top_zero,bottom_zero,empty_triangle
 
     // assume eax: ptr brp_vertex, /*ebx: ptr brp_vertex,*/ ecx: ptr brp_vertex, edx: ptr brp_vertex
@@ -77,19 +76,19 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     //;	0		1		2		3		4		5		6		7
 
     // fld			[edx].comp_f[C_SX*4]		;	x2
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SX])); //	x2
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SX])); //	x2
     // fsub		[eax].comp_f[C_SX*4]		;	dx2
-    fsub(((brp_vertex *)eax->ptr_val)->comp_f[C_SX]); //	dx2
+    fsub(((brp_vertex *)eax.ptr_val)->comp_f[C_SX]); //	dx2
     // fld			[ecx].comp_f[C_SX*4]		;	x1		dx2
-    fld(x87_op_f(((brp_vertex *)ecx->ptr_val)->comp_f[C_SX])); //	x1		dx2
+    fld(x87_op_f(((brp_vertex *)ecx.ptr_val)->comp_f[C_SX])); //	x1		dx2
     // fsub		[eax].comp_f[C_SX*4]		;	dx1		dx2
-    fsub(((brp_vertex *)eax->ptr_val)->comp_f[C_SX]); //	dx1		dx2
+    fsub(((brp_vertex *)eax.ptr_val)->comp_f[C_SX]); //	dx1		dx2
     // fld			[edx].comp_f[C_SY*4]		;	y2		dx1		dx2
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SY])); //	y2		dx1		dx2
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SY])); //	y2		dx1		dx2
     // fsub		[eax].comp_f[C_SY*4]		;	dy2		dx1		dx2
-    fsub(((brp_vertex *)eax->ptr_val)->comp_f[C_SY]);          //	dy2		dx1		dx2
-    fld(x87_op_f(((brp_vertex *)ecx->ptr_val)->comp_f[C_SY])); //	y1		dy2		dx1		dx2
-    fsub(((brp_vertex *)eax->ptr_val)->comp_f[C_SY]);          //	dy1		dy2		dx1		dx2
+    fsub(((brp_vertex *)eax.ptr_val)->comp_f[C_SY]);          //	dy2		dx1		dx2
+    fld(x87_op_f(((brp_vertex *)ecx.ptr_val)->comp_f[C_SY])); //	y1		dy2		dx1		dx2
+    fsub(((brp_vertex *)eax.ptr_val)->comp_f[C_SY]);          //	dy1		dy2		dx1		dx2
 
     fld(x87_op_i(2)); //	dx1		dy1		dy2		dx1		dx2
 
@@ -98,75 +97,75 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     fld(x87_op_i(4));                 //	dx2		dx1*dy2	dy1		dy2		dx1		dx2
     fmul_2(x87_op_i(0), x87_op_i(2)); //	dx2*dy1	dx1*dy2	dy1		dy2		dx1		dx2
 
-    eax->float_val = ((brp_vertex *)eax->ptr_val)->comp_f[C_SY];
-    ecx->float_val = ((brp_vertex *)ecx->ptr_val)->comp_f[C_SY];
+    eax.float_val = ((brp_vertex *)eax.ptr_val)->comp_f[C_SY];
+    ecx.float_val = ((brp_vertex *)ecx.ptr_val)->comp_f[C_SY];
 
     fsubp_2(x87_op_i(1), x87_op_i(0)); //	2area	dy1		dy2		dx1		dx2
 
-    ebx->uint_val ^= ebx->uint_val;
-    cmp(x86_op_reg(ecx), x86_op_reg(eax));
+    ebx.uint_val ^= ebx.uint_val;
+    cmp(x86_op_reg(&ecx), x86_op_reg(&eax));
 
-    rcl(x86_op_reg(ebx), 1);
-    edx->float_val = ((brp_vertex *)edx->ptr_val)->comp_f[C_SY];
+    rcl(x86_op_reg(&ebx), 1);
+    edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
 
     fdivr(fp_one); //	1/2area	dy1		dy2		dx1		dx2
 
-    cmp(x86_op_reg(edx), x86_op_reg(eax));
+    cmp(x86_op_reg(&edx), x86_op_reg(&eax));
 
-    rcl(x86_op_reg(ebx), 1);
-    cmp(x86_op_reg(edx), x86_op_reg(ecx));
+    rcl(x86_op_reg(&ebx), 1);
+    cmp(x86_op_reg(&edx), x86_op_reg(&ecx));
 
-    rcl(x86_op_reg(ebx), 1); // ebx now has 3 bit number characterising the order of the vertices.
+    rcl(x86_op_reg(&ebx), 1); // ebx now has 3 bit number characterising the order of the vertices.
 
-    eax->uint_val = sort_table_0[ebx->uint_val];
-    edx->uint_val = sort_table_2[ebx->uint_val];
-    esi->uint_val = flip_table[ebx->uint_val];
-    ebx->uint_val = sort_table_1[ebx->uint_val];
+    eax.uint_val = sort_table_0[ebx.uint_val];
+    edx.uint_val = sort_table_2[ebx.uint_val];
+    esi.uint_val = flip_table[ebx.uint_val];
+    ebx.uint_val = sort_table_1[ebx.uint_val];
 
     // Load eax,ebx,edx with pointers to the three vertices in vertical order
-    eax->ptr_val = workspace.v0_array[eax->uint_val];
-    edx->ptr_val = workspace.v0_array[edx->uint_val];
-    ebx->ptr_val = workspace.v0_array[ebx->uint_val];
-    workspace.flip = esi->uint_val;
+    eax.ptr_val = workspace.v0_array[eax.uint_val];
+    edx.ptr_val = workspace.v0_array[edx.uint_val];
+    ebx.ptr_val = workspace.v0_array[ebx.uint_val];
+    workspace.flip = esi.uint_val;
 
     // Work out Y extents of triangle
     // ; Convert float to int using integer instructions, because FPU is in use doing division
-    ebp->float_val = ((brp_vertex *)eax->ptr_val)->comp_f[C_SY];
-    ecx->uint_val = EXPONENT_OFFSET;
-    ecx->uint_val -= ebp->uint_val;
-    ebp->uint_val &= MASK_MANTISSA;
-    ecx->uint_val >>= 23;
-    ebp->uint_val |= IMPLICIT_ONE;
-    ebp->uint_val >>= (ecx->uint_val & 0xff);
-    esi->float_val = ((brp_vertex *)ebx->ptr_val)->comp_f[C_SY];
-    ecx->uint_val = EXPONENT_OFFSET;
-    ecx->uint_val -= esi->uint_val;
-    esi->uint_val &= MASK_MANTISSA;
-    ecx->uint_val >>= 23;
-    esi->uint_val |= IMPLICIT_ONE;
+    ebp.float_val = ((brp_vertex *)eax.ptr_val)->comp_f[C_SY];
+    ecx.uint_val = EXPONENT_OFFSET;
+    ecx.uint_val -= ebp.uint_val;
+    ebp.uint_val &= MASK_MANTISSA;
+    ecx.uint_val >>= 23;
+    ebp.uint_val |= IMPLICIT_ONE;
+    ebp.uint_val >>= (ecx.uint_val & 0xff);
+    esi.float_val = ((brp_vertex *)ebx.ptr_val)->comp_f[C_SY];
+    ecx.uint_val = EXPONENT_OFFSET;
+    ecx.uint_val -= esi.uint_val;
+    esi.uint_val &= MASK_MANTISSA;
+    ecx.uint_val >>= 23;
+    esi.uint_val |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    esi->uint_val >>= (ecx->uint_val & 0xff);
+    esi.uint_val >>= (ecx.uint_val & 0xff);
 
-    edi->float_val = ((brp_vertex *)edx->ptr_val)->comp_f[C_SY];
-    ecx->uint_val = EXPONENT_OFFSET;
-    ecx->uint_val -= edi->uint_val;
-    edi->uint_val &= MASK_MANTISSA;
-    ecx->uint_val >>= 23;
-    edi->uint_val |= IMPLICIT_ONE;
+    edi.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
+    ecx.uint_val = EXPONENT_OFFSET;
+    ecx.uint_val -= edi.uint_val;
+    edi.uint_val &= MASK_MANTISSA;
+    ecx.uint_val >>= 23;
+    edi.uint_val |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    edi->uint_val >>= (ecx->uint_val & 0xff);
+    edi.uint_val >>= (ecx.uint_val & 0xff);
 
     // Catch special cases of empty top or bottom trapezoids
 
     // cmp(ebp, esi);
     // je(top_zero);
-    if(ebp->uint_val == esi->uint_val) {
+    if(ebp.uint_val == esi.uint_val) {
         goto top_zero;
     }
 
     // cmp(esi, edi);
     // je(bottom_zero);
-    if(esi->uint_val == edi->uint_val) {
+    if(esi.uint_val == edi.uint_val) {
         goto bottom_zero;
     }
 
@@ -174,18 +173,18 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 
     //	0		1		2		3		4		5		6		7
     fmul_2(x87_op_i(1), x87_op_i(0));                          //	1/2area	dy1*a	dy2		dx1		dx2
-    fld(x87_op_f(((brp_vertex *)ebx->ptr_val)->comp_f[C_SY])); //	sy2		1/2area	dy1*a	dy2		dx1		dx2
-    fsub((((brp_vertex *)eax->ptr_val)->comp_f[C_SY]));        //   dsy1	1/2area	dy1*a	dy2		dx1		dx2
-    fxch(3);                                                   //   dy2  	1/2area	dy1*a	dsy1	dx1		dx2
+    fld(x87_op_f(((brp_vertex *)ebx.ptr_val)->comp_f[C_SY])); //	sy2		1/2area	dy1*a	dy2		dx1		dx2
+    fsub((((brp_vertex *)eax.ptr_val)->comp_f[C_SY]));        //   dsy1	1/2area	dy1*a	dy2		dx1		dx2
+    FXCH(3);                                                   //   dy2  	1/2area	dy1*a	dsy1	dx1		dx2
     fmul_2(x87_op_i(0), x87_op_i(1));                          //	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SY])); //   sy3	 dy2*a  	1/2area	dy1*a	dsy1	dx1 dx2
-    fsub((((brp_vertex *)ebx->ptr_val)->comp_f[C_SY]));        //   dsy2	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SY])); //   sy3	 dy2*a  	1/2area	dy1*a	dsy1	dx1 dx2
+    fsub((((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]));        //   dsy2	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
     fxch(5);                                                   //   dx1	  dy2*a 	1/2area	dy1*a	dsy1	dsy2	dx2
 
 count_cont:
     fmul_2(x87_op_i(0), x87_op_i(2));                          //	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dx2
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SY])); //   sy3	 dx1*a   dy2*a  	1/2area	dy1*a	dsy1 dsy2 dx2
-    fsub(((brp_vertex *)eax->ptr_val)->comp_f[C_SY]);          //   dsy3	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dx2
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SY])); //   sy3	 dx1*a   dy2*a  	1/2area	dy1*a	dsy1 dsy2 dx2
+    fsub(((brp_vertex *)eax.ptr_val)->comp_f[C_SY]);          //   dsy3	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dx2
     fxch(7);                                                   //   dx2		dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
     fmul_2(x87_op_i(0), x87_op_i(3));                          //   dx2*a	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
     fxch(3);                                                   //   1/2area	dx1*a   dy2*a  	dx2*a	dy1*a	dsy1	dsy2	dsy3
@@ -210,18 +209,18 @@ count_cont:
     // 			fmul		st,st(2)					;	dy2*dy3	dy1		dy2		dy3
     fmul_2(x87_op_i(0), x87_op_i(2));
     // 			fld			[ebx].comp_f[C_SX*4]		;	x2		dy2*dy3	dy1		dy2		dy3
-    fld(x87_op_f(((brp_vertex *)ebx->ptr_val)->comp_f[C_SX]));
+    fld(x87_op_f(((brp_vertex *)ebx.ptr_val)->comp_f[C_SX]));
     // 			fsub		[eax].comp_f[C_SX*4]		;	dx1		dy2*dy3	dy1		dy2		dy3
-    fsub((((brp_vertex *)eax->ptr_val)->comp_f[C_SX]));
+    fsub((((brp_vertex *)eax.ptr_val)->comp_f[C_SX]));
     // 			fld			st(1)						;	dy2*dy3 dx1		dy2*dy3	dy1		dy2		dy3
     fld(x87_op_i(1));
     // 			fmul		st,st(3)					;	dy123	dx1		dy2*dy3	dy1		dy2		dy3
     fmul_2(x87_op_i(0), x87_op_i(3));
 
     // 			fld			[edx].comp_f[C_SX*4]		;	x3		dy123	dx1		dy2*dy3	dy1		dy2		dy3
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SX]));
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SX]));
     // 			fsub		[ebx].comp_f[C_SX*4]		;	dx2		dy123	dx1		dy2*dy3	dy1		dy2		dy3
-    fsub((((brp_vertex *)ebx->ptr_val)->comp_f[C_SX]));
+    fsub((((brp_vertex *)ebx.ptr_val)->comp_f[C_SX]));
     // 			 fxch		 st(2)						;	dx1		dy123	dx2		dy2*dy3	dy1		dy2		dy3
     fxch(2);
     // 			fld			fp_one						;	1.0		dx1		dy123	dx2		dy2*dy3	dy1		dy2 dy3
@@ -232,39 +231,39 @@ count_cont:
     // ; Generate counts
     // ;
     // 		inc			ebp
-    ebp->uint_val++;
+    ebp.uint_val++;
     // 		mov			ecx,esi
-    ecx->uint_val = esi->uint_val;
+    ecx.uint_val = esi.uint_val;
     // 		sub			ecx,ebp				;  count_t = (y_m-y_t)-1
-    ecx->uint_val -= ebp->uint_val;
+    ecx.uint_val -= ebp.uint_val;
     // 		mov			[workspace.t_y],ebp			; save for X intercept calcs
-    workspace.t_y = ebp->uint_val;
+    workspace.t_y = ebp.uint_val;
     // 		mov			[workspace.topCount],ecx
-    workspace.topCount = ecx->int_val;
+    workspace.topCount = ecx.int_val;
     // 		inc			esi
-    esi->uint_val++;
+    esi.uint_val++;
     // 		sub			edi,esi				;  count_b = (y_b-y_m)-1
-    edi->uint_val -= esi->uint_val;
+    edi.uint_val -= esi.uint_val;
     // 		mov			m_y,esi				; save for X intercept calcs
-    m_y = esi->uint_val;
+    m_y = esi.uint_val;
     // 		mov			[workspace].bottomCount,edi
-    workspace.bottomCount = edi->int_val;
+    workspace.bottomCount = edi.int_val;
     // 		mov			esi,[workspace.flip]
-    esi->uint_val = workspace.flip;
+    esi.uint_val = workspace.flip;
 
     //     	; Generate LR/RL flag into esi (used to index convertion numbers below)
     // 	;
     // 			mov			edi,workspace.iarea
-    edi->uint_val = workspace.iarea;
+    edi.uint_val = workspace.iarea;
     // ;V
     // 			xor			esi,edi			; Build LR flag in bit 31
-    esi->uint_val ^= edi->uint_val;
+    esi.uint_val ^= edi.uint_val;
     // ;V
     // 			shr			esi,31			; move down to bit 0
-    esi->uint_val >>= 31;
+    esi.uint_val >>= 31;
     // ;V
     // 			mov			[workspace.flip],esi
-    workspace.flip = esi->uint_val;
+    workspace.flip = esi.uint_val;
 
     // ;XXX Setup screen pointers and strides
     // ;
@@ -282,7 +281,7 @@ count_cont:
     // 		fmulp		st(3),st					;	R		dx2		XYY		dy1		dy2		dy3
     fmulp_2(x87_op_i(3), x87_op_i(0));
     // 		fld			[edx].comp_f[C_SX*4]		;	x3		R		dx2		XYY		dy1		dy2		dy3
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SX]));
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SX]));
     // 		 fxch		st(3)						;	XYY		R		dx2		x3		dy1		dy2		dy3
     fxch(3);
     // 		fmul		st,st(1)					;	XYY*R	R		dx2		x3		dy1		dy2		dy3
@@ -290,7 +289,7 @@ count_cont:
     // 		 fxch		st(3)						;	x3		R		dx2		XYY*R	dy1		dy2		dy3
     fxch(3);
     // 		fsub		[eax].comp_f[C_SX*4]		;	dx3		R		dx2		XYY*R	dy1		dy2		dy3
-    fsub((((brp_vertex *)eax->ptr_val)->comp_f[C_SX]));
+    fsub((((brp_vertex *)eax.ptr_val)->comp_f[C_SX]));
     // 		 fxch		st(1)						;	R		dx3		dx2		XYY*R	dy1		dy2		dy3
     fxch(1);
     // 		fmulp		st(4),st					;	dx3		dx2		XYY*R	dy1*R	dy2		dy3
@@ -312,7 +311,7 @@ count_cont:
     // 		 fxch		st(1)			            ;	m_y		XYY*R	t_y		dy1*R	dy2*dx3	dx2*dy3
     fxch(1);
     // 		fsub		[ebx].comp_f[C_SY*4]		;	m_dy	XYY*R	t_y		dy1*R	dy2*dx3	dx2*dy3
-    fsub((((brp_vertex *)ebx->ptr_val)->comp_f[C_SY]));
+    fsub((((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]));
     // 		 fxch		st(3)						;	dy1*R	XYY*R	t_y		m_dy	dy2*dx3	dx2*dy3
     fxch(3);
     // 		fmul		st(4),st		            ;	dy1*R	XYY*R	t_y		m_dy	YYX*R	dx2*dy3
@@ -320,7 +319,7 @@ count_cont:
     // 		 fxch		st(2)						;	t_y		XYY*R	dy1*R	m_dy	YYX*R	dx2*dy3
     fxch(2);
     // 		fsub		[eax].comp_f[C_SY*4]		;	t_dy	XYY*R	dy1*R	m_dy	YYX*R	dx2*dy3
-    fsub((((brp_vertex *)eax->ptr_val)->comp_f[C_SY]));
+    fsub((((brp_vertex *)eax.ptr_val)->comp_f[C_SY]));
     // 		 fxch		st(2)						;	dy1*R	XYY*R	t_dy	m_dy	YYX*R	dx2*dy3
     fxch(2);
     // 		fmulp		st(5),st		            ;	XYY*R	t_dy	m_dy	YYX*R	YXY*R
@@ -351,7 +350,7 @@ count_cont:
     // 		 fxch		st(2)			            ;	m_dy*g2	t_dy	t_dy*g1	g1		gm		g2
     fxch(2);
     // 		fadd		[ebx].comp_f[C_SX*4]		;	x_2		t_dy	t_dy*g1	g1		gm		g2
-    fadd(x87_op_f(((brp_vertex *)ebx->ptr_val)->comp_f[C_SX]));
+    fadd(x87_op_f(((brp_vertex *)ebx.ptr_val)->comp_f[C_SX]));
     // 		 fxch		st(1)						;	t_dy	x_2		t_dy*g1	g1		gm		g2
     fxch(1);
     // 		fmul		st,st(4)		            ;	t_dy*gm	x_2		t_dy*g1	g1		gm		g2
@@ -359,7 +358,7 @@ count_cont:
     // 		 fxch		st(2)						;	t_dy*g1	x_2		t_dy*gm	g1		gm		g2
     fxch(2);
     // 		fadd		[eax].comp_f[C_SX*4]		;	x_1		x_2		t_dy*gm	g1		gm		g2
-    fadd(x87_op_f(((brp_vertex *)eax->ptr_val)->comp_f[C_SX]));
+    fadd(x87_op_f(((brp_vertex *)eax.ptr_val)->comp_f[C_SX]));
     // 		 fxch		st(3)						;	g1		x_2		t_dy*gm	x_1		gm		g2
     fxch(3);
     // 		fadd		fp_conv_d16		            ;	g1+C	x_2		t_dy*gm	x_1		gm		g2
@@ -367,7 +366,7 @@ count_cont:
     // 		 fxch		st(2)						;	t_dy*gm	x_2		g1+C	x_1		gm		g2
     fxch(2);
     // 		fadd		[eax].comp_f[C_SX*4]		;	x_m		x_2		g1+C	x_1		gm		g2
-    fadd(x87_op_f(((brp_vertex *)eax->ptr_val)->comp_f[C_SX]));
+    fadd(x87_op_f(((brp_vertex *)eax.ptr_val)->comp_f[C_SX]));
     // 		 fxch		st(4)						;	gm		x_2		g1+C	x_1		x_m		g2
     fxch(4);
     // 		fadd		fp_conv_d16		            ;	gm+C	x_2		g1+C	x_1		x_m		g2
@@ -375,8 +374,8 @@ count_cont:
     // 		 fxch		st(1)						;	x_2		gm+C	g1+C	x_1		x_m		g2
     fxch(1);
     // 		fadd	fconv_d16_12[esi*8]	            ;	x_2+C	gm+C	g1+C	x_1		x_m		g2
-    assert(esi->uint_val >= 0 && esi->uint_val <= 1);
-    fadd(x87_op_mem64(&fconv_d16_12[esi->uint_val]));
+    assert(esi.uint_val >= 0 && esi.uint_val <= 1);
+    fadd(x87_op_mem64(&fconv_d16_12[esi.uint_val]));
     // 		 fxch		st(5)						;	g2		gm+C	g1+C	x_1		x_m		x_2+C
     fxch(5);
     // 		fadd		fp_conv_d16		              ;	g2+C	gm+C	g1+C	x_1		x_m		x_2+C
@@ -390,54 +389,54 @@ count_cont:
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
     fstp(x87_op_mem64(&workspace.x2));
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
-    fadd(x87_op_mem64(&fconv_d16_12[esi->uint_val]));
+    fadd(x87_op_mem64(&fconv_d16_12[esi.uint_val]));
     // 		fxch		st(1)						;	x_m		x_1+C	x_2+C
     fxch(1);
     // 		fadd	fconv_d16_m[esi*8]				;	x_m+C	x_1+C	x_2+C
-    fadd(x87_op_mem64(&fconv_d16_m[esi->uint_val]));
+    fadd(x87_op_mem64(&fconv_d16_m[esi.uint_val]));
 
     // 	; Load deltas back in registers
     // 	;
     // 		mov			edx,[workspace].xm	; read fixed d_xm
-    edx->uint_val = workspace.xm;
+    edx.uint_val = workspace.xm;
     // 		mov			esi,[workspace].x1	; read fixed d_x1
-    esi->uint_val = workspace.x1;
+    esi.uint_val = workspace.x1;
     // 		mov			edi,[workspace].x2	; read fixed d_x2
-    edi->uint_val = workspace.x2;
+    edi.uint_val = workspace.x2;
     // 		mov		ebx,[workspace.v0]				; Start preparing for parmeter setup
-    ebx->ptr_val = workspace.v0;
+    ebx.ptr_val = workspace.v0;
     // 		fstp real8 ptr [workspace].xm			;	x_1+C	x_2+C
     fstp(x87_op_mem64(&workspace.xm));
     // 		fstp real8 ptr [workspace].x1			;	x_2+C
     fstp(x87_op_mem64(&workspace.x1));
 
     // 		mov			ecx,[workspace].xm
-    ecx->uint_val = workspace.xm;
+    ecx.uint_val = workspace.xm;
     // 		mov			[workspace].xm+4,edx
-    workspace.d_xm = edx->uint_val;
+    workspace.d_xm = edx.uint_val;
     // 		sar			ecx,16
-    sar(x86_op_reg(ecx), 16);
+    sar(x86_op_reg(&ecx), 16);
     // 		mov			[workspace].x1+4,esi
-    workspace.d_x1 = esi->uint_val;
+    workspace.d_x1 = esi.uint_val;
     // 		sar			edx,16			; get integer part of x delta down major edge
-    sar(x86_op_reg(edx), 16);
+    sar(x86_op_reg(&edx), 16);
     // 		mov			[workspace.t_dx],ecx
-    workspace.t_dx = ecx->uint_val;
+    workspace.t_dx = ecx.uint_val;
     // 		fild		[workspace.t_dx]			;	t_x		x_2+C
     fild(workspace.t_dx);
     // 	; Generate floating point versions of x delta and x delta+4
     // 	;
     // 		mov			[workspace.xstep_0],edx
-    workspace.xstep_0 = edx->uint_val;
+    workspace.xstep_0 = edx.uint_val;
     // 		inc edx
-    edx->uint_val++;
+    edx.uint_val++;
     // 		mov			[workspace.xstep_1],edx
-    workspace.xstep_1 = edx->uint_val;
+    workspace.xstep_1 = edx.uint_val;
     // 		mov			edx,[workspace.v2]				; Start preparing for parmeter setup
-    edx->ptr_val = workspace.v2;
+    edx.ptr_val = workspace.v2;
     // 												;	0		1		2		3		4		5		6		7
     // 		fsub		[eax].comp_f[C_SX*4]		;	t_dx	x_2+C
-    fsub((((brp_vertex *)eax->ptr_val)->comp_f[C_SX]));
+    fsub((((brp_vertex *)eax.ptr_val)->comp_f[C_SX]));
     // 		 fxch		st(1)						;	x_2+C	t_dx
     fxch(1);
     // 		fstp real8 ptr [workspace].x2			;	t_dx
@@ -452,9 +451,9 @@ count_cont:
     // 		fstp		[workspace.t_dx]			;	xstep_0	xstep_1
     fstp(x87_op_mem32(&workspace.t_dx));
     // 		mov			[workspace].x2+4,edi
-    workspace.d_x2 = edi->uint_val;
+    workspace.d_x2 = edi.uint_val;
     // 		mov		ecx,[workspace.v1]				; Start preparing for parmeter setup
-    ecx->ptr_val = workspace.v1;
+    ecx.ptr_val = workspace.v1;
     // 		fstp		[workspace.xstep_0]			;	step_1
     fstp(x87_op_mem32(&workspace.xstep_0));
     // 		fstp		[workspace.xstep_1]			;
@@ -468,7 +467,7 @@ count_cont:
 top_zero:
     // cmp			ebp,edi			; Check for completely empty triangle
     // je			empty_triangle
-    if(ebp->uint_val == edi->uint_val) {
+    if(ebp.uint_val == edi.uint_val) {
         goto empty_triangle;
     }
     // 										;	0		1		2		3		4		5		6		7
@@ -476,9 +475,9 @@ top_zero:
     fld(x87_op_f(fp_one));                                     //	1.0		1/2area	dy1*a	dy2		dx1		dx2
     fxch(3);                                                   //   dy2  	1/2area	dy1*a	1.0		dx1		dx2
     fmul_2(x87_op_i(0), x87_op_i(1));                          //	dy2*a  	1/2area	dy1*a	1.0		dx1		dx2
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_SY])); //   sy3	 dy2*a  	1/2area	dy1*a	1.0		dx1 dx2
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_SY])); //   sy3	 dy2*a  	1/2area	dy1*a	1.0		dx1 dx2
     // fsub		[ebx].comp_f[C_SY*4]		;   dsy2	dy2*a  	1/2area	dy1*a	1.0		dx1		dx2
-    fsub(((brp_vertex *)ebx->ptr_val)->comp_f[C_SY]);
+    fsub(((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]);
     //  fxch	   st(5)						;   dx1	  dy2*a 	1/2area	dy1*a	1.0		dsy2	dx2
     fxch(5);
 
@@ -490,9 +489,9 @@ bottom_zero:
     // 		fmul		st(1),st					;	1/2area	dy1*a	dy2		dx1		dx2
     fmul_2(x87_op_i(1), x87_op_i(0));
     // 		fld			[ebx].comp_f[C_SY*4]		;	sy2		1/2area	dy1*a	dy2		dx1		dx2
-    fld(x87_op_f(((brp_vertex *)ebx->ptr_val)->comp_f[C_SY]));
+    fld(x87_op_f(((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]));
     // 		fsub		[eax].comp_f[C_SY*4]		;   dsy1	1/2area	dy1*a	dy2		dx1		dx2
-    fsub(((brp_vertex *)eax->ptr_val)->comp_f[C_SY]);
+    fsub(((brp_vertex *)eax.ptr_val)->comp_f[C_SY]);
     // 		 fxch	   st(3)						;   dy2  	1/2area	dy1*a	dsy1	dx1		dx2
     fxch(3);
     // 		fmul		st,st(1)					;	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
@@ -545,13 +544,13 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 	;
     // 												;	0		1		2		3		4		5		6		7
     // 			fld		[edx].comp_f[comp*4]		;	p2
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[comp]));
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[comp]));
     // 			fsub	[ebx].comp_f[comp*4]		;	dp2
-    fsub(((brp_vertex *)ebx->ptr_val)->comp_f[comp]);
+    fsub(((brp_vertex *)ebx.ptr_val)->comp_f[comp]);
     // 			fld		[ecx].comp_f[comp*4]		;	p1		dp2
-    fld(x87_op_f(((brp_vertex *)ecx->ptr_val)->comp_f[comp]));
+    fld(x87_op_f(((brp_vertex *)ecx.ptr_val)->comp_f[comp]));
     // 			fsub	[ebx].comp_f[comp*4]		;	dp1		dp2
-    fsub(((brp_vertex *)ebx->ptr_val)->comp_f[comp]);
+    fsub(((brp_vertex *)ebx.ptr_val)->comp_f[comp]);
 
     // 	; Multiply deltas by precomputed values to get x & y gradients
     // 	; (Also interleaved load of parameter start and fractional x & y offsets of start position)
@@ -587,7 +586,7 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			fsubp	st(2),st					; 	dp2*c	d1b-d2a	dp1*d	fdy		fdx
     fsubp_2(x87_op_i(2), x87_op_i(0));
     // 			fld		[eax].comp_f[comp*4]		; 	param_t	dp2*c	d1b-d2a	dp1*d	fdy		fdx
-    fld(x87_op_f(((brp_vertex *)eax->ptr_val)->comp_f[comp]));
+    fld(x87_op_f(((brp_vertex *)eax.ptr_val)->comp_f[comp]));
     // 			 fxch	st(3)						; 	dp1*d	dp2*c	d1b-d2a	param_t	fdy		fdx
     fxch(3);
     // 			fsubp	st(1),st					; 	d2c-d1d	d1b-d2a	param_t	fdy		fdx
@@ -667,30 +666,30 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			fstp	real8 ptr d_p_x
     fstp(x87_op_mem64(d_p_x));
     // 			mov		esi,dword ptr s_p
-    esi->uint_val = *s_p;
+    esi.uint_val = *s_p;
     // 			mov		edi,dword ptr d_p_x
-    edi->uint_val = *d_p_x;
+    edi.uint_val = *d_p_x;
     // 			fstp	real8 ptr s_p	;
     fstp(x87_op_mem64(s_p));
     // 			fstp	real8 ptr d_p_x	;
     fstp(x87_op_mem64(d_p_x));
     // 			mov		dword ptr s_p+4,esi
-    mov(x86_op_mem32(s_p + 1), x86_op_reg(esi));
-    *((uint32_t*)s_p + 1) = esi->uint_val;
+    mov(x86_op_mem32(s_p + 1), x86_op_reg(&esi));
+    *((uint32_t*)s_p + 1) = esi.uint_val;
     // 			mov		dword ptr d_p_x+4,edi
-    mov(x86_op_mem32(d_p_x + 1), x86_op_reg(edi));
-    *((uint32_t*)d_p_x + 1) = edi->uint_val;
+    mov(x86_op_mem32(d_p_x + 1), x86_op_reg(&edi));
+    *((uint32_t*)d_p_x + 1) = edi.uint_val;
     // if unsigned
     if(is_unsigned) {
         // 	; Remap from -1 to 1 signed to 0 to 1 unsigned
         // 	;
         // 			mov		esi,dword ptr s_p
         //mov(x86_op_reg(esi), x86_op_mem32(s_p));
-        esi->uint_val = *s_p;
+        esi.uint_val = *s_p;
         // 			xor		esi,080000000h
-        esi->uint_val ^= 0x080000000;
+        esi.uint_val ^= 0x080000000;
         // 			mov		dword ptr s_p,esi
-        *s_p = esi->uint_val;
+        *s_p = esi.uint_val;
         // endif
     }
 }
@@ -720,40 +719,40 @@ void ARBITRARY_SETUP()
 void SETUP_FLAGS()
 {
     // 	mov edx,workspace.v2
-    mov(x86_op_reg(edx), x86_op_ptr(&workspace.v2));
+    mov(x86_op_reg(&edx), x86_op_ptr(&workspace.v2));
     // 	mov eax,workspace.v0
-    mov(x86_op_reg(eax), x86_op_ptr(&workspace.v0));
+    mov(x86_op_reg(&eax), x86_op_ptr(&workspace.v0));
     // 	mov ecx,workspace.v1
-    mov(x86_op_reg(ecx), x86_op_ptr(&workspace.v1));
+    mov(x86_op_reg(&ecx), x86_op_ptr(&workspace.v1));
     // 	mov esi,2
-    mov(x86_op_reg(esi), x86_op_imm(2));
+    mov(x86_op_reg(&esi), x86_op_imm(2));
     // if BASED_FIXED
     // 	mov ebx,dword ptr[edx+4*C_U]
     // 	mov ebp,dword ptr[eax+4*C_U]
     // 	mov edi,dword ptr[ecx+4*C_U]
     // else
     // 	fld dword ptr[edx+4*C_U]
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_U]));
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_U]));
     // 	fadd fp_conv_d16
     fadd(x87_op_mem32(&fp_conv_d16));
     // 	fld dword ptr[eax+4*C_U]
-    fld(x87_op_f(((brp_vertex *)eax->ptr_val)->comp_f[C_U]));
+    fld(x87_op_f(((brp_vertex *)eax.ptr_val)->comp_f[C_U]));
     // 	fadd fp_conv_d16
     fadd(x87_op_mem32(&fp_conv_d16));
     // 	fld dword ptr[ecx+4*C_U]
-    fld(x87_op_f(((brp_vertex *)ecx->ptr_val)->comp_f[C_U]));
+    fld(x87_op_f(((brp_vertex *)ecx.ptr_val)->comp_f[C_U]));
     // 	fadd fp_conv_d16
     fadd(x87_op_mem32(&fp_conv_d16));
     // 	fld dword ptr[edx+4*C_V]
-    fld(x87_op_f(((brp_vertex *)edx->ptr_val)->comp_f[C_V]));
+    fld(x87_op_f(((brp_vertex *)edx.ptr_val)->comp_f[C_V]));
     // 	fadd fp_conv_d16
     fadd(x87_op_mem32(&fp_conv_d16));
     // 	fld dword ptr[eax+4*C_V]
-    fld(x87_op_f(((brp_vertex *)eax->ptr_val)->comp_f[C_V]));
+    fld(x87_op_f(((brp_vertex *)eax.ptr_val)->comp_f[C_V]));
     // 	fadd fp_conv_d16
     fadd(x87_op_mem32(&fp_conv_d16));
     // 	fld dword ptr[ecx+4*C_V]
-    fld(x87_op_f(((brp_vertex *)ecx->ptr_val)->comp_f[C_V]));
+    fld(x87_op_f(((brp_vertex *)ecx.ptr_val)->comp_f[C_V]));
     // 	fadd fp_conv_d16
     fadd(x87_op_mem32(&fp_conv_d16));
     // 	 fxch st(2)
@@ -771,26 +770,26 @@ void SETUP_FLAGS()
     // 	fstp qword ptr workspace.scratch10
     fstp(x87_op_mem64(&workspace.scratch10));
     // 	mov ebx,workspace.scratch6
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspace.scratch6));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspace.scratch6));
     // 	mov ebp,workspace.scratch8
-    mov(x86_op_reg(ebp), x86_op_mem32(&workspace.scratch8));
+    mov(x86_op_reg(&ebp), x86_op_mem32(&workspace.scratch8));
     // 	mov edi,workspace.scratch10
-    mov(x86_op_reg(edi), x86_op_mem32(&workspace.scratch10));
+    mov(x86_op_reg(&edi), x86_op_mem32(&workspace.scratch10));
     // endif
     // 	and ebx,0ffff0000h
-    and(x86_op_reg(ebx), x86_op_imm(0xffff0000));
+    and(x86_op_reg(&ebx), x86_op_imm(0xffff0000));
     // 	and ebp,0ffff0000h
-    and(x86_op_reg(ebp), x86_op_imm(0xffff0000));
+    and(x86_op_reg(&ebp), x86_op_imm(0xffff0000));
     // 	and edi,0ffff0000h
-    and(x86_op_reg(edi), x86_op_imm(0xffff0000));
+    and(x86_op_reg(&edi), x86_op_imm(0xffff0000));
     // 	cmp ebx,ebp
     // 	jne wrapped
-    if(ebx->uint_val != ebp->uint_val) {
+    if(ebx.uint_val != ebp.uint_val) {
         goto wrapped;
     }
     // 	cmp ebx,edi
     // 	jne wrapped
-    if(ebx->uint_val != edi->uint_val) {
+    if(ebx.uint_val != edi.uint_val) {
         goto wrapped;
     }
     // if BASED_FIXED
@@ -799,37 +798,37 @@ void SETUP_FLAGS()
     // 	mov edi,dword ptr[ecx+4*C_V]
     // else
     // 	mov ebx,workspace.scratch0
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspace.scratch0));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspace.scratch0));
     // 	mov ebp,workspace.scratch2
-    mov(x86_op_reg(ebp), x86_op_mem32(&workspace.scratch2));
+    mov(x86_op_reg(&ebp), x86_op_mem32(&workspace.scratch2));
     // 	mov edi,workspace.scratch4
-    mov(x86_op_reg(edi), x86_op_mem32(&workspace.scratch4));
+    mov(x86_op_reg(&edi), x86_op_mem32(&workspace.scratch4));
     // endif
-    and(x86_op_reg(ebx), x86_op_imm(0xffff0000));
+    and(x86_op_reg(&ebx), x86_op_imm(0xffff0000));
     // 	and ebp,0ffff0000h
-    and(x86_op_reg(ebp), x86_op_imm(0xffff0000));
+    and(x86_op_reg(&ebp), x86_op_imm(0xffff0000));
     // 	and edi,0ffff0000h
-    and(x86_op_reg(edi), x86_op_imm(0xffff0000));
+    and(x86_op_reg(&edi), x86_op_imm(0xffff0000));
     // 	cmp ebx,ebp
     // 	jne wrapped
-    if(ebx->uint_val != ebp->uint_val) {
+    if(ebx.uint_val != ebp.uint_val) {
         goto wrapped;
     }
     // 	cmp ebx,edi
     // 	jne wrapped
-    if(ebx->uint_val != edi->uint_val) {
+    if(ebx.uint_val != edi.uint_val) {
         goto wrapped;
     }
 
     // 	mov esi,0
-    mov(x86_op_reg(esi), x86_op_imm(0));
+    mov(x86_op_reg(&esi), x86_op_imm(0));
 wrapped:
     // 	mov eax,workspace.flip
-    mov(x86_op_reg(eax), x86_op_mem32(&workspace.flip));
+    mov(x86_op_reg(&eax), x86_op_mem32(&workspace.flip));
     // 	or eax,esi
-    or (x86_op_reg(eax), x86_op_reg(esi));
+    or (x86_op_reg(&eax), x86_op_reg(&esi));
     // 	mov workspaceA.flags,eax
-    mov(x86_op_mem32(&workspaceA.flags), x86_op_reg(eax));
+    mov(x86_op_mem32(&workspaceA.flags), x86_op_reg(&eax));
     // endm
 }
 
@@ -837,9 +836,9 @@ void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
 {
     // ; assumes 8.24 format
     // 	mov edi,0ffffffh
-    mov(x86_op_reg(edi), x86_op_imm(0xffffff));
+    mov(x86_op_reg(&edi), x86_op_imm(0xffffff));
     // 	mov esi,0ff000000h
-    mov(x86_op_reg(esi), x86_op_imm(0xff000000));
+    mov(x86_op_reg(&esi), x86_op_imm(0xff000000));
     // 	and workspace.s_u,0ffffffh
     and(x86_op_mem32(&workspace.s_u), x86_op_imm(0xffffff));
     // 	and workspace.s_v,0ffffffh
@@ -859,13 +858,13 @@ void REMOVE_INTEGER_PARTS_OF_PARAM(void *param)
 {
     // local paramNegative
     // 	mov ebp,esi
-    mov(x86_op_reg(ebp), x86_op_reg(esi));
+    mov(x86_op_reg(&ebp), x86_op_reg(&esi));
     // 	mov eax,param
-    mov(x86_op_reg(eax), x86_op_mem32(param));
+    mov(x86_op_reg(&eax), x86_op_mem32(param));
 
     // 	test eax,80000000h
     // 	jnz paramNegative
-    if((eax->uint_val & 0x80000000) == 0) {
+    if((eax.uint_val & 0x80000000) == 0) {
         // zf = 1;
     } else {
         // zf = 0;
@@ -873,19 +872,19 @@ void REMOVE_INTEGER_PARTS_OF_PARAM(void *param)
     }
 
     // 	mov ebp,edi
-    mov(x86_op_reg(ebp), x86_op_reg(edi));
+    mov(x86_op_reg(&ebp), x86_op_reg(&edi));
 
     // 	and eax,ebp
-    and(x86_op_reg(eax), x86_op_reg(ebp));
+    and(x86_op_reg(&eax), x86_op_reg(&ebp));
 paramNegative:
     // 	and ebp,esi
-    and(x86_op_reg(ebp), x86_op_reg(esi));
+    and(x86_op_reg(&ebp), x86_op_reg(&esi));
 
     // 	or eax,ebp
-    or (x86_op_reg(eax), x86_op_reg(ebp));
+    or (x86_op_reg(&eax), x86_op_reg(&ebp));
 
     // 	mov param,eax
-    mov(x86_op_mem32(param), x86_op_reg(eax));
+    mov(x86_op_mem32(param), x86_op_reg(&eax));
     // endm
 }
 
@@ -957,64 +956,64 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
 void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS()
 {
     // 	mov ebx,workspaceA.sv
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspaceA.sv));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.sv));
 
     // 	shl ebx,16
-    shl(x86_op_reg(ebx), 16);
+    shl(x86_op_reg(&ebx), 16);
     // 	mov edx,workspaceA.dvx
-    mov(x86_op_reg(edx), x86_op_mem32(&workspaceA.dvx));
+    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvx));
     // 	shl edx,16
-    shl(x86_op_reg(edx), 16);
+    shl(x86_op_reg(&edx), 16);
     // 	mov workspaceA.svf,ebx
-    mov(x86_op_mem32(&workspaceA.svf), x86_op_reg(ebx));
+    mov(x86_op_mem32(&workspaceA.svf), x86_op_reg(&ebx));
     // 	mov ebx,workspaceA.dvy0
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspaceA.dvy0));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.dvy0));
     // 	mov workspaceA.dvxf,edx
-    mov(x86_op_mem32(&workspaceA.dvxf), x86_op_reg(edx));
+    mov(x86_op_mem32(&workspaceA.dvxf), x86_op_reg(&edx));
     // 	shl ebx,16
-    shl(x86_op_reg(ebx), 16);
+    shl(x86_op_reg(&ebx), 16);
     // 	mov edx,workspaceA.dvy1
-    mov(x86_op_reg(edx), x86_op_mem32(&workspaceA.dvy1));
+    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvy1));
 
     // 	shl edx,16
-    shl(x86_op_reg(edx), 16);
+    shl(x86_op_reg(&edx), 16);
     // 	mov workspaceA.dvy0f,ebx
-    mov(x86_op_mem32(&workspaceA.dvy0f), x86_op_reg(ebx));
+    mov(x86_op_mem32(&workspaceA.dvy0f), x86_op_reg(&ebx));
     // 	mov workspaceA.dvy1f,edx
-    mov(x86_op_mem32(&workspaceA.dvy1f), x86_op_reg(edx));
+    mov(x86_op_mem32(&workspaceA.dvy1f), x86_op_reg(&edx));
 
     // ;integer parts
 
     // 	mov ebx,workspaceA.sv
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspaceA.sv));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.sv));
 
     // 	sar ebx,16
-    sar(x86_op_reg(ebx), 16);
+    sar(x86_op_reg(&ebx), 16);
     // 	mov edx,workspaceA.dvx
-    mov(x86_op_reg(edx), x86_op_mem32(&workspaceA.dvx));
+    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvx));
 
     // 	sar edx,16
-    sar(x86_op_reg(edx), 16);
+    sar(x86_op_reg(&edx), 16);
     // 	mov workspaceA.sv,ebx
-    mov(x86_op_mem32(&workspaceA.sv), x86_op_reg(ebx));
+    mov(x86_op_mem32(&workspaceA.sv), x86_op_reg(&ebx));
 
     // 	mov ebx,workspaceA.dvy0
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspaceA.dvy0));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.dvy0));
     // 	mov workspaceA.dvx,edx
-    mov(x86_op_mem32(&workspaceA.dvx), x86_op_reg(edx));
+    mov(x86_op_mem32(&workspaceA.dvx), x86_op_reg(&edx));
 
     // 	sar ebx,16
-    sar(x86_op_reg(ebx), 16);
+    sar(x86_op_reg(&ebx), 16);
     // 	mov edx,workspaceA.dvy1
-    mov(x86_op_reg(edx), x86_op_mem32(&workspaceA.dvy1));
+    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvy1));
 
     // 	sar edx,16
-    sar(x86_op_reg(edx), 16);
+    sar(x86_op_reg(&edx), 16);
     // 	mov workspaceA.dvy0,ebx
-    mov(x86_op_mem32(&workspaceA.dvy0), x86_op_reg(ebx));
+    mov(x86_op_mem32(&workspaceA.dvy0), x86_op_reg(&ebx));
 
     // 	mov workspaceA.dvy1,edx
-    mov(x86_op_mem32(&workspaceA.dvy1), x86_op_reg(edx));
+    mov(x86_op_mem32(&workspaceA.dvy1), x86_op_reg(&edx));
 
     // endm
 }
@@ -1084,44 +1083,44 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
 void CREATE_CARRY_VERSIONS()
 {
     // mov eax,workspaceA.dvy0
-    mov(x86_op_reg(eax), x86_op_mem32(&workspaceA.dvy0));
+    mov(x86_op_reg(&eax), x86_op_mem32(&workspaceA.dvy0));
     // mov ebx,workspaceA.dvy1
-    mov(x86_op_reg(ebx), x86_op_mem32(&workspaceA.dvy1));
+    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.dvy1));
 
     // add eax,work.texture.stride_b
-    add(x86_op_reg(eax), x86_op_mem32(&work.texture.stride_b));
+    add(x86_op_reg(&eax), x86_op_mem32(&work.texture.stride_b));
     // mov ecx,workspaceA.dvx
-    mov(x86_op_reg(ecx), x86_op_mem32(&workspaceA.dvx));
+    mov(x86_op_reg(&ecx), x86_op_mem32(&workspaceA.dvx));
 
     // add ebx,work.texture.stride_b
-    add(x86_op_reg(ebx), x86_op_mem32(&work.texture.stride_b));
+    add(x86_op_reg(&ebx), x86_op_mem32(&work.texture.stride_b));
     // add ecx,work.texture.stride_b
-    add(x86_op_reg(ecx), x86_op_mem32(&work.texture.stride_b));
+    add(x86_op_reg(&ecx), x86_op_mem32(&work.texture.stride_b));
 
     // mov workspaceA.dvy0c,eax
-    mov(x86_op_mem32(&workspaceA.dvy0c), x86_op_reg(eax));
+    mov(x86_op_mem32(&workspaceA.dvy0c), x86_op_reg(&eax));
     // mov workspaceA.dvy1c,ebx
-    mov(x86_op_mem32(&workspaceA.dvy1c), x86_op_reg(ebx));
+    mov(x86_op_mem32(&workspaceA.dvy1c), x86_op_reg(&ebx));
 
     // mov workspaceA.dvxc,ecx
-    mov(x86_op_mem32(&workspaceA.dvxc), x86_op_reg(ecx));
+    mov(x86_op_mem32(&workspaceA.dvxc), x86_op_reg(&ecx));
 }
 
 void WRAP_SETUP()
 {
     // mov ecx,
-    mov(x86_op_reg(ecx), x86_op_mem32(&work.texture.width_p));
+    mov(x86_op_reg(&ecx), x86_op_mem32(&work.texture.width_p));
     // mov eax,work.texture._size
-    mov(x86_op_reg(eax), x86_op_mem32(&work.texture.size));
+    mov(x86_op_reg(&eax), x86_op_mem32(&work.texture.size));
     // shl ecx,16
-    shl(x86_op_reg(ecx), 16);
+    shl(x86_op_reg(&ecx), 16);
     // add eax,work.texture.base
-    // add(x86_op_reg(eax), x86_op_ptr(work.texture.base));  //doesnt work with pointers
+    // add(x86_op_reg(&eax), x86_op_ptr(work.texture.base));  //doesnt work with pointers
     // mov workspaceA.uUpperBound,ecx
-    mov(x86_op_mem32(&workspaceA.uUpperBound), x86_op_reg(ecx));
+    mov(x86_op_mem32(&workspaceA.uUpperBound), x86_op_reg(&ecx));
 
     // mov workspaceA.vUpperBound,eax
-    // mov(x86_op_mem32(&workspaceA.vUpperBound), x86_op_reg(eax)); doesn't work with pointers
+    // mov(x86_op_mem32(&workspaceA.vUpperBound), x86_op_reg(&eax)); doesn't work with pointers
     //workspaceA.vUpperBound = ((uint8_t *)work.texture.base) + work.texture.size;
     workspaceA.vUpperBound = 0 + work.texture.size;
 }

@@ -68,8 +68,8 @@ x86_operand x86_op_mem32(void *bytes);
 x86_operand x86_op_ptr(void *ptr);
 x86_operand x86_op_imm(uint32_t imm);
 
-extern x86_reg *eax, *ebx, *ecx, *edx, *esi, *ebp, *edi;
-void            x86emu_init();
+// extern x86_reg *eax, *ebx, *ecx, *edx, *esi, *ebp, *edi;
+// void            x86emu_init();
 
 int  x86emu_fpu_stack_top();
 void fld(x87_operand op);
@@ -107,5 +107,20 @@ void ror(x86_operand dest, int count);
 
 // hack
 void fild_ptr(intptr_t val);
+
+typedef struct x86emu_state_t {
+    long double x87_stack[8];
+    long double x87_swap;
+    int  x87_stack_top;
+    int cf;
+    int zf;
+} x86emu_state_t;
+
+extern x86emu_state_t x86_state;
+extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
+
+#define ST_(i) x86_state.x87_stack[x86_state.x87_stack_top - i]
+
+#define FXCH(i) x86_state.x87_swap = ST_(0); ST_(0) = ST_(i); ST_(i) = x86_state.x87_swap;
 
 #endif

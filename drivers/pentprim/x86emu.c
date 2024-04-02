@@ -4,27 +4,20 @@
 #include <stdio.h>
 #include <assert.h>
 
-long double fpu_stack[8];
-int         fpu_st0_ptr = -1;
-int         ZF          = 0;
-int         CF          = 0;
-int         SF          = 0;
-static int  inited      = 0;
 
-x86_reg *eax, *ebx, *ecx, *edx, *esi, *ebp, *edi;
+x86emu_state_t x86_state;
+x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
-// #define ST_(i) fpu_stack[fpu_st0_ptr - i]
-
-long double *st(int i)
-{
-    assert(fpu_st0_ptr - i >= 0);
-    assert(fpu_st0_ptr - i <= 7);
-    return &fpu_stack[fpu_st0_ptr - i];
-}
+// long double ST_(int i)
+// {
+//     assert(x87emu_stack_top - i >= 0);
+//     assert(x87emu_stack_top - i <= 7);
+//     return &x87emu_stack[x87emu_stack_top - i];
+// }
 
 int x86emu_fpu_stack_top()
 {
-    return fpu_st0_ptr;
+    return x86_state.x87_stack_top;
 }
 
 // float MEM32x(float)
@@ -32,20 +25,6 @@ int x86emu_fpu_stack_top()
 //     return 1;
 // }
 
-void x86emu_init()
-{
-    if(inited) {
-        return;
-    }
-    eax    = malloc(sizeof(x86_reg));
-    ebx    = malloc(sizeof(x86_reg));
-    ecx    = malloc(sizeof(x86_reg));
-    edx    = malloc(sizeof(x86_reg));
-    esi    = malloc(sizeof(x86_reg));
-    ebp    = malloc(sizeof(x86_reg));
-    edi    = malloc(sizeof(x86_reg));
-    inited = 1;
-}
 void fail()
 {
     printf("x86emu::fail\n");
@@ -54,9 +33,9 @@ void fail()
 
 void fpu_pop()
 {
-    fpu_stack[fpu_st0_ptr] = 0;
-    fpu_st0_ptr--;
-    assert(fpu_st0_ptr >= -1);
+    x86_state.x87_stack[x86_state.x87_stack_top] = 0;
+    x86_state.x87_stack_top--;
+    assert(x86_state.x87_stack_top >= -1);
 }
 
 x87_operand x87_op_f(float f)
@@ -163,43 +142,44 @@ fld(20)
 
     switch(op.type) {
         case X87_OP_ST:
-            fpu_stack[fpu_st0_ptr + 1] = *st(op.st_index);
+
+            x86_state.x87_stack[x86_state.x87_stack_top + 1] = ST_(op.st_index);
             break;
         case X87_OP_FLOAT:
-            fpu_stack[fpu_st0_ptr + 1] = op.float_val;
+            x86_state.x87_stack[x86_state.x87_stack_top + 1] = op.float_val;
             break;
         case X87_OP_DOUBLE:
-            fpu_stack[fpu_st0_ptr + 1] = op.double_val;
+            x86_state.x87_stack[x86_state.x87_stack_top + 1] = op.double_val;
             break;
         default:
             fail();
     }
-    fpu_st0_ptr++;
-    assert(fpu_st0_ptr < 8);
+    x86_state.x87_stack_top++;
+    assert(x86_state.x87_stack_top < 8);
 }
 
 void fild(int val)
 {
-    fpu_stack[fpu_st0_ptr + 1] = val;
-    fpu_st0_ptr++;
-    assert(fpu_st0_ptr < 7);
+    x86_state.x87_stack[x86_state.x87_stack_top + 1] = val;
+    x86_state.x87_stack_top++;
+    assert(x86_state.x87_stack_top < 7);
 }
 
 void fild_ptr(intptr_t val)
 {
-    fpu_stack[fpu_st0_ptr + 1] = val;
-    fpu_st0_ptr++;
-    assert(fpu_st0_ptr < 7);
+    x86_state.x87_stack[x86_state.x87_stack_top + 1] = val;
+    x86_state.x87_stack_top++;
+    assert(x86_state.x87_stack_top < 7);
 }
 
 void fsub(float v)
 {
-    *st(0) -= v;
+    ST_(0) -= v;
 }
 
 void fsub_2(x87_operand dest, x87_operand src)
 {
-    *st(dest.st_index) -= *st(src.st_index);
+    ST_(dest.st_index) -= ST_(src.st_index);
 }
 
 void fsubp_2(x87_operand dest, x87_operand src)
@@ -210,12 +190,12 @@ void fsubp_2(x87_operand dest, x87_operand src)
 
 void fmul(float val)
 {
-    *st(0) *= val;
+    ST_(0) *= val;
 }
 
 void fmul_2(x87_operand dest, x87_operand src)
 {
-    *st(dest.st_index) *= *st(src.st_index);
+    ST_(dest.st_index) *= ST_(src.st_index);
 }
 
 void fmulp_2(x87_operand dest, x87_operand src)
@@ -226,31 +206,33 @@ void fmulp_2(x87_operand dest, x87_operand src)
 
 void fdivr(float f)
 {
-    *st(0) = f / *st(0);
+    ST_(0) = f / ST_(0);
 }
 
 void fdivrp(int dest, int src)
 {
     // src is always 0
-    *st(dest) = *st(0) / *st(dest);
+    ST_(dest) = ST_(0) / ST_(dest);
     fpu_pop();
 }
 
 void fxch(int i)
 {
-    long double tmp = *st(0);
-    *st(0)          = *st(i);
-    *st(i)          = tmp;
+    long double tmp = ST_(0);
+    ST_(0)          = ST_(i);
+    ST_(i)          = tmp;
 }
+
+
 
 void fst(x87_operand dest)
 {
     switch(dest.type) {
         case X87_OP_MEM32:
-            *(float *)dest.mem = (float)*st(0);
+            *(float *)dest.mem = (float)ST_(0);
             break;
         case X87_OP_MEM64:
-            *(double *)dest.mem = (double)*st(0);
+            *(double *)dest.mem = (double)ST_(0);
             break;
         case X87_OP_ST:
             assert(dest.st_index == 0);
@@ -269,7 +251,7 @@ void fstp(x87_operand dest)
 
 void fadd_st(int dest, int src)
 {
-    *st(dest) += *st(src);
+    ST_(dest) += ST_(src);
 }
 
 void fadd(x87_operand op)
@@ -280,20 +262,20 @@ void fadd(x87_operand op)
     switch(op.type) {
         case X87_OP_MEM32:
             memcpy(&f, op.mem, 4);
-            *st(0) += f;
+            ST_(0) += f;
             break;
         case X87_OP_MEM64:
             memcpy(&d, op.mem, 8);
-            *st(0) += d;
+            ST_(0) += d;
             break;
         case X87_OP_FLOAT:
-            *st(0) += op.float_val;
+            ST_(0) += op.float_val;
             break;
         case X87_OP_DOUBLE:
-            *st(0) += op.double_val;
+            ST_(0) += op.double_val;
             break;
         case X87_OP_ST:
-            *st(op.st_index) += *st(0);
+            ST_(op.st_index) += ST_(0);
             break;
         default:
             fail();
@@ -397,15 +379,15 @@ void cmp(x86_operand dest, x86_operand src)
     switch(dest.type) {
         case X86_OP_REG:
             if(dest.reg->uint_val < *(uint32_t *)src_val) {
-                CF = 1;
-                ZF = 0;
-                SF = 1;
+                x86_state.cf = 1;
+                x86_state.zf = 0;
+                //x86_state.sf = 1;
             } else if(dest.reg->uint_val == *(uint32_t *)src_val) {
-                CF = 0;
-                ZF = 1;
+                x86_state.cf = 0;
+                x86_state.zf = 1;
             } else {
-                CF = 0;
-                ZF = 0;
+                x86_state.cf = 0;
+                x86_state.zf = 0;
             }
             break;
         default:
@@ -420,9 +402,9 @@ void rcl(x86_operand dest, int count)
             while(count != 0) {
                 int msb = dest.reg->uint_val & 0x80000000;
                 // rotate CF flag into lsb
-                dest.reg->uint_val = (dest.reg->uint_val << 1) + CF;
+                dest.reg->uint_val = (dest.reg->uint_val << 1) + x86_state.cf;
                 // rotate msb into CF
-                CF = msb;
+                x86_state.cf = msb;
                 count--;
             }
             break;
@@ -454,9 +436,9 @@ void sub(x86_operand dest, x86_operand src)
     switch(dest.type) {
         case X86_OP_REG:
             if(*(uint32_t *)src_val > dest.reg->uint_val) {
-                CF = 1;
+                x86_state.cf = 1;
             } else {
-                CF = 0;
+                x86_state.cf = 0;
             }
             dest.reg->uint_val -= *(uint32_t *)src_val;
             break;
@@ -479,7 +461,7 @@ void sbb(x86_operand dest, x86_operand src)
     }
     switch(dest.type) {
         case X86_OP_REG:
-            dest.reg->uint_val = (dest.reg->uint_val - (*(uint32_t *)src_val + CF));
+            dest.reg->uint_val = (dest.reg->uint_val - (*(uint32_t *)src_val + x86_state.cf));
             break;
         default:
             fail();
@@ -537,9 +519,9 @@ void add(x86_operand dest, x86_operand src)
         case X86_OP_REG:
             dest.reg->uint_val += *(uint32_t *)src_val;
             if(dest.reg->uint_val < *(uint32_t *)src_val) {
-                CF = 1;
+                x86_state.cf = 1;
             } else {
-                CF = 0;
+                x86_state.cf = 0;
             }
             break;
         default:
@@ -564,11 +546,11 @@ void adc(x86_operand dest, x86_operand src) {
     }
     switch(dest.type) {
         case X86_OP_REG:
-            dest.reg->uint_val += *(uint32_t *)src_val + CF;
+            dest.reg->uint_val += *(uint32_t *)src_val + x86_state.cf;
             if(dest.reg->uint_val < *(uint32_t *)src_val) {
-                CF = 1;
+                x86_state.cf = 1;
             } else {
-                CF = 0;
+                x86_state.cf = 0;
             }
             break;
         default:
@@ -606,7 +588,7 @@ void shr(x86_operand dest, int count)
     assert(dest.type == X86_OP_REG);
 
     while(count != 0) {
-        CF            = dest.reg->uint_val & 1;
+        x86_state.cf            = dest.reg->uint_val & 1;
         uint32_t res1 = dest.reg->uint_val / 2; // Unsigned divide
         uint32_t res2 = dest.reg->uint_val >> 1;
         if(res1 != res2) {
@@ -623,7 +605,7 @@ void sar(x86_operand dest, int count)
     int msb = dest.reg->int_val < 0;
 
     while(count != 0) {
-        CF                = dest.reg->uint_val & 1;
+        x86_state.cf                = dest.reg->uint_val & 1;
         dest.reg->int_val = dest.reg->int_val >> 1; // signed divide
         // if(msb) {
         //     dest.reg->uint_val |= (1 << 31);
@@ -637,7 +619,7 @@ void shl(x86_operand dest, int count)
     assert(dest.type == X86_OP_REG);
 
     while(count != 0) {
-        CF                 = dest.reg->uint_val & 0x80000000; // msb
+        x86_state.cf                 = dest.reg->uint_val & 0x80000000; // msb
         dest.reg->uint_val = dest.reg->uint_val << 1;
         count--;
     }
@@ -654,5 +636,5 @@ void ror(x86_operand dest, int count) {
 
 void fldi(double d)
 {
-    *st(0) = d;
+    ST_(0) = d;
 }
