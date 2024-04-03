@@ -92,15 +92,15 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 
     FLD_ST(2); //	dx1		dy1		dy2		dx1		dx2
 
-    fmul_2(x87_op_i(0), x87_op_i(2)); //	dx1*dy2	dy1		dy2		dx1		dx2
+    FMUL_ST(0, 2); //	dx1*dy2	dy1		dy2		dx1		dx2
 
     FLD_ST(4);                 //	dx2		dx1*dy2	dy1		dy2		dx1		dx2
-    fmul_2(x87_op_i(0), x87_op_i(2)); //	dx2*dy1	dx1*dy2	dy1		dy2		dx1		dx2
+    FMUL_ST(0, 2); //	dx2*dy1	dx1*dy2	dy1		dy2		dx1		dx2
 
     eax.float_val = ((brp_vertex *)eax.ptr_val)->comp_f[C_SY];
     ecx.float_val = ((brp_vertex *)ecx.ptr_val)->comp_f[C_SY];
 
-    fsubp_2(x87_op_i(1), x87_op_i(0)); //	2area	dy1		dy2		dx1		dx2
+    FSUBP_ST(1, 0); //	2area	dy1		dy2		dx1		dx2
 
     ebx.uint_val ^= ebx.uint_val;
     cmp(x86_op_reg(&ecx), x86_op_reg(&eax));
@@ -108,7 +108,7 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     rcl(x86_op_reg(&ebx), 1);
     edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
 
-    fdivr(fp_one); //	1/2area	dy1		dy2		dx1		dx2
+    FDIVR(fp_one); //	1/2area	dy1		dy2		dx1		dx2
 
     cmp(x86_op_reg(&edx), x86_op_reg(&eax));
 
@@ -172,28 +172,28 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     //; Parameter gradient startup and Y deltas for edge gradients
 
     //	0		1		2		3		4		5		6		7
-    fmul_2(x87_op_i(1), x87_op_i(0));                          //	1/2area	dy1*a	dy2		dx1		dx2
+    FMUL_ST(1, 0);                          //	1/2area	dy1*a	dy2		dx1		dx2
     FLD(((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]); //	sy2		1/2area	dy1*a	dy2		dx1		dx2
     FSUB((((brp_vertex *)eax.ptr_val)->comp_f[C_SY]));        //   dsy1	1/2area	dy1*a	dy2		dx1		dx2
     FXCH(3);                                                   //   dy2  	1/2area	dy1*a	dsy1	dx1		dx2
-    fmul_2(x87_op_i(0), x87_op_i(1));                          //	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
+    FMUL_ST(0, 1);                          //	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_SY]); //   sy3	 dy2*a  	1/2area	dy1*a	dsy1	dx1 dx2
     FSUB((((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]));        //   dsy2	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
     FXCH(5);                                                   //   dx1	  dy2*a 	1/2area	dy1*a	dsy1	dsy2	dx2
 
 count_cont:
-    fmul_2(x87_op_i(0), x87_op_i(2));                          //	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dx2
+    FMUL_ST(0, 2);                          //	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dx2
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_SY]); //   sy3	 dx1*a   dy2*a  	1/2area	dy1*a	dsy1 dsy2 dx2
     FSUB(((brp_vertex *)eax.ptr_val)->comp_f[C_SY]);          //   dsy3	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dx2
     FXCH(7);                                                   //   dx2		dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
-    fmul_2(x87_op_i(0), x87_op_i(3));                          //   dx2*a	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
+    FMUL_ST(0, 3);                          //   dx2*a	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
     FXCH(3);                                                   //   1/2area	dx1*a   dy2*a  	dx2*a	dy1*a	dsy1	dsy2	dsy3
 
-    fstp(x87_op_mem32(&workspace.iarea));
-    fstp(x87_op_mem32(&workspace.dx1_a));
-    fstp(x87_op_mem32(&workspace.dy2_a));
-    fstp(x87_op_mem32(&workspace.dx2_a));
-    fstp(x87_op_mem32(&workspace.dy1_a)); //  	dy1		dy2		dy3
+    FSTP_32(&workspace.iarea);
+    FSTP_32(&workspace.dx1_a);
+    FSTP_32(&workspace.dy2_a);
+    FSTP_32(&workspace.dx2_a);
+    FSTP_32(&workspace.dy1_a); //  	dy1		dy2		dy3
 
     //; Find edge gradients of triangle
     //;
@@ -207,7 +207,7 @@ count_cont:
     // fld st(2)                                        ;	dy3		dy1		dy2		dy3
     FLD_ST(2);
     // 			fmul		st,st(2)					;	dy2*dy3	dy1		dy2		dy3
-    fmul_2(x87_op_i(0), x87_op_i(2));
+    FMUL_ST(0, 2);
     // 			fld			[ebx].comp_f[C_SX*4]		;	x2		dy2*dy3	dy1		dy2		dy3
     FLD(((brp_vertex *)ebx.ptr_val)->comp_f[C_SX]);
     // 			fsub		[eax].comp_f[C_SX*4]		;	dx1		dy2*dy3	dy1		dy2		dy3
@@ -215,7 +215,7 @@ count_cont:
     // 			fld			st(1)						;	dy2*dy3 dx1		dy2*dy3	dy1		dy2		dy3
     FLD_ST(1);
     // 			fmul		st,st(3)					;	dy123	dx1		dy2*dy3	dy1		dy2		dy3
-    fmul_2(x87_op_i(0), x87_op_i(3));
+    FMUL_ST(0, 3);
 
     // 			fld			[edx].comp_f[C_SX*4]		;	x3		dy123	dx1		dy2*dy3	dy1		dy2		dy3
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_SX]);
@@ -226,7 +226,7 @@ count_cont:
     // 			fld			fp_one						;	1.0		dx1		dy123	dx2		dy2*dy3	dy1		dy2 dy3
     FLD(fp_one);
     // 			fdivrp		st(2),st					;	dx1		R		dx2		dy2*dy3	dy1		dy2		dy3
-    fdivrp(2, 0);
+    FDIVRP_ST(2, 0);
 
     // ; Generate counts
     // ;
@@ -279,13 +279,13 @@ count_cont:
     // 	;
     // 												;	0		1		2		3		4		5		6		7
     // 		fmulp		st(3),st					;	R		dx2		XYY		dy1		dy2		dy3
-    fmulp_2(x87_op_i(3), x87_op_i(0));
+    FMULP_ST(3, 0);
     // 		fld			[edx].comp_f[C_SX*4]		;	x3		R		dx2		XYY		dy1		dy2		dy3
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_SX]);
     // 		 FXCH		st(3)						;	XYY		R		dx2		x3		dy1		dy2		dy3
     FXCH(3);
     // 		fmul		st,st(1)					;	XYY*R	R		dx2		x3		dy1		dy2		dy3
-    fmul_2(x87_op_i(0), x87_op_i(1));
+    FMUL_ST(0, 1);
     // 		 FXCH		st(3)						;	x3		R		dx2		XYY*R	dy1		dy2		dy3
     FXCH(3);
     // 		fsub		[eax].comp_f[C_SX*4]		;	dx3		R		dx2		XYY*R	dy1		dy2		dy3
@@ -293,7 +293,7 @@ count_cont:
     // 		 FXCH		st(1)						;	R		dx3		dx2		XYY*R	dy1		dy2		dy3
     FXCH(1);
     // 		fmulp		st(4),st					;	dx3		dx2		XYY*R	dy1*R	dy2		dy3
-    fmulp_2(x87_op_i(4), x87_op_i(0));
+    FMULP_ST(4, 0);
     // 		 FXCH		st(2)						;	XYY*R	dx2		dx3		dy1*R	dy2		dy3
     FXCH(2);
     // 		fild		m_y				            ;	m_y		XYY*R	dx2		dx3		dy1*R	dy2		dy3
@@ -301,13 +301,13 @@ count_cont:
     // 		 FXCH		st(2)						;	dx2		XYY*R	m_y		dx3		dy1*R	dy2		dy3
     FXCH(2);
     // 		fmulp		st(6),st		            ;	XYY*R	m_y		dx3		dy1*R	dy2		dx2*dy3
-    fmulp_2(x87_op_i(6), x87_op_i(0));
+    FMULP_ST(6, 0);
     // 		fild		[workspace.t_y]				;	t_y		XYY*R	m_y		dx3		dy1*R	dy2 dx2*dy3
     fild(workspace.t_y);
     // FXCH		st(3)			            ;	dx3		XYY*R	m_y		t_y		dy1*R	dy2		dx2*dy3
     FXCH(3);
     // 		fmulp		st(5),st					;	XYY*R	m_y		t_y		dy1*R	dy2*dx3	dx2*dy3
-    fmulp_2(x87_op_i(5), x87_op_i(0));
+    FMULP_ST(5, 0);
     // 		 FXCH		st(1)			            ;	m_y		XYY*R	t_y		dy1*R	dy2*dx3	dx2*dy3
     FXCH(1);
     // 		fsub		[ebx].comp_f[C_SY*4]		;	m_dy	XYY*R	t_y		dy1*R	dy2*dx3	dx2*dy3
@@ -315,7 +315,7 @@ count_cont:
     // 		 FXCH		st(3)						;	dy1*R	XYY*R	t_y		m_dy	dy2*dx3	dx2*dy3
     FXCH(3);
     // 		fmul		st(4),st		            ;	dy1*R	XYY*R	t_y		m_dy	YYX*R	dx2*dy3
-    fmul_2(x87_op_i(4), x87_op_i(0));
+    FMUL_ST(4, 0);
     // 		 FXCH		st(2)						;	t_y		XYY*R	dy1*R	m_dy	YYX*R	dx2*dy3
     FXCH(2);
     // 		fsub		[eax].comp_f[C_SY*4]		;	t_dy	XYY*R	dy1*R	m_dy	YYX*R	dx2*dy3
@@ -323,7 +323,7 @@ count_cont:
     // 		 FXCH		st(2)						;	dy1*R	XYY*R	t_dy	m_dy	YYX*R	dx2*dy3
     FXCH(2);
     // 		fmulp		st(5),st		            ;	XYY*R	t_dy	m_dy	YYX*R	YXY*R
-    fmulp_2(x87_op_i(5), x87_op_i(0));
+    FMULP_ST(5, 0);
     // 		 FXCH		st(2)						;	m_dy	t_dy	XYY*R	YYX*R	YXY*R
     FXCH(2);
     // 												;	m_dy	t_dy	g1		gm		g2
@@ -340,13 +340,13 @@ count_cont:
     // 		FXCH		st(1)			            ;	m_dy	t_dy	t_dy	g1		gm		g2
     FXCH(1);
     // 		fmul		st,st(5)		            ;	m_dy*g2	t_dy	t_dy	g1		gm		g2
-    fmul_2(x87_op_i(0), x87_op_i(5));
+    FMUL_ST(0, 5);
     // 		FXCH		st(2)						;	t_dy	t_dy	m_dy*g2	g1		gm		g2
     FXCH(2);
     // 		fst			[workspace.t_dy]
     fst(x87_op_mem32(&workspace.t_dy));
     // 		fmul		st,st(3)					;	t_dy*g1	t_dy	m_dy*g2	g1		gm		g2
-    fmul_2(x87_op_i(0), x87_op_i(3));
+    FMUL_ST(0, 3);
     // 		 FXCH		st(2)			            ;	m_dy*g2	t_dy	t_dy*g1	g1		gm		g2
     FXCH(2);
     // 		fadd		[ebx].comp_f[C_SX*4]		;	x_2		t_dy	t_dy*g1	g1		gm		g2
@@ -354,7 +354,7 @@ count_cont:
     // 		 FXCH		st(1)						;	t_dy	x_2		t_dy*g1	g1		gm		g2
     FXCH(1);
     // 		fmul		st,st(4)		            ;	t_dy*gm	x_2		t_dy*g1	g1		gm		g2
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 		 FXCH		st(2)						;	t_dy*g1	x_2		t_dy*gm	g1		gm		g2
     FXCH(2);
     // 		fadd		[eax].comp_f[C_SX*4]		;	x_1		x_2		t_dy*gm	g1		gm		g2
@@ -383,11 +383,11 @@ count_cont:
     // 		 FXCH		st(2)						;	g1+C	gm+C	g2+C	x_1		x_m		x_2+C
     FXCH(2);
     // 		fstp real8 ptr [workspace].x1			;	gm+C	g2+C	x_1		x_m		x_2+C
-    fstp(x87_op_mem64(&workspace.x1));
+    FSTP_64(&workspace.x1);
     // 		fstp real8 ptr [workspace].xm			;	g2+C	x_1		x_m		x_2+C
-    fstp(x87_op_mem64(&workspace.xm));
+    FSTP_64(&workspace.xm);
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
-    fstp(x87_op_mem64(&workspace.x2));
+    FSTP_64(&workspace.x2);
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
     fadd(x87_op_mem64(&fconv_d16_12[esi.uint_val]));
     // 		FXCH		st(1)						;	x_m		x_1+C	x_2+C
@@ -406,9 +406,9 @@ count_cont:
     // 		mov		ebx,[workspace.v0]				; Start preparing for parmeter setup
     ebx.ptr_val = workspace.v0;
     // 		fstp real8 ptr [workspace].xm			;	x_1+C	x_2+C
-    fstp(x87_op_mem64(&workspace.xm));
+    FSTP_64(&workspace.xm);
     // 		fstp real8 ptr [workspace].x1			;	x_2+C
-    fstp(x87_op_mem64(&workspace.x1));
+    FSTP_64(&workspace.x1);
 
     // 		mov			ecx,[workspace].xm
     ecx.uint_val = workspace.xm;
@@ -440,7 +440,7 @@ count_cont:
     // 		 FXCH		st(1)						;	x_2+C	t_dx
     FXCH(1);
     // 		fstp real8 ptr [workspace].x2			;	t_dx
-    fstp(x87_op_mem64(&workspace.x2));
+    FSTP_64(&workspace.x2);
 
     // 		fild		[workspace.xstep_0]			;	xstep_0	t_dx
     fild(workspace.xstep_0);
@@ -449,15 +449,15 @@ count_cont:
     // 		 FXCH		st(2)			;	tdx		xstep_0	xstep_1
     FXCH(2);
     // 		fstp		[workspace.t_dx]			;	xstep_0	xstep_1
-    fstp(x87_op_mem32(&workspace.t_dx));
+    FSTP_32(&workspace.t_dx);
     // 		mov			[workspace].x2+4,edi
     workspace.d_x2 = edi.uint_val;
     // 		mov		ecx,[workspace.v1]				; Start preparing for parmeter setup
     ecx.ptr_val = workspace.v1;
     // 		fstp		[workspace.xstep_0]			;	step_1
-    fstp(x87_op_mem32(&workspace.xstep_0));
+    FSTP_32(&workspace.xstep_0);
     // 		fstp		[workspace.xstep_1]			;
-    fstp(x87_op_mem32(&workspace.xstep_1));
+    FSTP_32(&workspace.xstep_1);
 
     // 		jmp			exit
     goto exit;
@@ -471,10 +471,10 @@ top_zero:
         goto empty_triangle;
     }
     // 										;	0		1		2		3		4		5		6		7
-    fmul_2(x87_op_i(1), x87_op_i(0));                          //	1/2area	dy1*a	dy2		dx1		dx2
+    FMUL_ST(1, 0);                          //	1/2area	dy1*a	dy2		dx1		dx2
     FLD(fp_one);                                     //	1.0		1/2area	dy1*a	dy2		dx1		dx2
     FXCH(3);                                                   //   dy2  	1/2area	dy1*a	1.0		dx1		dx2
-    fmul_2(x87_op_i(0), x87_op_i(1));                          //	dy2*a  	1/2area	dy1*a	1.0		dx1		dx2
+    FMUL_ST(0, 1);                          //	dy2*a  	1/2area	dy1*a	1.0		dx1		dx2
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_SY]); //   sy3	 dy2*a  	1/2area	dy1*a	1.0		dx1 dx2
     // fsub		[ebx].comp_f[C_SY*4]		;   dsy2	dy2*a  	1/2area	dy1*a	1.0		dx1		dx2
     FSUB(((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]);
@@ -487,7 +487,7 @@ top_zero:
 bottom_zero:
     // 												;	0		1		2		3		4		5		6		7
     // 		fmul		st(1),st					;	1/2area	dy1*a	dy2		dx1		dx2
-    fmul_2(x87_op_i(1), x87_op_i(0));
+    FMUL_ST(1, 0);
     // 		fld			[ebx].comp_f[C_SY*4]		;	sy2		1/2area	dy1*a	dy2		dx1		dx2
     FLD(((brp_vertex *)ebx.ptr_val)->comp_f[C_SY]);
     // 		fsub		[eax].comp_f[C_SY*4]		;   dsy1	1/2area	dy1*a	dy2		dx1		dx2
@@ -495,7 +495,7 @@ bottom_zero:
     // 		 FXCH	   st(3)						;   dy2  	1/2area	dy1*a	dsy1	dx1		dx2
     FXCH(3);
     // 		fmul		st,st(1)					;	dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
-    fmul_2(x87_op_i(0), x87_op_i(1));
+    FMUL_ST(0, 1);
     // 		fld			fp_one						;   1.0	 dy2*a  	1/2area	dy1*a	dsy1	dx1		dx2
     FLD(fp_one);
     // 		 FXCH	   st(5)						;   dx1	  dy2*a 	1/2area	dy1*a	dsy1	1.0		dx2
@@ -584,13 +584,13 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			 FXCH	st(3)						; 	dp2*a	dp2*c	dp1*b	dp1*d	fdy		fdx
     FXCH(3);
     // 			fsubp	st(2),st					; 	dp2*c	d1b-d2a	dp1*d	fdy		fdx
-    fsubp_2(x87_op_i(2), x87_op_i(0));
+    FSUBP_ST(2, 0);
     // 			fld		[eax].comp_f[comp*4]		; 	param_t	dp2*c	d1b-d2a	dp1*d	fdy		fdx
     FLD(((brp_vertex *)eax.ptr_val)->comp_f[comp]);
     // 			 FXCH	st(3)						; 	dp1*d	dp2*c	d1b-d2a	param_t	fdy		fdx
     FXCH(3);
     // 			fsubp	st(1),st					; 	d2c-d1d	d1b-d2a	param_t	fdy		fdx
-    fsubp_2(x87_op_i(1), x87_op_i(0));
+    FSUBP_ST(1, 0);
     // 												; 	pdy		pdx		param_t	fdy		fdx
 
     // 	; Build the inputs to the rasteriser
@@ -618,13 +618,13 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			 FXCH	st(3)						; 	pdx		pdx*xs1	pdy		pdy_0	param_t	fdy		fdx
     FXCH(3);
     // 			fmul	st(6),st					; 	pdx		pdx*xs1	pdy		pdy_0	param_t	fdy		fdx*pdx
-    fmul_2(x87_op_i(6), x87_op_i(0));
+    FMUL_ST(6, 0);
     // 			 FXCH	st(2)						; 	pdy		pdx*xs1	pdx		pdy_0	param_t	fdy		fdx*pdx
     FXCH(2);
     // 			fadd	st(1),st					; 	pdy		pdy_1	pdx		pdy_0	param_t	fdy		fdx*pdx
     fadd_st(1, 0);
     // 			fmulp	st(5),st					; 	pdy_1	pdx		pdy_0	param_t	fdy*pdy	fdx*pdx
-    fmulp_2(x87_op_i(5), x87_op_i(0));
+    FMULP_ST(5, 0);
     // 			 FXCH	st(3)						; 	param_t	pdx		pdy_0	pdy_1	fdy*pdy	fdx*pdx
     FXCH(3);
     // 			faddp	st(5),st					; 	pdx		pdy_0	pdy_1	fdy*pdy	fpx+pt
@@ -662,17 +662,17 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			 FXCH	st(2)			; 	C+pdy_1	C+pdy_0	C+pstrt	C+pdx
     FXCH(2);
     // 			fstp	real8 ptr s_p
-    fstp(x87_op_mem64(s_p));
+    FSTP_64(s_p);
     // 			fstp	real8 ptr d_p_x
-    fstp(x87_op_mem64(d_p_x));
+    FSTP_64(d_p_x);
     // 			mov		esi,dword ptr s_p
     esi.uint_val = *s_p;
     // 			mov		edi,dword ptr d_p_x
     edi.uint_val = *d_p_x;
     // 			fstp	real8 ptr s_p	;
-    fstp(x87_op_mem64(s_p));
+    FSTP_64(s_p);
     // 			fstp	real8 ptr d_p_x	;
-    fstp(x87_op_mem64(d_p_x));
+    FSTP_64(d_p_x);
     // 			mov		dword ptr s_p+4,esi
     mov(x86_op_mem32(s_p + 1), x86_op_reg(&esi));
     *((uint32_t*)s_p + 1) = esi.uint_val;
@@ -758,17 +758,17 @@ void SETUP_FLAGS()
     // 	 FXCH st(2)
     FXCH(2);
     // 	fstp qword ptr workspace.scratch0
-    fstp(x87_op_mem64(&workspace.scratch0));
+    FSTP_64(&workspace.scratch0);
     // 	fstp qword ptr workspace.scratch2
-    fstp(x87_op_mem64(&workspace.scratch2));
+    FSTP_64(&workspace.scratch2);
     // 	fstp qword ptr workspace.scratch4
-    fstp(x87_op_mem64(&workspace.scratch4));
+    FSTP_64(&workspace.scratch4);
     // 	fstp qword ptr workspace.scratch6
-    fstp(x87_op_mem64(&workspace.scratch6));
+    FSTP_64(&workspace.scratch6);
     // 	fstp qword ptr workspace.scratch8
-    fstp(x87_op_mem64(&workspace.scratch8));
+    FSTP_64(&workspace.scratch8);
     // 	fstp qword ptr workspace.scratch10
-    fstp(x87_op_mem64(&workspace.scratch10));
+    FSTP_64(&workspace.scratch10);
     // 	mov ebx,workspace.scratch6
     mov(x86_op_reg(&ebx), x86_op_mem32(&workspace.scratch6));
     // 	mov ebp,workspace.scratch8
@@ -906,13 +906,13 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	FXCH st(2)						;	sp			dpdx		dpdy0		d
     FXCH(2);
     // 	fmul st,st(3)					;	spd			dpdx		dpdy0		d
-    fmul_2(x87_op_i(0), x87_op_i(3));
+    FMUL_ST(0, 3);
     // 	fild workspace.d_&param&_y_1	;	dpdy1		spd			dpdx		dpdy0		d
     fild(d_p_y_1);
     // 	FXCH st(2)						;	dpdx		spd			dpdy1		dpdy0		d
     FXCH(2);
     // 	fmul st,st(4)					;	dpdxd		spd			dpdy1		dpdy0		d
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 	 FXCH st(1)						;	spd			dpdxd		dpdy1		dpdy0		d
     FXCH(1);
     // 	fadd magic						;	spdx		dpdxd		dpdy1		dpdy0		d
@@ -920,7 +920,7 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	 FXCH st(3)						;	dpdy0		dpdxd		dpdy1		spdx		d
     FXCH(3);
     // 	fmul st,st(4)					;	dpdy0d		dpdxd		dpdy1		spdx		d
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 	 FXCH st(1)						;	dpdxd		dpdy0d		dpdy1		spdx		d
     FXCH(1);
     // 	fadd magic						;	dpdxdx		dpdy0d		dpdy1		spdx		d
@@ -928,7 +928,7 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	 FXCH st(2)						;	dpdy1		dpdy0d		dpdxdx		spdx		d
     FXCH(2);
     // 	fmul st,st(4)					;	dpdy1d		dpdy0d		dpdxdx		spdx		d
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 	 FXCH st(4)						;	d			dpdy0d		dpdxdx		spdx		dpdy1d
     FXCH(4);
     // 	fstp st(0)						;	dpdy0d		dpdxdx		spdx		dpdy1d
@@ -942,13 +942,13 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	 FXCH st(2)						;	spdx		dpdxdx		dpdy1dx		dpdy0dx
     FXCH(2);
     // 	fstp qword ptr workspaceA.s&param		;	dpdxdx		dpdy1dx		dpdy0dx
-    fstp(x87_op_mem64(a_sp));
+    FSTP_64(a_sp);
     // 	fstp qword ptr workspaceA.d&param&x	;	dpdy1dx		dpdy0dx
-    fstp(x87_op_mem64(a_dpx));
+    FSTP_64(a_dpx);
     // 	fstp qword ptr workspaceA.d&param&y1	;	dpdy0dx
-    fstp(x87_op_mem64(a_dpy1));
+    FSTP_64(a_dpy1);
     // 	fstp qword ptr workspaceA.d&param&y0	;
-    fstp(x87_op_mem64(a_dpy0));
+    FSTP_64(a_dpy0);
     // endm
 }
 
@@ -1034,13 +1034,13 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	FXCH st(2)						;	sp			dpdx		dpdy0		d
     FXCH(2);
     // 	fmul st,st(3)					;	spd			dpdx		dpdy0		d
-    fmul_2(x87_op_i(0), x87_op_i(3));
+    FMUL_ST(0, 3);
     // 	fild workspaceA.dvy1					;	dpdy1		spd			dpdx		dpdy0		d
     fild(workspaceA.dvy1);
     // 	FXCH st(2)						;	dpdx		spd			dpdy1		dpdy0		d
     FXCH(2);
     // 	fmul st,st(4)					;	dpdxd		spd			dpdy1		dpdy0		d
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 	 FXCH st(1)						;	spd			dpdxd		dpdy1		dpdy0		d
     FXCH(1);
     // 	fadd magic						;	spdx		dpdxd		dpdy1		dpdy0		d
@@ -1048,7 +1048,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(3)						;	dpdy0		dpdxd		dpdy1		spdx		d
     FXCH(3);
     // 	fmul st,st(4)					;	dpdy0d		dpdxd		dpdy1		spdx		d
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 	 FXCH st(1)						;	dpdxd		dpdy0d		dpdy1		spdx		d
     FXCH(1);
     // 	fadd magic						;	dpdxdx		dpdy0d		dpdy1		spdx		d
@@ -1056,7 +1056,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(2)						;	dpdy1		dpdy0d		dpdxdx		spdx		d
     FXCH(2);
     // 	fmul st,st(4)					;	dpdy1d		dpdy0d		dpdxdx		spdx		d
-    fmul_2(x87_op_i(0), x87_op_i(4));
+    FMUL_ST(0, 4);
     // 	 FXCH st(4)						;	d			dpdy0d		dpdxdx		spdx		dpdy1d
     FXCH(4);
     // 	fstp st(0)						;	dpdy0d		dpdxdx		spdx		dpdy1d
@@ -1070,13 +1070,13 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(2)						;	spdx		dpdxdx		dpdy1dx		dpdy0dx
     FXCH(2);
     // 	fstp qword ptr workspaceA.sv			;	dpdxdx		dpdy1dx		dpdy0dx
-    fstp(x87_op_mem64(&workspaceA.sv));
+    FSTP_64(&workspaceA.sv);
     // 	fstp qword ptr workspaceA.dvx			;	dpdy1dx		dpdy0dx
-    fstp(x87_op_mem64(&workspaceA.dvx));
+    FSTP_64(&workspaceA.dvx);
     // 	fstp qword ptr workspaceA.dvy1		;	dpdy0dx
-    fstp(x87_op_mem64(&workspaceA.dvy1));
+    FSTP_64(&workspaceA.dvy1);
     // 	fstp qword ptr workspaceA.dvy0		;
-    fstp(x87_op_mem64(&workspaceA.dvy0));
+    FSTP_64(&workspaceA.dvy0);
     // endm
 }
 

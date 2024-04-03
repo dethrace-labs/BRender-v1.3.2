@@ -121,6 +121,8 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
 #define ST_(i) x86_state.x87_stack[x86_state.x87_stack_top - i]
 
+#define X87_POP() x86_state.x87_stack_top--
+
 #define FXCH(i) \
     x86_state.x87_swap = ST_(0);\
     ST_(0) = ST_(i);            \
@@ -132,10 +134,44 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define FLD(val) \
     x86_state.x87_stack[++x86_state.x87_stack_top] = val;
 
+#define FILD(val) \
+    x86_state.x87_stack[++x86_state.x87_stack_top] = val;
+
 #define FSUB(val) \
     ST_(0) -= val;
 
 #define FMUL_ST(dest, src) \
     ST_(dest) *= ST_(src);
+
+#define FMULP_ST(dest, src) \
+    ST_(dest) *= ST_(src); \
+    X87_POP();
+
+#define FSUBP_ST(dest, src) \
+    ST_(dest) -= ST_(src); \
+    X87_POP();
+
+#define FADD(val) \
+    ST_(0) += val;
+
+#define FST_32(dest) \
+    *(float*)dest = (float)ST_(0);
+
+#define FSTP_32(dest) \
+    *(float*)dest = (float)ST_(0); \
+    X87_POP();
+
+#define FSTP_64(dest) \
+    *(double*)dest = (double)ST_(0); \
+    X87_POP();
+
+#define FDIVR(val) \
+    ST_(0) = val / ST_(0);
+
+#define FDIVRP_ST(dest, src) \
+    ST_(dest) = ST_(src) / ST_(dest); \
+    X87_POP();
+
+
 
 #endif
