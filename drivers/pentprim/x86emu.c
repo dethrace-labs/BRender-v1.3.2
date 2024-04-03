@@ -5,15 +5,16 @@
 #include <assert.h>
 
 
-x86emu_state_t x86_state;
+x86emu_state_t x86_state = { .x87_stack_top = -1 };
 x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
-// long double ST_(int i)
-// {
-//     assert(x87emu_stack_top - i >= 0);
-//     assert(x87emu_stack_top - i <= 7);
-//     return &x87emu_stack[x87emu_stack_top - i];
-// }
+
+long double* ST_debug(int i)
+{
+    assert(i >= 0);
+    assert(i <= 7);
+    return &x86_state.x87_stack[x86_state.x87_stack_top - i];
+}
 
 int x86emu_fpu_stack_top()
 {
@@ -143,7 +144,7 @@ fld(20)
     switch(op.type) {
         case X87_OP_ST:
 
-            x86_state.x87_stack[x86_state.x87_stack_top + 1] = ST_(op.st_index);
+            x86_state.x87_stack[x86_state.x87_stack_top + 1] = *ST_debug(op.st_index);
             break;
         case X87_OP_FLOAT:
             x86_state.x87_stack[x86_state.x87_stack_top + 1] = op.float_val;
@@ -174,12 +175,12 @@ void fild_ptr(intptr_t val)
 
 void fsub(float v)
 {
-    ST_(0) -= v;
+    *ST_debug(0) -= v;
 }
 
 void fsub_2(x87_operand dest, x87_operand src)
 {
-    ST_(dest.st_index) -= ST_(src.st_index);
+    *ST_debug(dest.st_index) -= *ST_debug(src.st_index);
 }
 
 void fsubp_2(x87_operand dest, x87_operand src)
@@ -190,12 +191,12 @@ void fsubp_2(x87_operand dest, x87_operand src)
 
 void fmul(float val)
 {
-    ST_(0) *= val;
+    *ST_debug(0) *= val;
 }
 
 void fmul_2(x87_operand dest, x87_operand src)
 {
-    ST_(dest.st_index) *= ST_(src.st_index);
+    *ST_debug(dest.st_index) *= *ST_debug(src.st_index);
 }
 
 void fmulp_2(x87_operand dest, x87_operand src)
@@ -206,21 +207,22 @@ void fmulp_2(x87_operand dest, x87_operand src)
 
 void fdivr(float f)
 {
-    ST_(0) = f / ST_(0);
+    *ST_debug(0) = f / *ST_debug(0);
 }
 
 void fdivrp(int dest, int src)
 {
     // src is always 0
-    ST_(dest) = ST_(0) / ST_(dest);
+    *ST_debug(dest) = *ST_debug(0) / *ST_debug(dest);
     fpu_pop();
 }
 
 void fxch(int i)
 {
-    long double tmp = ST_(0);
-    ST_(0)          = ST_(i);
-    ST_(i)          = tmp;
+    x86_state.x87_swap = *ST_debug(0);
+    *ST_debug(0)          = *ST_debug(i);
+    assert(i <= 7);
+    *ST_debug(i)          = x86_state.x87_swap;
 }
 
 
@@ -229,10 +231,10 @@ void fst(x87_operand dest)
 {
     switch(dest.type) {
         case X87_OP_MEM32:
-            *(float *)dest.mem = (float)ST_(0);
+            *(float *)dest.mem = (float)*ST_debug(0);
             break;
         case X87_OP_MEM64:
-            *(double *)dest.mem = (double)ST_(0);
+            *(double *)dest.mem = (double)*ST_debug(0);
             break;
         case X87_OP_ST:
             assert(dest.st_index == 0);
@@ -251,7 +253,7 @@ void fstp(x87_operand dest)
 
 void fadd_st(int dest, int src)
 {
-    ST_(dest) += ST_(src);
+    *ST_debug(dest) += *ST_debug(src);
 }
 
 void fadd(x87_operand op)
@@ -262,20 +264,20 @@ void fadd(x87_operand op)
     switch(op.type) {
         case X87_OP_MEM32:
             memcpy(&f, op.mem, 4);
-            ST_(0) += f;
+            *ST_debug(0) += f;
             break;
         case X87_OP_MEM64:
             memcpy(&d, op.mem, 8);
-            ST_(0) += d;
+            *ST_debug(0) += d;
             break;
         case X87_OP_FLOAT:
-            ST_(0) += op.float_val;
+            *ST_debug(0) += op.float_val;
             break;
         case X87_OP_DOUBLE:
-            ST_(0) += op.double_val;
+            *ST_debug(0) += op.double_val;
             break;
         case X87_OP_ST:
-            ST_(op.st_index) += ST_(0);
+            *ST_debug(op.st_index) += *ST_debug(0);
             break;
         default:
             fail();
@@ -636,5 +638,5 @@ void ror(x86_operand dest, int count) {
 
 void fldi(double d)
 {
-    ST_(0) = d;
+    *ST_debug(0) = d;
 }

@@ -44,32 +44,32 @@ void TriangleRender_ZT_I8_D16(brp_block *block, ...)
     fild(work.colour.stride_b);
     // 	fild work.depth.stride_b		;	ds			cs			db			ty			cb
     fild(work.depth.stride_b);
-    // 	fxch st(4)						;	cb			cs			db			ty			ds
-    fxch(4);
+    // 	FXCH st(4)						;	cb			cs			db			ty			ds
+    FXCH(4);
     // 	fsub fp_one						;	cb-1		cs			db			ty			ds
     fsub(fp_one);
-    // 	 fxch st(3)						;	ty			cs			db			cb-1		ds
-    fxch(3);
+    // 	 FXCH st(3)						;	ty			cs			db			cb-1		ds
+    FXCH(3);
     // 	fsub fp_one						;	ty-1		cs			db			cb-1		ds
     fsub(fp_one);
-    // 	 fxch st(2)						;	db			cs			ty-1		cb-1		ds
-    fxch(2);
+    // 	 FXCH st(2)						;	db			cs			ty-1		cb-1		ds
+    FXCH(2);
     // 	fsub fp_two						;	db-2		cs			ty-1		cb-1		ds
     fsub(fp_two);
-    // 	 fxch st(3)						;	cb-1		cs			ty-1		db-2		ds
-    fxch(3);
+    // 	 FXCH st(3)						;	cb-1		cs			ty-1		db-2		ds
+    FXCH(3);
     // 	fadd fp_conv_d					;	cb-1I		cs			ty-1		db-2		ds
     fadd(x87_op_mem32(&fp_conv_d));
-    // 	 fxch st(1)						;	cs			cb-1I		ty-1		db-2		ds
-    fxch(1);
+    // 	 FXCH st(1)						;	cs			cb-1I		ty-1		db-2		ds
+    FXCH(1);
     // 	fmul st,st(2)					;	csy			cb-1I		ty-1		db-2		ds
     fmul_2(x87_op_i(0), x87_op_i(2));
-    // 	 fxch st(3)						;	db-2		cb-1I		ty-1		csy			ds
-    fxch(3);
+    // 	 FXCH st(3)						;	db-2		cb-1I		ty-1		csy			ds
+    FXCH(3);
     // 	fadd fp_conv_d					;	db-2I		cb-1I		ty-1		csy			ds
     fadd(x87_op_mem32(&fp_conv_d));
-    // 	 fxch st(2)						;	ty-1		cb-1I		db-2I		csy			ds
-    fxch(2);
+    // 	 FXCH st(2)						;	ty-1		cb-1I		db-2I		csy			ds
+    FXCH(2);
     // 	fmulp st(4),st					;	cb-1I		db-2I		csy			dsy
     fmulp_2(x87_op_i(4), x87_op_i(0));
     // 	faddp st(2),st					;	db-2I		ca			dsy

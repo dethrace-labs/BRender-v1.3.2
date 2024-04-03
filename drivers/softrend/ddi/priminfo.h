@@ -32,7 +32,7 @@ enum brp_components {
 	C_U		= 8,
 	C_V		= 9,
 
-	C_I 	= 10,	
+	C_I 	= 10,
 	C_A     = 10,
 
 	C_R		= 11,
@@ -120,7 +120,7 @@ enum brp_flags {
 typedef union brp_vertex {
 	br_int_32 flags;
 	br_scalar	comp  [NUM_COMPONENTS];		/* All the components of vertex	*/
-	br_float	comp_f[NUM_COMPONENTS];	
+	br_float	comp_f[NUM_COMPONENTS];
 	br_fixed_ls	comp_x[NUM_COMPONENTS];
 	br_int_32	comp_i[NUM_COMPONENTS];
 } brp_vertex;
@@ -132,6 +132,9 @@ typedef union brp_vertex {
 /*
  * Render a primitive - takes 1 or more vertices
  */
+
+struct brp_block; //added to quiet compiler
+
 #ifndef __H2INC__
 typedef void BR_ASM_CALL brp_render_fn(struct brp_block *block, ...);
 #else
@@ -233,4 +236,3 @@ typedef struct brp_block_min {
 };
 #endif
 #endif
-

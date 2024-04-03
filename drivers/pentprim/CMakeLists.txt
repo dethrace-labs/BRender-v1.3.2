@@ -141,17 +141,15 @@ set_target_properties(pentprim PROPERTIES
 		OUTPUT_NAME "softprmf"
 		)
 
-# 		if(CMAKE_BUILD_TYPE MATCHES "Debug")
-#   set(
-#     CMAKE_C_FLAGS
-#     "${CMAKE_C_FLAGS}  -fsanitize=undefined -fsanitize=address"
-#   )
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+	set(CMAKE_C_FLAGS
+		"${CMAKE_C_FLAGS}  -fsanitize=undefined -fsanitize=address"
+	)
 
-# endif()
-
-# target_compile_options(pentprim PUBLIC -fsanitize=address)
-# target_link_options(pentprim
-# 		BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,leak,undefined
-# 	  )
+	target_compile_options(pentprim PUBLIC -fsanitize=address)
+	target_link_options(pentprim
+			BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,undefined
+	)
+endif()
 
 add_library(BRender::Drivers::SoftPrim ALIAS pentprim)

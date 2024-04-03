@@ -121,6 +121,21 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
 #define ST_(i) x86_state.x87_stack[x86_state.x87_stack_top - i]
 
-#define FXCH(i) x86_state.x87_swap = ST_(0); ST_(0) = ST_(i); ST_(i) = x86_state.x87_swap;
+#define FXCH(i) \
+    x86_state.x87_swap = ST_(0);\
+    ST_(0) = ST_(i);            \
+    ST_(i) = x86_state.x87_swap;
+
+#define FLD_ST(i) \
+    x86_state.x87_stack[++x86_state.x87_stack_top] = ST_(i);
+
+#define FLD(val) \
+    x86_state.x87_stack[++x86_state.x87_stack_top] = val;
+
+#define FSUB(val) \
+    ST_(0) -= val;
+
+#define FMUL_ST(dest, src) \
+    ST_(dest) *= ST_(src);
 
 #endif
