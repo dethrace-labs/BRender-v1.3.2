@@ -313,7 +313,7 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
 void ARBITRARY_SETUP();
 void SETUP_FLAGS();
 void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
-void REMOVE_INTEGER_PARTS_OF_PARAM(void *param);
+void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
 void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
                               void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic);
 void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();

@@ -78,9 +78,9 @@ void TriangleRender_ZT_I8_D16(brp_block *block, ...)
     // 	faddp st(2),st					;	ca			da
     faddp(x87_op_i(2));
     // 	fstp qword ptr workspace.scanAddress
-    FSTP_64(&workspace.scanAddress);
+    FSTP64(&workspace.scanAddress);
     // 	fstp qword ptr workspace.depthAddress
-    FSTP_64(&workspace.depthAddress);
+    FSTP64(&workspace.depthAddress);
 
     // 	mov eax,work.texture.base
     mov(x86_op_reg(&eax), x86_op_imm(0)); // TODO?
