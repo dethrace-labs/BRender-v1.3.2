@@ -9,6 +9,8 @@
 #define DRAW_RL           1
 #define NON_WRAPPED       0
 #define WRAPPED           1
+// To deal with 32 / 64 pointer manipulation issues,
+// we only add the base texture pointer when accessing pixels
 #define WORK_TEXTURE_BASE 0
 
 extern struct workspace_t               workspace;

@@ -19,7 +19,6 @@
 void DRAW_ZT_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, int32_t *halfCount, int pow2) {
 // 	local drawPixel,drawLine,done,lineDrawn,noPlot,mask
 	int32_t mask=0;
-	int32_t cf=0;
 // ; height test
 	MAKE_N_LOW_BIT_MASK(&mask,pow2);
 
@@ -130,29 +129,20 @@ noPlot:
 // 	mov ebx,workspace.d_z_x
 	ebx.uint_val = workspace.d_z_x;
 
-	cf = 0;
 // 	add_d edx,ebx,direction
 	if (direction == DRAW_LR) {
-		edx.uint_val += ebx.uint_val;
-		if(edx.uint_val < ebx.uint_val) {
-            cf = 1;
-        }
+		ADD_AND_SET_CF(edx.uint_val, ebx.uint_val);
 	} else {
-		if(ebx.uint_val > edx.uint_val) {
-            cf = 1;
-        }
-		edx.uint_val -= ebx.uint_val;
+		SUB_AND_SET_CF(edx.uint_val, ebx.uint_val);
 	}
 // 	mov esi,workspace.c_v
 	esi.uint_val = workspace.c_v;
 
 // 	adc_d edx,0,direction
 	if (direction == DRAW_LR) {
-		//adc(x86_op_reg(edx), x86_op_imm(0));
-		edx.uint_val += cf;
+		ADC(edx.uint_val, 0);
 	} else {
-		//sbb(x86_op_reg(edx), x86_op_imm(0));
-		edx.uint_val -= cf;
+		SBB(edx.uint_val, 0);
 	}
 // 	mov ebx,workspace.d_v_x
 	ebx.uint_val = workspace.d_v_x;
@@ -206,14 +196,13 @@ lineDrawn:
 	edi.uint_val = workspace.d_xm_f;
 
 // 	add ebp,edi
-	ebp.uint_val += edi.uint_val;
-	cf = ebp.uint_val < edi.uint_val;
+	ADD_AND_SET_CF(ebp.uint_val, edi.uint_val);
 
 // 	mov eax,workspace.s_u
 	eax.uint_val = workspace.s_u;
 
 // 	sbb edx,edx
-	edx.uint_val = edx.uint_val - (edx.uint_val + cf);
+	SBB(edx.uint_val, edx.uint_val);
 // 	mov workspace.xm_f,ebp
 	workspace.xm_f = ebp.uint_val;
 
@@ -328,45 +317,45 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 
 // ;										st(0)		st(1)		st(2)		st(3)		st(4)		st(5)		st(6)		st(7)
 // 	fild work.colour.base			;	cb
-	fild(cb);
+	FILD(cb);
 // 	fild workspace.t_y				;	ty			cb
-	fild(workspace.t_y);
+	FILD(workspace.t_y);
 // 	fild work.depth.base			;	db			ty			cb
-	fild(db);
+	FILD(db);
 // 	fild work.colour.stride_b		;	cs			db			ty			cb
-	fild(work.colour.stride_b);
+	FILD(work.colour.stride_b);
 // 	fild work.depth.stride_b		;	ds			cs			db			ty			cb
-	fild(work.depth.stride_b);
-// 	FXCH st(4)						;	cb			cs			db			ty			ds
+	FILD(work.depth.stride_b);
+// 	fxch st(4)						;	cb			cs			db			ty			ds
 	FXCH(4);
 // 	fsub fp_one						;	cb-1		cs			db			ty			ds
-	fsub(fp_one);
-// 	 FXCH st(3)						;	ty			cs			db			cb-1		ds
+	FSUB(fp_one);
+// 	 fxch st(3)						;	ty			cs			db			cb-1		ds
 	FXCH(3);
 // 	fsub fp_one						;	ty-1		cs			db			cb-1		ds
-	fsub(fp_one);
-// 	FXCH st(2)						;	db			cs			ty-1		cb-1		ds
+	FSUB(fp_one);
+// 	fxch st(2)						;	db			cs			ty-1		cb-1		ds
 	FXCH(2);
 // 	fsub fp_two						;	db-2		cs			ty-1		cb-1		ds
-	fsub(fp_two);
-// 	 FXCH st(3)						;	cb-1		cs			ty-1		db-2		ds
+	FSUB(fp_two);
+// 	 fxch st(3)						;	cb-1		cs			ty-1		db-2		ds
 	FXCH(3);
 // 	fadd fp_conv_d					;	cb-1I		cs			ty-1		db-2		ds
-	fadd(x87_op_mem32(&fp_conv_d));
-// 	 FXCH st(1)						;	cs			cb-1I		ty-1		db-2		ds
+	FADD(*((float*)&fp_conv_d));
+// 	 fxch st(1)						;	cs			cb-1I		ty-1		db-2		ds
 	FXCH(1);
 // 	fmul st,st(2)					;	csy			cb-1I		ty-1		db-2		ds
-	fmul_2(x87_op_i(0), x87_op_i(2));
-// 	 FXCH st(3)						;	db-2		cb-1I		ty-1		csy			ds
+	FMUL_ST(0, 2);
+// 	 fxch st(3)						;	db-2		cb-1I		ty-1		csy			ds
 	FXCH(3);
 // 	fadd fp_conv_d					;	db-2I		cb-1I		ty-1		csy			ds
-	fadd(x87_op_mem32(&fp_conv_d));
-// 	 FXCH st(2)						;	ty-1		cb-1I		db-2I		csy			ds
+	FADD(*((float*)&fp_conv_d));
+// 	 fxch st(2)						;	ty-1		cb-1I		db-2I		csy			ds
 	FXCH(2);
 // 	fmulp st(4),st					;	cb-1I		db-2I		csy			dsy
-	fmulp_2(x87_op_i(4), x87_op_i(0));
+	FMULP_ST(4, 0);
 // 	faddp st(2),st					;	db-2I		ca			dsy
-	faddp(x87_op_i(2));
+	FADDP_ST(2, 0);
 // 	;x-stall
 // 	mov eax,workspace.xm
     eax.uint_val = workspace.xm;
@@ -374,7 +363,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 	ebx.uint_val = workspace.d_xm;
 
 // 	faddp st(2),st					;	ca			da
-	faddp(x87_op_i(2));
+	FADDP_ST(2, 0);
 // 	;x-stall
 // 	;x-stall
 
@@ -396,10 +385,10 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 // 	mov workspace.d_xm_f,ebx
 	workspace.d_xm_f = ebx.uint_val;
 // 	cmp edx,80000000
-	cmp(x86_op_reg(&edx), x86_op_imm(80000000));
+	CMP(edx.uint_val, 80000000);
 
 // 	adc edx,-1
-	adc(x86_op_reg(&edx), x86_op_imm(-1));
+	ADC(edx.uint_val, -1);
 
 // 	mov	eax,workspace.flip
 	eax.uint_val = workspace.flip;

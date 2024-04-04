@@ -186,6 +186,23 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     ST_(dest) += ST_(src); \
     X87_POP();
 
+#define CMP(val1, val2) \
+    x86_state.cf = val1 < val2; \
+    x86_state.zf = val1 == val2;
 
+#define ADD_AND_SET_CF(val1, val2) \
+    val1 += val2; \
+	x86_state.cf = val1 < val2;
+
+#define SUB_AND_SET_CF(val1, val2) \
+    x86_state.cf = val1 < val2; \
+    val1 -= val2;
+
+
+#define ADC(val1, val2) \
+    val1 += val2 + x86_state.cf;
+
+#define SBB(val1, val2) \
+    val1 = val1 - (val2 + x86_state.cf);
 
 #endif

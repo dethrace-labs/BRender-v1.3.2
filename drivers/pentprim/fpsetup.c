@@ -103,18 +103,17 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     FSUBP_ST(1, 0); //	2area	dy1		dy2		dx1		dx2
 
     ebx.uint_val ^= ebx.uint_val;
-    cmp(x86_op_reg(&ecx), x86_op_reg(&eax));
+    CMP(ecx.uint_val, eax.uint_val);
 
     rcl(x86_op_reg(&ebx), 1);
     edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
 
     FDIVR(fp_one); //	1/2area	dy1		dy2		dx1		dx2
 
-    cmp(x86_op_reg(&edx), x86_op_reg(&eax));
-
+    CMP(edx.uint_val, eax.uint_val);
     rcl(x86_op_reg(&ebx), 1);
-    cmp(x86_op_reg(&edx), x86_op_reg(&ecx));
 
+    CMP(edx.uint_val, ecx.uint_val)
     rcl(x86_op_reg(&ebx), 1); // ebx now has 3 bit number characterising the order of the vertices.
 
     eax.uint_val = sort_table_0[ebx.uint_val];
@@ -415,11 +414,11 @@ count_cont:
     // 		mov			[workspace].xm+4,edx
     workspace.d_xm = edx.uint_val;
     // 		sar			ecx,16
-    sar(x86_op_reg(&ecx), 16);
+    ecx.int_val >>= 16;
     // 		mov			[workspace].x1+4,esi
     workspace.d_x1 = esi.uint_val;
     // 		sar			edx,16			; get integer part of x delta down major edge
-    sar(x86_op_reg(&edx), 16);
+    edx.int_val >>= 16;
     // 		mov			[workspace.t_dx],ecx
     workspace.t_dx = ecx.uint_val;
     // 		fild		[workspace.t_dx]			;	t_x		x_2+C
@@ -957,64 +956,58 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
 void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS()
 {
     // 	mov ebx,workspaceA.sv
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.sv));
-
+    ebx.uint_val = workspaceA.sv;
     // 	shl ebx,16
-    shl(x86_op_reg(&ebx), 16);
+    ebx.uint_val <<= 16;
     // 	mov edx,workspaceA.dvx
-    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvx));
+    edx.uint_val = workspaceA.dvx;
     // 	shl edx,16
-    shl(x86_op_reg(&edx), 16);
+    edx.uint_val <<= 16;
     // 	mov workspaceA.svf,ebx
-    mov(x86_op_mem32(&workspaceA.svf), x86_op_reg(&ebx));
+    workspaceA.svf = ebx.uint_val;
     // 	mov ebx,workspaceA.dvy0
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.dvy0));
+    ebx.uint_val = workspaceA.dvy0;
     // 	mov workspaceA.dvxf,edx
-    mov(x86_op_mem32(&workspaceA.dvxf), x86_op_reg(&edx));
+    workspaceA.dvxf = edx.uint_val;
     // 	shl ebx,16
-    shl(x86_op_reg(&ebx), 16);
+    ebx.uint_val <<= 16;
     // 	mov edx,workspaceA.dvy1
-    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvy1));
-
+    edx.uint_val = workspaceA.dvy1;
     // 	shl edx,16
-    shl(x86_op_reg(&edx), 16);
+    edx.uint_val <<= 16;
     // 	mov workspaceA.dvy0f,ebx
-    mov(x86_op_mem32(&workspaceA.dvy0f), x86_op_reg(&ebx));
+    workspaceA.dvy0f = ebx.uint_val;
     // 	mov workspaceA.dvy1f,edx
-    mov(x86_op_mem32(&workspaceA.dvy1f), x86_op_reg(&edx));
+    workspaceA.dvy1f = edx.uint_val;
 
     // ;integer parts
 
     // 	mov ebx,workspaceA.sv
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.sv));
-
+    ebx.uint_val = workspaceA.sv;
     // 	sar ebx,16
-    sar(x86_op_reg(&ebx), 16);
+    ebx.int_val >>= 16;
     // 	mov edx,workspaceA.dvx
-    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvx));
+    edx.uint_val = workspaceA.dvx;
 
     // 	sar edx,16
-    sar(x86_op_reg(&edx), 16);
+    edx.int_val >>= 16;
     // 	mov workspaceA.sv,ebx
-    mov(x86_op_mem32(&workspaceA.sv), x86_op_reg(&ebx));
+    workspaceA.sv = ebx.uint_val;
 
     // 	mov ebx,workspaceA.dvy0
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.dvy0));
+    ebx.uint_val = workspaceA.dvy0;
     // 	mov workspaceA.dvx,edx
-    mov(x86_op_mem32(&workspaceA.dvx), x86_op_reg(&edx));
-
+    workspaceA.dvx = edx.uint_val;
     // 	sar ebx,16
-    sar(x86_op_reg(&ebx), 16);
+    ebx.int_val >>= 16;
     // 	mov edx,workspaceA.dvy1
-    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.dvy1));
-
+    edx.uint_val = workspaceA.dvy1;
     // 	sar edx,16
-    sar(x86_op_reg(&edx), 16);
+    edx.int_val >>= 16;
     // 	mov workspaceA.dvy0,ebx
-    mov(x86_op_mem32(&workspaceA.dvy0), x86_op_reg(&ebx));
-
+    workspaceA.dvy0 = ebx.uint_val;
     // 	mov workspaceA.dvy1,edx
-    mov(x86_op_mem32(&workspaceA.dvy1), x86_op_reg(&edx));
+    workspaceA.dvy1 = edx.uint_val;
 
     // endm
 }
@@ -1084,46 +1077,42 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
 void CREATE_CARRY_VERSIONS()
 {
     // mov eax,workspaceA.dvy0
-    mov(x86_op_reg(&eax), x86_op_mem32(&workspaceA.dvy0));
+    eax.uint_val = workspaceA.dvy0;
     // mov ebx,workspaceA.dvy1
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.dvy1));
-
+    ebx.uint_val = workspaceA.dvy1;
     // add eax,work.texture.stride_b
-    add(x86_op_reg(&eax), x86_op_mem32(&work.texture.stride_b));
+    eax.uint_val += work.texture.stride_b;
     // mov ecx,workspaceA.dvx
-    mov(x86_op_reg(&ecx), x86_op_mem32(&workspaceA.dvx));
-
+    ecx.uint_val = workspaceA.dvx;
     // add ebx,work.texture.stride_b
-    add(x86_op_reg(&ebx), x86_op_mem32(&work.texture.stride_b));
+    ebx.uint_val += work.texture.stride_b;
     // add ecx,work.texture.stride_b
-    add(x86_op_reg(&ecx), x86_op_mem32(&work.texture.stride_b));
+    ecx.uint_val += work.texture.stride_b;
 
     // mov workspaceA.dvy0c,eax
-    mov(x86_op_mem32(&workspaceA.dvy0c), x86_op_reg(&eax));
+    workspaceA.dvy0c = eax.uint_val;
     // mov workspaceA.dvy1c,ebx
-    mov(x86_op_mem32(&workspaceA.dvy1c), x86_op_reg(&ebx));
-
+    workspaceA.dvy1c = ebx.uint_val;
     // mov workspaceA.dvxc,ecx
-    mov(x86_op_mem32(&workspaceA.dvxc), x86_op_reg(&ecx));
+    workspaceA.dvxc = ecx.uint_val;
 }
 
 void WRAP_SETUP()
 {
     // mov ecx,
-    mov(x86_op_reg(&ecx), x86_op_mem32(&work.texture.width_p));
+    ecx.uint_val = work.texture.width_p;
     // mov eax,work.texture._size
-    mov(x86_op_reg(&eax), x86_op_mem32(&work.texture.size));
+    eax.uint_val = work.texture.size;
+
     // shl ecx,16
-    shl(x86_op_reg(&ecx), 16);
+    ecx.uint_val <<= 16;
     // add eax,work.texture.base
-    // add(x86_op_reg(&eax), x86_op_ptr(work.texture.base));  //doesnt work with pointers
+    eax.uint_val += WORK_TEXTURE_BASE;
     // mov workspaceA.uUpperBound,ecx
-    mov(x86_op_mem32(&workspaceA.uUpperBound), x86_op_reg(&ecx));
+    workspaceA.uUpperBound = ecx.int_val;
 
     // mov workspaceA.vUpperBound,eax
-    // mov(x86_op_mem32(&workspaceA.vUpperBound), x86_op_reg(&eax)); doesn't work with pointers
-    //workspaceA.vUpperBound = ((uint8_t *)work.texture.base) + work.texture.size;
-    workspaceA.vUpperBound = 0 + work.texture.size;
+    workspaceA.vUpperBound = eax.uint_val;
 }
 
 void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n) {
