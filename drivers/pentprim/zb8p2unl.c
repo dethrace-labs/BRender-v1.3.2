@@ -120,7 +120,7 @@ drawPixel:
     }
 
 // 	mov [ebp+2*ecx],dl
-	((uint16_t *)work.depth.base)[ebp.uint_val / 2 + ecx.int_val] = edx.short_val[0]; // *(uint16_t *)&edx.uint_val;
+	((uint16_t *)work.depth.base)[ebp.uint_val / 2 + ecx.int_val] = edx.short_val[0];
 // 	mov [edi+ecx],al
 // 	mov [ebp+2*ecx+1],dh
 	((uint8_t *)work.colour.base)[edi.uint_val + ecx.uint_val] = eax.bytes[0];
@@ -436,7 +436,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_32(brp_block *block, brp_vertex *v0, b
 }
 
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_64(brp_block *block, ...) {
-    va_list     va; // [esp+24h] [ebp+18h] BYREF
+    va_list     va;
     va_start(va, block);
 	TriangleRender_ZT_I8_D16_POW2(block, 6, va);
 	va_end(va);
@@ -446,9 +446,11 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_128(brp_block *block, brp_vertex *v0, 
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZT_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
+void BR_ASM_CALL TriangleRender_ZT_I8_D16_256(brp_block *block, ...) {
+    va_list     va;
+    va_start(va, block);
+	TriangleRender_ZT_I8_D16_POW2(block, 8, va);
+	va_end(va);
 }
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
     // Not implemented

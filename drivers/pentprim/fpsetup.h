@@ -11,6 +11,8 @@
 #define WRAPPED           1
 // To deal with 32 / 64 pointer manipulation issues,
 // we only add the base texture pointer when accessing pixels
+#define WORK_COLOUR_BASE 0
+#define WORK_DEPTH_BASE 0
 #define WORK_TEXTURE_BASE 0
 
 extern struct workspace_t               workspace;
@@ -323,6 +325,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
 void CREATE_CARRY_VERSIONS();
 void WRAP_SETUP();
 
+void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 
 // TOOD: should be in common.h

@@ -114,6 +114,7 @@ typedef struct x86emu_state_t {
     int  x87_stack_top;
     int cf;
     int zf;
+    uint32_t x86_swap;
 } x86emu_state_t;
 
 extern x86emu_state_t x86_state;
@@ -205,4 +206,8 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define SBB(val1, val2) \
     val1 = val1 - (val2 + x86_state.cf);
 
+#define ROR16(dest) \
+    x86_state.x86_swap = dest.short_val[0]; \
+	dest.short_val[0] = dest.short_val[1]; \
+	dest.short_val[1] = x86_state.x86_swap;
 #endif

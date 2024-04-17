@@ -16,7 +16,7 @@ void BR_CALLBACK _BrBeginHook(void)
 
     BrDevAddStatic(NULL, BrDrv1SoftPrimBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1SoftRendBegin, NULL);
-    BrDevAddStatic(NULL, BrDrv1SDL2Begin, NULL);
+    //BrDevAddStatic(NULL, BrDrv1SDL2Begin, NULL);
 }
 
 void BR_CALLBACK _BrEndHook(void)
@@ -67,7 +67,31 @@ int main(int argc, char **argv)
 
     //BrLogSetLevel(BR_LOG_DEBUG);
 
-    err = BrDevBegin(&screen, "SDL2");
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		printf("sdl_init panic! (%s)\n", SDL_GetError());
+		return -1;
+	}
+
+	SDL_Window *window = SDL_CreateWindow(
+		"brenSDL",
+		SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED,
+		640, 480,
+		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == NULL)
+    {
+        printf("renderer panic! (%s)\n", SDL_GetError());
+        return -1;
+    }
+
+    BrBegin();
+    BrZbBegin(BR_PMT_INDEX_8, BR_PMT_DEPTH_16);
+
+    //err = BrDevBegin(&screen, "SDL2");
+    screen = BrPixelmapAllocate(BR_PMT_INDEX_8, 640, 480, NULL, BR_PMAF_NORMAL);
 
     if(err != BRE_OK) {
         //BrLogError("APP", "BrDevBeginVar() failed");
@@ -99,6 +123,8 @@ int main(int argc, char **argv)
         goto create_fail;
     }
 
+    SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(colour_buffer->pixels, 640, 480, 8, 640, 0, 0, 0, 0);
+
     BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
     colour_buffer->origin_x = depth_buffer->origin_x = colour_buffer->width >> 1;
@@ -110,9 +136,18 @@ int main(int argc, char **argv)
         goto create_fail;
     }
 
-    BrPixelmapPaletteSet(colour_buffer, pal_std);
+    SDL_Color *cols = pal_std->pixels;
+    for (int i = 0; i < 256; i++)
+    {
+        int r = cols[i].r;
+        cols[i].r = cols[i].b;
+        cols[i].b = r;
+    }
 
-    BrRendererBegin(colour_buffer, NULL, NULL, primitive_heap, sizeof(primitive_heap));
+    //BrPixelmapPaletteSet(colour_buffer, pal_std);
+    SDL_SetPaletteColors(surface->format->palette, pal_std->pixels, 0, 256);
+
+    //BrRendererBegin(colour_buffer, NULL, NULL, primitive_heap, sizeof(primitive_heap));
 
     world = BrActorAllocate(BR_ACTOR_NONE, NULL);
 
@@ -121,7 +156,7 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(1));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(1.5));
 
         camera_data           = (br_camera *)camera->type_data;
         camera_data->aspect   = BR_DIV(BR_SCALAR(colour_buffer->width), BR_SCALAR(colour_buffer->height));
@@ -145,20 +180,20 @@ int main(int argc, char **argv)
     }
 
     br_pixelmap *pm3[1000];
-    count = BrPixelmapLoadMany("/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX", pm3, 1000);
+    count = BrPixelmapLoadMany("/opt/CARMA/DATA/PIXELMAP/SCREWIE.PIX", pm3, 1000);
     BrMapAddMany(pm3, count);
     br_material *mat3[1000];
-    count = BrMaterialLoadMany("/opt/CARMA/DATA/MATERIAL/EAGLE.MAT", mat3, 1000);
+    count = BrMaterialLoadMany("/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT", mat3, 1000);
     BrMaterialAddMany(mat3, count);
 
     br_pixelmap *pm = BrPixelmapLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.pix");
     BrMapAdd(pm);
 
     br_model *mod1[1000];
-    count = BrModelLoadMany("/opt/CARMA/DATA/MODELS/EAGLE.DAT", mod1, 1000);
+    count = BrModelLoadMany("/opt/CARMA/DATA/MODELS/SCREWIE.DAT", mod1, 1000);
     BrModelAddMany(mod1, count);
 
-cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
     BrActorAdd(world, cube);
     //  cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
     // cube->t.type = BR_TRANSFORM_MATRIX34;
@@ -174,7 +209,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
 //     cube2->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
 //     BrMapUpdate(cube2->material->colour_map, BR_MAPU_ALL);
 //     BrMaterialUpdate(cube2->material, BR_MATU_ALL);
-//     cube2->render_style = BR_RSTYLE_EDGES;
+    // cube->render_style = BR_RSTYLE_EDGES;
 
 
 #if defined(SOFTCUBE_16BIT)
@@ -188,14 +223,15 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
     // cube->material->flags |= BR_MATF_SMOOTH; // Makes lighting look _much_ better.
     // cube->material->flags |= BR_MATF_DISABLE_COLOUR_KEY;  // Not supported by software.
     // cube->material->opacity = 255; // < 255 selects screendoor renderer
-    //cube->render_style = BR_RSTYLE_EDGES;
+    // cube->render_style = BR_RSTYLE_EDGES;
 
 //BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
     BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
+    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(-100));
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
-    // light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
-    //  BrLightEnable(light);
+    light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
+     BrLightEnable(light);
 
     ticks_last = SDL_GetTicks64();
 
@@ -213,6 +249,15 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
             switch(evt.type) {
                 case SDL_QUIT:
                     goto done;
+
+                case SDL_KEYUP:
+                    if (evt.key.keysym.sym == SDLK_a) {
+                        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(-10)));
+                    } else if (evt.key.keysym.sym == SDLK_s) {
+                        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(10)));
+                    }
+                    break;
+
             }
         }
 
@@ -231,14 +276,10 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
 
         } else {
 
-            BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
-            // BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -0.1);
-
-            //  BrMatrix34PostRotateX(&cube2->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(25) * BR_SCALAR(dt)));
-            //    BrMatrix34PostRotateX(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(25) * BR_SCALAR(dt)));
+//            BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(20) * BR_SCALAR(dt)));
 
             BrRendererFrameBegin();
-            BrPixelmapFill(colour_buffer, 255);
+            BrPixelmapFill(colour_buffer, 10);
             BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
             BrZbSceneRender(world, camera, colour_buffer, depth_buffer);
@@ -266,7 +307,12 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
             printf("Current FPS: %d, average: %d\n", fps, avg);
         }
 
-        BrPixelmapDoubleBuffer(screen, colour_buffer);
+        SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        SDL_RenderPresent(renderer);
+        SDL_DestroyTexture(texture);
+
+        //BrPixelmapDoubleBuffer(screen, colour_buffer);
     }
 
 done:

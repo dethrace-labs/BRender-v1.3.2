@@ -476,6 +476,7 @@ static void GEOMETRY_CALL V1Face_Render(struct br_geometry *self, struct br_rend
 }
 #endif
 
+#include <stdio.h>
 #ifndef V1Face_OS_Render
 void GEOMETRY_CALL V1Face_OS_Render(struct br_geometry *self, struct br_renderer *renderer)
 {
@@ -502,6 +503,8 @@ void GEOMETRY_CALL V1Face_OS_Render(struct br_geometry *self, struct br_renderer
 				rend.temp_vertices+(*fp_vertices)[1],
 				rend.temp_vertices+(*fp_vertices)[2],
 				fp_vertices, fp_edges, fp_eqn, tfp);
+
+			//return;
 #endif
 		}
 	}
@@ -519,6 +522,7 @@ void GEOMETRY_CALL V1Face_OSV_Render(struct br_geometry *self, struct br_rendere
 	brp_block * unclipped = renderer->state.cache.face_blocks_onscreen[renderer->state.cache.nface_blocks_onscreen].chain;
 
 	rend.prelit_colours = rend.face_colours;
+	return;
 
 	/*
 	 * Go through each face in loop

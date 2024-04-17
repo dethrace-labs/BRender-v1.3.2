@@ -57,7 +57,7 @@ void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, brp_vertex *v0, brp_v
 void BR_ASM_CALL TriangleRender_Z_I8_D16_ShadeTable(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL TriangleRenderPIZ2I(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL TriangleRender_ZI_I8_D16_ShadeTable(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
-void BR_ASM_CALL TriangleRender_ZI_I8_D16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
+void BR_ASM_CALL TriangleRender_ZI_I8_D16(brp_block *block, ...);
 void BR_ASM_CALL TriangleRender_ZIF_I8_D16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL TriangleRender_ZIF_I8_D16_FLAT(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 
@@ -66,7 +66,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_16(brp_block *block, brp_vertex *v0, b
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_32(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_128(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
-void BR_ASM_CALL TriangleRender_ZT_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
+void BR_ASM_CALL TriangleRender_ZT_I8_D16_256(brp_block *block, ...);
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 
 void BR_ASM_CALL TriangleRender_ZTB_I8_D16_8(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
@@ -272,9 +272,9 @@ void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_1024(brp_block *block, brp_vertex *
  * l_piz.c
  */
 
-void BR_ASM_CALL LineRenderPIZ2I(brp_block *block, brp_vertex *v0,brp_vertex *v1);
+void BR_ASM_CALL LineRenderPIZ2I(brp_block *block, ...);
 void BR_ASM_CALL LineRenderPIZ2T(brp_block *block, ...);
-void BR_ASM_CALL LineRenderPIZ2TI(brp_block *block, brp_vertex *v0,brp_vertex *v1);
+void BR_ASM_CALL LineRenderPIZ2TI(brp_block *block, ...);
 
 void BR_ASM_CALL LineRenderPFZ2I(brp_block *block, brp_vertex *v0,brp_vertex *v1);
 void BR_ASM_CALL LineRenderPFZ2I555(brp_block *block, brp_vertex *v0,brp_vertex *v1);

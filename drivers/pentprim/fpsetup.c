@@ -37,6 +37,14 @@ float                            temp;
 struct workspace_t               workspace;
 struct ArbitraryWidthWorkspace_t workspaceA;
 
+void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+}
+
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
@@ -135,7 +143,7 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ebp.uint_val &= MASK_MANTISSA;
     ecx.uint_val >>= 23;
     ebp.uint_val |= IMPLICIT_ONE;
-    ebp.uint_val >>= (ecx.uint_val & 0xff);
+    ebp.uint_val >>= ecx.bytes[0];
     esi.float_val = ((brp_vertex *)ebx.ptr_val)->comp_f[C_SY];
     ecx.uint_val = EXPONENT_OFFSET;
     ecx.uint_val -= esi.uint_val;
@@ -143,7 +151,7 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ecx.uint_val >>= 23;
     esi.uint_val |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    esi.uint_val >>= (ecx.uint_val & 0xff);
+    esi.uint_val >>= ecx.bytes[0];
 
     edi.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
     ecx.uint_val = EXPONENT_OFFSET;
@@ -152,7 +160,7 @@ int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ecx.uint_val >>= 23;
     edi.uint_val |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    edi.uint_val >>= (ecx.uint_val & 0xff);
+    edi.uint_val >>= ecx.bytes[0];
 
     // Catch special cases of empty top or bottom trapezoids
 

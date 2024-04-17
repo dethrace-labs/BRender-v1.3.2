@@ -634,8 +634,7 @@ uPerLineNoWrapPositive:
 
 
 void BR_ASM_CALL TriangleRender_ZTI_I8_D16(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
-    // Not implemented
-    BrAbort();
+    // no-op
 }
 void BR_ASM_CALL TriangleRender_ZTI_I8_D16_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
     // Not implemented
