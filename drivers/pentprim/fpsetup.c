@@ -37,6 +37,19 @@ float                            temp;
 struct workspace_t               workspace;
 struct ArbitraryWidthWorkspace_t workspaceA;
 
+// FIXME: These are originally macros. Functions for now
+int  SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+void ARBITRARY_SETUP();
+void SETUP_FLAGS();
+void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
+void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
+void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
+                              void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic);
+void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
+void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
+void CREATE_CARRY_VERSIONS();
+void WRAP_SETUP();
+
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
@@ -369,7 +382,7 @@ count_cont:
     // 		 FXCH		st(3)						;	g1		x_2		t_dy*gm	x_1		gm		g2
     FXCH(3);
     // 		fadd		fp_conv_d16		            ;	g1+C	x_2		t_dy*gm	x_1		gm		g2
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 		 FXCH		st(2)						;	t_dy*gm	x_2		g1+C	x_1		gm		g2
     FXCH(2);
     // 		fadd		[eax].comp_f[C_SX*4]		;	x_m		x_2		g1+C	x_1		gm		g2
@@ -377,16 +390,16 @@ count_cont:
     // 		 FXCH		st(4)						;	gm		x_2		g1+C	x_1		x_m		g2
     FXCH(4);
     // 		fadd		fp_conv_d16		            ;	gm+C	x_2		g1+C	x_1		x_m		g2
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 		 FXCH		st(1)						;	x_2		gm+C	g1+C	x_1		x_m		g2
     FXCH(1);
     // 		fadd	fconv_d16_12[esi*8]	            ;	x_2+C	gm+C	g1+C	x_1		x_m		g2
     assert(esi.uint_val >= 0 && esi.uint_val <= 1);
-    FADD(*((double*)&fconv_d16_12[esi.uint_val]));
+    FADD64(fconv_d16_12[esi.uint_val]);
     // 		 FXCH		st(5)						;	g2		gm+C	g1+C	x_1		x_m		x_2+C
     FXCH(5);
     // 		fadd		fp_conv_d16		              ;	g2+C	gm+C	g1+C	x_1		x_m		x_2+C
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 		 FXCH		st(2)						;	g1+C	gm+C	g2+C	x_1		x_m		x_2+C
     FXCH(2);
     // 		fstp real8 ptr [workspace].x1			;	gm+C	g2+C	x_1		x_m		x_2+C
@@ -396,11 +409,11 @@ count_cont:
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
     FSTP64(&workspace.x2);
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
-    FADD(*((double*)&fconv_d16_12[esi.uint_val]));
+    FADD64(fconv_d16_12[esi.uint_val]);
     // 		FXCH		st(1)						;	x_m		x_1+C	x_2+C
     FXCH(1);
     // 		fadd	fconv_d16_m[esi*8]				;	x_m+C	x_1+C	x_2+C
-    FADD(*((double*)&fconv_d16_m[esi.uint_val]));
+    FADD64(fconv_d16_m[esi.uint_val]);
 
     // 	; Load deltas back in registers
     // 	;
@@ -639,11 +652,11 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			 FXCH	st(1)						; 	pdy_0	pdx		pdy_1	fdy*pdy	fpx+pt
     FXCH(1);
     // 			fadd	conv						; 	C+pdy_0	pdx		pdy_1	fdy*pdy	fpx+pt
-    FADD(*((float*)&conv));
+    FADD(conv);
     // 			 FXCH	st(2)						; 	pdy_1	pdx		C+pdy_0	fdy*pdy	fpx+pt
     FXCH(2);
     // 			fadd	conv						; 	C+pdy_1	pdx		C+pdy_0	fdy*pdy	fpx+pt
-    FADD(*((float*)&conv));
+    FADD(conv);
     // 			 FXCH	st(3)						; 	fdy*pdy	pdx		C+pdy_0	C+pdy_1	fpx+pt
     FXCH(3);
     // 			faddp	st(4),st					;	pdx		C+pdy_0	C+pdy_1	pstart
@@ -659,13 +672,13 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 	; 13 cycles
     // 									;	0		1		2		3		4		5		6		7
     // 			fadd	conv			; 	C+pdx	C+pdy_0	C+pdy_1	pstart
-    FADD(*((float*)&conv));
+    FADD(conv);
     // 			 FXCH	st(3)			; 	pstart	C+pdy_0	C+pdy_1	C+pdx
     FXCH(3);
     // ; 1 clock delay
 
     // 			fadd	conv			; 	C+pstrt	C+pdy_0	C+pdy_1	C+pdx
-    FADD(*((float*)&conv));
+    FADD(conv);
     // 			 FXCH	st(2)			; 	C+pdy_1	C+pdy_0	C+pstrt	C+pdx
     FXCH(2);
     // 			fstp	real8 ptr s_p
@@ -739,27 +752,27 @@ void SETUP_FLAGS()
     // 	fld dword ptr[edx+4*C_U]
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_U]);
     // 	fadd fp_conv_d16
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 	fld dword ptr[eax+4*C_U]
     FLD(((brp_vertex *)eax.ptr_val)->comp_f[C_U]);
     // 	fadd fp_conv_d16
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 	fld dword ptr[ecx+4*C_U]
     FLD(((brp_vertex *)ecx.ptr_val)->comp_f[C_U]);
     // 	fadd fp_conv_d16
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 	fld dword ptr[edx+4*C_V]
     FLD(((brp_vertex *)edx.ptr_val)->comp_f[C_V]);
     // 	fadd fp_conv_d16
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 	fld dword ptr[eax+4*C_V]
     FLD(((brp_vertex *)eax.ptr_val)->comp_f[C_V]);
     // 	fadd fp_conv_d16
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 	fld dword ptr[ecx+4*C_V]
     FLD(((brp_vertex *)ecx.ptr_val)->comp_f[C_V]);
     // 	fadd fp_conv_d16
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 	 FXCH st(2)
     FXCH(2);
     // 	fstp qword ptr workspace.scratch0
@@ -924,7 +937,7 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	 FXCH st(1)						;	spd			dpdxd		dpdy1		dpdy0		d
     FXCH(1);
     // 	fadd magic						;	spdx		dpdxd		dpdy1		dpdy0		d
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(3)						;	dpdy0		dpdxd		dpdy1		spdx		d
     FXCH(3);
     // 	fmul st,st(4)					;	dpdy0d		dpdxd		dpdy1		spdx		d
@@ -932,7 +945,7 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	 FXCH st(1)						;	dpdxd		dpdy0d		dpdy1		spdx		d
     FXCH(1);
     // 	fadd magic						;	dpdxdx		dpdy0d		dpdy1		spdx		d
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(2)						;	dpdy1		dpdy0d		dpdxdx		spdx		d
     FXCH(2);
     // 	fmul st,st(4)					;	dpdy1d		dpdy0d		dpdxdx		spdx		d
@@ -942,11 +955,11 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	fstp st(0)						;	dpdy0d		dpdxdx		spdx		dpdy1d
     FSTP32_ST(0);
     // 	fadd magic						;	dpdy0dx		dpdxdx		spdx		dpdy1d
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(3)						;	dpdy1d		dpdxdx		spdx		dpdy0dx
     FXCH(3);
     // 	fadd magic						;	dpdy1dx		dpdxdx		spdx		dpdy0dx
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(2)						;	spdx		dpdxdx		dpdy1dx		dpdy0dx
     FXCH(2);
     // 	fstp qword ptr workspaceA.s&param		;	dpdxdx		dpdy1dx		dpdy0dx
@@ -1046,7 +1059,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(1)						;	spd			dpdxd		dpdy1		dpdy0		d
     FXCH(1);
     // 	fadd magic						;	spdx		dpdxd		dpdy1		dpdy0		d
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(3)						;	dpdy0		dpdxd		dpdy1		spdx		d
     FXCH(3);
     // 	fmul st,st(4)					;	dpdy0d		dpdxd		dpdy1		spdx		d
@@ -1054,7 +1067,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(1)						;	dpdxd		dpdy0d		dpdy1		spdx		d
     FXCH(1);
     // 	fadd magic						;	dpdxdx		dpdy0d		dpdy1		spdx		d
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(2)						;	dpdy1		dpdy0d		dpdxdx		spdx		d
     FXCH(2);
     // 	fmul st,st(4)					;	dpdy1d		dpdy0d		dpdxdx		spdx		d
@@ -1064,11 +1077,11 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	fstp st(0)						;	dpdy0d		dpdxdx		spdx		dpdy1d
     FSTP32_ST(0);
     // 	fadd magic						;	dpdy0dx		dpdxdx		spdx		dpdy1d
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(3)						;	dpdy1d		dpdxdx		spdx		dpdy0dx
     FXCH(3);
     // 	fadd magic						;	dpdy1dx		dpdxdx		spdx		dpdy0dx
-    FADD(*((float*)&magic));
+    FADD(magic);
     // 	 FXCH st(2)						;	spdx		dpdxdx		dpdy1dx		dpdy0dx
     FXCH(2);
     // 	fstp qword ptr workspaceA.sv			;	dpdxdx		dpdy1dx		dpdy0dx

@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "work.h"
+#include "x86emu.h"
 
 #define work_main_i				workspace.xm
 #define work_main_d_i			workspace.d_xm

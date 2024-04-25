@@ -110,6 +110,7 @@ add_library(pentprim
 		sar16.c
 		decal.c
 
+		pfpsetup.c
 		fpsetup.c
 		x86emu.c
 

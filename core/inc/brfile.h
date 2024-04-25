@@ -21,7 +21,7 @@ typedef int BR_CALLBACK br_mode_test_cbfn(br_uint_8 *magics,br_size_t n_magics);
  * Interface to filesystem
  */
 typedef br_uint_32 BR_CALLBACK brfile_attributes_cbfn(void);
-typedef void * BR_CALLBACK brfile_open_read_cbfn(const char *name, br_size_t n_magics,
+typedef void * BR_CALLBACK brfile_open_read_cbfn(char *name, br_size_t n_magics,
 	br_mode_test_cbfn *mode_test,
 	int *mode_result);
 typedef void * BR_CALLBACK brfile_open_write_cbfn(char *name, int text);
@@ -131,4 +131,3 @@ enum br_filesystem_identify {
 #define BR_EOF (-1)
 
 #endif
-

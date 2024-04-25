@@ -1,6 +1,7 @@
 #include "brender.h"
 #include "priminfo.h"
 #include "fpsetup.h"
+#include "x86emu.h"
 #include <stdarg.h>
 #include "work.h"
 
@@ -341,7 +342,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 // 	 fxch st(3)						;	cb-1		cs			ty-1		db-2		ds
 	FXCH(3);
 // 	fadd fp_conv_d					;	cb-1I		cs			ty-1		db-2		ds
-	FADD(*((float*)&fp_conv_d));
+	FADD(fp_conv_d);
 // 	 fxch st(1)						;	cs			cb-1I		ty-1		db-2		ds
 	FXCH(1);
 // 	fmul st,st(2)					;	csy			cb-1I		ty-1		db-2		ds
@@ -349,7 +350,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_li
 // 	 fxch st(3)						;	db-2		cb-1I		ty-1		csy			ds
 	FXCH(3);
 // 	fadd fp_conv_d					;	db-2I		cb-1I		ty-1		csy			ds
-	FADD(*((float*)&fp_conv_d));
+	FADD(fp_conv_d);
 // 	 fxch st(2)						;	ty-1		cb-1I		db-2I		csy			ds
 	FXCH(2);
 // 	fmulp st(4),st					;	cb-1I		db-2I		csy			dsy

@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include "work.h"
 #include "zb8awtm.h"
+#include "x86emu.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,80 +36,80 @@ void TriangleRender_ZT_I8_D16(brp_block *block, ...)
     intptr_t db = 0; //(intptr_t)work.depth.base;
 
     // 	fild work.colour.base			;	cb
-    fild(cb);
+    FILD(cb);
     // 	fild workspace.t_y				;	ty			cb
-    fild(workspace.t_y);
+    FILD(workspace.t_y);
     // 	fild work.depth.base			;	db			ty			cb
-    fild(db);
+    FILD(db);
     // 	fild work.colour.stride_b		;	cs			db			ty			cb
-    fild(work.colour.stride_b);
+    FILD(work.colour.stride_b);
     // 	fild work.depth.stride_b		;	ds			cs			db			ty			cb
-    fild(work.depth.stride_b);
+    FILD(work.depth.stride_b);
     // 	FXCH st(4)						;	cb			cs			db			ty			ds
     FXCH(4);
     // 	fsub fp_one						;	cb-1		cs			db			ty			ds
-    fsub(fp_one);
+    FSUB(fp_one);
     // 	 FXCH st(3)						;	ty			cs			db			cb-1		ds
     FXCH(3);
     // 	fsub fp_one						;	ty-1		cs			db			cb-1		ds
-    fsub(fp_one);
+    FSUB(fp_one);
     // 	 FXCH st(2)						;	db			cs			ty-1		cb-1		ds
     FXCH(2);
     // 	fsub fp_two						;	db-2		cs			ty-1		cb-1		ds
-    fsub(fp_two);
+    FSUB(fp_two);
     // 	 FXCH st(3)						;	cb-1		cs			ty-1		db-2		ds
     FXCH(3);
     // 	fadd fp_conv_d					;	cb-1I		cs			ty-1		db-2		ds
-    fadd(x87_op_mem32(&fp_conv_d));
+    FADD(fp_conv_d);
     // 	 FXCH st(1)						;	cs			cb-1I		ty-1		db-2		ds
     FXCH(1);
     // 	fmul st,st(2)					;	csy			cb-1I		ty-1		db-2		ds
-    fmul_2(x87_op_i(0), x87_op_i(2));
+    FMUL_ST(0, 2);
     // 	 FXCH st(3)						;	db-2		cb-1I		ty-1		csy			ds
     FXCH(3);
     // 	fadd fp_conv_d					;	db-2I		cb-1I		ty-1		csy			ds
-    fadd(x87_op_mem32(&fp_conv_d));
+    FADD(fp_conv_d);
     // 	 FXCH st(2)						;	ty-1		cb-1I		db-2I		csy			ds
     FXCH(2);
     // 	fmulp st(4),st					;	cb-1I		db-2I		csy			dsy
-    fmulp_2(x87_op_i(4), x87_op_i(0));
+    FMULP_ST(0, 4);
     // 	faddp st(2),st					;	db-2I		ca			dsy
-    faddp(x87_op_i(2));
+    FADDP_ST(2, 0);
     // 	;stall
     // 	faddp st(2),st					;	ca			da
-    faddp(x87_op_i(2));
+    FADDP_ST(2, 0);
     // 	fstp qword ptr workspace.scanAddress
     FSTP64(&workspace.scanAddress);
     // 	fstp qword ptr workspace.depthAddress
     FSTP64(&workspace.depthAddress);
 
     // 	mov eax,work.texture.base
-    mov(x86_op_reg(&eax), x86_op_imm(0)); // TODO?
+    eax.uint_val = WORK_TEXTURE_BASE;
     // 	mov ebx,workspaceA.sv
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspaceA.sv));
+    ebx.uint_val = workspaceA.sv;
 
     // 	add ebx,eax
-    add(x86_op_reg(&ebx), x86_op_reg(&eax));
+    ebx.uint_val += eax.uint_val;
     // 	mov eax,workspace.xm
-    mov(x86_op_reg(&eax), x86_op_mem32(&workspace.xm));
+    eax.uint_val = workspace.xm;
 
     // 	shl eax,16
-    shl(x86_op_reg(&eax), 16);
+    eax.uint_val <<= 16;
     // 	mov workspaceA.sv,ebx
-    mov(x86_op_mem32(&workspaceA.sv), x86_op_reg(&ebx));
+    workspaceA.sv = ebx.uint_val;
 
     // 	mov	edx,workspaceA.flags
-    mov(x86_op_reg(&edx), x86_op_mem32(&workspaceA.flags));
+    edx.uint_val = workspaceA.flags;
     // 	mov ebx,workspace.d_xm
-    mov(x86_op_reg(&ebx), x86_op_mem32(&workspace.d_xm));
+    ebx.uint_val = workspace.d_xm;
 
     // 	shl ebx,16
-    shl(x86_op_reg(&ebx), 16);
+    ebx.uint_val <<= 16;
     // 	mov workspace.xm_f,eax
-    mov(x86_op_mem32(&workspace.xm_f), x86_op_reg(&eax));
+    workspace.xm_f = eax.uint_val;
 
     // 	mov workspace.d_xm_f,ebx
-    mov(x86_op_mem32(&workspace.d_xm_f), x86_op_reg(&ebx));
+    workspace.d_xm_f = ebx.uint_val;
     // 	jmp ecx
     switch(edx.uint_val) {
         case 0:
@@ -489,12 +490,12 @@ void PER_SCAN_ZT(int32_t *halfCount, char wrap_flag, uint32_t *minorX, uint32_t 
     edi.uint_val = workspace.d_xm_f;
 
     // 	add ebp,edi
-    add(x86_op_reg(&ebp), x86_op_reg(&edi));
+    ADD_AND_SET_CF(ebp.uint_val, edi.uint_val);
     // 	mov eax,workspaceA.svf
     eax.uint_val = workspaceA.svf;
 
     // 	sbb edi,edi
-    sbb(x86_op_reg(&edi), x86_op_reg(&edi));
+    SBB(edi.uint_val, edi.uint_val);
     // 	mov workspace.xm_f,ebp
     workspace.xm_f = ebp.uint_val;
 
@@ -514,7 +515,7 @@ void PER_SCAN_ZT(int32_t *halfCount, char wrap_flag, uint32_t *minorX, uint32_t 
     // 	add edx,[workspaceA.duy0+8*edi]
     edx.uint_val += ((uint32_t *)&workspaceA.duy0)[2 * edi.int_val];
     // 	add eax,[workspaceA.dvy0f+4*edi]
-    add(x86_op_reg(&eax), x86_op_imm(((uint32_t *)&workspaceA.dvy0f)[edi.int_val]));
+    ADD_AND_SET_CF(eax.uint_val, ((uint32_t *)&workspaceA.dvy0f)[edi.int_val]);
 
     // 	rcl esi,1
     rcl(x86_op_reg(&esi), 1);

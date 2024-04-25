@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "../softrend/ddi/priminfo.h"
-#include "x86emu.h"
 
 #define DRAW_LR           0
 #define DRAW_RL           1
@@ -312,21 +311,11 @@ typedef struct workspace_t {
 */
 
 void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-int  SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t *d_p_x, uint32_t conv, int is_unsigned);
-void ARBITRARY_SETUP();
-void SETUP_FLAGS();
-void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
-void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
-void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
-                              void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic);
-void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
-void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
-void CREATE_CARRY_VERSIONS();
-void WRAP_SETUP();
-
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+
+// was a macro
+void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t *d_p_x, uint32_t conv, int is_unsigned);
 
 // TOOD: should be in common.h
 void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n);

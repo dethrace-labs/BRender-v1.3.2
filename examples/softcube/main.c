@@ -11,8 +11,8 @@
 
 void BR_CALLBACK _BrBeginHook(void)
 {
-    struct br_device *BR_EXPORT BrDrv1SoftPrimBegin(const char *arguments);
-    struct br_device *BR_EXPORT BrDrv1SoftRendBegin(const char *arguments);
+    struct br_device *BR_EXPORT BrDrv1SoftPrimBegin(char *arguments);
+    struct br_device *BR_EXPORT BrDrv1SoftRendBegin(char *arguments);
 
     BrDevAddStatic(NULL, BrDrv1SoftPrimBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1SoftRendBegin, NULL);
@@ -231,7 +231,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
     light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
-     BrLightEnable(light);
+    BrLightEnable(light);
 
     ticks_last = SDL_GetTicks64();
 
@@ -252,9 +252,9 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
 
                 case SDL_KEYUP:
                     if (evt.key.keysym.sym == SDLK_a) {
-                        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(-10)));
+                        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(-3)));
                     } else if (evt.key.keysym.sym == SDLK_s) {
-                        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(10)));
+                        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(3)));
                     }
                     break;
 
@@ -276,7 +276,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
 
         } else {
 
-//            BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(20) * BR_SCALAR(dt)));
+           BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
 
             BrRendererFrameBegin();
             BrPixelmapFill(colour_buffer, 10);

@@ -72,38 +72,38 @@ x86_operand x86_op_imm(uint32_t imm);
 // void            x86emu_init();
 
 int  x86emu_fpu_stack_top();
-void fld(x87_operand op);
-void fild(int val);
-void fsub(float val);
-void fadd(x87_operand op);
-void fadd_st(int dest, int src);
-void faddp(x87_operand op);
-void fsub_2(x87_operand dest, x87_operand src);
-void fsubp_2(x87_operand dest, x87_operand src);
-void fmul(float);
-void fmul_2(x87_operand dest, x87_operand src);
-void fmulp_2(x87_operand dest, x87_operand src);
-void fdivr(float f);
-void fdivrp(int dest, int src);
-void fxch(int i);
-void fst(x87_operand dest);
-void fstp(x87_operand dest);
-void fldi(double);
+// void fld(x87_operand op);
+// void fild(int val);
+// void fsub(float val);
+// void fadd(x87_operand op);
+// void fadd_st(int dest, int src);
+// void faddp(x87_operand op);
+// void fsub_2(x87_operand dest, x87_operand src);
+// void fsubp_2(x87_operand dest, x87_operand src);
+// void fmul(float);
+// void fmul_2(x87_operand dest, x87_operand src);
+// void fmulp_2(x87_operand dest, x87_operand src);
+// void fdivr(float f);
+// void fdivrp(int dest, int src);
+// void fxch(int i);
+// void fst(x87_operand dest);
+// void fstp(x87_operand dest);
+// void fldi(double);
 
-void mov(x86_operand dest, x86_operand src);
-void xor_(x86_operand dest, x86_operand src);
-void cmp(x86_operand dest, x86_operand src);
+// void mov(x86_operand dest, x86_operand src);
+// void xor_(x86_operand dest, x86_operand src);
+// void cmp(x86_operand dest, x86_operand src);
 void rcl(x86_operand dest, int count);
-void sub(x86_operand dest, x86_operand src);
-void sbb(x86_operand dest, x86_operand src);
-void and (x86_operand dest, x86_operand src);
-void add(x86_operand dest, x86_operand src);
-void adc(x86_operand dest, x86_operand src);
-void or (x86_operand dest, x86_operand src);
-void shr(x86_operand dest, int count);
-void sar(x86_operand dest, int count);
-void shl(x86_operand dest, int count);
-void ror(x86_operand dest, int count);
+// void sub(x86_operand dest, x86_operand src);
+// void sbb(x86_operand dest, x86_operand src);
+// void and (x86_operand dest, x86_operand src);
+// void add(x86_operand dest, x86_operand src);
+// void adc(x86_operand dest, x86_operand src);
+// void or (x86_operand dest, x86_operand src);
+// void shr(x86_operand dest, int count);
+// void sar(x86_operand dest, int count);
+// void shl(x86_operand dest, int count);
+// void ror(x86_operand dest, int count);
 
 // hack
 void fild_ptr(intptr_t val);
@@ -132,17 +132,20 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define FLD_ST(i) \
     x86_state.x87_stack[++x86_state.x87_stack_top] = ST_(i);
 
-#define FLD(val) \
-    x86_state.x87_stack[++x86_state.x87_stack_top] = val;
+#define FLD(val_ptr) \
+    x86_state.x87_stack[++x86_state.x87_stack_top] = *(float *)&val_ptr;
 
 #define FILD(val) \
     x86_state.x87_stack[++x86_state.x87_stack_top] = (int)val;
 
 #define FSUB(val) \
-    ST_(0) -= val;
+    ST_(0) -= *(float *)&val;
+
+#define FSUBR(val) \
+    ST_(0) = val - ST_(0);
 
 #define FMUL(val) \
-    ST_(0) *= val;
+    ST_(0) *= *(float *)&val;
 
 #define FMUL_ST(dest, src) \
     ST_(dest) *= ST_(src);
@@ -151,12 +154,21 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     ST_(dest) *= ST_(src); \
     X87_POP();
 
+#define FSUB_ST(dest, src) \
+    ST_(dest) -= ST_(src); \
+
 #define FSUBP_ST(dest, src) \
     ST_(dest) -= ST_(src); \
     X87_POP();
 
+#define FADD_0() \
+    ST_(1) += ST_(0);
+
 #define FADD(val) \
-    ST_(0) += val;
+    ST_(0) += *(float *)&val;
+
+#define FADD64(val) \
+    ST_(0) += *(double *)&val;
 
 #define FST32(dest) \
     *(float*)dest = (float)ST_(0);
@@ -164,6 +176,13 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define FSTP32(dest) \
     *(float*)dest = (float)ST_(0); \
     X87_POP();
+
+#define FISTP32(dest) \
+    *(int32_t*)dest = (int32_t)ST_(0); \
+    X87_POP();
+
+#define FABS() \
+    ST_(0) = fabs(ST_(0));
 
 #define FSTP32_ST(dest) \
     ST_(0) = ST_(0); \
@@ -186,6 +205,9 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define FADDP_ST(dest, src) \
     ST_(dest) += ST_(src); \
     X87_POP();
+
+#define FCHS() \
+    ST_(0) *= -1;
 
 #define CMP(val1, val2) \
     x86_state.cf = val1 < val2; \

@@ -522,7 +522,6 @@ void GEOMETRY_CALL V1Face_OSV_Render(struct br_geometry *self, struct br_rendere
 	brp_block * unclipped = renderer->state.cache.face_blocks_onscreen[renderer->state.cache.nface_blocks_onscreen].chain;
 
 	rend.prelit_colours = rend.face_colours;
-	return;
 
 	/*
 	 * Go through each face in loop
