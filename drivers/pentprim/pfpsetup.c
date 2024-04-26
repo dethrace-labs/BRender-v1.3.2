@@ -55,28 +55,28 @@
 #define workspace_xstep_0		workspace.xstep_0
 #define workspace_xstep_1		workspace.xstep_1
 
-long  fconv_d16_12[2] = {0x04238000000000000, 0x04238000000010000};
-long  fconv_d16_m[2]  = {0x04238000000010000, 0x04238000000000000};
-float fp_one          = 1.0f;
-float fp_two          = 2.0f;
-float fp_four         = 4.0f;
+// long  fconv_d16_12[2] = {0x04238000000000000, 0x04238000000010000};
+// long  fconv_d16_m[2]  = {0x04238000000010000, 0x04238000000000000};
+// float fp_one          = 1.0f;
+// float fp_two          = 2.0f;
+// float fp_four         = 4.0f;
 
-uint32_t fp_conv_d   = 0x59C00000;
-uint32_t fp_conv_d8  = 0x55C00000;
-uint32_t fp_conv_d8r = 0x5DC00000;
-uint32_t fp_conv_d16 = 0x51C00000;
-uint32_t fp_conv_d24 = 0x4DC00000;
-uint32_t fp_conv_d32 = 0x49C00000;
+// uint32_t fp_conv_d   = 0x59C00000;
+// uint32_t fp_conv_d8  = 0x55C00000;
+// uint32_t fp_conv_d8r = 0x5DC00000;
+// uint32_t fp_conv_d16 = 0x51C00000;
+// uint32_t fp_conv_d24 = 0x4DC00000;
+// uint32_t fp_conv_d32 = 0x49C00000;
 
-uint16_t fp_single_cw   = 0x107f;
-uint16_t fp_double_cw   = 0x127f;
-uint16_t fp_extended_cw = 0x137f;
+// uint16_t fp_single_cw   = 0x107f;
+// uint16_t fp_double_cw   = 0x127f;
+// uint16_t fp_extended_cw = 0x137f;
 
-int      sort_table_1[] = {1, 2, 0, 0, 0, 0, 2, 1};
-int      sort_table_0[] = {0, 0, 0, 2, 1, 0, 1, 2};
-int      sort_table_2[] = {2, 1, 0, 1, 2, 0, 0, 0};
-uint32_t flip_table[8]  = {0x000000000, 0x080000000, 0x080000000, 0x000000000,
-                           0x080000000, 0x000000000, 0x000000000, 0x080000000};
+// int      sort_table_1[] = {1, 2, 0, 0, 0, 0, 2, 1};
+// int      sort_table_0[] = {0, 0, 0, 2, 1, 0, 1, 2};
+// int      sort_table_2[] = {2, 1, 0, 1, 2, 0, 0, 0};
+// uint32_t flip_table[8]  = {0x000000000, 0x080000000, 0x080000000, 0x000000000,
+//                            0x080000000, 0x000000000, 0x000000000, 0x080000000};
 
 enum {
     CHEAT_NO = 0,
@@ -101,18 +101,17 @@ enum {
 // brp_vertex *bot_vertex;
 brp_vertex* top_mid_bot_verticies[3];
 
-float xr_yr;
-float wr_sr;
-float wmin_4;
+uint32_t xr_yr;
+uint32_t wr_sr;
+uint32_t wmin_4;
 uint32_t u_base;
 uint32_t v_base;
-float q0;
-float q1;
-float q2;
-float maxuv;
+uint32_t q0;
+uint32_t q1;
+uint32_t q2;
+uint32_t maxuv;
 
-// PERSP prefix added
-int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
+static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
 	// local count_cont,exit,top_zero,bottom_zero,empty_triangle
     // assume eax: ptr brp_vertex, /*ebx: ptr brp_vertex,*/ ecx: ptr brp_vertex, edx: ptr brp_vertex
@@ -239,11 +238,11 @@ count_cont:
     FMUL_ST(0, 3);                          //   dx2*a	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
     FXCH(3);                                                   //   1/2area	dx1*a   dy2*a  	dx2*a	dy1*a	dsy1	dsy2	dsy3
 
-    FSTP32(&workspace.iarea);
-    FSTP32(&workspace.dx1_a);
-    FSTP32(&workspace.dy2_a);
-    FSTP32(&workspace.dx2_a);
-    FSTP32(&workspace.dy1_a); //  	dy1		dy2		dy3
+    FSTP(&workspace.iarea);
+    FSTP(&workspace.dx1_a);
+    FSTP(&workspace.dy2_a);
+    FSTP(&workspace.dx2_a);
+    FSTP(&workspace.dy1_a); //  	dy1		dy2		dy3
 
     //; Find edge gradients of triangle
     //;
@@ -402,7 +401,7 @@ count_cont:
     // 		FXCH		st(2)						;	t_dy	t_dy	m_dy*g2	g1		gm		g2
     FXCH(2);
     // 		fst			[workspace.t_dy]
-    FST32(&workspace.t_dy);
+    FST(&workspace.t_dy);
     // 		fmul		st,st(3)					;	t_dy*g1	t_dy	m_dy*g2	g1		gm		g2
     FMUL_ST(0, 3);
     // 		 FXCH		st(2)			            ;	m_dy*g2	t_dy	t_dy*g1	g1		gm		g2
@@ -508,13 +507,13 @@ count_cont:
 	// fxch	st(2)						;	tdx		xstep_0	xstep_1
 	FXCH(2);
 	// fstp	workspace_t_dx				;	xstep_0	xstep_1
-	FSTP32(&workspace.t_dx);
+	FSTP(&workspace.t_dx);
 	// mov		ecx,[workspace_v1] 			; Start preparing for parameter setup
 	ecx.ptr_val = workspace.v1;
 	// fstp	workspace_xstep_0			;	step_1
-	FSTP32(&workspace.xstep_0);
+	FSTP(&workspace.xstep_0);
 	// fstp	workspace_xstep_1			;
-	FSTP32(&workspace.xstep_1);
+	FSTP(&workspace.xstep_1);
 
     // 		jmp			exit
     goto exit;
@@ -567,11 +566,11 @@ empty_triangle:
     workspace.topCount = -1;
     // mov workspace.bottomCount,-1
     workspace.bottomCount = -1;
-    FSTP32_ST(0);
-    FSTP32_ST(0);
-    FSTP32_ST(0);
-    FSTP32_ST(0);
-    FSTP32_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
     return FPSETUP_EMPTY_TRIANGLE;
 
 exit:
@@ -590,6 +589,8 @@ exit:
 // ;
 
 int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
+
+    assert(x86_state.x87_stack_top == -1);
 
 	// ; Sort the vertices in SX order (relies on all positive values)
 	// ;
@@ -672,7 +673,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// fld		st(0)						;	xrange	xrange	yrange
     FLD_ST(0);
 	// fsub	st(0),st(2)					;	xr-yr	xrange	yrange
-    FSUBP_ST(0, 2);
+    FSUB_ST(0, 2);
 
 	// rcl		ecx,1
     rcl(x86_op_reg(&ecx), 1);
@@ -685,7 +686,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
     CMP(edx.float_val, ebx.float_val);
 
 	// fstp	xr_yr
-    FSTP32(&xr_yr);
+    FSTP(&xr_yr);
 
 	// rcl		ecx,1			; ebx now has 3 bit number characterising the order of the vertices.
     rcl(x86_op_reg(&ecx), 1);
@@ -711,7 +712,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
     FXCH(1);
 xrange_larger:
 	// fstp	st(1)						;	srange
-    FSTP32_ST(1);
+    FSTP_ST(1);
 
 	// mov		eax,[top_vertex+eax]
     eax.ptr_val = top_mid_bot_verticies[eax.uint_val];
@@ -727,7 +728,7 @@ xrange_larger:
 	// fld		[eax].comp_f[C_W*4]			;	wmin	wmax	srange
     FLD(BRP_VERTEX(eax)->comp_f[C_W]);
 	// fsub	st(1),st(0) 					;	wmin	wrange	srange
-    FSUBP_ST(1, 0);
+    FSUB_ST(1, 0);
 	// fxch	st(2)  	 				    	;	srange	wrange	wmin
     FXCH(2);
 
@@ -736,7 +737,7 @@ xrange_larger:
 	// ; 3 cycles
 	// ;
     // fmul								;	wr*sr	wmin
-    FMUL_ST(1, 0);
+    FMUL_0();
     // fxch	st(1)						;	wmin	wr*sr
     FXCH(1);
     // fmul	fp_four						;	wmin*4	wr*sr
@@ -754,12 +755,12 @@ xrange_larger:
 	// ; 5 cycles
 	// ;
     // fstp	wr_sr
-    FSTP32(&wr_sr);
+    FSTP(&wr_sr);
     // fstp	wmin_4
-    FSTP32(&wmin_4);
+    FSTP(&wmin_4);
 
     // mov		ecx,wr_sr
-    eax.uint_val = wr_sr;
+    ecx.uint_val = wr_sr;
     // mov		edx,wmin_4
     edx.uint_val = wmin_4;
 
@@ -776,6 +777,7 @@ xrange_larger:
     // mov		edx,workspace_v2
     edx.ptr_val = workspace.v2;
     // jb		cheat
+    assert(x86_state.x87_stack_top == -1);
     if (jb_flag) {
         return CHEAT_YES;
     }
@@ -799,6 +801,7 @@ xrange_larger:
 // ;	ebp: ptr to bottom vertex
 // ;
 void SETUP_FLOAT_UV_PERSPECTIVE() {
+    assert(x86_state.x87_stack_top == -1);
     // 		assume esi: ptr brp_vertex, edi: ptr brp_vertex, ebp: ptr brp_vertex
 
     // 	; N.B. in this code, u0, v0, w0 etc. refer to the top vertex, u1 etc. to the middle and
@@ -861,15 +864,15 @@ no_flip:
     // fxch	st(2)						;	dx1*a	dy2		dy1*a	dx2*a	1/2area
     FXCH(2);
     // fstp	workspace_dx1_a				;	dy2		dy1*a	dx2*a	1/2area
-    FSTP32(&workspace_dx1_a);
+    FSTP(&workspace_dx1_a);
     // fmulp st(3),st(0)				;	dy1*a	dx2*a	dy2*a
     FMULP_ST(3, 0);
     // fstp	workspace_dy1_a				;	dx2*a	dy2*a
-    FSTP32(&workspace_dy1_a);
+    FSTP(&workspace_dy1_a);
     // fstp	workspace_dx2_a				;	dy2*a
-    FSTP32(&workspace_dx2_a);
+    FSTP(&workspace_dx2_a);
     // fstp	workspace_dy2_a				;
-    FSTP32(&workspace_dy2_a);
+    FSTP(&workspace_dy2_a);
 
     // ; Calculate integral base texture coords and write out as integers.
 	// ;
@@ -880,13 +883,13 @@ no_flip:
     // fld		[esi].comp_f[C_U*4]			;	u0
     FLD(BRP_VERTEX(esi)->comp_f[C_U]);
     // fistp	work.awsl.u_current			;
-    FISTP32(&work.awsl.u_current);
+    FISTP(&work.awsl.u_current);
     // fild	work.awsl.u_current			;	ub
     FILD(work.awsl.u_current);
     // fld		[esi].comp_f[C_V*4]			;	v0		ub
     FLD(BRP_VERTEX(esi)->comp_f[C_V]);
     // fistp	work.awsl.v_current			;	ub
-    FISTP32(&work.awsl.v_current);
+    FISTP(&work.awsl.v_current);
     // fild	work.awsl.v_current			;	vb		ub
     FILD(work.awsl.v_current);
     // fxch	st(1)						;	ub		vb
@@ -903,11 +906,11 @@ no_flip:
     // fld		[esi].comp_f[C_U*4]		;	u0		q'0		ub		vb
     FLD(BRP_VERTEX(esi)->comp_f[C_U]);
     // fsub	st(0),st(2)					;	u'0		q'0		ub		vb
-    FSUBP_ST(0, 2);
+    FSUB_ST(0, 2);
     // fld		[esi].comp_f[C_V*4]		;	v0		u'0		q'0		ub		vb
     FLD(BRP_VERTEX(esi)->comp_f[C_V]);
     // fsub	st(0),st(4)					;	v'0		u'0		q'0		ub		vb
-    FSUBP_ST(0, 4);
+    FSUB_ST(0, 4);
 
     // ; Calculate |u'0| + |v'0| + |q'0|
 	// ;
@@ -916,7 +919,7 @@ no_flip:
     // fld		st(2)						;	q'0		v'0		u'0		q'0		ub		vb
     FLD_ST(2);
     // fst		q0							;	q'0		v'0		u'0		q'0		ub		vb
-    FST32(&q0);
+    FST(&q0);
     // fabs								;	|q'0|	v'0		u'0		q'0		ub		vb
     FABS();
     // fld		st(2)						;	u'0		|q'0|	v'0		u'0		q'0		ub		vb
@@ -949,7 +952,7 @@ no_flip:
     // fxch	st(2)						;	maxuv	v'q'0	u'q'0	w2		ub		vb
     FXCH(2);
     // fstp	maxuv						;	v'q'0	u'q'0	w2		ub		vb
-    FSTP32(&maxuv);
+    FSTP(&maxuv);
 
     // ; Calculate u' and v' (deltas from base coords) and q' (= q * product(w)) for vertex 1
 	// ;
@@ -964,11 +967,11 @@ no_flip:
     // fxch	st(3)						;	u1		v'q'0	u'q'0	q'1		ub		vb
     FXCH(3);
     // fsub	st(0),st(4)					;	u'1		v'q'0	u'q'0	q'1		ub		vb
-    FSUBP_ST(0, 4);
+    FSUB_ST(0, 4);
     // fld		[edi].comp_f[C_V*4]			;	v1		u'1		v'q'0	u'q'0	q'1		ub		vb
     FLD(BRP_VERTEX(edi)->comp_f[C_V]);
     // fsub	st(0),st(6)					;	v'1		u'1		v'q'0	u'q'0	q'1		ub		vb
-    FSUBP_ST(0, 6);
+    FSUB_ST(0, 6);
 
     // ; Multiply u'1 and v'1 by q'1
 	// ;
@@ -987,7 +990,7 @@ no_flip:
     // fmul	st(2),st(0)					;	q'1		w0		v'q'1	v'q'0	u'q'0	u'q'1	ub		vb
     FMUL_ST(2,0);
     // fstp	q1							;	w0		v'q'1	v'q'0	u'q'0	u'q'1	ub		vb
-    FSTP32(&q1);
+    FSTP(&q1);
 
     // ; Calculate u' and v' (deltas from base coords) and q' (= q * product(w)) for vertex 2
 	// ;
@@ -1013,7 +1016,7 @@ no_flip:
     // fmul	st(7),st(0)					;	q'2		v'2		v'q'1	v'q'0	u'q'0	u'q'1	maxuv	u'q'2
     FMUL_ST(7,0);
     // fst		q2							;	q'2		v'2		v'q'1	v'q'0	u'q'0	u'q'1	maxuv	u'q'2
-    FST32(&q2);
+    FST(&q2);
     // fmulp	st(1),st(0)					;	v'q'2	v'q'1	v'q'0	u'q'0	u'q'1	maxuv	u'q'2
     FMULP_ST(1,0);
 
@@ -1077,7 +1080,7 @@ no_flip:
     // fxch	st(5)						;	maxuv	dv1		dv2		v'q'0	du1		u'q'0	du2
     FXCH(5);
     // fstp	maxuv						;	dv1		dv2		v'q'0	du1		u'q'0	du2
-    FSTP32(&maxuv);
+    FSTP(&maxuv);
 
     // ; Calculate normalisation factor to ensure that numerator and denominator
 	// ; values do not overflow at any point in the rasterisation.
@@ -1127,12 +1130,324 @@ exact:
 	// ;
 	// ; 64 cycles
 
+    // fld		st(3)						;	du1		dv1		dv2		v'q'0	du1		u'q'0	du2
+    FLD_ST(3);
+    // fmul	workspace_dy2_a				;	du1*b	dv1		dv2		v'q'0	du1		u'q'0	du2
+    FMUL(workspace_dy2_a);
+    // fld		st(6)						;	du2		du1*b	dv1		dv2		v'q'0	du1		u'q'0	du2
+    FLD_ST(6);
+    // fmul	workspace_dy1_a				;	du2*a	du1*b	dv1		dv2		v'q'0	du1		u'q'0	du2
+    FMUL(workspace_dy1_a);
+    // fxch	st(5)						;	du1		du1*b	dv1		dv2		v'q'0	du2*a	u'q'0	du2
+    FXCH(5);
+    // mov		maxuv,eax
+    maxuv = eax.float_val;
+    // fmul	workspace_dx2_a				;	du1*d	du1*b	dv1		dv2		v'q'0	du2*a	u'q'0	du2
+    FMUL(workspace_dx2_a);
+    // fxch	st(1)						;	du1*b	du1*d	dv1		dv2		v'q'0	du2*a	u'q'0	du2
+    FXCH(1);
+    // fsubrp	st(5),st(0)					;	du1*d	dv1		dv2		v'q'0	udx		u'q'0	du2
+    FSUBRP_ST(5, 0);
+    // fxch	st(6)						;	du2		dv1		dv2		v'q'0	udx		u'q'0	du1*d
+    FXCH(6);
+    // fmul	workspace_dx1_a				;	du2*c	dv1		dv2		v'q'0	udx		u'q'0	du1*d
+    FMUL(workspace_dx1_a);
+    // fld		workspace_t_dx				;	fdx		du2*c	dv1		dv2		v'q'0	udx		u'q'0	du1*d
+    FLD(workspace_t_dx);
+    // fmul	st(0),st(5)					;	fdx*udx	du2*c	dv1		dv2		v'q'0	udx		u'q'0	du1*d
+    FMUL_ST(0, 5);
+    // fxch	st(7)						;	du1*d	du2*c	dv1		dv2		v'q'0	udx		u'q'0	fdx*udx
+    FXCH(7);
+    // fsubp	st(1),st(0)					;	udy		dv1		dv2		v'q'0	udx		u'q'0	fdx*udx
+    FSUBP_ST(1, 0);
+    // fld		workspace_t_dy				;	fdy		udy		dv1		dv2		v'q'0	udx		u'q'0	fdx*udx
+    FLD(workspace_t_dy);
+    // fxch	st(7)						;	fdx*udx	udy		dv1		dv2		v'q'0	udx		u'q'0	fdy
+    FXCH(7);
+    // faddp	st(6),st(0)					;	udy		dv1		dv2		v'q'0	udx		fux+ut	fdy
+    FADDP_ST(6, 0);
+    // fmul	st(6),st(0)					;	udy		dv1		dv2		v'q'0	udx		fux+ut	fdy*udy
+    FMUL_ST(6, 0);
+    // fld		st(4)						;	udx		udy		dv1		dv2		v'q'0	udx		fux+ut	fdy*udy
+    FLD_ST(4);
+    // fxch	st(7)						;	fdy*udy	udy		dv1		dv2		v'q'0	udx		fux+ut	udx
+    FXCH(7);
+    // faddp	st(6),st(0)					;	udy		dv1		dv2		v'q'0	udx		ustart	udx
+    FADDP_ST(6, 0);
+    // fxch	st(6)						;	udx		dv1		dv2		v'q'0	udx		ustart	udy
+    FXCH(6);
+    // fmul	workspace_xstep_0			;	udx*xs0	dv1		dv2		v'q'0	udx		ustart	udy
+    FMUL(workspace_xstep_0);
+    // fld		st(1)						;	dv1		udx*xs0	dv1		dv2		v'q'0	udx		ustart	udy
+    FLD_ST(1);
+    // fxch	st(6)						;	ustart	udx*xs0	dv1		dv2		v'q'0	udx		dv1		udy
+    FXCH(6);
+    // fmul	maxuv						;	ustart'	udx*xs0	dv1		dv2		v'q'0	udx		dv1		udy
+    FMUL(maxuv);
+    // fxch	st(1)						;	udx*xs0	ustart'	dv1		dv2		v'q'0	udx		dv1		udy
+    FXCH(1);
+    // faddp	st(7),st(0)					;	ustart'	dv1		dv2		v'q'0	udx		dv1		udy_0
+    FADDP_ST(7, 0);
+    // fxch	st(4)						;	udx		dv1		dv2		v'q'0	ustart'	dv1		udy_0
+    FXCH(4);
+    // fmul	maxuv						;	udx'	dv1		dv2		v'q'0	ustart'	dv1		udy_0
+    FMUL(maxuv);
+    // fxch	st(4)						;	ustart'	dv1		dv2		v'q'0	udx'	dv1		udy_0
+    FXCH(4);
+    // fadd	fp_conv_d					;	ustrt+C	dv1		dv2		v'q'0	udx'	dv1		udy_0
+    FADD(fp_conv_d);
+    // fxch	st(6)						;	udy_0	dv1		dv2		v'q'0	udx'	dv1		ustrt+C
+    FXCH(6);
+    // fmul	maxuv						;	udy_0'	dv1		dv2		v'q'0	udx'	dv1		ustrt+C
+    FMUL(maxuv);
+    // fxch	st(4)						;	udx'	dv1		dv2		v'q'0	udy_0'	dv1		ustrt+C
+    FXCH(4);
+    // fadd	fp_conv_d					;	udx+C	dv1		dv2		v'q'0	udy_0'	dv1		ustrt+C
+    FADD(fp_conv_d);
+    // fxch	st(6)						;	ustrt+C	dv1		dv2		v'q'0	udy_0'	dv1		udx+C
+    FXCH(6);
+    // fstp	real8 ptr work.pu.currentpix ;	dv1		dv2		v'q'0	udy_0'	dv1		udx+C
+    FSTP64(&work.pu.currentpix);
+    // fld		st(1)						;	dv2		dv1		dv2		v'q'0	udy_0'	dv1		udx+C
+    FLD_ST(1);
+    // fxch	st(4)						;	udy_0'	dv1		dv2		v'q'0	dv2		dv1		udx+C
+    FXCH(4);
+    // fadd	fp_conv_d					;	udy_0+C	dv1		dv2		v'q'0	dv2		dv1		udx+C
+    FADD(fp_conv_d);
+    // fxch	st(6)						;	udx+C	dv1		dv2		v'q'0	dv2		dv1		udy_0+C
+    FXCH(6);
+    // fstp	real8 ptr work.pu.grad_x	;	dv1		dv2		v'q'0	dv2		dv1		udy_0+C
+    FSTP64(&work.pu.grad_x);
+    // fmul	workspace_dy2_a				;	dv1*b	dv2		v'q'0	dv2		dv1		udy_0+C
+    FMUL(workspace_dy2_a);
+    // fxch	st(5)						;	udy_0+C	dv2		v'q'0	dv2		dv1		dv1*b
+    FXCH(5);
+    // fstp	real8 ptr work.pu.d_carry	;	dv2		v'q'0	dv2		dv1		dv1*b
+    FSTP64(&work.pu.d_carry);
+    // fmul	workspace_dy1_a				;	dv2*a	v'q'0	dv2		dv1		dv1*b
+    FMUL(workspace_dy1_a);
+    // fxch	st(3)						;	dv1		v'q'0	dv2		dv2*a	dv1*b
+    FXCH(3);
+    // mov		eax,work.pu.currentpix
+    eax.uint_val = work.pu.currentpix;
+    // mov		ebx,work.pu.d_carry
+    ebx.uint_val = work.pu.d_carry;
+    // fmul	workspace_dx2_a				;	dv1*d	v'q'0	dv2		dv2*a	dv1*b
+    FMUL(workspace_dx2_a);
+    // fxch	st(2)						;	dv2		v'q'0	dv1*d	dv2*a	dv1*b
+    FXCH(2);
+    // mov		work.pu.current,eax
+    work.pu.current = eax.uint_val;
+    // mov		work.pu.d_nocarry,ebx
+    work.pu.d_nocarry = ebx.uint_val;
+    // fmul	workspace_dx1_a				;	dv2*c	v'q'0	dv1*d	dv2*a	dv1*b
+    FMUL(workspace_dx1_a);
+    // fxch	st(4)						;	dv1*b	v'q'0	dv1*d	dv2*a	dv2*c
+    FXCH(4);
+    // fsubrp	st(3),st(0)					;	v'q'0	dv1*d	vdx		dv2*c
+    FSUBRP_ST(3, 0);
+    // fld		workspace_t_dx				;	fdx		v'q'0	dv1*d	vdx		dv2*c
+    FLD(workspace_t_dx);
+    // fxch	st(2)						;	dv1*d	v'q'0	fdx		vdx		dv2*c
+    FXCH(2);
+    // fsubp	st(4),st(0)					;	v'q'0	fdx		vdx		vdy
+    FSUBP_ST(4, 0);
+    // fxch	st(1)						;	fdx		v'q'0	vdx		vdy
+    FXCH(1);
+    // fmul	st(0),st(2)					;	fdx*vdx	v'q'0	vdx		vdy
+    FMUL_ST(0, 2);
+    // fld		workspace_t_dy				;	fdy		fdx*vdx	v'q'0	vdx		vdy
+    FLD(workspace_t_dy);
+    // fmul	st(0),st(4)					;	fdy*vdy	fdx*vdx	v'q'0	vdx		vdy
+    FMUL_ST(0, 4);
+    // fxch	st(1)						;	fdx*vdx	fdy*vdy	v'q'0	vdx		vdy
+    FXCH(1);
+    // faddp	st(2),st(0)					;	fdy*vdy	fvx+ft	vdx		vdy
+    FADDP_ST(2, 0);
+    // fld		st(2)						;	vdx		fdy*vdy	fvx+ft	vdx		vdy
+    FLD_ST(2);
+    // fxch	st(1)						;	fdy*vdy	vdx		fvx+ft	vdx		vdy
+    FXCH(1);
+    // faddp	st(2),st(0)					;	vdx		vstart	vdx		vdy
+    FADDP_ST(2, 0);
+    // fmul	workspace_xstep_0			;	vdx*xs0	vstart	vdx		vdy
+    FMUL(workspace_xstep_0);
+    // fxch	st(2)						;	vdx		vstart	vdx*xs0	vdy
+    FXCH(2);
+    // ;1 cycle
+    // fmul	maxuv						;	vdx'	vstart	vdx*xs0	vdy
+    FMUL(maxuv);
+    // fxch	st(2)						;	vdx*xs0	vstart	vdx'	vdy
+    FXCH(2);
+    // faddp	st(3),st(0)					;	vstart	vdx'	vdy_0
+    FADDP_ST(3, 0);
+    // fmul	maxuv						;	vstart'	vdx'	vdy_0
+    FMUL(maxuv);
+    // fxch	st(1)						;	vdx'	vstart'	vdy_0
+    FXCH(1);
+    // fadd	fp_conv_d					;	vdx+C	vstart'	vdy_0
+    FADD(fp_conv_d);
+    // fxch	st(2)						;	vdy_0	vstart'	vdx+C
+    FXCH(2);
+    // fmul	maxuv						;	vdy_0'	vstart'	vdx+C
+    FMUL(maxuv);
+    // fxch	st(1)						;	vstart'	vdy_0'	vdx+C
+    FXCH(1);
+    // fadd	fp_conv_d					;	vstrt+C	vdy_0'	vdx+C
+    FADD(fp_conv_d);
+    // fxch	st(1)						;	vdy_0'	vstrt+C	vdx+C
+    FXCH(1);
+    // fadd	fp_conv_d					;	vdy_0+C	vstrt+C	vdx+C
+    FADD(fp_conv_d);
+    // fxch	st(2)						;	vdx+C	vstrt+C	vdy_0+C
+    FXCH(2);
+    // fstp	real8 ptr work.pv.grad_x	;	vstrt+C	vdy_0+C
+    FSTP64(&work.pv.grad_x);
+    // fstp	real8 ptr work.pv.currentpix ;	vdy_0+C
+    FSTP64(&work.pv.currentpix);
+    // fstp	real8 ptr work.pv.d_carry	;
+    FSTP64(&work.pv.d_carry);
 
+    // mov		eax,work.pv.currentpix
+    eax.uint_val = work.pv.currentpix;
+    // mov		ebx,work.pv.d_carry
+    ebx.uint_val = work.pv.d_carry;
+    // mov		work.pv.current,eax
+    work.pv.current = eax.uint_val;
+    // mov		work.pv.d_nocarry,ebx
+    work.pv.d_nocarry = ebx.uint_val;
 
-
-
-
-
+    // ; Do parameter calculations for q'
+	// ;
+	// ; pdx = dp1 * dy2_a - dp2 * dy1_a
+	// ; pdy = dp2 * dx1_a - dp1 * dx2_a
+	// ;
+	// ; pdy_0 = pdy + xstep_0 * pdx
+	// ; pdy_1 = pdy + xstep_1 * pdx
+	// ; pstart = param_t + pdx * fdx + pdy * fdy
+	// ;
+	// ; Final results are multiplied by the normalisation factor.
+	// ;
+	// ; 44 cycles
+    // fld		q2							;	q2
+    FLD(q2);
+    // fsub	q0							;	dq2
+    FSUB(q0);
+    // fld		q1							;	q1		dq2
+    FLD(q1);
+    // fsub	q0							;	dq1		dq2
+    FSUB(q0);
+    // fld		st(1)						;	dq2		dq1		dq2
+    FLD_ST(1);
+    // fmul	workspace_dy1_a				;	dq2*a	dq1		dq2
+    FMUL(workspace_dy1_a);
+    // fld		st(1)						;	dq1		dq2*a	dq1		dq2
+    FLD_ST(1);
+    // fmul	workspace_dy2_a				;	dq1*b	dq2*a	dq1		dq2
+    FMUL(workspace_dy2_a);
+    // fld		workspace_t_dx				;	fdx		dq1*b	dq2*a	dq1		dq2
+    FLD(workspace_t_dx);
+    // fxch	st(4)						;	dq2		dq1*b	dq2*a	dq1		fdx
+    FXCH(4);
+    // fmul	workspace_dx1_a				;	dq2*c	dq1*b	dq2*a	dq1		fdx
+    FMUL(workspace_dx1_a);
+    // fld		workspace_t_dy				;	fdy		dq2*c	dq1*b	dq2*a	dq1		fdx
+    FLD(workspace_t_dy);
+    // fxch	st(4)						;	dq1		dq2*c	dq1*b	dq2*a	fdy		fdx
+    FXCH(4);
+    // fmul	workspace_dx2_a				;	dq1*d	dq2*c	dq1*b	dq2*a	fdy		fdx
+    FMUL(workspace_dx2_a);
+    // fxch	st(3)						;	dq2*a	dq2*c	dq1*b	dq1*d	fdy		fdx
+    FXCH(3);
+    // fsubp	st(2),st					;	dq2*c	d1b-d2a	dq1*d	fdy		fdx
+    FSUBP_ST(2, 0);
+    // fld		q0							;	q'0		dq2*c	d1b-d2a	dq1*d	fdy		fdx
+    FLD(q0);
+    // fxch	st(3)						;	dq1*d	dq2*c	d1b-d2a	q'0		fdy		fdx
+    FXCH(3);
+    // fsubp	st(1),st					;	d2c-d1d	d1b-d2a	q'0		fdy		fdx
+    FSUBP_ST(1, 0);
+    //                                      ;	qdy		qdx		q'0		fdy		fdx
+    // fld		st(1)						;	qdx		qdy		qdx		q'0		fdy		fdx
+    FLD_ST(1);
+    // fmul	workspace_xstep_0			;	qdx*xs0	qdy		qdx		q'0		fdy		fdx
+    FMUL(workspace_xstep_0);
+    // fld		st(2)						;	qdx		qdx*xs0	qdy		qdx		q'0		fdy		fdx
+    FLD_ST(2);
+    // fmul	workspace_xstep_1			;	qdx*xs1	qdx*xs0	qdy		qdx		q'0		fdy		fdx
+    FMUL(workspace_xstep_1);
+    // fxch	st(1)						;	qdx*xs0	qdx*xs1	qdy		qdx		q'0		fdy		fdx
+    FXCH(1);
+    // fadd	st,st(2)					;	qdy_0	qdx*xs1	qdy		qdx		q'0		fdy		fdx
+    FADD_ST(0, 2);
+    // fxch	st(3)						;	qdx		qdx*xs1	qdy		qdy_0	q'0		fdy		fdx
+    FXCH(3);
+    // fmul	st(6),st					;	qdx		qdx*xs1	qdy		qdy_0	q'0		fdy		fdx*qdx
+    FMUL_ST(6, 0);
+    // fxch	st(2)						;	qdy		qdx*xs1	qdx		qdy_0	q'0		fdy		fdx*qdx
+    FXCH(2);
+    // fadd	st(1),st					;	qdy		qdy_1	qdx		qdy_0	q'0		fdy		fdx*qdx
+    FADD_ST(1, 0);
+    // fmulp	st(5),st					;	qdy_1	qdx		qdy_0	q'0		fdy*qdy	fdx*qdx
+    FMULP_ST(5, 0);
+    // fxch	st(3)						;	q'0		qdx		qdy_0	qdy_1	fdy*qdy	fdx*qdx
+    FXCH(3);
+    // faddp	st(5),st					;	qdx		qdy_0	qdy_1	fdy*qdy	fpx+qt
+    FADDP_ST(5, 0);
+    // fxch	st(1)						;	qdy_0	qdx		qdy_1	fdy*qdy	fpx+qt
+    FXCH(1);
+    // fmul	maxuv						;	qdy_0'	qdx		qdy_1	fdy*qdy	fpx+qt
+    FMUL(maxuv);
+    // fxch	st(3)						;	fdy*qdy	qdx		qdy_1	qdy_0'	fpx+qt
+    FXCH(3);
+    // fxch	st(2)						;	qdy_1	qdx		fdy*qdy	qdy_0'	fpx+qt
+    FXCH(2);
+    // fmul	maxuv						;	qdy_1'	qdx		fdy*qdy	qdy_0'	fpx+qt
+    FMUL(maxuv);
+    // fxch	st(4)						;	fpx+qt	qdx		fdy*qdy	qdy_0'	qdy_1'
+    FXCH(4);
+    // faddp	st(2),st					;	qdx		qstart	qdy_0'	qdy_1'
+    FADDP_ST(2, 0);
+    // fmul	maxuv						;	qdx'	qstart	qdy_0'	qdy_1'
+    FMUL(maxuv);
+    // fxch	st(2)						;	qdy_0'	qstart	qdx'	qdy_1'
+    FXCH(2);
+    // fadd	fp_conv_d					;	C+qdy_0	qstart	qdx'	qdy_1'
+    FADD(fp_conv_d);
+    // fxch	st(1)						;	qstart	C+qdy_0	qdx'	qdy_1'
+    FXCH(1);
+    // fmul	maxuv						;	qstart'	C+qdy_0	qdx'	qdy_1'
+    FMUL(maxuv);
+    // fxch	st(3)						;	qdy_1'	C+qdy_0	qdx'	qstart'
+    FXCH(3);
+    // fadd	fp_conv_d					;	C+qdy_1	C+qdy_0	qdx'	qstart'
+    FADD(fp_conv_d);
+    // fxch	st(2)						;	qdx'	C+qdy_0	C+qdy_1	qstart'
+    FXCH(2);
+    // fadd	fp_conv_d					;	C+qdx	C+qdy_0	C+qdy_1	qstart'
+    FADD(fp_conv_d);
+    // fxch	st(3)						;	qstart'	C+qdy_0	C+qdy_1	C+qdx
+    FXCH(3);
+    // fadd	fp_conv_d					;	C+qstrt	C+qdy_0	C+qdy_1	C+qdx
+    FADD(fp_conv_d);
+    // fxch	st(2)						;	C+qdy_1	C+qdy_0	C+qstrt	C+qdx
+    FXCH(2);
+    // fstp	real8 ptr work.pq.d_carry	;	C+qdy_0	C+qstrt	C+qdx
+    FSTP64(&work.pq.d_carry);
+    // fstp	real8 ptr work.pq.grad_x	;	C+qstrt	C+qdx
+    FSTP64(&work.pq.grad_x);
+    // fstp	real8 ptr work.pq.currentpix ;	C+qdx
+    FSTP64(&work.pq.currentpix);
+    // mov		eax,work.pq.grad_x
+    eax.uint_val = work.pq.grad_x;
+    // mov		ebx,work.pq.currentpix
+    ebx.uint_val = work.pq.currentpix;
+    // fstp	real8 ptr work.pq.grad_x	;
+    FSTP64(&work.pq.grad_x);
+    // mov		work.pq.d_nocarry,eax
+    work.pq.d_nocarry = eax.uint_val;
+    // mov		work.pq.current,ebx
+    work.pq.current = ebx.uint_val;
 }
 
 void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
@@ -1154,7 +1469,7 @@ void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 		//stc
 		x86_state.cf = 1;
 	} else {
-		//SETUP_FLOAT_UV_PERSPECTIVE
+		SETUP_FLOAT_UV_PERSPECTIVE();
 		//clc
 		x86_state.cf = 0;
 	}

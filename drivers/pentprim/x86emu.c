@@ -227,29 +227,29 @@ void fxch(int i)
 
 
 
-void fst(x87_operand dest)
-{
-    switch(dest.type) {
-        case X87_OP_MEM32:
-            *(float *)dest.mem = (float)*ST_debug(0);
-            break;
-        case X87_OP_MEM64:
-            *(double *)dest.mem = (double)*ST_debug(0);
-            break;
-        case X87_OP_ST:
-            assert(dest.st_index == 0);
-            // no op
-            break;
-        default:
-            fail();
-    }
-}
+// void FST(&x87_operand dest)
+// {
+//     switch(dest.type) {
+//         case X87_OP_MEM32:
+//             *(float *)dest.mem = (float)*ST_debug(0);
+//             break;
+//         case X87_OP_MEM64:
+//             *(double *)dest.mem = (double)*ST_debug(0);
+//             break;
+//         case X87_OP_ST:
+//             assert(dest.st_index == 0);
+//             // no op
+//             break;
+//         default:
+//             fail();
+//     }
+// }
 
-void fstp(x87_operand dest)
-{
-    fst(dest);
-    fpu_pop();
-}
+// void FSTP(&x87_operand dest)
+// {
+//     FST(&dest);
+//     fpu_pop();
+// }
 
 void fadd_st(int dest, int src)
 {

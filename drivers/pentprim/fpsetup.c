@@ -11,6 +11,7 @@ long  fconv_d16_12[2] = {0x04238000000000000, 0x04238000000010000};
 long  fconv_d16_m[2]  = {0x04238000000010000, 0x04238000000000000};
 float fp_one          = 1.0f;
 float fp_two          = 2.0f;
+float fp_four          = 4.0f;
 
 uint32_t fp_conv_d   = 0x59C00000;
 uint32_t fp_conv_d8  = 0x55C00000;
@@ -38,7 +39,7 @@ struct workspace_t               workspace;
 struct ArbitraryWidthWorkspace_t workspaceA;
 
 // FIXME: These are originally macros. Functions for now
-int  SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+static int  SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void ARBITRARY_SETUP();
 void SETUP_FLAGS();
 void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
@@ -80,7 +81,7 @@ void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ARBITRARY_SETUP();
 }
 
-int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
+static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
     assert(x86_state.x87_stack_top == -1);
     eax.ptr_val = v0;
@@ -209,11 +210,11 @@ count_cont:
     FMUL_ST(0, 3);                          //   dx2*a	dx1*a   dy2*a  	1/2area	dy1*a	dsy1	dsy2	dsy3
     FXCH(3);                                                   //   1/2area	dx1*a   dy2*a  	dx2*a	dy1*a	dsy1	dsy2	dsy3
 
-    FSTP32(&workspace.iarea);
-    FSTP32(&workspace.dx1_a);
-    FSTP32(&workspace.dy2_a);
-    FSTP32(&workspace.dx2_a);
-    FSTP32(&workspace.dy1_a); //  	dy1		dy2		dy3
+    FSTP(&workspace.iarea);
+    FSTP(&workspace.dx1_a);
+    FSTP(&workspace.dy2_a);
+    FSTP(&workspace.dx2_a);
+    FSTP(&workspace.dy1_a); //  	dy1		dy2		dy3
 
     //; Find edge gradients of triangle
     //;
@@ -364,7 +365,7 @@ count_cont:
     // 		FXCH		st(2)						;	t_dy	t_dy	m_dy*g2	g1		gm		g2
     FXCH(2);
     // 		fst			[workspace.t_dy]
-    FST32(&workspace.t_dy);
+    FST(&workspace.t_dy);
     // 		fmul		st,st(3)					;	t_dy*g1	t_dy	m_dy*g2	g1		gm		g2
     FMUL_ST(0, 3);
     // 		 FXCH		st(2)			            ;	m_dy*g2	t_dy	t_dy*g1	g1		gm		g2
@@ -469,15 +470,15 @@ count_cont:
     // 		 FXCH		st(2)			;	tdx		xstep_0	xstep_1
     FXCH(2);
     // 		fstp		[workspace.t_dx]			;	xstep_0	xstep_1
-    FSTP32(&workspace.t_dx);
+    FSTP(&workspace.t_dx);
     // 		mov			[workspace].x2+4,edi
     workspace.d_x2 = edi.uint_val;
     // 		mov		ecx,[workspace.v1]				; Start preparing for parmeter setup
     ecx.ptr_val = workspace.v1;
     // 		fstp		[workspace.xstep_0]			;	step_1
-    FSTP32(&workspace.xstep_0);
+    FSTP(&workspace.xstep_0);
     // 		fstp		[workspace.xstep_1]			;
-    FSTP32(&workspace.xstep_1);
+    FSTP(&workspace.xstep_1);
 
     // 		jmp			exit
     goto exit;
@@ -530,11 +531,11 @@ empty_triangle:
     workspace.topCount = -1;
     // mov workspace.bottomCount,-1
     workspace.bottomCount = -1;
-    FSTP32_ST(0);
-    FSTP32_ST(0);
-    FSTP32_ST(0);
-    FSTP32_ST(0);
-    FSTP32_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
+    FSTP_ST(0);
     return FPSETUP_EMPTY_TRIANGLE;
 
 exit:
@@ -953,7 +954,7 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
     // 	 FXCH st(4)						;	d			dpdy0d		dpdxdx		spdx		dpdy1d
     FXCH(4);
     // 	fstp st(0)						;	dpdy0d		dpdxdx		spdx		dpdy1d
-    FSTP32_ST(0);
+    FSTP_ST(0);
     // 	fadd magic						;	dpdy0dx		dpdxdx		spdx		dpdy1d
     FADD(magic);
     // 	 FXCH st(3)						;	dpdy1d		dpdxdx		spdx		dpdy0dx
@@ -1075,7 +1076,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(4)						;	d			dpdy0d		dpdxdx		spdx		dpdy1d
     FXCH(4);
     // 	fstp st(0)						;	dpdy0d		dpdxdx		spdx		dpdy1d
-    FSTP32_ST(0);
+    FSTP_ST(0);
     // 	fadd magic						;	dpdy0dx		dpdxdx		spdx		dpdy1d
     FADD(magic);
     // 	 FXCH st(3)						;	dpdy1d		dpdxdx		spdx		dpdy0dx

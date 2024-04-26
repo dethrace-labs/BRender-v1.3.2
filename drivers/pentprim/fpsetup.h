@@ -16,9 +16,29 @@
 
 extern struct workspace_t               workspace;
 extern struct ArbitraryWidthWorkspace_t workspaceA;
-extern float                            fp_one;
-extern float                            fp_two;
-extern uint32_t                         fp_conv_d;
+
+extern long  fconv_d16_12[2];
+extern long  fconv_d16_m[2];
+extern float fp_one        ;
+extern float fp_two        ;
+extern float fp_four        ;
+
+extern uint32_t fp_conv_d;
+extern uint32_t fp_conv_d8;
+extern uint32_t fp_conv_d8r;
+extern uint32_t fp_conv_d16 ;
+extern uint32_t fp_conv_d24 ;
+extern uint32_t fp_conv_d32 ;
+
+extern uint16_t fp_single_cw ;
+extern uint16_t fp_double_cw ;
+extern uint16_t fp_extended_cw ;
+
+extern int      sort_table_1[];
+extern int      sort_table_0[];
+extern int      sort_table_2[];
+extern uint32_t flip_table[8];
+
 ;
 
 enum {

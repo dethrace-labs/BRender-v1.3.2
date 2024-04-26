@@ -122,7 +122,9 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
 #define ST_(i) x86_state.x87_stack[x86_state.x87_stack_top - i]
 
-#define X87_POP() x86_state.x87_stack_top--
+#define X87_POP() \
+    ST_(0) = 0; \
+    x86_state.x87_stack_top--;
 
 #define FXCH(i) \
     x86_state.x87_swap = ST_(0);\
@@ -144,11 +146,21 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define FSUBR(val) \
     ST_(0) = val - ST_(0);
 
+#define FSUBRP_ST(dest, src) \
+    ST_(dest) = ST_(src) - ST_(dest); \
+    X87_POP();
+
 #define FMUL(val) \
     ST_(0) *= *(float *)&val;
 
 #define FMUL_ST(dest, src) \
     ST_(dest) *= ST_(src);
+
+// no-operand pops the stack
+// https://c9x.me/x86/html/file_module_x86_id_104.html
+#define FMUL_0() \
+    ST_(1) *= ST_(0); \
+    X87_POP();
 
 #define FMULP_ST(dest, src) \
     ST_(dest) *= ST_(src); \
@@ -162,7 +174,8 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     X87_POP();
 
 #define FADD_0() \
-    ST_(1) += ST_(0);
+    ST_(1) += ST_(0); \
+    X87_POP();
 
 #define FADD(val) \
     ST_(0) += *(float *)&val;
@@ -170,21 +183,21 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 #define FADD64(val) \
     ST_(0) += *(double *)&val;
 
-#define FST32(dest) \
+#define FST(dest) \
     *(float*)dest = (float)ST_(0);
 
-#define FSTP32(dest) \
+#define FSTP(dest) \
     *(float*)dest = (float)ST_(0); \
     X87_POP();
 
-#define FISTP32(dest) \
+#define FISTP(dest) \
     *(int32_t*)dest = (int32_t)ST_(0); \
     X87_POP();
 
 #define FABS() \
     ST_(0) = fabs(ST_(0));
 
-#define FSTP32_ST(dest) \
+#define FSTP_ST(dest) \
     ST_(0) = ST_(0); \
     X87_POP();
 
