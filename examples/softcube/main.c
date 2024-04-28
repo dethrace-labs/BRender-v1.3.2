@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 	}
 
 	SDL_Window *window = SDL_CreateWindow(
-		"brenSDL",
+		"BRender v1.3.2 software renderer",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		640, 480,

@@ -4,6 +4,7 @@
 #include "x86emu.h"
 #include <stdarg.h>
 #include "work.h"
+#include "stdio.h"
 
 // TriangleRender_ZT_I8_D16_POW2 3,_8
 // TriangleRender_ZT_I8_D16_POW2 4,_16
@@ -297,21 +298,23 @@ done:
 
 }
 
-void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, va_list va) {
+void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va) {
 	brp_vertex *v0; // [esp+18h] [ebp+Ch]
     brp_vertex *v1; // [esp+1Ch] [ebp+10h]
     brp_vertex *v2; // [esp+20h] [ebp+14h]
 
-	v0 = va_arg(va, brp_vertex *);
-    v1 = va_arg(va, brp_vertex *);
-    v2 = va_arg(va, brp_vertex *);
-    va_end(va);
+	if (!skip_setup) {
+		v0 = va_arg(va, brp_vertex *);
+		v1 = va_arg(va, brp_vertex *);
+		v2 = va_arg(va, brp_vertex *);
+		va_end(va);
 
-    workspace.v0 = v0;
-    workspace.v1 = v1;
-    workspace.v2 = v2;
+		workspace.v0 = v0;
+		workspace.v1 = v1;
+		workspace.v2 = v2;
 
-    TriangleSetup_ZT(v0, v1, v2);
+		TriangleSetup_ZT(v0, v1, v2);
+	}
 
 	intptr_t cb = 0;
     intptr_t db = 0;
@@ -439,7 +442,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_32(brp_block *block, brp_vertex *v0, b
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_64(brp_block *block, ...) {
     va_list     va;
     va_start(va, block);
-	TriangleRender_ZT_I8_D16_POW2(block, 6, va);
+	TriangleRender_ZT_I8_D16_POW2(block, 6, 0, va);
 	va_end(va);
 }
 
@@ -450,7 +453,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_128(brp_block *block, brp_vertex *v0, 
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_256(brp_block *block, ...) {
     va_list     va;
     va_start(va, block);
-	TriangleRender_ZT_I8_D16_POW2(block, 8, va);
+	TriangleRender_ZT_I8_D16_POW2(block, 8, 0, va);
 	va_end(va);
 }
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {

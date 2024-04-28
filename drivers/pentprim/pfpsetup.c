@@ -419,7 +419,7 @@ count_cont:
     // 		 FXCH		st(3)						;	g1		x_2		t_dy*gm	x_1		gm		g2
     FXCH(3);
     // 		fadd		fp_conv_d16		            ;	g1+C	x_2		t_dy*gm	x_1		gm		g2
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 		 FXCH		st(2)						;	t_dy*gm	x_2		g1+C	x_1		gm		g2
     FXCH(2);
     // 		fadd		[eax].comp_f[C_SX*4]		;	x_m		x_2		g1+C	x_1		gm		g2
@@ -427,16 +427,15 @@ count_cont:
     // 		 FXCH		st(4)						;	gm		x_2		g1+C	x_1		x_m		g2
     FXCH(4);
     // 		fadd		fp_conv_d16		            ;	gm+C	x_2		g1+C	x_1		x_m		g2
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 		 FXCH		st(1)						;	x_2		gm+C	g1+C	x_1		x_m		g2
     FXCH(1);
     // 		fadd	fconv_d16_12[esi*8]	            ;	x_2+C	gm+C	g1+C	x_1		x_m		g2
-    assert(esi.uint_val >= 0 && esi.uint_val <= 1);
-    FADD(*((double*)&fconv_d16_12[esi.uint_val]));
+    FADD64(fconv_d16_12[esi.uint_val]);
     // 		 FXCH		st(5)						;	g2		gm+C	g1+C	x_1		x_m		x_2+C
     FXCH(5);
     // 		fadd		fp_conv_d16		              ;	g2+C	gm+C	g1+C	x_1		x_m		x_2+C
-    FADD(*((float*)&fp_conv_d16));
+    FADD(fp_conv_d16);
     // 		 FXCH		st(2)						;	g1+C	gm+C	g2+C	x_1		x_m		x_2+C
     FXCH(2);
     // 		fstp real8 ptr [workspace].x1			;	gm+C	g2+C	x_1		x_m		x_2+C
@@ -446,11 +445,11 @@ count_cont:
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
     FSTP64(&workspace.x2);
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
-    FADD(*((double*)&fconv_d16_12[esi.uint_val]));
+    FADD64(fconv_d16_12[esi.uint_val]);
     // 		FXCH		st(1)						;	x_m		x_1+C	x_2+C
     FXCH(1);
     // 		fadd	fconv_d16_m[esi*8]				;	x_m+C	x_1+C	x_2+C
-    FADD(*((double*)&fconv_d16_m[esi.uint_val]));
+    FADD64(fconv_d16_m[esi.uint_val]);
 
     // 	; Load deltas back in registers
     // 	;
@@ -1096,7 +1095,7 @@ no_flip:
 	// ; 4-6 cycles + 0-3 cycles misprediction penalty
 	// ;
     // mov		eax,maxuv
-    eax.float_val = maxuv;
+    eax.uint_val = maxuv;
 	// ; Round up to a power of two
 	// ;
     // test	eax,MASK_MANTISSA
