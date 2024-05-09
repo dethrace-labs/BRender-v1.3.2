@@ -92,8 +92,8 @@ struct render_buffer {
 	br_uint_32 width_b;		/* In bytes					*/
 	br_uint_32 width_p;		/* In pixels				*/
 	br_uint_32 height;		/* In scanlines				*/
-        br_int_32 stride_b;    /* In bytes                                     */
-        br_int_32 stride_p;    /* In pixels                            */
+	br_int_32 stride_b;    /* In bytes                                     */
+	br_int_32 stride_p;    /* In pixels                            */
 	br_uint_32 size;		/* stride * width_bytes 	*/
 
 	br_uint_32 *palette;	/* Colour map, if valid 	*/
@@ -205,4 +205,3 @@ typedef struct prim_work * BR_EXPORT br_work_fn(void);
 };
 #endif
 #endif
-

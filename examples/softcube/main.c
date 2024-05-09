@@ -227,7 +227,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
 
 //BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
     BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
-    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(-100));
+    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(-150));
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
     light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
@@ -276,7 +276,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
 
         } else {
 
-           BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
+        //    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
 
             BrRendererFrameBegin();
             BrPixelmapFill(colour_buffer, 10);

@@ -1104,7 +1104,7 @@ no_flip:
         goto exact;
     }
     // and		eax,not MASK_MANTISSA
-    eax.uint_val &= !MASK_MANTISSA;
+    eax.uint_val &= ~MASK_MANTISSA;
     // add		eax,1 shl EXPONENT_SHIFT
     eax.uint_val += (1 << EXPONENT_SHIFT);
 
@@ -1113,7 +1113,6 @@ exact:
 	// ;
 	// neg		eax
     eax.uint_val = -eax.uint_val;
-	// add		eax,(EXPONENT_BIAS * 2 + 28) shl EXPONENT_SHIFT
     eax.uint_val += ((EXPONENT_BIAS * 2 + 28) << EXPONENT_SHIFT);
 
     // ; Do parameter calculations for u and v
@@ -1140,7 +1139,7 @@ exact:
     // fxch	st(5)						;	du1		du1*b	dv1		dv2		v'q'0	du2*a	u'q'0	du2
     FXCH(5);
     // mov		maxuv,eax
-    maxuv = eax.float_val;
+    maxuv = eax.uint_val;
     // fmul	workspace_dx2_a				;	du1*d	du1*b	dv1		dv2		v'q'0	du2*a	u'q'0	du2
     FMUL(workspace_dx2_a);
     // fxch	st(1)						;	du1*b	du1*d	dv1		dv2		v'q'0	du2*a	u'q'0	du2
@@ -1275,6 +1274,7 @@ exact:
     FXCH(2);
     // ;1 cycle
     // fmul	maxuv						;	vdx'	vstart	vdx*xs0	vdy
+    float f = *(float *)&maxuv;
     FMUL(maxuv);
     // fxch	st(2)						;	vdx*xs0	vstart	vdx'	vdy
     FXCH(2);

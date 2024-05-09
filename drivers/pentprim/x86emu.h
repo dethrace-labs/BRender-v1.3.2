@@ -114,6 +114,8 @@ typedef struct x86emu_state_t {
     int  x87_stack_top;
     int cf;
     int zf;
+    int sf;
+    int of;
     uint32_t x86_swap;
 } x86emu_state_t;
 
@@ -227,8 +229,15 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.zf = val1 == val2;
 
 #define ADD_AND_SET_CF(val1, val2) \
+    do { \
+    int sign_a = (int32_t)val1 >> 31;  \
+    int sign_b = (int32_t)val2 >> 31; \
     val1 += val2; \
-	x86_state.cf = val1 < val2;
+    x86_state.sf = (int32_t)val1 >> 31; \
+    x86_state.of = ((~(sign_a ^ sign_b)) & (sign_a ^ x86_state.sf)) >> 31; \
+	x86_state.cf = val1 < val2; \
+    } while(0)
+
 
 #define SUB_AND_SET_CF(val1, val2) \
     x86_state.cf = val1 < val2; \

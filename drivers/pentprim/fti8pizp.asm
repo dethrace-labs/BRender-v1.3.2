@@ -73,11 +73,11 @@ TRANSPARENCY	equ	1
 
 		.data
 
-; Fix to stop masm creating prologue\epilogue to handle stack frame. 
+; Fix to stop masm creating prologue\epilogue to handle stack frame.
 
 PROLOGUE MACRO procname, flags, argbytes, localbytes, reglist, userparms:VARARG
 	push ebp
-	
+
 	mov ebp,esp
 	push ebx
 
@@ -87,7 +87,7 @@ PROLOGUE MACRO procname, flags, argbytes, localbytes, reglist, userparms:VARARG
 endm
 
 EPILOGUE MACRO procname, flags, argbytes, localbytes, reglist, userparms:VARARG
-	pop	esi													   
+	pop	esi
 	pop	edi
 
 	pop	ebx
@@ -169,27 +169,27 @@ work_pi_d_carry		equ	workspace.d_i_y_1
 
 else
 
-work_main_i			equ	work.main.i			
-work_main_d_i		equ	work.main.d_i		
-work_main_y			equ	work.main.y			
+work_main_i			equ	work.main.i
+work_main_d_i		equ	work.main.d_i
+work_main_y			equ	work.main.y
 
-work_top_count		equ	work.top.count		
-work_top_i			equ	work.top.i			
-work_top_d_i		equ	work.top.d_i		
+work_top_count		equ	work.top.count
+work_top_i			equ	work.top.i
+work_top_d_i		equ	work.top.d_i
 
-work_bot_count		equ	work.bot.count		
-work_bot_i			equ	work.bot.i			
-work_bot_d_i		equ	work.bot.d_i		
+work_bot_count		equ	work.bot.count
+work_bot_i			equ	work.bot.i
+work_bot_d_i		equ	work.bot.d_i
 
-work_pz_current		equ	work.pz.current		
-work_pz_grad_x		equ	work.pz.grad_x		
-work_pz_d_nocarry	equ	work.pz.d_nocarry	
-work_pz_d_carry		equ	work.pz.d_carry		
+work_pz_current		equ	work.pz.current
+work_pz_grad_x		equ	work.pz.grad_x
+work_pz_d_nocarry	equ	work.pz.d_nocarry
+work_pz_d_carry		equ	work.pz.d_carry
 
-work_pi_current		equ	work.pi.current		
-work_pi_grad_x		equ	work.pi.grad_x		
-work_pi_d_nocarry	equ	work.pi.d_nocarry	
-work_pi_d_carry		equ	work.pi.d_carry		
+work_pi_current		equ	work.pi.current
+work_pi_grad_x		equ	work.pi.grad_x
+work_pi_d_nocarry	equ	work.pi.d_nocarry
+work_pi_d_carry		equ	work.pi.d_carry
 
 endif
 
@@ -1016,11 +1016,11 @@ nodraw:
 
 	; Linear interpolation section
 	;
-	; eax = 
+	; eax =
 	; ebx = z
 	; ecx = dz, i
 	; edx = di
-	; esi = 
+	; esi =
 	; edi = dest
 	; ebp = zdest
 
@@ -1060,7 +1060,7 @@ nodraw:
 	; ebx = u
 	; ecx = v
 	; edx = q
-	; esi = 
+	; esi =
 	; edi = du,dv
 	; ebp = dq
 	;
@@ -1082,7 +1082,7 @@ ifidni <udirn>,<b>
 	; Check for u error going outside range 0..1
 	;
 		jge		nodecu
-	
+
 	; Adjust u downward
 	;
 deculoop:
@@ -1119,7 +1119,7 @@ else
 	; Check for u error going outside range 0..1
 	;
 		jl_&udirn	doneu
-	
+
 	; Adjust u
 	;
 stepuloop:
@@ -1141,7 +1141,7 @@ doneu:
 
 		mov		edi,work.tsl.dv_numerator
 		mov		work.tsl.u_numerator,ebx
-			
+
 	; Interpolate v numerator
 	;
 		add_&dirn	ecx,edi
@@ -1153,7 +1153,7 @@ ifidni <vdirn>,<b>
 	;
 		uslot
 		jge		nodecv
-	
+
 	; Adjust v downward
 	;
 decvloop:
@@ -1370,11 +1370,11 @@ nodraw:
 
 	; Linear interpolation section
 	;
-	; eax = 
+	; eax =
 	; ebx = z
 	; ecx = dz
-	; edx = 
-	; esi = 
+	; edx =
+	; esi =
 	; edi = dest
 	; ebp = zdest
 
@@ -1407,7 +1407,7 @@ nodraw:
 	; ebx = u
 	; ecx = v
 	; edx = q
-	; esi = 
+	; esi =
 	; edi = du,dv
 	; ebp = dq
 	;
@@ -1431,7 +1431,7 @@ ifidni <udirn>,<b>
 	; Check for u error going outside range 0..1
 	;
 		jge		nodecu
-	
+
 	; Adjust u downward
 	;
 deculoop:
@@ -1468,7 +1468,7 @@ else
 	; Check for u error going outside range 0..1
 	;
 		jl_&udirn	doneu
-	
+
 	; Adjust u
 	;
 stepuloop:
@@ -1490,7 +1490,7 @@ endif
 doneu:
 		mov		edi,work.tsl.dv_numerator
 		mov		work.tsl.u_numerator,ebx
-			
+
 	; Interpolate v numerator
 	;
 		add_&dirn	ecx,edi
@@ -1502,7 +1502,7 @@ ifidni <vdirn>,<b>
 	;
 		uslot
 		jge		nodecv
-	
+
 	; Adjust v downward
 	;
 decvloop:
@@ -1579,7 +1579,7 @@ ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_u&udirn&_v&vdirn endp
 
 		.code
 
-		OPTION PROLOGUE:PROLOGUE 
+		OPTION PROLOGUE:PROLOGUE
 		OPTION EPILOGUE:EPILOGUE
 
 
@@ -1699,7 +1699,7 @@ TriangleRasterise_ZPTI_I8_D16_32 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTI_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -1708,9 +1708,9 @@ TriangleRasterise_ZPTI_I8_D16_32 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTI_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -1725,9 +1725,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTI_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTI_I8_D16_32 endp
@@ -1816,7 +1816,7 @@ TriangleRender_ZPT_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPT_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -1825,9 +1825,9 @@ TriangleRender_ZPT_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPT_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -1842,9 +1842,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPT_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPT_I8_D16_32 endp
@@ -1961,7 +1961,7 @@ TriangleRasterise_ZPTI_I8_D16_64 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTI_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -1970,9 +1970,9 @@ TriangleRasterise_ZPTI_I8_D16_64 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTI_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -1987,9 +1987,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTI_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTI_I8_D16_64 endp
@@ -2078,7 +2078,7 @@ TriangleRender_ZPT_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPT_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2087,9 +2087,9 @@ TriangleRender_ZPT_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPT_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -2104,9 +2104,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPT_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPT_I8_D16_64 endp
@@ -2224,7 +2224,7 @@ TriangleRasterise_ZPTI_I8_D16_128 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTI_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2233,9 +2233,9 @@ TriangleRasterise_ZPTI_I8_D16_128 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTI_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -2250,9 +2250,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTI_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTI_I8_D16_128 endp
@@ -2341,7 +2341,7 @@ TriangleRender_ZPT_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPT_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2350,9 +2350,9 @@ TriangleRender_ZPT_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPT_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -2367,9 +2367,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPT_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPT_I8_D16_128 endp
@@ -2484,7 +2484,7 @@ TriangleRasterise_ZPTI_I8_D16_256 label proc
 		jnz		reversed
 
 		call	TrapeziumRender_ZPTI_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2493,9 +2493,9 @@ TriangleRasterise_ZPTI_I8_D16_256 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPTI_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -2510,9 +2510,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPTI_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTI_I8_D16_256 endp
@@ -2598,7 +2598,7 @@ TriangleRender_ZPT_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
 		call	TrapeziumRender_ZPT_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2607,9 +2607,9 @@ TriangleRender_ZPT_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPT_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -2624,9 +2624,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPT_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPT_I8_D16_256 endp
@@ -2746,7 +2746,7 @@ TriangleRasterise_ZPTI_I8_D16_1024 label proc
 		jnz		reversed
 
 		call	TrapeziumRender_ZPTI_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2755,9 +2755,9 @@ TriangleRasterise_ZPTI_I8_D16_1024 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPTI_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -2772,9 +2772,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPTI_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTI_I8_D16_1024 endp
@@ -2867,7 +2867,7 @@ TriangleRender_ZPT_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
 		call	TrapeziumRender_ZPT_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -2876,9 +2876,9 @@ TriangleRender_ZPT_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPT_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -2893,9 +2893,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
 		call	TrapeziumRender_ZPT_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPT_I8_D16_1024 endp
@@ -3017,7 +3017,7 @@ TriangleRasterise_ZPTIF_I8_D16_32 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIF_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3026,9 +3026,9 @@ TriangleRasterise_ZPTIF_I8_D16_32 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -3043,9 +3043,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTIF_I8_D16_32 endp
@@ -3133,7 +3133,7 @@ TriangleRender_ZPTF_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTF_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3142,9 +3142,9 @@ TriangleRender_ZPTF_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -3159,9 +3159,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTF_I8_D16_32 endp
@@ -3276,7 +3276,7 @@ TriangleRasterise_ZPTIF_I8_D16_64 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIF_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3285,9 +3285,9 @@ TriangleRasterise_ZPTIF_I8_D16_64 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -3302,9 +3302,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTIF_I8_D16_64 endp
@@ -3392,7 +3392,7 @@ TriangleRender_ZPTF_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTF_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3401,9 +3401,9 @@ TriangleRender_ZPTF_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -3418,9 +3418,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTF_I8_D16_64 endp
@@ -3536,7 +3536,7 @@ TriangleRasterise_ZPTIF_I8_D16_128 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIF_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3545,9 +3545,9 @@ TriangleRasterise_ZPTIF_I8_D16_128 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -3562,9 +3562,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTIF_I8_D16_128 endp
@@ -3652,7 +3652,7 @@ TriangleRender_ZPTF_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTF_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3661,9 +3661,9 @@ TriangleRender_ZPTF_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -3678,9 +3678,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTF_I8_D16_128 endp
@@ -3795,7 +3795,7 @@ TriangleRasterise_ZPTIF_I8_D16_256 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIF_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3804,9 +3804,9 @@ TriangleRasterise_ZPTIF_I8_D16_256 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -3821,9 +3821,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTIF_I8_D16_256 endp
@@ -3909,7 +3909,7 @@ TriangleRender_ZPTF_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTF_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -3918,9 +3918,9 @@ TriangleRender_ZPTF_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -3935,9 +3935,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTF_I8_D16_256 endp
@@ -4055,7 +4055,7 @@ TriangleRasterise_ZPTIF_I8_D16_1024 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIF_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4064,9 +4064,9 @@ TriangleRasterise_ZPTIF_I8_D16_1024 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -4081,9 +4081,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIF_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTIF_I8_D16_1024 endp
@@ -4173,7 +4173,7 @@ TriangleRender_ZPTF_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTF_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4182,9 +4182,9 @@ TriangleRender_ZPTF_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -4199,9 +4199,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTF_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTF_I8_D16_1024 endp
@@ -4323,7 +4323,7 @@ TriangleRasterise_ZPTIB_I8_D16_32 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIB_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4332,9 +4332,9 @@ TriangleRasterise_ZPTIB_I8_D16_32 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -4349,9 +4349,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTIB_I8_D16_32 endp
@@ -4441,7 +4441,7 @@ TriangleRender_ZPTB_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTB_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4450,9 +4450,9 @@ TriangleRender_ZPTB_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -4467,9 +4467,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTB_I8_D16_32 endp
@@ -4488,7 +4488,7 @@ TriangleRender_ZPTIB_I8_D16_64_FLAT proc uses eax ebx ecx edx esi edi,
 	; Call the shared setup code.
 	;
         call    TriangleSetup_ZPTI_FLAT
-		
+
 		jc	TriangleRasterise_ZTIB_I8_D16_64
 
 		jmp		TriangleRasterise_ZPTIB_I8_D16_64
@@ -4588,7 +4588,7 @@ TriangleRasterise_ZPTIB_I8_D16_64 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIB_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4597,9 +4597,9 @@ TriangleRasterise_ZPTIB_I8_D16_64 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -4614,9 +4614,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTIB_I8_D16_64 endp
@@ -4705,7 +4705,7 @@ TriangleRender_ZPTB_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTB_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4714,9 +4714,9 @@ TriangleRender_ZPTB_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -4731,9 +4731,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTB_I8_D16_64 endp
@@ -4851,7 +4851,7 @@ TriangleRasterise_ZPTIB_I8_D16_128 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIB_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4860,9 +4860,9 @@ TriangleRasterise_ZPTIB_I8_D16_128 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -4877,9 +4877,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTIB_I8_D16_128 endp
@@ -4968,7 +4968,7 @@ TriangleRender_ZPTB_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTB_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -4977,9 +4977,9 @@ TriangleRender_ZPTB_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -4994,9 +4994,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTB_I8_D16_128 endp
@@ -5111,7 +5111,7 @@ TriangleRasterise_ZPTIB_I8_D16_256 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIB_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5120,9 +5120,9 @@ TriangleRasterise_ZPTIB_I8_D16_256 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -5137,9 +5137,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTIB_I8_D16_256 endp
@@ -5225,7 +5225,7 @@ TriangleRender_ZPTB_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTB_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5234,9 +5234,9 @@ TriangleRender_ZPTB_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -5251,9 +5251,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTB_I8_D16_256 endp
@@ -5373,7 +5373,7 @@ TriangleRasterise_ZPTIB_I8_D16_1024 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIB_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5382,9 +5382,9 @@ TriangleRasterise_ZPTIB_I8_D16_1024 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -5399,9 +5399,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIB_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTIB_I8_D16_1024 endp
@@ -5492,7 +5492,7 @@ TriangleRender_ZPTB_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTB_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5501,9 +5501,9 @@ TriangleRender_ZPTB_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -5518,9 +5518,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTB_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTB_I8_D16_1024 endp
@@ -5641,7 +5641,7 @@ TriangleRasterise_ZPTIFB_I8_D16_32 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIFB_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5650,9 +5650,9 @@ TriangleRasterise_ZPTIFB_I8_D16_32 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -5667,9 +5667,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTIFB_I8_D16_32 endp
@@ -5757,7 +5757,7 @@ TriangleRender_ZPTFB_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTFB_I8_D16_32_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5766,9 +5766,9 @@ TriangleRender_ZPTFB_I8_D16_32 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_32_f
-		
+
 		ret
 
 reversed:
@@ -5783,9 +5783,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_32_b
-		
+
 		ret
 
 TriangleRender_ZPTFB_I8_D16_32 endp
@@ -5900,7 +5900,7 @@ TriangleRasterise_ZPTIFB_I8_D16_64 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIFB_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -5909,9 +5909,9 @@ TriangleRasterise_ZPTIFB_I8_D16_64 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -5926,9 +5926,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTIFB_I8_D16_64 endp
@@ -6016,7 +6016,7 @@ TriangleRender_ZPTFB_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTFB_I8_D16_64_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6025,9 +6025,9 @@ TriangleRender_ZPTFB_I8_D16_64 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_64_f
-		
+
 		ret
 
 reversed:
@@ -6042,9 +6042,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_64_b
-		
+
 		ret
 
 TriangleRender_ZPTFB_I8_D16_64 endp
@@ -6160,7 +6160,7 @@ TriangleRasterise_ZPTIFB_I8_D16_128 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIFB_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6169,9 +6169,9 @@ TriangleRasterise_ZPTIFB_I8_D16_128 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -6186,9 +6186,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTIFB_I8_D16_128 endp
@@ -6276,7 +6276,7 @@ TriangleRender_ZPTFB_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTFB_I8_D16_128_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6285,9 +6285,9 @@ TriangleRender_ZPTFB_I8_D16_128 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_128_f
-		
+
 		ret
 
 reversed:
@@ -6302,9 +6302,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_128_b
-		
+
 		ret
 
 TriangleRender_ZPTFB_I8_D16_128 endp
@@ -6417,7 +6417,7 @@ TriangleRasterise_ZPTIFB_I8_D16_256 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIFB_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6426,9 +6426,9 @@ TriangleRasterise_ZPTIFB_I8_D16_256 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -6443,9 +6443,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTIFB_I8_D16_256 endp
@@ -6530,7 +6530,7 @@ TriangleRender_ZPTFB_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTFB_I8_D16_256_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6539,9 +6539,9 @@ TriangleRender_ZPTFB_I8_D16_256 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_256_f
-		
+
 		ret
 
 reversed:
@@ -6556,9 +6556,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_256_b
-		
+
 		ret
 
 TriangleRender_ZPTFB_I8_D16_256 endp
@@ -6676,7 +6676,7 @@ TriangleRasterise_ZPTIFB_I8_D16_1024 label proc
 		jnz		reversed
 
         call    TrapeziumRender_ZPTIFB_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6685,9 +6685,9 @@ TriangleRasterise_ZPTIFB_I8_D16_1024 label proc
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -6702,9 +6702,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTIFB_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTIFB_I8_D16_1024 endp
@@ -6794,7 +6794,7 @@ TriangleRender_ZPTFB_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 		jnz		reversed
 
         call    TrapeziumRender_ZPTFB_I8_D16_1024_f
-		
+
 		mov		eax,work_bot_i
 		mov		ebx,work_bot_d_i
 
@@ -6803,9 +6803,9 @@ TriangleRender_ZPTFB_I8_D16_1024 proc uses eax ebx ecx edx esi edi,
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_1024_f
-		
+
 		ret
 
 reversed:
@@ -6820,9 +6820,9 @@ reversed:
 
 		mov		work_top_d_i,ebx
 		mov		work_top_count,ecx
-		
+
         call    TrapeziumRender_ZPTFB_I8_D16_1024_b
-		
+
 		ret
 
 TriangleRender_ZPTFB_I8_D16_1024 endp
@@ -6958,6 +6958,7 @@ TrapeziumRender_ZPTI_I8_D16 64,b,\
 	<add al,100b>,<sub al,100b>,<inc ah>,<dec ah>,\
     <shr eax,2>,<and eax,0fffh>,<F>
 
+
 TrapeziumRender_ZPT_I8_D16 64,f,\
 	<shl eax,2>,\
 	<add al,100b>,<sub al,100b>,<inc ah>,<dec ah>,\
@@ -7146,6 +7147,7 @@ TrapeziumRender_ZPTI_I8_D16 64,b,\
 	<add al,100b>,<sub al,100b>,<inc ah>,<dec ah>,\
     <shr eax,2>,<and eax,0fffh>,<F>,<B>
 
+ // size,dirn,pre,incu,decu,incv,decv,post1,post2,fogging,blend
 TrapeziumRender_ZPT_I8_D16 64,f,\
 	<shl eax,2>,\
 	<add al,100b>,<sub al,100b>,<inc ah>,<dec ah>,\
@@ -7212,8 +7214,3 @@ TrapeziumRender_ZPT_I8_D16 1024,b,\
 	endif
 
     end
-
-
-
-
-
