@@ -2,6 +2,7 @@
 #define X86_EMU
 
 #include <stdint.h>
+#include <math.h>
 
 enum X86_OP {
     X86_OP_REG,
@@ -193,7 +194,7 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     X87_POP();
 
 #define FISTP(dest) \
-    *(int32_t*)dest = (int32_t)ST_(0); \
+    *(int32_t*)dest = round(ST_(0)); \
     X87_POP();
 
 #define FABS() \
