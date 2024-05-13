@@ -648,7 +648,6 @@ udloop:
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
     esi.uint_val += edx.uint_val;
     // add		ebp,ebx					; work.pu.current += work.pq.current
-    ebp.uint_val += ebx.uint_val;
     ADD_AND_SET_CF(ebp.uint_val, ebx.uint_val);
     // uslot
     // no-op
@@ -704,7 +703,6 @@ vdloop:
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
     esi.uint_val += edx.uint_val;
     // add		ebp,ebx					; work.pv.current += work.pq.current
-    ebp.uint_val += ebx.uint_val;
     ADD_AND_SET_CF(ebp.uint_val, ebx.uint_val);
     // uslot
     // no op
@@ -831,7 +829,6 @@ no_pixels:
     // mov		eax,work_main_d_i
     eax.uint_val = work_main_d_i;
     // add		ebp,eax				; step major edge
-    ebp.uint_val += eax.uint_val;
     ADD_AND_SET_CF(ebp.uint_val, eax.uint_val);
     // jc		carry
     if (x86_state.cf) {
@@ -989,7 +986,6 @@ void print_brp_vertex(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     }
 }
 
-static int count;
 void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     va_list     va;
     va_start(va, block);
@@ -1001,19 +997,6 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     v1 = va_arg(va, brp_vertex *);
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
-
-    // if (v0->comp_f[10] != 0.195447f || v1->comp_f[10] != 0.000000 || v2->comp_f[10] != -0.195652f){
-    //     printf("skipping\n");
-    //     return;
-    // }
-    count++;
-
-    printf("call %d\n", count);
-    if (count != 31) {
-        return;
-    }
-
-    print_brp_vertex(v0, v1, v2);
 
     TriangleSetup_ZPT(v0, v1, v2);
 
