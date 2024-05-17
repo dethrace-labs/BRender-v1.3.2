@@ -90,6 +90,9 @@ struct v11group {
 	br_uint_16 nfaces;				/* Number of faces in this group		*/
 	br_uint_16 nvertices;			/* Number of vertices in this group		*/
 	br_uint_16 nedges;				/* Number of edges in this group		*/
+
+	// Added to avoid 64 bit issues trying to pack br_material* into br_colour. eek ;)
+	br_uintptr_t* face_colours_ptr;
 };
 
 #if 0

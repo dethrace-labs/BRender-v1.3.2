@@ -16,9 +16,9 @@ target_compile_definitions(brender-inc INTERFACE
 # Generate pretok.h, pretok_c.h, and toktype.c
 add_custom_command(
         OUTPUT pretok.h pretok.c toktype.c
-        COMMAND "${PERL_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/make/tokgen.pl" "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
+        COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl" "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
         MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
-        DEPENDS "${CMAKE_SOURCE_DIR}/make/tokgen.pl"
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl"
 )
 
 set(GENERATED_FILES
@@ -29,7 +29,7 @@ set(GENERATED_FILES
 
 set(INC_TOKEN_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok
-        ${CMAKE_SOURCE_DIR}/make/tokgen.pl
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl
         )
 source_group("Token" FILES ${INC_TOKEN_FILES} ${GENERATED_FILES})
 set_source_files_properties(${INC_TOKEN_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)

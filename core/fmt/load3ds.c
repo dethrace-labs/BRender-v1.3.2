@@ -2034,7 +2034,7 @@ static void DismantleNTriObj(NTriObj_t *n_tri_obj)
 /*
  * Actor enumeration callback used to count cameras
  */
-static br_uint_32 BR_CALLBACK CountCameras(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK CountCameras(br_actor *actor, void *arg)
 {
 	br_uint_32 *count = (br_uint_32 *)arg;
 
@@ -2046,7 +2046,7 @@ static br_uint_32 BR_CALLBACK CountCameras(br_actor *actor, void *arg)
 /*
  * Actor enumeration callback used to fill table of cameras
  */
-static br_uint_32 BR_CALLBACK FindCameras(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK FindCameras(br_actor *actor, void *arg)
 {
 	br_camera ***camera = (br_camera ***)arg;
 
@@ -2059,7 +2059,7 @@ static br_uint_32 BR_CALLBACK FindCameras(br_actor *actor, void *arg)
  * Actor enumeration callback used to detach
  * camera type data resources from parent actors
  */
-static br_uint_32 BR_CALLBACK DetachCameras(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK DetachCameras(br_actor *actor, void *arg)
 {
 	br_fmt_results *results = (br_fmt_results *)arg;
 
@@ -2102,7 +2102,7 @@ static void CollectCameras(br_fmt_results *results, br_actor *actor)
 /*
  * Actor enumeration callback used to count lights
  */
-static br_uint_32 BR_CALLBACK CountLights(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK CountLights(br_actor *actor, void *arg)
 {
 	br_uint_32 *count = (br_uint_32 *)arg;
 
@@ -2114,7 +2114,7 @@ static br_uint_32 BR_CALLBACK CountLights(br_actor *actor, void *arg)
 /*
  * Actor enumeration callback used to fill table of lights
  */
-static br_uint_32 BR_CALLBACK FindLights(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK FindLights(br_actor *actor, void *arg)
 {
 	br_light ***light = (br_light ***)arg;
 
@@ -2127,7 +2127,7 @@ static br_uint_32 BR_CALLBACK FindLights(br_actor *actor, void *arg)
  * Actor enumeration callback used to detach
  * light type data resources from parent actors
  */
-static br_uint_32 BR_CALLBACK DetachLights(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK DetachLights(br_actor *actor, void *arg)
 {
 	br_fmt_results *results = (br_fmt_results *)arg;
 
@@ -2316,7 +2316,7 @@ static void CollectMaterials(br_fmt_results *results, MaterialList_t *list)
  * Actor enumeration callback used to attach
  * actors to actor hierarchy table as resources
  */
-static br_uint_32 BR_CALLBACK ResAddHierarchy(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK ResAddHierarchy(br_actor *actor, void *arg)
 {
 	br_fmt_results *results = (br_fmt_results *)arg;
 
@@ -2328,7 +2328,7 @@ static br_uint_32 BR_CALLBACK ResAddHierarchy(br_actor *actor, void *arg)
 /*
  * Actor enumeration callback used to clear references to models
  */
-static br_uint_32 BR_CALLBACK ClearActorModels(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK ClearActorModels(br_actor *actor, void *arg)
 {
 	actor->model = NULL;
 
@@ -2338,7 +2338,7 @@ static br_uint_32 BR_CALLBACK ClearActorModels(br_actor *actor, void *arg)
 /*
  * Actor enumeration callback used to clear references to materials
  */
-static br_uint_32 BR_CALLBACK ClearActorMaterials(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK ClearActorMaterials(br_actor *actor, void *arg)
 {
 	actor->material = NULL;
 
@@ -2348,7 +2348,7 @@ static br_uint_32 BR_CALLBACK ClearActorMaterials(br_actor *actor, void *arg)
 /*
  * Actor enumeration callback used to scale hierarchy
  */
-static br_uint_32 BR_CALLBACK ScaleTransform(br_actor *actor, void *arg)
+static br_uintptr_t BR_CALLBACK ScaleTransform(br_actor *actor, void *arg)
 {
 	BrVector3Scale(&actor->t.t.translate.t, &actor->t.t.translate.t, *((br_scalar *)arg));
 

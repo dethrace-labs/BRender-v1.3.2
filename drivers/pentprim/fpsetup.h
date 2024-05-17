@@ -183,8 +183,6 @@ struct ArbitraryWidthWorkspace_t {
     uint32_t duy0;
     uint32_t pad3;
 
-    uint32_t pad10;
-
     // originally a pointer into work.texture.base
     // now only an offset
     uint32_t sv;
@@ -213,7 +211,7 @@ struct ArbitraryWidthWorkspace_t {
 
     uint32_t flags;
     char    *retAddress;
-};
+} __attribute__((aligned(8)));
 
 
 void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);

@@ -2,6 +2,7 @@
 #include "../softrend/ddi/priminfo.h"
 #include "x86emu.h"
 #include "fpsetup.h"
+#include <stdio.h>
 #include <assert.h>
 #include "work.h"
 
@@ -1452,10 +1453,11 @@ exact:
 void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 	int cheat;
 
-	SETUP_FLOAT(v0, v1, v2);
+	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
 	//SETUP_FLOAT_PARAM C_SZ,pz,fp_conv_d16,1
 	SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-
 	if (SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() == CHEAT_YES) {
 		// mov	esi,work.tsl.direction
 		// mov	workspace.flip,esi

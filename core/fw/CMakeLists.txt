@@ -22,9 +22,9 @@ add_custom_command(
         OUTPUT dev_objs.cgh
         # This will work with MSVC and GCC
         COMMAND "${CMAKE_C_COMPILER}" -D__CLASSGEN__ -E "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp" > dev_objs.tmp
-        COMMAND "${PERL_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/make/classgen.pl" < dev_objs.tmp > dev_objs.cgh
+        COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl" < dev_objs.tmp > dev_objs.cgh
         MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp"
-        DEPENDS "${CMAKE_SOURCE_DIR}/make/classgen.pl"
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl"
         BYPRODUCTS dev_objs.tmp
 )
 
@@ -34,7 +34,7 @@ set(GENERATED_FILES
 
 set(FW_DEV_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp
-        ${CMAKE_SOURCE_DIR}/make/classgen.pl
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl
         )
 
 source_group("Device" FILES ${FW_DEV_FILES} ${GENERATED_FILES})

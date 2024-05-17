@@ -25,13 +25,6 @@ void BR_CALLBACK _BrEndHook(void)
 
 static char primitive_heap[1500 * 1024];
 
-static void draw_info(br_pixelmap *screen, br_material *mat)
-{
-
-    br_uint_16 font_height = 0;
-    brp_block *block;
-}
-
 int main(int argc, char **argv)
 {
     br_pixelmap *screen = NULL, *colour_buffer = NULL, *depth_buffer = NULL;
@@ -41,31 +34,7 @@ int main(int argc, char **argv)
     br_colour    clear_colour;
     br_error     err;
 
-    int load_from_file = 0;
-
-    uint8_t file_buf[640 * 480];
-    // file_buf[-1] = 0;
-    int px_idx = 0;
-
-    if(load_from_file) {
-        FILE *f = fopen("/Users/jeff/Downloads/carma/out.txt", "r");
-
-        while(1) {
-            int res = fgetc(f);
-            if(res == EOF) {
-                break;
-            }
-            char c = (char)res;
-            if(c != ' ' && c != '\x0d' && c != '\x0a') {
-                file_buf[px_idx] = c - 48;
-                px_idx++;
-            }
-        }
-    }
-
     BrBegin();
-
-    //BrLogSetLevel(BR_LOG_DEBUG);
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -156,7 +125,8 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.0), BR_SCALAR(1.5));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.3), BR_SCALAR(0.5), BR_SCALAR(1.6));
+        // BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.5), BR_SCALAR(1));
 
         camera_data           = (br_camera *)camera->type_data;
         camera_data->aspect   = BR_DIV(BR_SCALAR(colour_buffer->width), BR_SCALAR(colour_buffer->height));
@@ -167,49 +137,42 @@ int main(int argc, char **argv)
     BrMapFindHook(BrMapFindFailedLoad);
     BrMaterialFindHook(BrMaterialFindFailedLoad);
 
-    br_pixelmap *pm2[1000];
-    int          count = BrPixelmapLoadMany("/opt/CARMA/DATA/PIXELMAP/GASPUMP.PIX", pm2, 1000);
-    BrMapAddMany(pm2, count);
-    br_material *mat2[1000];
-    count = BrMaterialLoadMany("/opt/CARMA/DATA/MATERIAL/GASPUMP.MAT", mat2, 1000);
-    BrMaterialAddMany(mat2, count);
-    for(int i = 0; i < count; i++) {
-        mat2[i]->flags |= BR_MATF_PERSPECTIVE;
-        mat2[i]->flags |= BR_MATF_DITHER;
-        mat2[i]->flags |= BR_MATF_SMOOTH;
+    char* pm_names[] = {
+        "/opt/CARMA/DATA/PIXELMAP/GASPUMP.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/TRAFCLIT.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX"
+    };
+    char* mat_names[] = {
+        "/opt/CARMA/DATA/MATERIAL/GASPUMP.MAT",
+        "/opt/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT"
+    };
+    char *mdl_names[] = {
+        "/opt/CARMA/DATA/MODELS/&00GAS.DAT",
+        "/opt/CARMA/DATA/MODELS/&03TRAFF.DAT",
+        "/opt/CARMA/DATA/MODELS/EAGLE.DAT"
+    };
+
+    for (int i = 0; i < sizeof(pm_names) / sizeof(char*); i++) {
+        br_pixelmap *tmp[1000];
+        int          count = BrPixelmapLoadMany(pm_names[i], tmp, 1000);
+        BrMapAddMany(tmp, count);
+    }
+    for (int i = 0; i < sizeof(mat_names) / sizeof(char*); i++) {
+        br_material *tmp[1000];
+        int          count = BrMaterialLoadMany(mat_names[i], tmp, 1000);
+        BrMaterialAddMany(tmp, count);
+    }
+    for (int i = 0; i < sizeof(mdl_names) / sizeof(char*); i++) {
+        br_model *tmp[1000];
+        int          count = BrModelLoadMany(mdl_names[i], tmp, 1000);
+        BrModelAddMany(tmp, count);
     }
 
-    br_pixelmap *pm3[1000];
-    count = BrPixelmapLoadMany("/opt/CARMA/DATA/PIXELMAP/SCREWIE.PIX", pm3, 1000);
-    BrMapAddMany(pm3, count);
-    br_material *mat3[1000];
-    count = BrMaterialLoadMany("/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT", mat3, 1000);
-    BrMaterialAddMany(mat3, count);
-
-    br_pixelmap *pm = BrPixelmapLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.pix");
-    BrMapAdd(pm);
-
-    br_model *mod1[1000];
-    count = BrModelLoadMany("/opt/CARMA/DATA/MODELS/SCREWIE.DAT", mod1, 1000);
-    BrModelAddMany(mod1, count);
-
-cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
+    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&00GAS.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&03TRAFF.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
     BrActorAdd(world, cube);
-    //  cube           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-    // cube->t.type = BR_TRANSFORM_MATRIX34;
-    // cube->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
-    // BrModelUpdate(cube->model, BR_MODU_ALL);
-    // cube->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
-    // BrMapUpdate(cube->material->colour_map, BR_MAPU_ALL);
-    // BrMaterialUpdate(cube->material, BR_MATU_ALL);
-
-//   cube2           = BrActorAdd(world, BrActorAllocate(BR_ACTOR_MODEL, NULL));
-//     cube2->t.type = BR_TRANSFORM_MATRIX34;
-//     cube2->model    = BrModelFind("/Users/jeff/code/CrocDE-BRender/examples/dat/cube.dat");
-//     cube2->material = BrMaterialLoad("/Users/jeff/code/CrocDE-BRender/examples/dat/checkerboard8.mat");
-//     BrMapUpdate(cube2->material->colour_map, BR_MAPU_ALL);
-//     BrMaterialUpdate(cube2->material, BR_MATU_ALL);
-    // cube->render_style = BR_RSTYLE_EDGES;
 
 
 #if defined(SOFTCUBE_16BIT)
@@ -226,7 +189,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
     // cube->render_style = BR_RSTYLE_EDGES;
 
 //BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
-    BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
+    BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-10));
     BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(-150));
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
@@ -237,6 +200,7 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
 
     Uint32 totalFrameTicks = 0;
     Uint32 totalFrames     = 0;
+    int show_depth_buffer = 0;
 
     for(SDL_Event evt;;) {
         float dt;
@@ -255,6 +219,9 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
                         BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(-3)));
                     } else if (evt.key.keysym.sym == SDLK_s) {
                         BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(3)));
+                    }
+                    if (evt.key.keysym.sym == SDLK_d) {
+                        show_depth_buffer = !show_depth_buffer;
                     }
                     break;
 
@@ -305,6 +272,19 @@ cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
 
         if(totalFrames % 60 == 0) {
             printf("Current FPS: %d, average: %d\n", fps, avg);
+        }
+        if (show_depth_buffer) {
+            uint16_t *dp = depth_buffer->pixels;
+            uint8_t *p = colour_buffer->pixels;
+            for (int y = 0; y < 480; y++) {
+                for (int x = 0; x < 640; x++) {
+                    if (*dp != 0xFFFF) {
+                        *p = 255;
+                    }
+                    dp++;
+                    p++;
+                }
+            }
         }
 
         SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);

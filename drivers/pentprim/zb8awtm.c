@@ -72,7 +72,7 @@ void TriangleRender_ZT_I8_D16(brp_block *block, ...)
     // 	 FXCH st(2)						;	ty-1		cb-1I		db-2I		csy			ds
     FXCH(2);
     // 	fmulp st(4),st					;	cb-1I		db-2I		csy			dsy
-    FMULP_ST(0, 4);
+    FMULP_ST(4, 0);
     // 	faddp st(2),st					;	db-2I		ca			dsy
     FADDP_ST(2, 0);
     // 	;stall
@@ -199,7 +199,6 @@ drawLine:
     ebp.uint_val = workspace.depthAddress;
 
     // 	shr ebx,16
-    // shr(x86_op_reg(ebx), 16);
     ebx.uint_val >>= 16;
     // 	mov edi,workspace.scanAddress
     edi.uint_val = workspace.scanAddress;

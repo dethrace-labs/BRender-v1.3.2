@@ -167,7 +167,7 @@ void BR_PUBLIC_ENTRY BrTableUpdate(br_pixelmap *item, br_uint_16 flags);
 /*
  * Actor Handling
  */
-typedef br_uint_32 BR_CALLBACK br_actor_enum_cbfn(br_actor *mat, void *arg);
+typedef br_uintptr_t BR_CALLBACK br_actor_enum_cbfn(br_actor *mat, void *arg);
 br_uint_32 BR_PUBLIC_ENTRY BrActorEnum(br_actor *parent, br_actor_enum_cbfn *callback , void *arg);
 
 br_actor * BR_PUBLIC_ENTRY BrActorAdd(br_actor *parent, br_actor *a);
@@ -518,7 +518,7 @@ __inline br_actor * BR_PUBLIC_ENTRY BrActorRemoveNoRenumber(br_actor *a)
 {
 //	UASSERT_MESSAGE("NULL pointer to the hierrachy to remove", a != NULL);
 //	UASSERT(a->prev != NULL);
-	
+
 	BR_SIMPLEREMOVE(a);
 
 	a->parent = NULL;
@@ -538,5 +538,3 @@ __inline br_actor * BR_PUBLIC_ENTRY BrActorRemoveNoRenumber(br_actor *a)
 #endif /* _NO_PROTOTYPES */
 
 #endif
-
-
