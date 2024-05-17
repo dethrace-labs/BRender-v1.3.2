@@ -232,27 +232,16 @@ int main(int argc, char **argv)
         Uint32 startTicks = SDL_GetTicks();
         Uint64 startPerf  = SDL_GetPerformanceCounter();
 
-        if(load_from_file) {
+        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
 
-            colour_buffer->origin_x = 0;
-            colour_buffer->origin_y = 0;
-            for(int y = 0; y < 480; y++) {
-                memcpy(colour_buffer->pixels + y * colour_buffer->row_bytes, &file_buf[y * 480], 640);
-            }
-            // memcpy(colour_buffer->pixels, file_buf, 640 * 480);
+        BrRendererFrameBegin();
+        BrPixelmapFill(colour_buffer, 10);
+        BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
-        } else {
+        BrZbSceneRender(world, camera, colour_buffer, depth_buffer);
 
-           BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
+        BrRendererFrameEnd();
 
-            BrRendererFrameBegin();
-            BrPixelmapFill(colour_buffer, 10);
-            BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
-
-            BrZbSceneRender(world, camera, colour_buffer, depth_buffer);
-
-            BrRendererFrameEnd();
-        }
 
         // End frame timing
         Uint32 endTicks  = SDL_GetTicks();

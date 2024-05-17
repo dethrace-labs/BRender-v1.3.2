@@ -789,16 +789,65 @@ static void triangleSubdivideCheck(int depth, struct brp_block *block, brp_verte
 /*
  * Faces ops for subdivision
  */
-void BR_ASM_CALL OpTriangleSubdivide(struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+void BR_ASM_CALL OpTriangleSubdivide(struct brp_block *block, ...)
 {
-	BrFailure("FIXME: %s:%d", __FILE__, __LINE__);
+	brp_vertex clip_in[3];
+	int nclipped,i;
+	brp_vertex *clipped;
+	br_vector3 *vp_p;
+	br_vector2 *vp_map;
+	br_colour colour = scache.colour;
+	br_vector3 rev_normal;
+
+	va_list va;
+    brp_vertex *v0;
+    brp_vertex *v1;
+    brp_vertex *v2;
+    br_uint_16(*fp_vertices)[3];
+    br_uint_16(*fp_edges)[3];
+    br_vector4       *fp_eqn;
+    struct temp_face *tfp;
+
+	va_start(va, block);
+    v0          = va_arg(va, brp_vertex *);
+    v1          = va_arg(va, brp_vertex *);
+    v2          = va_arg(va, brp_vertex *);
+    fp_vertices = va_arg(va, br_uint_16(*)[3]);
+    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_eqn      = va_arg(va, br_vector4 *);
+    tfp         = va_arg(va, struct temp_face *);
+    va_end(va);
     triangleSubdivide(6, block, v0,v1,v2, fp_vertices, fp_edges, fp_eqn, tfp);
 }
 
-void BR_ASM_CALL OpTriangleSubdivideOnScreen(struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+void BR_ASM_CALL OpTriangleSubdivideOnScreen(struct brp_block *block, ...)
 {
-	BrFailure("FIXME: %s:%d", __FILE__, __LINE__);
+	brp_vertex clip_in[3];
+	int nclipped,i;
+	brp_vertex *clipped;
+	br_vector3 *vp_p;
+	br_vector2 *vp_map;
+	br_colour colour = scache.colour;
+	br_vector3 rev_normal;
+
+	va_list va;
+    brp_vertex *v0;
+    brp_vertex *v1;
+    brp_vertex *v2;
+    br_uint_16(*fp_vertices)[3];
+    br_uint_16(*fp_edges)[3];
+    br_vector4       *fp_eqn;
+    struct temp_face *tfp;
+
+	va_start(va, block);
+    v0          = va_arg(va, brp_vertex *);
+    v1          = va_arg(va, brp_vertex *);
+    v2          = va_arg(va, brp_vertex *);
+    fp_vertices = va_arg(va, br_uint_16(*)[3]);
+    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_eqn      = va_arg(va, br_vector4 *);
+    tfp         = va_arg(va, struct temp_face *);
+    va_end(va);
+
     triangleSubdivideOnScreen(6, block, v0,v1,v2, fp_vertices, fp_edges, fp_eqn, tfp);
 }

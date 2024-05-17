@@ -1019,7 +1019,6 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     v1 = va_arg(va, brp_vertex *);
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
-    return;
 
     TriangleSetup_ZPT(v0, v1, v2);
 

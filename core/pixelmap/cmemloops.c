@@ -258,8 +258,13 @@ void _MemRectFill_A(char *dest,
 	br_uint_32 dest_qual, br_uint_32 pwidth, br_uint_32 pheight,
 	br_int_32 d_stride, br_uint_32 bpp, br_uint_32 colour) {
 
-    // Not implemented
-    BrAbort();
+    const br_uint_32 linediff = pwidth * bpp;
+    d_stride -= linediff;
+
+    for(; pheight-- > 0; dest += d_stride) {
+        for(br_uint_32 w = 0; w < pwidth; ++w, dest += bpp)
+            _MemPixelSet(dest, 0, bpp, colour);
+    }
 }
 
 void _MemRectCopySourceColourKey0_A(char *dest,
@@ -293,7 +298,7 @@ void BR_ASM_CALL _MemRectFillFPU_A(char *dest,
 	br_uint_32 dest_qual, br_uint_32 pwidth, br_uint_32 pheight,
 	br_uint_32 stride, br_uint_32 bpp, br_uint_32 colour) {
 
-        _MemRectFillFPU_A(dest, dest_qual, pwidth, pheight, stride, bpp, colour);
+        _MemRectFill_A(dest, dest_qual, pwidth, pheight, stride, bpp, colour);
 }
 
 void BR_ASM_CALL _MemCopyFPU_A(char *dest,
