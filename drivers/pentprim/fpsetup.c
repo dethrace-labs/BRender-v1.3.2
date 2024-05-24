@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include "common.h"
 
 long  fconv_d16_12[2] = {0x04238000000000000, 0x04238000000010000};
 long  fconv_d16_m[2]  = {0x04238000000010000, 0x04238000000000000};
@@ -40,17 +41,17 @@ struct workspace_t               workspace;
 struct ArbitraryWidthWorkspace_t workspaceA;
 
 // FIXME: These are originally macros. Functions for now
-static int  SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-void ARBITRARY_SETUP();
-void SETUP_FLAGS();
-void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
-void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
-void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
+static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+static void ARBITRARY_SETUP();
+static void SETUP_FLAGS();
+static void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
+static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
+static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
                               void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic);
-void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
-void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
-void CREATE_CARRY_VERSIONS();
-void WRAP_SETUP();
+static void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
+static void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
+static void CREATE_CARRY_VERSIONS();
+static void WRAP_SETUP();
 
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
@@ -724,7 +725,7 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     }
 }
 
-void ARBITRARY_SETUP()
+static void ARBITRARY_SETUP()
 {
     // SETUP_FPU
     SETUP_FLAGS();
@@ -746,7 +747,7 @@ void ARBITRARY_SETUP()
 }
 
 // SETUP_FLAGS macro ; approx 21 cycles fixed, 45 cycles float
-void SETUP_FLAGS()
+static void SETUP_FLAGS()
 {
     // 	mov edx,workspace.v2
     edx.ptr_val = workspace.v2;
@@ -865,7 +866,7 @@ wrapped:
     // endm
 }
 
-void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
+static void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
 {
     // ; assumes 8.24 format
     // 	mov edi,0ffffffh
@@ -887,7 +888,7 @@ void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
     // endm
 }
 
-void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param)
+static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param)
 {
     // local paramNegative
     // 	mov ebp,esi
@@ -922,7 +923,7 @@ paramNegative:
 }
 
 // MULTIPLY_UP_PARAM_VALUES macro param,dimension,magic ;24 cycles
-void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
+static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
                               void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic)
 {
     // ;										st(0)		st(1)		st(2)		st(3)		st(4)		st(5) st(6) st(7)
@@ -986,7 +987,7 @@ void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32
 }
 
 // SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS macro ; 24 cycles
-void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS()
+static void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS()
 {
     // 	mov ebx,workspaceA.sv
     ebx.uint_val = workspaceA.sv;
@@ -1046,7 +1047,7 @@ void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS()
 }
 
 // MULTIPLY_UP_V_BY_STRIDE macro magic; 24 cycles
-void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
+static void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
 {
     //  ;										st(0)		st(1)		st(2)		st(3)		st(4)		st(5) st(6) st(7)
 
@@ -1107,7 +1108,7 @@ void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // endm
 }
 
-void CREATE_CARRY_VERSIONS()
+static void CREATE_CARRY_VERSIONS()
 {
     // mov eax,workspaceA.dvy0
     eax.uint_val = workspaceA.dvy0;
@@ -1130,7 +1131,7 @@ void CREATE_CARRY_VERSIONS()
     workspaceA.dvxc = ecx.uint_val;
 }
 
-void WRAP_SETUP()
+static void WRAP_SETUP()
 {
     // mov ecx,
     ecx.uint_val = work.texture.width_p;
@@ -1146,11 +1147,4 @@ void WRAP_SETUP()
 
     // mov workspaceA.vUpperBound,eax
     workspaceA.vUpperBound = eax.uint_val;
-}
-
-void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n) {
-    int count;
-    for (count = 0; count < n; count++) {
-        *name |= 1 << count;
-    }
 }

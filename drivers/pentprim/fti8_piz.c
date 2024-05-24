@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "work.h"
 #include "x86emu.h"
+#include "common.h"
 
 #define work_main_i				workspace.xm
 #define work_main_d_i			workspace.d_xm
@@ -36,9 +37,6 @@
 #define work_pi_grad_x			workspace.d_i_x
 #define work_pi_d_nocarry		workspace.d_i_y_0
 #define work_pi_d_carry			workspace.d_i_y_1
-
-#define DIR_F 0
-#define DIR_B 1
 
 void TRAPEZIUM_ZI_I8_D16(int32_t *half_count, uint32_t *half_i, uint32_t *half_d_i, int dirn) {
 

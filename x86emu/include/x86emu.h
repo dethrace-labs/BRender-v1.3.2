@@ -123,6 +123,9 @@ typedef struct x86emu_state_t {
 extern x86emu_state_t x86_state;
 extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
+// 0-based
+#define BYTE2(x) ((unsigned int)x >> (2 << 3)) & 0xff
+
 #define ST_(i) x86_state.x87_stack[x86_state.x87_stack_top - i]
 
 #define X87_POP() \

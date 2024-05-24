@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include "work.h"
 #include "stdio.h"
+#include "common.h"
 
 // TriangleRender_ZT_I8_D16_POW2 3,_8
 // TriangleRender_ZT_I8_D16_POW2 4,_16

@@ -142,18 +142,21 @@ int main(int argc, char **argv)
         "/opt/CARMA/DATA/PIXELMAP/TRAFCLIT.PIX",
         "/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX",
         "/opt/CARMA/DATA/PIXELMAP/SCREWIE.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/TASSLE.PIX",
     };
     char* mat_names[] = {
         "/opt/CARMA/DATA/MATERIAL/GASPUMP.MAT",
         "/opt/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
         "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT",
-        "/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT"
+        "/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/TASSLE.MAT"
     };
     char *mdl_names[] = {
         "/opt/CARMA/DATA/MODELS/&00GAS.DAT",
         "/opt/CARMA/DATA/MODELS/&03TRAFF.DAT",
         "/opt/CARMA/DATA/MODELS/EAGLE.DAT",
-        "/opt/CARMA/DATA/MODELS/SCREWIE.DAT"
+        "/opt/CARMA/DATA/MODELS/SCREWIE.DAT",
+        "/opt/CARMA/DATA/MODELS/TASSLE.DAT",
     };
 
     br_pixelmap *fog = BrPixelmapLoad("/opt/CARMA/DATA/SHADETAB/STAAAAAA.TAB");
@@ -192,8 +195,9 @@ int main(int argc, char **argv)
 
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&00GAS.ACT");
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&03TRAFF.ACT");
-    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
+    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/TASSLE.ACT");
 
     // only wheel
     // cube->children[0].prev = NULL;

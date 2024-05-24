@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "work.h"
 #include "x86emu.h"
+#include "common.h"
 
 void DRAW_ZTI_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, int32_t *halfCount, int pow2) {
     // local drawPixel,drawLine,done,lineDrawn,noPlot,mask
@@ -96,7 +97,7 @@ drawPixel:
     // mov al,[esi+eax]
     eax.bytes[0] = ((uint8_t *)work.texture.base)[esi.uint_val + eax.uint_val];
     // mov ah,byte ptr[workspace.c_i+2]
-    eax.bytes[1] = ((unsigned int)workspace.c_i >> (2 << 3)) & 0xff;
+    eax.bytes[1] = BYTE2(workspace.c_i);
     // ja noPlot
     if (ebx.short_val[0] > edx.short_val[0]) {
         goto noPlot;

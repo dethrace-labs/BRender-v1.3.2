@@ -1,13 +1,11 @@
 #include "brender.h"
 #include "priminfo.h"
-#include "fpsetup.h"
 #include "pfpsetup.h"
-#include "x86emu.h"
 #include "work.h"
+#include "x86emu.h"
+#include "common.h"
+#include "fpwork.h"
 #include <stdio.h>
-
-#define DIR_F 0
-#define DIR_B 1
 
 #define work_main_i				workspace.xm
 #define work_main_d_i			workspace.d_xm
@@ -552,6 +550,501 @@ donev:
 }
 
 void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int vdirn, int fogging, int blend) {
+    // mov		edx,work.pu.current
+    edx.uint_val = work.pu.current;
+    // mov		esi,work.pu.grad_x
+    esi.uint_val = work.pu.grad_x;
+
+    if (udirn == eScan_direction_i) {
+        // mov		ebx,work.pq.current
+        ebx.uint_val = work.pq.current;
+        // mov		ecx,work.pq.grad_x
+        ecx.uint_val = work.pq.grad_x;
+        // sub		edx,ebx				; Move error into the range -1..0
+        edx.uint_val -= ebx.uint_val;
+        // sub		esi,ecx
+        esi.uint_val -= ecx.uint_val;
+    }
+
+     // mov		ebp,work.pv.current
+    ebp.uint_val = work.pv.current;
+    // mov		edi,work.pv.grad_x
+    edi.uint_val = work.pv.grad_x;
+
+    // ifidni <vdirn>,<i>
+    if (vdirn == eScan_direction_i) {
+        // ifdifi <udirn>,<i>
+        if (udirn != eScan_direction_i) {
+            // mov		ebx,work.pq.current
+            ebx.uint_val = work.pq.current;
+            // mov		ecx,work.pq.grad_x
+            ecx.uint_val = work.pq.grad_x;
+        }
+
+        // sub		ebp,ebx				; Move error into the range -1..0
+        ebp.uint_val -= ebx.uint_val;
+        // sub		edi,ecx
+        edi.uint_val -= ecx.uint_val;
+
+    }
+
+    // mov		work.tsl.u_numerator, edx
+    work.tsl.u_numerator = edx.uint_val;
+    // mov		work.tsl.du_numerator, esi
+    work.tsl.du_numerator = esi.uint_val;
+    // mov		work.tsl.v_numerator, ebp
+    work.tsl.v_numerator = ebp.uint_val;
+    // mov		work.tsl.dv_numerator, edi
+    work.tsl.dv_numerator = edi.uint_val;
+    // mov		esi,work.texture.base
+    esi.ptr_val = work.texture.base;
+    // mov		eax,work.tsl.source
+    eax.uint_val = work.tsl.source;
+    // mov		edi,work.tsl.start
+    edi.ptr_val = work.tsl.start;
+    // mov		ebp,work.tsl.zstart
+    ebp.ptr_val = work.tsl.zstart;
+    // mov		ebx,work_pz_current
+    ebx.uint_val = work_pz_current;
+
+    // mov		edx,work_pi_current
+    edx.uint_val = work_pi_current;
+    // ror		ebx,16					; Swap z words
+    ROR16(ebx);
+    // mov		work.tsl.i,edx
+    work.tsl.i = edx.uint_val;
+    // mov		work.tsl.z,ebx
+    work.tsl.z = ebx.uint_val;
+    // mov		edx,work.pq.current
+    edx.uint_val = work.pq.current;
+    // mov		work.tsl.denominator,edx
+    work.tsl.denominator = edx.uint_val;
+
+next_pixel:
+	// ; Texel fetch and store section
+	// ;
+	// ; eax = source offset
+	// ; ebx = new z value
+	// ; ecx = texel
+	// ; edx = old z value, shade table
+	// ; esi = texture base
+	// ; edi = dest
+	// ; ebp = zdest
+
+	// ; Perform z buffer test and get texel
+	// ;
+
+    // mov		dx,[ebp]
+    edx.short_val[0] = *((uint16_t*)ebp.ptr_val);
+    // xor		ecx,ecx
+    ecx.uint_val = 0;
+    // mov		ebx,work.tsl.z
+    ebx.uint_val = work.tsl.z;
+    // mov		cl,[eax+esi]
+    ecx.bytes[0] = ((uint8_t*)esi.ptr_val)[eax.uint_val];
+
+    // cmp		bx,dx
+    // ja		nodraw
+    if (ebx.short_val[0] > edx.short_val[0]) {
+        goto nodraw;
+    }
+
+    // ; Get intensity
+	// ;
+    // mov		edx,work.shade_table
+    edx.ptr_val = work.shade_table;
+    // mov		ch,byte ptr (work.tsl.i+2)
+    ecx.bytes[1] = BYTE2(work.tsl.i);
+
+	// ; Test for transparency
+	// ;
+    // test	cl,cl
+    // jz		nodraw
+    if (ecx.bytes[0] == 0) {
+        goto nodraw;
+    }
+
+    // ifidni <fogging>,<F>
+    if (fogging == 1) {
+        // ifidni <blend>,<B>
+        if (blend == 1) {
+            // ; Look texel up in shade table, fog table, blend table, store texel
+            // not implemented
+            BrAbort();
+        } else {
+            // ; Look texel up in shade table + fog table, store texel and z
+            // not implemented
+            BrAbort();
+        }
+    } else if (blend == 1) {
+        // ; Look texel up in shade table + blend table, store texel
+        // not implemented
+        BrAbort();
+    } else {
+        // ; Look texel up in shade table, store texel and z
+	    // ;
+        // mov     [ebp],bx
+        *((uint16_t*)ebp.ptr_val) = ebx.short_val[0];
+        // mov     cl,[ecx+edx]
+        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.uint_val];
+        // mov     [edi],cl
+        *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
+    }
+
+nodraw:
+
+	// ; Linear interpolation section
+	// ;
+	// ; eax =
+	// ; ebx = z
+	// ; ecx = dz, i
+	// ; edx = di
+	// ; esi =
+	// ; edi = dest
+	// ; ebp = zdest
+
+	// ; Prepare source offset for modification
+	// ;
+
+    // pre
+    eax.uint_val <<= params[size].pre;
+    // mov		ecx,work.tsl._end
+    ecx.ptr_val = work.tsl.end;
+    // ; Update destinations and check for end of scan
+    // ;
+    // inc_&dirn	edi
+    if (dirn == DIR_F) {
+        edi.ptr_val++;
+    } else {
+        edi.ptr_val--;
+    }
+    // add_&dirn	ebp,2
+    if (dirn == DIR_F) {
+        ebp.ptr_val += 2;
+    } else {
+        ebp.ptr_val -= 2;
+    }
+    // cmp		edi,ecx
+    // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
+    if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
+        return;
+    }
+
+
+    // ; Interpolate z and i
+    // ;
+    // mov		ecx,work.tsl.dz
+    ecx.uint_val = work.tsl.dz;
+    // mov		edx,work.tsl._di
+    edx.uint_val = work.tsl.di;
+    // add_&dirn	ebx,ecx
+    if (dirn == DIR_F) {
+    ADD_AND_SET_CF(ebx.uint_val, ecx.uint_val);
+    } else {
+        SUB_AND_SET_CF(ebx.uint_val, ecx.uint_val);
+    }
+    // mov		ecx,work.tsl.i
+    ecx.uint_val = work.tsl.i;
+    // adc_&dirn	ebx,0		; carry into integer part of z
+    ADC_DIRN(dirn, ebx.uint_val, 0);
+    // add_&dirn	ecx,edx
+    ADD_DIRN(dirn, ecx.uint_val, edx.uint_val);
+    // mov		work.tsl.dest,edi
+    work.tsl.dest = edi.ptr_val;
+    // mov		work.tsl.zdest,ebp
+    work.tsl.zdest = ebp.ptr_val;
+    // mov		work.tsl.z,ebx
+    work.tsl.z = ebx.uint_val;
+    // mov		work.tsl.i,ecx
+    work.tsl.i = ecx.uint_val;
+
+    // ; Perspective interpolation section
+	// ;
+	// ; eax = source offset
+	// ; ebx = u
+	// ; ecx = v
+	// ; edx = q
+	// ; esi =
+	// ; edi = du,dv
+	// ; ebp = dq
+	// ;
+
+    // mov		edx,work.tsl.denominator
+    edx.uint_val = work.tsl.denominator;
+    // mov		ebp,work.tsl.ddenominator
+    ebp.uint_val = work.tsl.ddenominator;
+    // mov		ebx,work.tsl.u_numerator
+    ebx.uint_val = work.tsl.u_numerator;
+    // mov		edi,work.tsl.du_numerator
+    edi.uint_val = work.tsl.du_numerator;
+    // ; Interpolate u numerator and denominator
+    // ;
+    // add_&dirn	edx,ebp
+    if (dirn == DIR_F) {
+        edx.uint_val += ebp.uint_val;
+    } else {
+        edx.uint_val -= ebp.uint_val;
+    }
+    // add_&dirn	ebx,edi
+    if (dirn == DIR_F) {
+        ebx.uint_val += edi.uint_val;
+    } else {
+        ebx.uint_val -= edi.uint_val;
+    }
+    // mov		ecx,work.tsl.v_numerator
+    ecx.uint_val = work.tsl.v_numerator;
+
+    // ifidni <udirn>,<b>
+    if (udirn == eScan_direction_b) {
+
+        // ; Check for u error going outside range 0..1
+        // ;
+        // jge		nodecu
+        if (ebx.int_val >= 0) {
+            goto nodecu;
+        }
+        // ; Adjust u downward
+        // ;
+deculoop:
+        // decu
+        eax.bytes[0] -= params[size].decu;
+        // add		edi,ebp
+        edi.uint_val += ebp.uint_val;
+        // add		ebx,edx
+        ebx.uint_val += edx.uint_val;
+        // jl		deculoop
+        if (ebx.int_val < 0) {
+            goto deculoop;
+        }
+        // mov		work.tsl.du_numerator,edi
+        work.tsl.du_numerator = edi.uint_val;
+        // jmp		doneu
+        goto doneu;
+nodecu:
+        // cmp		ebx,edx
+        // jl		doneu
+        if (ebx.int_val < edx.int_val) {
+            goto doneu;
+        }
+        // ; Adjust u upward
+        // ;
+inculoop:
+        // incu
+        eax.bytes[0] += params[size].incu;
+        // sub		edi,ebp
+        edi.uint_val -= ebp.uint_val;
+        // sub		ebx,edx
+        ebx.uint_val -= edx.uint_val;
+        // cmp		ebx,edx
+        // jge		inculoop
+        if (ebx.int_val > edx.int_val) {
+            goto inculoop;
+        }
+        // mov		work.tsl.du_numerator,edi
+        work.tsl.du_numerator = edi.uint_val;
+        // vslot
+        // no op
+
+    } else {
+
+        // ; Check for u error going outside range 0..1
+	    // ;
+        // jl_&udirn	doneu
+        if (udirn == eScan_direction_i && ebx.int_val < 0) {
+            goto nodecu;
+        } else if (udirn == eScan_direction_b && ebx.int_val > 0) {
+            goto nodecu;
+        } else if (udirn == eScan_direction_d && ebx.int_val >= 0) {
+            goto nodecu;
+        }
+
+        // ; Adjust u
+	    // ;
+stepuloop:
+        // ifidni <udirn>,<i>
+        // incu
+        if (udirn == eScan_direction_i) {
+            eax.bytes[0] += params[size].incu;
+        }
+        // else
+		// decu
+        else {
+            eax.bytes[0] -= params[size].decu;
+        }
+        // endif
+
+        // sub_&udirn	edi,ebp
+        // sub_&udirn	ebx,edx
+        if (udirn == eScan_direction_i) {
+            edi.uint_val -= ebp.uint_val;
+            SUB_AND_SET_CF(ebx.uint_val, edx.uint_val);
+        } else if (udirn == eScan_direction_b) {
+            edi.uint_val += ebp.uint_val;
+            ADD_AND_SET_CF(ebx.uint_val, edx.uint_val);
+        } else if (udirn == eScan_direction_d) {
+            edi.uint_val += ebp.uint_val;
+            ADD_AND_SET_CF(ebx.uint_val, edx.uint_val);
+        }
+
+        // jge_&udirn	stepuloop
+        if (udirn == eScan_direction_i && ebx.int_val >= 0) {
+            goto stepuloop;
+        } else if (udirn == eScan_direction_b && ebx.int_val <= 0) {
+            goto stepuloop;
+        } else if (udirn == eScan_direction_d && x86_state.cf == 0) {
+            goto stepuloop;
+        }
+
+		// mov		work.tsl.du_numerator,edi
+        work.tsl.du_numerator = edi.uint_val;
+		// vslot
+
+    }
+
+
+doneu:
+    // mov		edi,work.tsl.dv_numerator
+    edi.uint_val = work.tsl.dv_numerator;
+    // mov		work.tsl.u_numerator,ebx
+    work.tsl.u_numerator = ebx.uint_val;
+    // ; Interpolate v numerator
+    // ;
+    // add_&dirn	ecx,edi
+    if (dirn == DIR_F) {
+        ecx.uint_val += edi.uint_val;
+    } else {
+        ecx.uint_val -= edi.uint_val;
+    }
+    // mov		work.tsl.denominator,edx
+    work.tsl.denominator = edx.uint_val;
+
+
+    // ifidni <vdirn>,<b>
+    if (vdirn == eScan_direction_b) {
+        // ; Check for v error going outside range 0..1
+        // ;
+        // uslot
+        // no-op
+        // jge		nodecv
+        if (ecx.int_val >= 0) {
+            goto nodecv;
+        }
+        // ; Adjust v downward
+        // ;
+decvloop:
+        // decv
+        eax.bytes[1] -= params[size].decv;
+        // add		edi,ebp
+        edi.uint_val += ebp.uint_val;
+        // add		ecx,edx
+        ecx.uint_val += edx.uint_val;
+        // jl		decvloop
+        if (ecx.int_val < 0) {
+            goto decvloop;
+        }
+        // mov		work.tsl.dv_numerator,edi
+        work.tsl.dv_numerator = edi.uint_val;
+        // jmp		donev
+        goto donev;
+nodecv:
+        // cmp		ecx,edx
+        // jl		donev
+        if (ecx.int_val < edx.int_val) {
+            goto donev;
+        }
+        // ; Adjust v upward
+        // ;
+incvloop:
+        // incv
+        eax.bytes[1] += params[size].incv;
+        // sub		edi,ebp
+        edi.uint_val -= ebp.uint_val;
+        // sub		ecx,edx
+        ecx.uint_val -= edx.uint_val;
+        // cmp		ecx,edx
+        // jge		incvloop
+        if (ecx.int_val >= edx.int_val) {
+            goto incvloop;
+        }
+        // mov		work.tsl.dv_numerator,edi
+        work.tsl.dv_numerator = edi.uint_val;
+        // vslot
+        // no-op
+    } else {
+        // ; Check for v error going outside range 0..1
+	    // ;
+        // uslot
+		// jl_&vdirn	donev
+        if (vdirn == eScan_direction_i && ecx.int_val < 0) {
+            goto donev;
+        } else if (vdirn == eScan_direction_b && ecx.int_val > 0) {
+            goto donev;
+        } else if (vdirn == eScan_direction_d && ecx.int_val >= 0) {
+            goto donev;
+        }
+
+        // ; Adjust v
+        // ;
+stepvloop:
+
+        // ifidni <vdirn>,<i>
+        //         incv
+        // else
+        //         decv
+        // endif
+        if (vdirn == eScan_direction_i) {
+            eax.bytes[1] += params[size].incv;
+        } else {
+            eax.bytes[1] -= params[size].decv;
+        }
+
+        // sub_&vdirn	edi,ebp
+        // sub_&vdirn	ecx,edx
+        // jge_&vdirn	stepvloop
+        if (vdirn == eScan_direction_i) {
+            edi.uint_val -= ebp.uint_val;
+            SUB_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            if (ecx.int_val >= 0) {
+                goto stepvloop;
+            }
+        } else if (vdirn == eScan_direction_b) {
+            edi.uint_val += ebp.uint_val;
+            ADD_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            if (ecx.int_val <= 0) {
+                goto stepvloop;
+            }
+        } else if (vdirn == eScan_direction_d) {
+            edi.uint_val += ebp.uint_val;
+            ADD_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            if (x86_state.cf == 0) {
+                goto stepvloop;
+            }
+        }
+
+		// mov		work.tsl.dv_numerator,edi
+        work.tsl.dv_numerator = edi.uint_val;
+		// vslot
+        // no-op
+    }
+
+donev:
+
+	// ; Fix wrapping of source offset after modification
+	// ;
+    // post1
+    eax.uint_val >>= params[size].post1;
+    // mov	work.tsl.v_numerator,ecx
+    work.tsl.v_numerator = ecx.uint_val;
+
+    // post2
+    eax.uint_val &= params[size].post2;
+    // mov		ebp,work.tsl.zdest
+    ebp.ptr_val = work.tsl.zdest;
+
+    // mov		edi,work.tsl.dest
+    edi.ptr_val = work.tsl.dest;
+    // jmp		next_pixel
+    goto next_pixel;
 }
 
 // TrapeziumRender_ZPT_I8_D16 64,f,\

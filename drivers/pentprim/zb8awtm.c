@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "fpsetup.h"
-#include "work.h"
+#include "fpwork.h"
+#include "common.h"
 
 void TriangleRender_ZT_I8_D16(brp_block *block, ...)
 {
