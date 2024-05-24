@@ -1475,3 +1475,31 @@ void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 		x86_state.cf = 0;
 	}
 }
+
+void TriangleSetup_ZPTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+	int cheat;
+
+	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+	//SETUP_FLOAT_PARAM C_SZ,pz,fp_conv_d16,1
+	SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    // SETUP_FLOAT_PARAM C_I,pi,fp_conv_d16
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+	if (SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() == CHEAT_YES) {
+		// mov	esi,work.tsl.direction
+		// mov	workspace.flip,esi
+		workspace.flip = work.tsl.direction;
+
+		// SETUP_FLOAT_PARAM C_U,pu,fp_conv_d16
+		// SETUP_FLOAT_PARAM C_V,pv,fp_conv_d16
+		SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
+		SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
+		//stc
+		x86_state.cf = 1;
+	} else {
+		SETUP_FLOAT_UV_PERSPECTIVE();
+		//clc
+		x86_state.cf = 0;
+	}
+}

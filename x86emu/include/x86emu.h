@@ -208,6 +208,9 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     *(double*)dest = (double)ST_(0); \
     X87_POP();
 
+#define FDIV(val) \
+    ST_(0) = ST_(0) / val;
+
 #define FDIVR(val) \
     ST_(0) = val / ST_(0);
 

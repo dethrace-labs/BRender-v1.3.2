@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.3), BR_SCALAR(0.5), BR_SCALAR(1.6));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.1), BR_SCALAR(0), BR_SCALAR(2.0));
         // BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.5), BR_SCALAR(1));
 
         camera_data           = (br_camera *)camera->type_data;
@@ -140,18 +140,24 @@ int main(int argc, char **argv)
     char* pm_names[] = {
         "/opt/CARMA/DATA/PIXELMAP/GASPUMP.PIX",
         "/opt/CARMA/DATA/PIXELMAP/TRAFCLIT.PIX",
-        "/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX"
+        "/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/SCREWIE.PIX",
     };
     char* mat_names[] = {
         "/opt/CARMA/DATA/MATERIAL/GASPUMP.MAT",
         "/opt/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
-        "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT"
+        "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT"
     };
     char *mdl_names[] = {
         "/opt/CARMA/DATA/MODELS/&00GAS.DAT",
         "/opt/CARMA/DATA/MODELS/&03TRAFF.DAT",
-        "/opt/CARMA/DATA/MODELS/EAGLE.DAT"
+        "/opt/CARMA/DATA/MODELS/EAGLE.DAT",
+        "/opt/CARMA/DATA/MODELS/SCREWIE.DAT"
     };
+
+    br_pixelmap *fog = BrPixelmapLoad("/opt/CARMA/DATA/SHADETAB/STAAAAAA.TAB");
+    BrMapAdd(fog);
 
     for (int i = 0; i < sizeof(pm_names) / sizeof(char*); i++) {
         br_pixelmap *tmp[1000];
@@ -161,36 +167,46 @@ int main(int argc, char **argv)
     for (int i = 0; i < sizeof(mat_names) / sizeof(char*); i++) {
         br_material *tmp[1000];
         int          count = BrMaterialLoadMany(mat_names[i], tmp, 1000);
-        BrMaterialAddMany(tmp, count);
+        for (int j = 0; j < count; j++) {
+            if (tmp[j]->colour_map != NULL) {
+                tmp[j]->flags |= BR_MATF_PRELIT | BR_MATF_SMOOTH;
+                tmp[j]->flags &= ~BR_MATF_LIGHT;
+                tmp[j]->index_shade = fog;
+                // tmp[j]->ka = 0.5f;
+                BrMaterialUpdate(tmp[j], BR_MATU_ALL);
+            }
+        }
+        int loaded  = BrMaterialAddMany(tmp, count);
     }
+
     for (int i = 0; i < sizeof(mdl_names) / sizeof(char*); i++) {
         br_model *tmp[1000];
         int          count = BrModelLoadMany(mdl_names[i], tmp, 1000);
+        for (int j = 0; j < count; j++) {
+            for (int k = 0; k < tmp[j]->nvertices; k++) {
+                tmp[j]->vertices[k].index = 0;
+            }
+        }
         BrModelAddMany(tmp, count);
     }
 
-    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&00GAS.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&00GAS.ACT");
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&03TRAFF.ACT");
-    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
+
+    // only wheel
+    // cube->children[0].prev = NULL;
+    // cube->children[0].parent = NULL;
+    // BrActorAdd(world, &cube->children[0]);
+
+    // cube->children = NULL;
     BrActorAdd(world, cube);
 
 
-#if defined(SOFTCUBE_16BIT)
-
-#else
-    cube->material = BrMaterialLoad("checkerboard24.mat");
-#endif
-
-    // cube->material->flags |= BR_MATF_PERSPECTIVE; // Perspective-correct texture mapping. Doesn't actually work.
-    // cube->material->flags |= BR_MATF_DITHER;      // Dithering.
-    // cube->material->flags |= BR_MATF_SMOOTH; // Makes lighting look _much_ better.
-    // cube->material->flags |= BR_MATF_DISABLE_COLOUR_KEY;  // Not supported by software.
-    // cube->material->opacity = 255; // < 255 selects screendoor renderer
-    // cube->render_style = BR_RSTYLE_EDGES;
-
 //BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
-    BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-10));
-    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(-150));
+    BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
+    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(50));
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
     light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));

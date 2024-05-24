@@ -13,6 +13,7 @@
 #define WORK_COLOUR_BASE 0
 #define WORK_DEPTH_BASE 0
 #define WORK_TEXTURE_BASE 0
+#define WORK_SHADE_BASE 0
 
 extern struct workspace_t               workspace;
 extern struct ArbitraryWidthWorkspace_t workspaceA;
@@ -217,6 +218,7 @@ struct ArbitraryWidthWorkspace_t {
 void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+void TriangleSetup_ZTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 
 // was a macro
 void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t *d_p_x, uint32_t conv, int is_unsigned);

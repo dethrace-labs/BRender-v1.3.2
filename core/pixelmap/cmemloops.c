@@ -220,38 +220,24 @@ void _MemRectCopy_A(char *dest,
 	br_int_32 d_stride,br_int_32 s_stride,
 	br_uint_32 bpp)
 {
-    const br_uint_32 linediff = pwidth * bpp;
-    s_stride -= linediff;
-    d_stride -= linediff;
+    // const br_uint_32 linediff = pwidth * bpp;
+    // s_stride -= linediff;
+    // d_stride -= linediff;
 
-    for(; pheight-- > 0; src += s_stride, dest += d_stride) {
-        for(br_uint_32 w = 0; w < pwidth; ++w, src += bpp, dest += bpp)
-            _MemPixelSet(dest, 0, bpp, _MemPixelGet(src, src_qualifier, bpp));
+    for (int i = 0; i < pheight; i++) {
+        memcpy(dest + i * d_stride, src + i * s_stride, bpp * pwidth);
     }
+
+    // for(; pheight-- > 0; src += s_stride, dest += d_stride) {
+    //     for(br_uint_32 w = 0; w < pwidth; w++, src += bpp, dest += bpp)
+    //         _MemPixelSet(dest, 0, bpp, _MemPixelGet(src, src_qualifier, bpp));
+    // }
 }
 
 /* From IDA */
 void _MemCopy_A(char *dest, br_uint_32 dest_qual, char *src, br_uint_32 src_qualifier, br_uint_32 pixels, br_uint_32 bpp)
 {
-    int          j;  // [sp+0h] [bp-24h]@4
-    int          i;  // [sp+10h] [bp-14h]@1
-    unsigned int v6; // [sp+14h] [bp-10h]@1
-    void        *v8; // [sp+1Ch] [bp-8h]@1
-    const char  *v9; // [sp+20h] [bp-4h]@1
-
-    v9      = src;
-    v8      = dest;
-    char v7 = bpp * pixels;
-    v6      = bpp * pixels;
-    for(i = (br_uint_8)dest & 3; i; --i) {
-        v7             = *v9;
-        *(uint8_t *)v8 = *v9++;
-        v8             = (char *)v8 + 1;
-        --v6;
-    }
-    memcpy(v8, v9, 4 * (v6 >> 2));
-    for(j = v6 & 3; j; --j)
-        *((uint8_t *)v8 + 4 * (v6 >> 2)) = v7;
+    memcpy(dest, src, pixels * bpp);
 }
 
 void _MemRectFill_A(char *dest,
@@ -313,5 +299,5 @@ void BR_ASM_CALL _MemRectCopyFPU_A(char *dest,
 	br_uint_32 pwidth, br_uint_32 pheight,
 	br_uint_32 d_stride, br_uint_32 s_stride, br_uint_32 bpp) {
 
-        _MemRectCopy_A(dest, dest_qual, src, src_qualifier, pwidth, pheight, d_stride, s_stride, bpp);
+    _MemRectCopy_A(dest, dest_qual, src, src_qualifier, pwidth, pheight, d_stride, s_stride, bpp);
 }

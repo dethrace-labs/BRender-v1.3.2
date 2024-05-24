@@ -75,7 +75,7 @@ endif()
 target_include_directories(softrend PRIVATE ddi)
 #target_compile_definitions(softrend PRIVATE -D__386__)
 
-target_link_libraries(softrend PRIVATE BRender::DDI)
+target_link_libraries(softrend PRIVATE BRender::DDI x86emu)
 
 set_target_properties(softrend PROPERTIES
         EXPORT_NAME "Drivers::SoftRend"

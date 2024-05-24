@@ -620,7 +620,6 @@ static void BR_ASM_CALL averageVerticesOnScreen(struct br_renderer *renderer, br
 
 br_boolean subdivideCheck(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
-	BrFailure("FIXME: %s:%d", __FILE__, __LINE__);
 
 #if 0
     br_scalar lu,hu,lv,hv, q0,q1,q2;
@@ -707,8 +706,6 @@ static void triangleSubdivide(int depth, struct brp_block *block, brp_vertex *v0
 {
 	br_uint_32 combined_codes;
 
-	BrFailure("FIXME: %s:%d", __FILE__, __LINE__);
-
     /*
      * If triangle is not visible - then ignore it
      */
@@ -732,7 +729,9 @@ static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_ve
 {
     brp_vertex mid0,mid1,mid2;
 
-	BrFailure("FIXME: %s:%d", __FILE__, __LINE__);
+    // FIXME
+    block->chain->render(block->chain, v0, v1, v2, fp_vertices, fp_edges, fp_eqn, tfp);
+    return;
 
     if(depth > 0 && subdivideCheck(v0,v1,v2)) {
         /*
@@ -763,7 +762,8 @@ static void triangleSubdivideCheck(int depth, struct brp_block *block, brp_verte
 {
     brp_vertex mid0,mid1,mid2;
 
-	BrFailure("FIXME: %s:%d", __FILE__, __LINE__);
+    block->chain->render(block->chain, v0, v1, v2, fp_vertices, fp_edges, fp_eqn, tfp);
+    return;
 
     if(depth > 0 && subdivideCheck(v0,v1,v2)) {
         /*

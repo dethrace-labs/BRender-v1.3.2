@@ -112,7 +112,6 @@ add_library(pentprim
 
 		pfpsetup.c
 		fpsetup.c
-		x86emu.c
 
 		ti8_pizp.c
 		t15_pizp.c
@@ -136,7 +135,7 @@ if(NOT target_type STREQUAL SHARED_LIBRARY)
     target_compile_definitions(pentprim PRIVATE -DDEFINE_BR_ENTRY_POINT)
 endif()
 
-target_link_libraries(pentprim PRIVATE BRender::DDI)
+target_link_libraries(pentprim PRIVATE BRender::DDI x86emu)
 target_include_directories(pentprim PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 set_target_properties(pentprim PROPERTIES

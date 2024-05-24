@@ -32,6 +32,8 @@ option(BRENDER_BUILD_SOFT "Build Software Renderer" ON)
 
 add_subdirectory(core)
 
+add_subdirectory(x86emu)
+
 if (BRENDER_BUILD_DRIVERS)
     add_subdirectory(drivers)
 endif ()
@@ -52,13 +54,13 @@ add_library(BRender::Full ALIAS brender-full)
 add_library(BRender::DDI ALIAS brender-ddi)
 
 
-option(BRENDER_BUILD_TOOLS "Build Tools" ON)
-option(BRENDER_BUILD_EXAMPLES "Build Examples" ON)
+option(BRENDER_BUILD_TOOLS "Build Tools" OFF)
+option(BRENDER_BUILD_EXAMPLES "Build Examples" OFF)
 option(BRENDER_DISABLE_INSTALL "Disable installation" OFF)
 
-if (BRENDER_BUILD_TOOLS)
-    add_subdirectory(tools)
-endif ()
+# if (BRENDER_BUILD_TOOLS)
+#     add_subdirectory(tools)
+# endif ()
 
 if (BRENDER_BUILD_EXAMPLES AND BRENDER_BUILD_DRIVERS AND TARGET SDL2::SDL2)
     add_subdirectory(examples)
