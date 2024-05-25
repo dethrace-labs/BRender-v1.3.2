@@ -55,15 +55,6 @@ enum tTrapezium_render_size {
     eTrapezium_render_size_256,
 };
 
-typedef enum {
-    eBlend_no,
-    eBlend_yes
-} tBlend_enabled;
-
-typedef enum {
-    eFog_no,
-    eFog_yes,
-} tFog_enabled;
 
 // 	<>,\
 // 	<inc al>,<dec al>,<inc ah>,<dec ah>,\
@@ -1098,7 +1089,7 @@ donev:
 // 	<>,<>
 
 
-void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, int fog, int blend) {
+void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, tFog_enabled fogging, tBlend_enabled blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
     ebx.uint_val = work_top_count;
@@ -1291,21 +1282,21 @@ vddone:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, 0, 0);
+    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fogging, blend);
     goto ScanlineRender_ZPT_done;
 qi_ud:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, 0, 0);
+    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fogging, blend);
     goto ScanlineRender_ZPT_done;
 qd:
     // test	esi,esi
@@ -1317,39 +1308,39 @@ qd_ui:
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, 0, 0);
+    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fogging, blend);
     goto ScanlineRender_ZPT_done;
 qd_ud:
     // cmp		esi,ebp
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
     if (dirn == DIR_F && esi.int_val > ebp.int_val || dirn == DIR_B && esi.int_val < ebp.int_val) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, 0, 0);
+    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fogging, blend);
 
     // ; Scanline loops return here when finished
 	// ;

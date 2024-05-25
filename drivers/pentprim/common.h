@@ -11,6 +11,16 @@
 #define DIR_F 0
 #define DIR_B 1
 
+typedef enum {
+    eBlend_no,
+    eBlend_yes
+} tBlend_enabled;
+
+typedef enum {
+    eFog_no,
+    eFog_yes,
+} tFog_enabled;
+
 // To deal with 32 / 64 pointer manipulation issues,
 // we only add the base texture pointer when accessing pixels
 #define WORK_COLOUR_BASE 0

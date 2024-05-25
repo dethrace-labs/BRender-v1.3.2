@@ -101,16 +101,17 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ebx.uint_val ^= ebx.uint_val;
     CMP(ecx.uint_val, eax.uint_val);
 
-    rcl(x86_op_reg(&ebx), 1);
+    RCL_1(ebx);
     edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
 
     FDIVR(fp_one); //	1/2area	dy1		dy2		dx1		dx2
 
     CMP(edx.uint_val, eax.uint_val);
-    rcl(x86_op_reg(&ebx), 1);
+    RCL_1(ebx);
+
 
     CMP(edx.uint_val, ecx.uint_val)
-    rcl(x86_op_reg(&ebx), 1); // ebx now has 3 bit number characterising the order of the vertices.
+    RCL_1(ebx); // ebx now has 3 bit number characterising the order of the vertices.
 
     eax.uint_val = sort_table_0[ebx.uint_val];
     edx.uint_val = sort_table_2[ebx.uint_val];
@@ -513,7 +514,7 @@ empty_triangle:
     return FPSETUP_EMPTY_TRIANGLE;
 
 exit:
-    assert(x86emu_fpu_stack_top() == -1);
+    assert(x86_state.x87_stack_top == -1);
     return FPSETUP_SUCCESS;
 }
 
@@ -868,7 +869,7 @@ static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0
                               void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic)
 {
     // ;										st(0)		st(1)		st(2)		st(3)		st(4)		st(5) st(6) st(7)
-    assert(x86emu_fpu_stack_top() == -1);
+    assert(x86_state.x87_stack_top == -1);
 
     // fild work.texture.dimension;         d
     FILD(dimension);

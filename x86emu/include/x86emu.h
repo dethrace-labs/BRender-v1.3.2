@@ -72,7 +72,7 @@ x86_operand x86_op_imm(uint32_t imm);
 // extern x86_reg *eax, *ebx, *ecx, *edx, *esi, *ebp, *edi;
 // void            x86emu_init();
 
-int  x86emu_fpu_stack_top();
+// int  x86emu_fpu_stack_top();
 // void fld(x87_operand op);
 // void fild(int val);
 // void fsub(float val);
@@ -94,7 +94,7 @@ int  x86emu_fpu_stack_top();
 // void mov(x86_operand dest, x86_operand src);
 // void xor_(x86_operand dest, x86_operand src);
 // void cmp(x86_operand dest, x86_operand src);
-void rcl(x86_operand dest, int count);
+// void rcl(x86_operand dest, int count);
 // void sub(x86_operand dest, x86_operand src);
 // void sbb(x86_operand dest, x86_operand src);
 // void and (x86_operand dest, x86_operand src);
@@ -107,7 +107,7 @@ void rcl(x86_operand dest, int count);
 // void ror(x86_operand dest, int count);
 
 // hack
-void fild_ptr(intptr_t val);
+// void fild_ptr(intptr_t val);
 
 typedef struct x86emu_state_t {
     long double x87_stack[8];
@@ -245,6 +245,14 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 	x86_state.cf = val1 < val2; \
     } while(0)
 
+#define RCL_1(reg) \
+    do { \
+    int msb = reg.uint_val & 0x80000000; \
+    /* rotate CF flag into lsb */ \
+    reg.uint_val = (reg.uint_val << 1) + x86_state.cf; \
+    /* rotate msb into CF */ \
+    x86_state.cf = msb; \
+    } while(0)
 
 #define SUB_AND_SET_CF(val1, val2) \
     x86_state.cf = val1 < val2; \

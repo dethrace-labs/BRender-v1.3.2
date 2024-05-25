@@ -160,12 +160,11 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 	workspace.v2 = edx.ptr_val;
     edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
     FDIVR(fp_one); //	1/2area	dy1		dy2		dx1		dx2
-	rcl(x86_op_reg(&ebx), 1);
+	RCL_1(ebx);
     CMP(edx.uint_val, eax.uint_val);
-    rcl(x86_op_reg(&ebx), 1);
-
+    RCL_1(ebx);
     CMP(edx.uint_val, ecx.uint_val)
-    rcl(x86_op_reg(&ebx), 1); // ebx now has 3 bit number characterising the order of the vertices.
+    RCL_1(ebx); // ebx now has 3 bit number characterising the order of the vertices.
 
     eax.uint_val = sort_table_0[ebx.uint_val];
     edx.uint_val = sort_table_2[ebx.uint_val];
@@ -574,7 +573,7 @@ empty_triangle:
     return FPSETUP_EMPTY_TRIANGLE;
 
 exit:
-    assert(x86emu_fpu_stack_top() == -1);
+    assert(x86_state.x87_stack_top == -1);
     return FPSETUP_SUCCESS;
 }
 
@@ -617,17 +616,17 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	CMP(ecx.uint_val, eax.uint_val);
 
 	// rcl		ebx,1
-	rcl(x86_op_reg(&ebx), 1);
+	RCL_1(ebx);
 	// cmp		edx,eax
 	CMP(edx.uint_val, eax.uint_val);
 
 	// rcl		ebx,1
-	rcl(x86_op_reg(&ebx), 1);
+	RCL_1(ebx);
 	// cmp		edx,ecx
 	CMP(edx.uint_val, ecx.uint_val);
 
 	// rcl		ebx,1			; ebx now has 3 bit number characterising the order of the vertices.
-	rcl(x86_op_reg(&ebx), 1);
+	RCL_1(ebx);
 	// xor		ecx,ecx
 	ecx.uint_val = 0;
 
@@ -676,12 +675,12 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
     FSUB_ST(0, 2);
 
 	// rcl		ecx,1
-    rcl(x86_op_reg(&ecx), 1);
+    RCL_1(ecx);
 	// cmp		edx,eax
     CMP(edx.float_val, eax.float_val);
 
 	// rcl		ecx,1
-    rcl(x86_op_reg(&ecx), 1);
+    RCL_1(ecx);
 	// cmp		edx,ebx
     CMP(edx.float_val, ebx.float_val);
 
@@ -689,7 +688,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
     FSTP(&xr_yr);
 
 	// rcl		ecx,1			; ebx now has 3 bit number characterising the order of the vertices.
-    rcl(x86_op_reg(&ecx), 1);
+    RCL_1(ecx);
 	// mov		ebx,xr_yr
     ebx.uint_val = xr_yr;
 
