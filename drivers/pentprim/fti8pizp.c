@@ -55,15 +55,15 @@ enum tTrapezium_render_size {
     eTrapezium_render_size_256,
 };
 
-enum tBlend_enabled {
-    eBlend_yes,
+typedef enum {
     eBlend_no,
-};
+    eBlend_yes
+} tBlend_enabled;
 
-enum tFog_enabled {
-    eFog_yes,
+typedef enum {
     eFog_no,
-};
+    eFog_yes,
+} tFog_enabled;
 
 // 	<>,\
 // 	<inc al>,<dec al>,<inc ah>,<dec ah>,\
@@ -80,7 +80,7 @@ trapezium_render_size_params params[] = {
     { .pre = 0, .incu = 1, .decu = 1, .incv = 1, .decv = 1, .post1 = 0, .post2 = 0xffffffff },
 };
 
-void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int vdirn, int fogging, int blend) {
+void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
     // ; Make temporary copies of parameters that change
 	// ;
 
@@ -190,20 +190,18 @@ next_pixel:
     }
 
     // ifidni <fogging>,<F>
-    if (fogging == 1) {
-        // not implemented
-        BrAbort();
+    if (fogging == eFog_yes) {
         // ifidni <blend>,<B>
-        if (blend == 1) {
+        if (blend == eBlend_yes) {
             // ; Look texel up in fog table + blend table, store texel
             // not implemented
-
+            BrAbort();
         } else {
             // ; Look texel up in fog table, store texel and z
             // not implemented
             BrAbort();
         }
-    } else if (blend == 1) {
+    } else if (blend == eBlend_yes) {
         // ; Look texel up in blend table, store texel
         // ;
         // and     ecx,0ffh
@@ -579,7 +577,7 @@ donev:
     goto next_pixel;
 }
 
-void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int vdirn, int fogging, int blend) {
+void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
     // mov		edx,work.pu.current
     edx.uint_val = work.pu.current;
     // mov		esi,work.pu.grad_x
@@ -700,7 +698,7 @@ next_pixel:
         if (blend == 1) {
             // ; Look texel up in shade table, fog table, blend table, store texel
             // not implemented
-            BrAbort();
+            BrFailure("Not implemented");
         } else {
             // ; Look texel up in shade table + fog table, store texel and z
             // not implemented
@@ -1504,7 +1502,7 @@ done_trapezium:
 
 }
 
-void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param) {
+void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param, tFog_enabled fog, tBlend_enabled blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
     ebx.uint_val = work_top_count;
@@ -1697,21 +1695,21 @@ vddone:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, 0, 0);
+    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fog, blend);
     goto ScanlineRender_ZPTI_done;
 qi_ud:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, 0, 0);
+    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fog, blend);
     goto ScanlineRender_ZPTI_done;
 qd:
     // test	esi,esi
@@ -1723,39 +1721,39 @@ qd_ui:
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, 0, 0);
+    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fog, blend);
     goto ScanlineRender_ZPTI_done;
 qd_ud:
     // cmp		esi,ebp
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
     if (dirn == DIR_F && esi.int_val > ebp.int_val || dirn == DIR_B && esi.int_val < ebp.int_val) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, 0, 0);
+        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, 0, 0);
+    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fog, blend);
 
     // ; Scanline loops return here when finished
 	// ;
@@ -2061,7 +2059,7 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64);
+    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.uint_val = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2075,14 +2073,14 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
     // mov		work_top_count,ecx
     work_top_count = ecx.uint_val;
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-   TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64);
+   TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64);
+   TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.uint_val = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2096,7 +2094,7 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.uint_val;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64);
+    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64_FLAT(brp_block *block, ...) {
@@ -2278,8 +2276,159 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_128(brp_block *block, ...) {
     BrAbort();
 }
 
+void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...);
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
-    printf("TriangleRender_ZPTI_I8_D16_256\n");
+    va_list     va;
+    va_start(va, block);
+    brp_vertex *v0;
+    brp_vertex *v1;
+    brp_vertex *v2;
+
+	v0 = va_arg(va, brp_vertex *);
+    v1 = va_arg(va, brp_vertex *);
+    v2 = va_arg(va, brp_vertex *);
+    va_end(va);
+
+    // TriangleRender_ZPT_I8_D16_256(block, v0, v1, v2);
+    // return;
+
+    TriangleSetup_ZPTI(v0, v1, v2);
+
+    // jc TriangleRasterise_ZT_I8_D16_256
+    if (x86_state.cf) {
+        va_list unused;
+        TriangleRender_ZTI_I8_D16_POW2(block, 8, 1, unused);
+        return;
+    }
+
+    // ; Calculate address of first scanline in colour and depth buffers
+	// ;
+    // mov		esi,work_main_y
+    esi.uint_val = work_main_y;
+    // mov		eax,work.colour.base
+    eax.uint_val = WORK_COLOUR_BASE;
+    // dec		esi
+    esi.uint_val--;
+    // mov		ebx,work.colour.stride_b
+    ebx.uint_val = work.colour.stride_b;
+    // mov		ecx,work.depth.base
+    ecx.uint_val = WORK_DEPTH_BASE;
+    // mov		edx,work.depth.stride_b
+    edx.uint_val = work.depth.stride_b;
+    // imul	ebx,esi
+    ebx.int_val *= esi.int_val;
+    // imul	edx,esi
+    edx.int_val *= esi.int_val;
+    // add		eax,ebx
+    eax.uint_val += ebx.uint_val;
+    // add		ecx,edx
+    ecx.uint_val += edx.uint_val;
+    // dec		eax
+    eax.uint_val--;
+    // sub		ecx,2
+    ecx.uint_val -= 2;
+    // mov		workspace.scanAddress,eax
+    workspace.scanAddress = eax.uint_val;
+    // mov		workspace.depthAddress,ecx
+    workspace.depthAddress = ecx.uint_val;
+
+    // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
+	// ; Copy some values into perspective texture mappng workspace
+	// ; Calculate offset of starting pixel in texture map
+	// ;
+    // mov		eax,work_main_i
+    eax.uint_val = work_main_i;
+    // mov		ebx,work_main_d_i
+    ebx.uint_val = work_main_d_i;
+    // ror		eax,16
+    ROR16(eax);
+    // cmp		ebx,80000000h
+    CMP(ebx.uint_val, 0x80000000);
+    // adc		ebx,-1
+    ADC(ebx.uint_val, -1);
+    // mov		ecx,work_pz_grad_x
+    ecx.uint_val = work_pz_grad_x;
+    // ror		ebx,16
+    ROR16(ebx);
+    // cmp		ecx,80000000h
+    CMP(ecx.uint_val, 0x80000000);
+    // adc		ecx,-1
+    ADC(ecx.uint_val, -1);
+    // mov		edx,work_pi_grad_x
+    edx.uint_val = work_pi_grad_x;
+    // ror		ecx,16
+    ROR16(ecx);
+    // cmp		edx,80000000h
+    CMP(edx.uint_val, 0x80000000);
+    // adc		edx,-1
+    ADC(edx.uint_val, -1);
+    // mov		work_main_i,eax
+    work_main_i = eax.uint_val;
+    // xor		eax,eax
+    eax.uint_val = 0;
+    // mov		work_main_d_i,ebx
+    work_main_d_i = ebx.uint_val;
+    // mov		al,byte ptr work.awsl.u_current
+    eax.bytes[0] = work.awsl.u_current & 0xff;
+    // mov		work.tsl.dz,ecx
+    work.tsl.dz = ecx.uint_val;
+    // mov		ah,byte ptr work.awsl.v_current
+    eax.bytes[1] = work.awsl.v_current & 0xff;
+    // mov		work.tsl._di,edx
+    work.tsl.di = edx.uint_val;
+    // mov		work.tsl.source,eax
+    work.tsl.source = eax.uint_val;
+    // mov		ebx,work.pq.grad_x
+    ebx.uint_val = work.pq.grad_x;
+    // mov		work.tsl.ddenominator,ebx
+    work.tsl.ddenominator = ebx.uint_val;
+    // mov		eax,work.tsl.direction
+    eax.uint_val = work.tsl.direction;
+
+    // ; Check scan direction and use appropriate rasteriser
+	// ;
+    // test	eax,eax
+    // jnz		reversed
+    if (eax.uint_val != 0) {
+        goto reversed;
+    }
+    // call    TrapeziumRender_ZPTI_I8_D16_256_f
+    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.uint_val = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.uint_val = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.uint_val = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.uint_val;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.uint_val;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.uint_val;
+    // call    TrapeziumRender_ZPTI_I8_D16_256_f
+   TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    // ret
+    return;
+
+reversed:
+
+    // call    TrapeziumRender_ZPTI_I8_D16_64_b
+   TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.uint_val = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.uint_val = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.uint_val = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.uint_val;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.uint_val;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.uint_val;
+    // call    TrapeziumRender_ZPTI_I8_D16_64_b
+    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256_FLAT(brp_block *block, ...) {
