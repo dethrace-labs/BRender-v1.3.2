@@ -36,18 +36,35 @@ static void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n) {
 
 // Helpers for conditional logic based on directional
 
-#define ADC_DIRN(dirn, op1, op2) \
+#define ADC_D(op1, op2, dirn) \
     if (dirn == DIR_F) { \
         ADC(op1, op2); \
     } else { \
         SBB(op1, op2); \
     }
 
-#define ADD_DIRN(dirn, op1, op2) \
+#define ADD_D(op1, op2, dirn) \
     if (dirn == DIR_F) { \
         op1 += op2; \
     } else { \
         op1 -= op2; \
+    }
+
+#define INC_D(op1, dirn) \
+    if (dirn == DIR_F) { \
+        op1++; \
+    } else { \
+        op1--; \
+    }
+
+#define JG_D(val, label, dirn) \
+    if ((dirn == DIR_F && val > 0) || (dirn == DIR_B && val < 0)) { \
+        goto label; \
+    }
+
+#define JLE_D(val, label, dirn) \
+    if ((dirn == DIR_F && val <= 0) || (dirn == DIR_B && val >= 0)) { \
+        goto label; \
     }
 
 #endif

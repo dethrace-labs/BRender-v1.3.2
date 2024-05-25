@@ -37,61 +37,23 @@ uint32_t flip_table[8]  = {0x000000000, 0x080000000, 0x080000000, 0x000000000,
 #define EXPONENT_OFFSET ((127 + 23) << 23) | 0x07fffff
 
 float                            temp;
+double                         temporary_intensity;
 struct workspace_t               workspace;
 struct ArbitraryWidthWorkspace_t workspaceA;
 
-// FIXME: These are originally macros. Functions for now
-static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-static void ARBITRARY_SETUP();
-static void SETUP_FLAGS();
-static void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
-static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
-static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
-                              void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic);
-static void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
-static void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
-static void CREATE_CARRY_VERSIONS();
-static void WRAP_SETUP();
+// // FIXME: These are originally macros. Functions for now
+// static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+// static void ARBITRARY_SETUP();
+// static void SETUP_FLAGS();
+// static void REMOVE_INTEGER_PARTS_OF_PARAMETERS();
+// static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param);
+// static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
+//                               void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic);
+// static void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
+// static void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic);
+// static void CREATE_CARRY_VERSIONS();
+// static void WRAP_SETUP();
 
-void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
-        return;
-    }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
-}
-
-void TriangleSetup_ZTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
-        return;
-    }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
-}
-
-void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
-{
-    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
-        return;
-    }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
-}
-
-void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
-{
-    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
-        return;
-    }
-
-    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z, &workspace.d_z_x, fp_conv_d16, 1);
-    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u, &workspace.d_u_x, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
-    ARBITRARY_SETUP();
-}
 
 static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 {
@@ -725,27 +687,6 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     }
 }
 
-static void ARBITRARY_SETUP()
-{
-    // SETUP_FPU
-    SETUP_FLAGS();
-    REMOVE_INTEGER_PARTS_OF_PARAMETERS();
-
-    // MULTIPLY_UP_PARAM_VALUES(u, width_p, fp_conv_d8r);
-    MULTIPLY_UP_PARAM_VALUES(workspace.s_u, workspace.d_u_x, workspace.d_u_y_0, workspace.d_u_y_1, &workspaceA.su,
-                             &workspaceA.dux, &workspaceA.duy1, &workspaceA.duy0, work.texture.width_p, fp_conv_d8r);
-
-    // MULTIPLY_UP_PARAM_VALUES(v, height, fp_conv_d8r);
-    MULTIPLY_UP_PARAM_VALUES(workspace.s_v, workspace.d_v_x, workspace.d_v_y_0, workspace.d_v_y_1, &workspaceA.sv,
-                             &workspaceA.dvx, &workspaceA.dvy1, &workspaceA.dvy0, work.texture.height, fp_conv_d8r);
-
-    SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
-    MULTIPLY_UP_V_BY_STRIDE(fp_conv_d);
-    CREATE_CARRY_VERSIONS();
-    WRAP_SETUP();
-    // RESTORE_FPU
-}
-
 // SETUP_FLAGS macro ; approx 21 cycles fixed, 45 cycles float
 static void SETUP_FLAGS()
 {
@@ -866,28 +807,6 @@ wrapped:
     // endm
 }
 
-static void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
-{
-    // ; assumes 8.24 format
-    // 	mov edi,0ffffffh
-    edi.uint_val = 0xffffff;
-    // 	mov esi,0ff000000h
-    esi.uint_val = 0xff000000;
-    // 	and workspace.s_u,0ffffffh
-    workspace.s_u &= 0xffffff;
-    // 	and workspace.s_v,0ffffffh
-    workspace.s_v &= 0xffffff;
-
-    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_u_x);
-    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_u_y_0);
-    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_u_y_1);
-
-    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_v_x);
-    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_v_y_0);
-    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_v_y_1);
-    // endm
-}
-
 static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param)
 {
     // local paramNegative
@@ -919,6 +838,28 @@ paramNegative:
 
     // 	mov param,eax
     *param = eax.uint_val;
+    // endm
+}
+
+static void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
+{
+    // ; assumes 8.24 format
+    // 	mov edi,0ffffffh
+    edi.uint_val = 0xffffff;
+    // 	mov esi,0ff000000h
+    esi.uint_val = 0xff000000;
+    // 	and workspace.s_u,0ffffffh
+    workspace.s_u &= 0xffffff;
+    // 	and workspace.s_v,0ffffffh
+    workspace.s_v &= 0xffffff;
+
+    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_u_x);
+    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_u_y_0);
+    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_u_y_1);
+
+    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_v_x);
+    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_v_y_0);
+    REMOVE_INTEGER_PARTS_OF_PARAM(&workspace.d_v_y_1);
     // endm
 }
 
@@ -1147,4 +1088,83 @@ static void WRAP_SETUP()
 
     // mov workspaceA.vUpperBound,eax
     workspaceA.vUpperBound = eax.uint_val;
+}
+
+static void ARBITRARY_SETUP()
+{
+    // SETUP_FPU
+    SETUP_FLAGS();
+    REMOVE_INTEGER_PARTS_OF_PARAMETERS();
+
+    // MULTIPLY_UP_PARAM_VALUES(u, width_p, fp_conv_d8r);
+    MULTIPLY_UP_PARAM_VALUES(workspace.s_u, workspace.d_u_x, workspace.d_u_y_0, workspace.d_u_y_1, &workspaceA.su,
+                             &workspaceA.dux, &workspaceA.duy1, &workspaceA.duy0, work.texture.width_p, fp_conv_d8r);
+
+    // MULTIPLY_UP_PARAM_VALUES(v, height, fp_conv_d8r);
+    MULTIPLY_UP_PARAM_VALUES(workspace.s_v, workspace.d_v_x, workspace.d_v_y_0, workspace.d_v_y_1, &workspaceA.sv,
+                             &workspaceA.dvx, &workspaceA.dvy1, &workspaceA.dvy0, work.texture.height, fp_conv_d8r);
+
+    SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
+    MULTIPLY_UP_V_BY_STRIDE(fp_conv_d);
+    CREATE_CARRY_VERSIONS();
+    WRAP_SETUP();
+    // RESTORE_FPU
+}
+
+void SETUP_FLOAT_COLOUR(brp_vertex *v0) {
+    // fld dword ptr [eax+4*C_I]
+	// fadd fp_conv_d16
+	// fstp qword ptr temporary_intensity
+	// mov bl, byte ptr temporary_intensity+2
+	// mov byte ptr workspace.colour,bl
+    workspace.colour = (int)v0->comp_f[C_I];
+}
+
+
+void TriangleSetup_Z(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    SETUP_FLOAT_COLOUR(v0);
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+}
+
+void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+}
+
+void TriangleSetup_ZTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+}
+
+void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
+{
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
+}
+
+void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
+{
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+
+    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z, &workspace.d_z_x, fp_conv_d16, 1);
+    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u, &workspace.d_u_x, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
+    ARBITRARY_SETUP();
 }

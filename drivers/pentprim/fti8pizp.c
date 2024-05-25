@@ -29,7 +29,9 @@
 #define work_pi_d_nocarry		workspace.d_i_y_0
 #define work_pi_d_carry			workspace.d_i_y_1
 
+// non-perspective if following cheat mode
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va);
+void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va);
 void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va);
 
 typedef struct trapezium_render_size_params {
@@ -51,6 +53,16 @@ enum tScan_direction {
 enum tTrapezium_render_size {
     eTrapezium_render_size_64,
     eTrapezium_render_size_256,
+};
+
+enum tBlend_enabled {
+    eBlend_yes,
+    eBlend_no,
+};
+
+enum tFog_enabled {
+    eFog_yes,
+    eFog_no,
 };
 
 // 	<>,\
@@ -183,11 +195,29 @@ next_pixel:
         BrAbort();
         // ifidni <blend>,<B>
         if (blend == 1) {
+            // ; Look texel up in fog table + blend table, store texel
             // not implemented
 
+        } else {
+            // ; Look texel up in fog table, store texel and z
+            // not implemented
+            BrAbort();
         }
     } else if (blend == 1) {
-        BrAbort();
+        // ; Look texel up in blend table, store texel
+        // ;
+        // and     ecx,0ffh
+        ecx.uint_val &= 0xff;
+        // mov     edx,work.blend_table
+        edx.ptr_val = work.blend_table;
+        // mov     ch,[edi]
+        ecx.bytes[1] = *((uint8_t*)edi.ptr_val);
+        // ;AGI stall
+        // mov     cl,[edx+ecx]
+        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.uint_val];
+        // mov     [edi],cl
+        *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
+
     } else {
         // ; Store texel and z
 	    // ;
@@ -746,9 +776,9 @@ nodraw:
     // mov		ecx,work.tsl.i
     ecx.uint_val = work.tsl.i;
     // adc_&dirn	ebx,0		; carry into integer part of z
-    ADC_DIRN(dirn, ebx.uint_val, 0);
+    ADC_D(ebx.uint_val, 0, dirn);
     // add_&dirn	ecx,edx
-    ADD_DIRN(dirn, ecx.uint_val, edx.uint_val);
+    ADD_D(ecx.uint_val, edx.uint_val, dirn);
     // mov		work.tsl.dest,edi
     work.tsl.dest = edi.ptr_val;
     // mov		work.tsl.zdest,ebp
@@ -1070,7 +1100,7 @@ donev:
 // 	<>,<>
 
 
-void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param) {
+void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, int fog, int blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
     ebx.uint_val = work_top_count;
@@ -1892,15 +1922,15 @@ done_trapezium:
 
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPT_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPT_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
@@ -2069,7 +2099,7 @@ reversed:
     TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64);
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
@@ -2194,7 +2224,7 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64);
+    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.uint_val = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2208,14 +2238,14 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     // mov		work_top_count,ecx
     work_top_count = ecx.uint_val;
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64);
+   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64);
+   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.uint_val = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2229,30 +2259,30 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.uint_val;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64);
+    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
 
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_128_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_128_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
 
-void BR_ASM_CALL TriangleRender_ZPT_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPT_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
-    // no-op triangle
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
+    printf("TriangleRender_ZPTI_I8_D16_256\n");
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
@@ -2362,7 +2392,7 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_256_f
-    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256);
+    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.uint_val = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2376,14 +2406,14 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
     // mov		work_top_count,ecx
     work_top_count = ecx.uint_val;
     // call    TrapeziumRender_ZPT_I8_D16_256_f
-   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256);
+   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256);
+   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.uint_val = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2397,199 +2427,481 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.uint_val;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256);
+    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
 }
 
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_1024_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_1024_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPT_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPT_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_32_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_32_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_64(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_64(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_64_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_64_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_64(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_64(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_128_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_128_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_256(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_256_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_256_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_256(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_1024_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIF_I8_D16_1024_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTF_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_32_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_32_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_64(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_64(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_64_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_64_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
-    // Not implemented
-    // no-op triangle
+void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, ...) {
+    va_list     va;
+    va_start(va, block);
+    brp_vertex *v0;
+    brp_vertex *v1;
+    brp_vertex *v2;
+
+	v0 = va_arg(va, brp_vertex *);
+    v1 = va_arg(va, brp_vertex *);
+    v2 = va_arg(va, brp_vertex *);
+    va_end(va);
+
+    TriangleSetup_ZPT(v0, v1, v2);
+
+    // jc TriangleRasterise_ZTB_I8_D16_64
+    if (x86_state.cf) {
+        va_list l;
+        TriangleRender_ZTB_I8_D16_POW2(block, 6, 1, l);
+        return;
+    }
+
+    // ; Calculate address of first scanline in colour and depth buffers
+	// ;
+    // mov		esi,work_main_y
+    esi.uint_val = work_main_y;
+    // mov		eax,work.colour.base
+    eax.uint_val = WORK_COLOUR_BASE;
+    // dec		esi
+    esi.uint_val--;
+    // mov		ebx,work.colour.stride_b
+    ebx.uint_val = work.colour.stride_b;
+    // mov		ecx,work.depth.base
+    ecx.uint_val = WORK_DEPTH_BASE;
+    // mov		edx,work.depth.stride_b
+    edx.uint_val = work.depth.stride_b;
+    // imul	ebx,esi
+    ebx.int_val *= esi.int_val;
+    // imul	edx,esi
+    edx.int_val *= esi.int_val;
+    // add		eax,ebx
+    eax.uint_val += ebx.uint_val;
+    // add		ecx,edx
+    ecx.uint_val += edx.uint_val;
+    // dec		eax
+    eax.uint_val--;
+    // sub		ecx,2
+    ecx.uint_val -= 2;
+    // mov		workspace.scanAddress,eax
+    workspace.scanAddress = eax.uint_val;
+    // mov		workspace.depthAddress,ecx
+    workspace.depthAddress = ecx.uint_val;
+
+    // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
+	// ; Copy some values into perspective texture mappng workspace
+	// ; Calculate offset of starting pixel in texture map
+	// ;
+    // mov		eax,work_main_i
+    eax.uint_val = work_main_i;
+    // mov		ebx,work_main_d_i
+    ebx.uint_val = work_main_d_i;
+    // ror		eax,16
+    ROR16(eax);
+    // cmp		ebx,80000000h
+    CMP(ebx.uint_val, 0x80000000);
+    // adc		ebx,-1
+    ADC(ebx.uint_val, -1);
+    // mov		ecx,work_pz_grad_x
+    ecx.uint_val = work_pz_grad_x;
+    // ror		ebx,16
+    ROR16(ebx);
+    // cmp		ecx,80000000h
+    CMP(ecx.uint_val, 0x80000000);
+    // adc		ecx,-1
+    ADC(ecx.uint_val, -1);
+    // mov		work_main_i,eax
+    work_main_i = eax.uint_val;
+    // ror		ecx,16
+    ROR16(ecx);
+    // mov		al,byte ptr work.awsl.u_current
+    eax.bytes[0] = work.awsl.u_current;
+    // mov		ah,byte ptr work.awsl.v_current
+    eax.bytes[1] = work.awsl.v_current;
+    // mov		work_main_d_i,ebx
+    work_main_d_i = ebx.uint_val;
+    // shl		al,2
+    eax.bytes[0] <<= 2;
+    // mov		work.tsl.dz,ecx
+    work.tsl.dz = ecx.uint_val;
+    // shr		eax,2
+    eax.uint_val >>= 2;
+    // mov		ebx,work.pq.grad_x
+    ebx.uint_val = work.pq.grad_x;
+    // and		eax,63*65
+    eax.uint_val &= 63*65;
+    // mov		work.tsl.ddenominator,ebx
+    work.tsl.ddenominator = ebx.uint_val;
+    // mov		work.tsl.source,eax
+    work.tsl.source = eax.uint_val;
+    // mov		eax,work.tsl.direction
+    eax.uint_val = work.tsl.direction;
+
+    // ; Check scan direction and use appropriate rasteriser
+	// ;
+    // test	eax,eax
+    // jnz		reversed
+    if (eax.uint_val != 0) {
+        goto reversed;
+    }
+    // call    TrapeziumRender_ZPTB_I8_D16_64_f
+    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+    // mov		eax,work_bot_i
+    eax.uint_val = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.uint_val = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.uint_val = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.uint_val;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.uint_val;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.uint_val;
+    // call    TrapeziumRender_ZPTB_I8_D16_64_f
+   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+    // ret
+    return;
+
+reversed:
+
+    // call    TrapeziumRender_ZPTB_I8_D16_64_b
+   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+    // mov		eax,work_bot_i
+    eax.uint_val = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.uint_val = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.uint_val = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.uint_val;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.uint_val;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.uint_val;
+    // call    TrapeziumRender_ZPTB_I8_D16_64_b
+    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+
 }
 
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_128_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_128_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_256(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_256_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_256_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, ...) {
+    va_list     va;
+    va_start(va, block);
+    brp_vertex *v0;
+    brp_vertex *v1;
+    brp_vertex *v2;
+
+	v0 = va_arg(va, brp_vertex *);
+    v1 = va_arg(va, brp_vertex *);
+    v2 = va_arg(va, brp_vertex *);
+    va_end(va);
+
+    TriangleSetup_ZPT(v0, v1, v2);
+
+    // jc TriangleRasterise_ZTB_I8_D16_256
+    if (x86_state.cf) {
+        va_list unused;
+        TriangleRender_ZTB_I8_D16_POW2(block, 8, 1, unused);
+        return;
+    }
+
+    // ; Calculate address of first scanline in colour and depth buffers
+	// ;
+    // mov		esi,work_main_y
+    esi.uint_val = work_main_y;
+    // mov		eax,work.colour.base
+    eax.uint_val = WORK_COLOUR_BASE;
+    // dec		esi
+    esi.uint_val--;
+    // mov		ebx,work.colour.stride_b
+    ebx.uint_val = work.colour.stride_b;
+    // mov		ecx,work.depth.base
+    ecx.uint_val = WORK_DEPTH_BASE;
+    // mov		edx,work.depth.stride_b
+    edx.uint_val = work.depth.stride_b;
+    // imul	ebx,esi
+    ebx.int_val *= esi.int_val;
+    // imul	edx,esi
+    edx.int_val *= esi.int_val;
+    // add		eax,ebx
+    eax.uint_val += ebx.uint_val;
+    // add		ecx,edx
+    ecx.uint_val += edx.uint_val;
+    // dec		eax
+    eax.uint_val--;
+    // sub		ecx,2
+    ecx.uint_val -= 2;
+    // mov		workspace.scanAddress,eax
+    workspace.scanAddress = eax.uint_val;
+    // mov		workspace.depthAddress,ecx
+    workspace.depthAddress = ecx.uint_val;
+
+    // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
+	// ; Copy some values into perspective texture mappng workspace
+	// ; Calculate offset of starting pixel in texture map
+	// ;
+    // mov		eax,work_main_i
+    eax.uint_val = work_main_i;
+    // mov		ebx,work_main_d_i
+    ebx.uint_val = work_main_d_i;
+    // ror		eax,16
+    ROR16(eax);
+    // cmp		ebx,80000000h
+    CMP(ebx.uint_val, 0x80000000);
+    // adc		ebx,-1
+    ADC(ebx.uint_val, -1);
+    // mov		ecx,work_pz_grad_x
+    ecx.uint_val = work_pz_grad_x;
+    // ror		ebx,16
+    ROR16(ebx);
+    // cmp		ecx,80000000h
+    CMP(ecx.uint_val, 0x80000000);
+    // adc		ecx,-1
+    ADC(ecx.uint_val, -1);
+    // mov		work_main_i,eax
+    work_main_i = eax.uint_val;
+    // ror		ecx,16
+    ROR16(ecx);
+    // mov		work_main_d_i,ebx
+    work_main_d_i = ebx.uint_val;
+    // xor eax,eax
+    eax.uint_val = 0;
+    // mov		work.tsl.dz,ecx
+    work.tsl.dz = ecx.uint_val;
+    // mov		al,byte ptr work.awsl.u_current
+    eax.bytes[0] = work.awsl.u_current;
+    // mov		ebx,work.pq.grad_x
+    ebx.uint_val = work.pq.grad_x;
+    // mov		ah,byte ptr work.awsl.v_current
+    eax.bytes[1] = work.awsl.v_current;
+    // mov		work.tsl.ddenominator,ebx
+    work.tsl.ddenominator = ebx.uint_val;
+    // mov		work.tsl.source,eax
+    work.tsl.source = eax.uint_val;
+    // mov		eax,work.tsl.direction
+    eax.uint_val = work.tsl.direction;
+
+    // ; Check scan direction and use appropriate rasteriser
+	// ;
+    // test	eax,eax
+    // jnz		reversed
+    if (eax.uint_val != 0) {
+        goto reversed;
+    }
+    // call    TrapeziumRender_ZPT_I8_D16_256_f
+    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+    // mov		eax,work_bot_i
+    eax.uint_val = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.uint_val = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.uint_val = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.uint_val;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.uint_val;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.uint_val;
+    // call    TrapeziumRender_ZPT_I8_D16_256_f
+   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+    // ret
+    return;
+
+reversed:
+
+    // call    TrapeziumRender_ZPT_I8_D16_64_b
+   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+    // mov		eax,work_bot_i
+    eax.uint_val = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.uint_val = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.uint_val = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.uint_val;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.uint_val;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.uint_val;
+    // call    TrapeziumRender_ZPT_I8_D16_64_b
+    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+}
+
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_1024_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_1024_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_32_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_32_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_32(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_64(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_64(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_64_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_64_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_64(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_64(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_128_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_128_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_128(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_256(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_256_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_256_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_256(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_256(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_1024_FLAT(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZPTIFB_I8_D16_1024_FLAT(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_1024(brp_block *block, brp_vertex *a,brp_vertex *b,brp_vertex *c) {
+void BR_ASM_CALL TriangleRender_ZPTFB_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }

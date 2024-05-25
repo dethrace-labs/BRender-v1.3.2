@@ -21,35 +21,6 @@ void BR_ASM_CALL TriangleRender_ZIF_I8_D16_FLAT(brp_block *block, brp_vertex *v0
     BrAbort();
 }
 
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_8(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_32(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_128(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTB_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-
 void BR_ASM_CALL TriangleRender_T_I8_32(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
     // Not implemented
     BrAbort();
@@ -68,40 +39,6 @@ void BR_ASM_CALL TriangleRender_T_I8_1024(brp_block *block, brp_vertex *v0, brp_
 }
 
 
-
-// void BR_ASM_CALL TriangleRender_ZTIB_I8_D16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-//     // Not implemented
-//     BrAbort();
-// }
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_8(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_32(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    // no-op triangle
-    //BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_128(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZTIB_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
 
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_8_FLAT(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
     // Not implemented

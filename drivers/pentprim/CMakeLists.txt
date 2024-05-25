@@ -124,6 +124,8 @@ add_library(pentprim
 		zb8p2lit.c
 		fti8_piz.c
 		zb8.c
+		zb8p2ulb.c
+		zb8p2ltb.c
 
 		${PRIM_FILES}
 )

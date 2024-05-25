@@ -149,12 +149,14 @@ int main(int argc, char **argv)
         "/opt/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
         "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT",
         "/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT",
-        "/opt/CARMA/DATA/MATERIAL/TASSLE.MAT"
+        "/opt/CARMA/DATA/MATERIAL/TASSLE.MAT",
+        "/opt/CARMA/DATA/REG/MATERIAL/SIMPMAT.MAT"
     };
     char *mdl_names[] = {
         "/opt/CARMA/DATA/MODELS/&00GAS.DAT",
         "/opt/CARMA/DATA/MODELS/&03TRAFF.DAT",
         "/opt/CARMA/DATA/MODELS/EAGLE.DAT",
+        "/opt/CARMA/DATA/MODELS/EAGLEX.DAT",
         "/opt/CARMA/DATA/MODELS/SCREWIE.DAT",
         "/opt/CARMA/DATA/MODELS/TASSLE.DAT",
     };
@@ -172,9 +174,9 @@ int main(int argc, char **argv)
         int          count = BrMaterialLoadMany(mat_names[i], tmp, 1000);
         for (int j = 0; j < count; j++) {
             if (tmp[j]->colour_map != NULL) {
-                tmp[j]->flags |= BR_MATF_PRELIT | BR_MATF_SMOOTH;
-                tmp[j]->flags &= ~BR_MATF_LIGHT;
-                tmp[j]->index_shade = fog;
+                // tmp[j]->flags |= BR_MATF_PRELIT | BR_MATF_SMOOTH;
+                // tmp[j]->flags &= ~BR_MATF_LIGHT;
+                // tmp[j]->index_shade = fog;
                 // tmp[j]->ka = 0.5f;
                 BrMaterialUpdate(tmp[j], BR_MATU_ALL);
             }
@@ -197,7 +199,11 @@ int main(int argc, char **argv)
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&03TRAFF.ACT");
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
     // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
-    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/TASSLE.ACT");
+    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLEX.ACT");
+
+    cube2 = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLEX.ACT");
+    BrMatrix34Translate(&cube2->t.t.mat, 0, 0.3, 0.2);
+    // cube->render_style = BR_RSTYLE_EDGES;
 
     // only wheel
     // cube->children[0].prev = NULL;
@@ -206,9 +212,10 @@ int main(int argc, char **argv)
 
     // cube->children = NULL;
     BrActorAdd(world, cube);
+    BrActorAdd(world, cube2);
 
 
-//BrMatrix34Translate(&cube->t.t.mat, 0, 0.0, -30);
+
     BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
     BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(50));
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
@@ -255,7 +262,7 @@ int main(int argc, char **argv)
         BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
 
         BrRendererFrameBegin();
-        BrPixelmapFill(colour_buffer, 10);
+        BrPixelmapFill(colour_buffer, 255);
         BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
         BrZbSceneRender(world, camera, colour_buffer, depth_buffer);

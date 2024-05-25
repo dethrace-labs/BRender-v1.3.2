@@ -39,7 +39,7 @@ enum {
 
 
 
-
+void TriangleSetup_Z(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
