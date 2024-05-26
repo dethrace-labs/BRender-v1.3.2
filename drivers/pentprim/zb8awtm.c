@@ -20,11 +20,6 @@ enum tDraw_ZT_I8_direction {
 // PER_SCAN_ZT macro half,wrap_flag,minorX
 static inline void PER_SCAN_ZT(int32_t *halfCount, char wrap_flag, uint32_t *minorX, uint32_t *d_minorX)
 {
-    // 	local uPerLineNoWrapNegative,uPerLineNoWrapPositive,vPerLineNoWrapNegative,vPerLineNoWrapPositive
-    // 	local uAboveRetest,uBelowRetest,vAboveRetest,vBelowRetest
-
-    // printf("PER_SCAN_ZT\n");
-
     // 	mov ebp,workspace.xm_f
     ebp.uint_val = workspace.xm_f;
     // 	mov edi,workspace.d_xm_f
@@ -48,9 +43,6 @@ static inline void PER_SCAN_ZT(int32_t *halfCount, char wrap_flag, uint32_t *min
     // 	mov edx,workspaceA.su
     edx.uint_val = workspaceA.su;
     // 	mov ebp,[workspace.d_z_y_0+8*edi]
-    if(edi.uint_val != 0) {
-        int a = 0;
-    }
     ebp.uint_val = ((uint32_t *)&workspace.d_z_y_0)[2 * edi.int_val];
 
     // 	add edx,[workspaceA.duy0+8*edi]

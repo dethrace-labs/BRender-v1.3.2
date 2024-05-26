@@ -29,8 +29,9 @@
 #define work_pi_d_nocarry		workspace.d_i_y_0
 #define work_pi_d_carry			workspace.d_i_y_1
 
-// The version of BRender shipped with Carmageddon did not have perspective cheating
-#define ENABLE_PERSPECTIVE_CHEAT 0
+// The version of BRender shipped with Carmageddon disabled perspective cheating for blended triangles
+// BRender v1.3.2 has perspective cheating enabled except for fogged triangles
+#define ENABLE_PERSPECTIVE_CHEAT_FOR_BLEND 0
 
 // non-perspective if following cheat mode
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va);
@@ -1938,7 +1939,6 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
 
-#if ENABLE_PERSPECTIVE_CHEAT==1
     TriangleSetup_ZPTI(v0, v1, v2);
     // jc TriangleRasterise_ZTI_I8_D16_64
     if (x86_state.cf) {
@@ -1946,9 +1946,6 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
         TriangleRender_ZTI_I8_D16_POW2(block, 6, 1, l);
         return;
     }
-#else
-    TriangleSetup_ZPTI_NOCHEAT(v0, v1, v2);
-#endif
 
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
@@ -2111,7 +2108,6 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
 
-#if ENABLE_PERSPECTIVE_CHEAT==1
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZT_I8_D16_64
     if (x86_state.cf) {
@@ -2119,9 +2115,6 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
         TriangleRender_ZT_I8_D16_POW2(block, 6, 1, l);
         return;
     }
-#else
-    TriangleSetup_ZPT_NOCHEAT(v0, v1, v2);
-#endif
 
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
@@ -2277,7 +2270,6 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
 
-#if ENABLE_PERSPECTIVE_CHEAT==1
     TriangleSetup_ZPTI(v0, v1, v2);
     // jc TriangleRasterise_ZTI_I8_D16_256
     if (x86_state.cf) {
@@ -2285,9 +2277,6 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
         TriangleRender_ZTI_I8_D16_POW2(block, 8, 1, l);
         return;
     }
-#else
-    TriangleSetup_ZPTI_NOCHEAT(v0, v1, v2);
-#endif
 
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
@@ -2436,7 +2425,6 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
 
-#if ENABLE_PERSPECTIVE_CHEAT==1
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZT_I8_D16_256
     if (x86_state.cf) {
@@ -2444,9 +2432,6 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
         TriangleRender_ZT_I8_D16_POW2(block, 8, 1, l);
         return;
     }
-#else
-    TriangleSetup_ZPT_NOCHEAT(v0, v1, v2);
-#endif
 
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
@@ -2674,7 +2659,7 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, ...) {
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
 
-#if ENABLE_PERSPECTIVE_CHEAT==1
+#if ENABLE_PERSPECTIVE_CHEAT_FOR_BLEND==1
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZTB_I8_D16_64
     if (x86_state.cf) {
@@ -2845,7 +2830,7 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, ...) {
     v2 = va_arg(va, brp_vertex *);
     va_end(va);
 
-#if ENABLE_PERSPECTIVE_CHEAT==1
+#if ENABLE_PERSPECTIVE_CHEAT_FOR_BLEND==1
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZTB_I8_D16_256
     if (x86_state.cf) {
