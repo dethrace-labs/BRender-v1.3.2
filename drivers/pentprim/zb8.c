@@ -23,7 +23,7 @@ void DRAW_Z_I8_D16(uint32_t *minorX, uint32_t *d_minorX, char direction, int32_t
     // cmp ebx,0
     // jl done
     if (ebx.int_val < 0) {
-        goto done;
+        return;
     }
     // mov eax,workspace.s_z
     eax.uint_val = workspace.s_z;
@@ -144,7 +144,6 @@ lineDrawn:
     if (edx.int_val >= 0) {
         goto drawLine;
     }
-done:
 }
 
 void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, ...) {

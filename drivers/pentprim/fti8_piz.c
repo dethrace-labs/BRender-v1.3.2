@@ -47,7 +47,7 @@ void TRAPEZIUM_ZI_I8_D16(int32_t *half_count, uint32_t *half_i, uint32_t *half_d
     // test	ebx,ebx
     // jl	done_trapezium
     if (ebx.int_val < 0) {
-        goto done_trapezium;
+        return;
     }
 
     // mov	eax,work_pi_current
@@ -270,9 +270,6 @@ no_pixels:
     if (*half_count >= 0) {
         goto scan_loop;
     }
-
-done_trapezium:
-
 }
 
 

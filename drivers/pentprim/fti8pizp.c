@@ -1100,7 +1100,7 @@ void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, tFog_enabled fogging, 
     // test	ebx,ebx
     // jl		done_trapezium
     if (ebx.int_val < 0) {
-        goto done_trapezium;
+        return;
     }
     // mov		edi,work_top_i
     edi.uint_val = work_top_i;
@@ -1492,9 +1492,6 @@ carry:
     if (ecx.int_val >= 0) {
         goto scan_loop;
     }
-
-done_trapezium:
-
 }
 
 void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param, tFog_enabled fog, tBlend_enabled blend) {
@@ -1504,7 +1501,7 @@ void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param, tFog_enabled fog, tBl
     // test	ebx,ebx
     // jl		done_trapezium
     if (ebx.int_val < 0) {
-        goto done_trapezium;
+        return;
     }
     // mov		edi,work_top_i
     edi.uint_val = work_top_i;
@@ -1910,9 +1907,6 @@ carry:
     if (ecx.int_val >= 0) {
         goto scan_loop;
     }
-
-done_trapezium:
-
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32(brp_block *block, ...) {

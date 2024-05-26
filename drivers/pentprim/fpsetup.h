@@ -40,10 +40,12 @@ enum {
 
 
 void TriangleSetup_Z(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
-void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 void TriangleSetup_ZTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+
+void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
+void TriangleSetup_ZTI_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2);
 
 // was a macro. Used by pfpsetup
 void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t *d_p_x, uint32_t conv, int is_unsigned);

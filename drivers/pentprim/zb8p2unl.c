@@ -33,7 +33,7 @@ void DRAW_ZT_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, i
 // 	cmp ebp,0
 // 	jl done
 	if (ebp.int_val < 0) {
-		goto done;
+		return;
 	}
 
 // 	mov ebx,workspace.minorX
@@ -294,9 +294,6 @@ lineDrawn:
 	if (*halfCount >= 0) {
 		goto drawLine;
 	}
-
-done:
-
 }
 
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va) {

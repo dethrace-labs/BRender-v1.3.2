@@ -1169,3 +1169,16 @@ void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
     ARBITRARY_SETUP();
 }
+
+void TriangleSetup_ZTI_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
+{
+    if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+
+    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z, &workspace.d_z_x, fp_conv_d16, 1);
+    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u, &workspace.d_u_x, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_I, "_i", &workspace.s_i, &workspace.d_i_x, fp_conv_d16, 0);
+    ARBITRARY_SETUP();
+}

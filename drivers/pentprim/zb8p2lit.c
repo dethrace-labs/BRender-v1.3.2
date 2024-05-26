@@ -19,7 +19,7 @@ void DRAW_ZTI_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, 
     // cmp edx,0
     // jl done
     if (edx.int_val < 0) {
-        goto done;
+        return;
     }
     // mov edx,workspace.minorX
     edx.uint_val = *minorX;
@@ -274,20 +274,19 @@ lineDrawn:
     if (esi.int_val >= 0) {
         goto drawLine;
     }
+}
 
-done:
-}
-#include <stdio.h>
-static void print_brp_vertex(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    printf("v0->flags = %d;\n", v0->flags);
-    printf("v1->flags = %d;\n", v1->flags);
-    printf("v2->flags = %d;\n", v2->flags);
-    for (int i = 0; i < 16; i++) {
-        printf("v0->comp_f[%d] = %f;\n", i, v0->comp_f[i]);
-        printf("v1->comp_f[%d] = %f;\n", i, v1->comp_f[i]);
-        printf("v2->comp_f[%d] = %f;\n", i, v2->comp_f[i]);
-    }
-}
+// #include <stdio.h>
+// static void print_brp_vertex(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+//     printf("v0->flags = %d;\n", v0->flags);
+//     printf("v1->flags = %d;\n", v1->flags);
+//     printf("v2->flags = %d;\n", v2->flags);
+//     for (int i = 0; i < 16; i++) {
+//         printf("v0->comp_f[%d] = %f;\n", i, v0->comp_f[i]);
+//         printf("v1->comp_f[%d] = %f;\n", i, v1->comp_f[i]);
+//         printf("v2->comp_f[%d] = %f;\n", i, v2->comp_f[i]);
+//     }
+// }
 
 void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, va_list va) {
 	brp_vertex *v0; // [esp+18h] [ebp+Ch]
