@@ -1425,7 +1425,6 @@ exact:
 }
 
 void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-
 	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
@@ -1449,9 +1448,22 @@ void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 	}
 }
 
-void TriangleSetup_ZPTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-	int cheat;
+void TriangleSetup_ZPT_NOCHEAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+	//SETUP_FLOAT_PARAM C_SZ,pz,fp_conv_d16,1
+	SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    // mov		esi,top_vertex
+    esi.ptr_val = top_mid_bot_vertices[0];
+    // mov		edi,mid_vertex
+    edi.ptr_val = top_mid_bot_vertices[1];
+    // mov		ebp,bot_vertex
+    ebp.ptr_val = top_mid_bot_vertices[2];
+    SETUP_FLOAT_UV_PERSPECTIVE();
+}
 
+void TriangleSetup_ZPTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
@@ -1475,4 +1487,21 @@ void TriangleSetup_ZPTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 		//clc
 		x86_state.cf = 0;
 	}
+}
+
+void TriangleSetup_ZPTI_NOCHEAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
+        return;
+    }
+	//SETUP_FLOAT_PARAM C_SZ,pz,fp_conv_d16,1
+	SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    // SETUP_FLOAT_PARAM C_I,pi,fp_conv_d16
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+    // mov		esi,top_vertex
+    esi.ptr_val = top_mid_bot_vertices[0];
+    // mov		edi,mid_vertex
+    edi.ptr_val = top_mid_bot_vertices[1];
+    // mov		ebp,bot_vertex
+    ebp.ptr_val = top_mid_bot_vertices[2];
+    SETUP_FLOAT_UV_PERSPECTIVE();
 }

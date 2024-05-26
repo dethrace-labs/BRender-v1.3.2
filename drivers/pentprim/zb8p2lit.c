@@ -8,7 +8,7 @@
 
 void DRAW_ZTI_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, int32_t *halfCount, int pow2) {
     // local drawPixel,drawLine,done,lineDrawn,noPlot,mask
-    int32_t mask=0;
+    uint32_t mask=0;
 // ; height test
 	MAKE_N_LOW_BIT_MASK(&mask,pow2);
 
@@ -417,15 +417,15 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int 
 	}
 }
 
-void BR_ASM_CALL TriangleRender_ZTI_I8_D16_8(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_8(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZTI_I8_D16_16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_16(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZTI_I8_D16_32(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
@@ -435,15 +435,17 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16_64(brp_block *block, ...) {
 	TriangleRender_ZTI_I8_D16_POW2(block, 6, 0, va);
 	va_end(va);
 }
-void BR_ASM_CALL TriangleRender_ZTI_I8_D16_128(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_128(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
-void BR_ASM_CALL TriangleRender_ZTI_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    // Not implemented
-    printf("TriangleRender_ZTI_I8_D16_256\n");
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_256(brp_block *block, ...) {
+    va_list     va;
+    va_start(va, block);
+	TriangleRender_ZTI_I8_D16_POW2(block, 8, 0, va);
+	va_end(va);
 }
-void BR_ASM_CALL TriangleRender_ZTI_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
+void BR_ASM_CALL TriangleRender_ZTI_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }

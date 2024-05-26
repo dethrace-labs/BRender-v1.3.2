@@ -12,7 +12,7 @@
 // TriangleRender_ZT_I8_D16_POW2 5,_32
 // TriangleRender_ZT_I8_D16_POW2 6,_64
 // TriangleRender_ZT_I8_D16_POW2 7,_128
-// ;TriangleRender_ZT_I8_D16_POW2 8,_256
+// TriangleRender_ZT_I8_D16_POW2 8,_256
 // TriangleRender_ZT_I8_D16_POW2 10,_1024
 
 // ;**************************
@@ -21,7 +21,7 @@
 
 void DRAW_ZT_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, int32_t *halfCount, int pow2) {
 // 	local drawPixel,drawLine,done,lineDrawn,noPlot,mask
-	int32_t mask=0;
+	uint32_t mask=0;
 // ; height test
 	MAKE_N_LOW_BIT_MASK(&mask,pow2);
 

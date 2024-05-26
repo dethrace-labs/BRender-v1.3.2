@@ -13,7 +13,7 @@
 
 void DRAW_ZTB_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, int32_t *halfCount, int pow2) {
 // 	local drawPixel,drawLine,done,lineDrawn,noPlot,mask
-	int32_t mask=0;
+	uint32_t mask=0;
 // ; height test
 	MAKE_N_LOW_BIT_MASK(&mask,pow2);
 
@@ -454,8 +454,10 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_128(brp_block *block, ...) {
     BrAbort();
 }
 void BR_ASM_CALL TriangleRender_ZTB_I8_D16_256(brp_block *block, ...) {
-    // Not implemented
-    BrAbort();
+	va_list     va;
+    va_start(va, block);
+	TriangleRender_ZTB_I8_D16_POW2(block, 8, 0, va);
+	va_end(va);
 }
 void BR_ASM_CALL TriangleRender_ZTB_I8_D16_1024(brp_block *block, ...) {
     // Not implemented
