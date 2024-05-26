@@ -204,7 +204,7 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     ST_(0) = fabs(ST_(0));
 
 #define FSTP_ST(dest) \
-    ST_(0) = ST_(0); \
+    ST_(dest) = ST_(0); \
     X87_POP();
 
 #define FSTP64(dest) \

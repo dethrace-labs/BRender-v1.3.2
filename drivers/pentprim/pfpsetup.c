@@ -6,7 +6,6 @@
 #include <assert.h>
 #include "work.h"
 
-
 #define work_main_i				workspace.xm
 #define work_main_d_i			workspace.d_xm
 #define work_main_y				workspace.t_y
@@ -56,29 +55,6 @@
 #define workspace_xstep_0		workspace.xstep_0
 #define workspace_xstep_1		workspace.xstep_1
 
-// long  fconv_d16_12[2] = {0x04238000000000000, 0x04238000000010000};
-// long  fconv_d16_m[2]  = {0x04238000000010000, 0x04238000000000000};
-// float fp_one          = 1.0f;
-// float fp_two          = 2.0f;
-// float fp_four         = 4.0f;
-
-// uint32_t fp_conv_d   = 0x59C00000;
-// uint32_t fp_conv_d8  = 0x55C00000;
-// uint32_t fp_conv_d8r = 0x5DC00000;
-// uint32_t fp_conv_d16 = 0x51C00000;
-// uint32_t fp_conv_d24 = 0x4DC00000;
-// uint32_t fp_conv_d32 = 0x49C00000;
-
-// uint16_t fp_single_cw   = 0x107f;
-// uint16_t fp_double_cw   = 0x127f;
-// uint16_t fp_extended_cw = 0x137f;
-
-// int      sort_table_1[] = {1, 2, 0, 0, 0, 0, 2, 1};
-// int      sort_table_0[] = {0, 0, 0, 2, 1, 0, 1, 2};
-// int      sort_table_2[] = {2, 1, 0, 1, 2, 0, 0, 0};
-// uint32_t flip_table[8]  = {0x000000000, 0x080000000, 0x080000000, 0x000000000,
-//                            0x080000000, 0x000000000, 0x000000000, 0x080000000};
-
 enum {
     CHEAT_NO = 0,
     CHEAT_YES = 1
@@ -100,7 +76,7 @@ enum {
 // brp_vertex *top_vertex;
 // brp_vertex *mid_vertex;
 // brp_vertex *bot_vertex;
-brp_vertex* top_mid_bot_verticies[3];
+brp_vertex* top_mid_bot_vertices[3];
 
 uint32_t xr_yr;
 uint32_t wr_sr;
@@ -306,18 +282,18 @@ count_cont:
     edi.uint_val = workspace.iarea;
 
 	// mov top_vertex,eax
-	top_mid_bot_verticies[0] = eax.ptr_val;
+	top_mid_bot_vertices[0] = eax.ptr_val;
 
     // ;V
     // 			xor			esi,edi			; Build LR flag in bit 31
     esi.uint_val ^= edi.uint_val;
 	// mov		mid_vertex,ebx
-	top_mid_bot_verticies[1] = ebx.ptr_val;
+	top_mid_bot_vertices[1] = ebx.ptr_val;
     // ;V
     // 			shr			esi,31			; move down to bit 0
     esi.uint_val >>= 31;
 	// mov		bot_vertex,edx
-	top_mid_bot_verticies[2] = edx.ptr_val;
+	top_mid_bot_vertices[2] = edx.ptr_val;
 
 	// mov		work.tsl.direction,esi
 	work.tsl.direction = esi.int_val;
@@ -596,12 +572,12 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// ; 7 cycles
 	// ;
 	// mov		esi,top_vertex
-	esi.ptr_val = top_mid_bot_verticies[0];
+	esi.ptr_val = top_mid_bot_vertices[0];
 	// mov		edi,mid_vertex
-	edi.ptr_val = top_mid_bot_verticies[1];
+	edi.ptr_val = top_mid_bot_vertices[1];
 
 	// mov		ebp,bot_vertex
-	ebp.ptr_val = top_mid_bot_verticies[2];
+	ebp.ptr_val = top_mid_bot_vertices[2];
 	// xor		ebx,ebx
 	ebx.uint_val = 0;
 
@@ -646,9 +622,9 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	FSUB(BRP_VERTEX(esi)->comp_f[C_SY]);
 
 	// mov		eax,[top_vertex+eax]
-	eax.ptr_val = top_mid_bot_verticies[eax.uint_val];
+	eax.ptr_val = top_mid_bot_vertices[eax.uint_val];
 	// mov		edx,[top_vertex+edx]
-	edx.ptr_val = top_mid_bot_verticies[edx.uint_val];
+	edx.ptr_val = top_mid_bot_vertices[edx.uint_val];
 
 	// fld		[edx].comp_f[C_SX*4]		;	xr		yrange
 	FLD(BRP_VERTEX(edx)->comp_f[C_SX]);
@@ -703,10 +679,9 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// ;
 	// test	ebx,080000000h
 	// je		xrange_larger
-    if (ebx.uint_val == 0x80000000) {
+    if ((ebx.uint_val & 0x80000000) == 0) {
         goto xrange_larger;
     }
-
 	// fxch	st(1)						;	yrange	xrange
     FXCH(1);
 xrange_larger:
@@ -714,9 +689,9 @@ xrange_larger:
     FSTP_ST(1);
 
 	// mov		eax,[top_vertex+eax]
-    eax.ptr_val = top_mid_bot_verticies[eax.uint_val];
+    eax.ptr_val = top_mid_bot_vertices[eax.uint_val];
 	// mov		edx,[top_vertex+edx]
-    edx.ptr_val = top_mid_bot_verticies[edx.uint_val];
+    edx.ptr_val = top_mid_bot_vertices[edx.uint_val];
 
 	// ; Determine the minimum and range of W values covered by the three vertices
 	// ;
@@ -745,7 +720,7 @@ xrange_larger:
     FXCH(1);
 
     // mov		eax,top_vertex	; restore pointers
-    eax.ptr_val = top_mid_bot_verticies[0];
+    eax.ptr_val = top_mid_bot_vertices[0];
     // mov		ebx,workspace_v0
     ebx.ptr_val = workspace.v0;
 
@@ -1100,7 +1075,7 @@ no_flip:
 	// ;
     // test	eax,MASK_MANTISSA
     // je		exact
-    if (eax.uint_val == MASK_MANTISSA) {
+    if ((eax.uint_val & MASK_MANTISSA) == 0) {
         goto exact;
     }
     // and		eax,not MASK_MANTISSA
@@ -1450,7 +1425,6 @@ exact:
 }
 
 void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-	int cheat;
 
 	if (SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;

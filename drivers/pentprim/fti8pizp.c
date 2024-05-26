@@ -2093,16 +2093,7 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64_FLAT(brp_block *block, ...) {
     BrAbort();
 }
 
-void print_brp_vertex(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    printf("v0->flags = %d;\n", v0->flags);
-    printf("v1->flags = %d;\n", v1->flags);
-    printf("v2->flags = %d;\n", v2->flags);
-    for (int i = 0; i < 16; i++) {
-        printf("v0->comp_f[%d] = %f;\n", i, v0->comp_f[i]);
-        printf("v1->comp_f[%d] = %f;\n", i, v1->comp_f[i]);
-        printf("v2->comp_f[%d] = %f;\n", i, v2->comp_f[i]);
-    }
-}
+
 
 void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     va_list     va;
