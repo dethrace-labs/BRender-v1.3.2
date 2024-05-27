@@ -30,7 +30,6 @@ int	MatchCount = 0;
 static struct local_block primInfo_t8[] = {
 
 #if BASED_FLOAT
-#pragma message ("FLOAT")
 #include "prim_t8f.c"
 #endif
 
@@ -49,10 +48,11 @@ static struct local_block primInfo_p8[] = {
 #include "prim_p8.c"
 };
 
+#if 0  /* We currently only support 8 bit types */
+
 static struct local_block primInfo_t15[] = {
 
 #if BASED_FLOAT
-#pragma message ("FLOAT")
 #include "prm_t15f.c"
 #endif
 
@@ -74,7 +74,6 @@ static struct local_block primInfo_p15[] = {
 static struct local_block primInfo_t16[] = {
 
 #if BASED_FLOAT
-#pragma message ("FLOAT")
 #include "prm_t16f.c"
 #endif
 
@@ -104,7 +103,7 @@ static struct local_block primInfo_l24[] = {
 static struct local_block primInfo_p24[] = {
 #include "prim_p24.c"
 };
-
+#endif
 
 struct prim_info_table {
 	struct local_block *blocks;
