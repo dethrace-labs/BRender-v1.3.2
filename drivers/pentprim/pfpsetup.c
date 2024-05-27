@@ -1089,7 +1089,7 @@ exact:
 	// ;
 	// neg		eax
     eax.v = -eax.v;
-    eax.v += ((EXPONENT_BIAS * 2 + 28) << EXPONENT_SHIFT);
+    eax.v += 0x8D000000;  // ((EXPONENT_BIAS * 2 + 28) << EXPONENT_SHIFT) calculation caused undefined behavior warning
 
     // ; Do parameter calculations for u and v
 	// ;
