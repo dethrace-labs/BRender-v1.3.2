@@ -1,10 +1,10 @@
-#include "priminfo.h"
 #include <stdarg.h>
-#include "work.h"
 #include <string.h>
 #include <stdlib.h>
+#include "brender.h"
 #include <stdio.h>
 #include "fpsetup.h"
+#include "fpwork.h"
 #include "work.h"
 #include "x86emu.h"
 #include "common.h"

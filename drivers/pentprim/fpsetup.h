@@ -1,7 +1,7 @@
 #ifndef FPSETUP_H
 #define FPSETUP_H
 
-#include "fpwork.h"
+#include "priminfo.h"
 
 extern long  fconv_d16_12[2];
 extern long  fconv_d16_m[2];
@@ -24,8 +24,6 @@ extern int      sort_table_1[];
 extern int      sort_table_0[];
 extern int      sort_table_2[];
 extern uint32_t flip_table[8];
-
-;
 
 enum {
     FPSETUP_SUCCESS,

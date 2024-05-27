@@ -1,14 +1,6 @@
-project(softrend C ASM_MASM)
+project(softrend C)
 
-include(h2inc)
-
-#make_h2inc(softrend "${CMAKE_CURRENT_SOURCE_DIR}/drv.h" "${CMAKE_CURRENT_BINARY_DIR}/drv.inc")
-
-set(ASM_FILES
-        #subdiv.asm
-)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-set_source_files_properties(${ASM_FILES} PROPERTIES COMPILE_OPTIONS "-safeseh")
 
 add_library(softrend
         alpha.c
@@ -61,10 +53,6 @@ add_library(softrend
         zsrmacro.h
 
         subdiv.c
-
-#        "${CMAKE_CURRENT_BINARY_DIR}/drv.inc"
-
-        ${ASM_FILES}
 )
 
 get_target_property(target_type softrend TYPE)

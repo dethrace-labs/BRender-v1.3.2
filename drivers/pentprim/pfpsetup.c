@@ -2,6 +2,7 @@
 #include "../softrend/ddi/priminfo.h"
 #include "x86emu.h"
 #include "fpsetup.h"
+#include "fpwork.h"
 #include <stdio.h>
 #include <assert.h>
 #include "work.h"

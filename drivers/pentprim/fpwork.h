@@ -121,7 +121,7 @@ struct workspace_t {
     uint32_t     scratch13;
     uint32_t     scratch14;
     uint32_t     scratch15;
-} workspace_t;
+};
 
 #define m_y        workspace.t_dy
 #define sort_value workspace.top_vertex

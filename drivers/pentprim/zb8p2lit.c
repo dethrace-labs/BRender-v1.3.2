@@ -1,6 +1,6 @@
 #include "brender.h"
-#include "priminfo.h"
 #include "fpsetup.h"
+#include "fpwork.h"
 #include <stdarg.h>
 #include "work.h"
 #include "x86emu.h"

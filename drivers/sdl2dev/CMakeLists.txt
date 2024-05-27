@@ -19,7 +19,7 @@ target_include_directories(sdl2dev-headers INTERFACE
 
 set_target_properties(sdl2dev-headers PROPERTIES
         EXPORT_NAME "Drivers::SDL2::Headers"
-        FOLDER "BRender/Drivers"
+        # FOLDER "BRender/Drivers"
         )
 
 
