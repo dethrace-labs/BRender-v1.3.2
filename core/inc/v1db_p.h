@@ -340,8 +340,8 @@ void BR_PUBLIC_ENTRY BrRendererEnd(void);
 void BR_PUBLIC_ENTRY BrRendererFrameBegin();
 void BR_PUBLIC_ENTRY BrRendererFrameEnd();
 
-void BR_PUBLIC_ENTRY BrRendererFocusLossBegin();
-void BR_PUBLIC_ENTRY BrRendererFocusLossEnd();
+// void BR_PUBLIC_ENTRY BrRendererFocusLossBegin();
+// void BR_PUBLIC_ENTRY BrRendererFocusLossEnd();
 
 /*
  * Renderering - Z Buffer

@@ -76,52 +76,52 @@ void OUTCODE_ORDINATE(float lValue, float rValue, int*tableName1, x86_reg *reg0,
     // mov reg0,rValue
     reg0->float_val = rValue;
     // mov esi,080000000h
-    esi.uint_val = 0x80000000;
+    esi.v = 0x80000000;
     // and esi,reg0
-    esi.uint_val &= reg0->uint_val;
+    esi.v &= reg0->v;
     // mov reg1,lValue
     reg1->float_val = lValue;
     // mov edi,080000000h
-    edi.uint_val = 0x80000000;
+    edi.v = 0x80000000;
     // and reg0,07fffffffh
-    reg0->uint_val &= 0x7fffffff;
+    reg0->v &= 0x7fffffff;
     // shr esi,1
-    esi.uint_val >>= 1;
+    esi.v >>= 1;
     // and edi,reg1
-    edi.uint_val &= reg1->uint_val;
+    edi.v &= reg1->v;
     // or esi,edi
-    esi.uint_val |= edi.uint_val;
+    esi.v |= edi.v;
     // mov edi,reg0
-    edi.uint_val = reg0->uint_val;
+    edi.v = reg0->v;
     // and reg1,07fffffffh
-    reg1->uint_val &= 0x7fffffff;
+    reg1->v &= 0x7fffffff;
     // ;stall
     // sub edi,reg1
-    edi.uint_val -= reg1->uint_val;
+    edi.v -= reg1->v;
     // sub reg1,reg0
-    reg1->uint_val -= reg0->uint_val;
+    reg1->v -= reg0->v;
     // shr edi,3
-    edi.uint_val >>= 3;
+    edi.v >>= 3;
     // and reg1,080000000h
-    reg1->uint_val &= 0x80000000;
+    reg1->v &= 0x80000000;
     // shr reg1,2
-    reg1->uint_val >>= 2;
+    reg1->v >>= 2;
     // or esi,edi
-    esi.uint_val |= edi.uint_val;
+    esi.v |= edi.v;
     // or esi,reg1
-    esi.uint_val |= reg1->uint_val;
+    esi.v |= reg1->v;
     // lea reg0,tableName1
     reg0->ptr_val = tableName1;
     // shr esi,28
-    esi.uint_val >>= 28;
+    esi.v >>= 28;
     // ;stall
     // ;stall
     // ;stall
     // mov reg0,[reg0+4*esi]
-    reg0->uint_val = ((uint32_t*)reg0->ptr_val)[esi.uint_val];
+    reg0->v = ((uint32_t*)reg0->ptr_val)[esi.v];
     // ;stall
     // xor edx,reg0
-    edx.uint_val ^= reg0->uint_val;
+    edx.v ^= reg0->v;
 }
 // ;assumes edx contains outcode flags,esi target for discriptor edi,reg0,reg1
 // ;14 cycles - (at least 2.5 wasted cycles)
@@ -229,11 +229,11 @@ void TEST_AND_PROJECT_VERTEX(x86_reg *reg) {
     br_renderer *renderer = BR_RENDERER(ebp);
 
     // mov edx,[reg]
-    edx.uint_val = BRP_VERTEX((*reg))->flags;
+    edx.v = BRP_VERTEX((*reg))->flags;
     // test edx,OUTCODES_ALL
     // jnz done
-    if (edx.uint_val != OUTCODES_ALL) {
-        goto done;
+    if (edx.v != OUTCODES_ALL) {
+        return;
     }
     // fld fp_one										;	1
     FLD(fp_one);
@@ -289,7 +289,6 @@ void TEST_AND_PROJECT_VERTEX(x86_reg *reg) {
     // ;stall
     // fstp [reg+4*C_SZ]
     FSTP(&BRP_VERTEX((*reg))->comp_f[C_Z]);
-done:
 }
 
 void averageVerticesOnScreen(struct br_renderer *renderer, brp_vertex *dest1, brp_vertex *dest2,
@@ -419,40 +418,40 @@ void averageVertices(struct br_renderer *renderer, brp_vertex *m0, brp_vertex *m
 
     // ;outcoding
     // mov edx,OUTCODES_NOT
-    edx.uint_val = OUTCODES_NOT;
+    edx.v = OUTCODES_NOT;
 	// mov eax,m0
     eax.ptr_val = m0;
 	// OUTCODE_ORDINATE [eax+4*C_X],[eax+4*C_W],rightLeftTable,ebx,ecx
-    OUTCODE_ORDINATE(m0->comp_f[C_X], m0->comp_f[C_W], &rightLeftTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m0->comp_f[C_X], m0->comp_f[C_W], rightLeftTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Y],[eax+4*C_W],topBottomTable,ebx,ecx
-    OUTCODE_ORDINATE(m0->comp_f[C_Y], m0->comp_f[C_W], &topBottomTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m0->comp_f[C_Y], m0->comp_f[C_W], topBottomTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Z],[eax+4*C_W],hitherYonTable,ebx,ecx
-    OUTCODE_ORDINATE(m0->comp_f[C_Z], m0->comp_f[C_W], &hitherYonTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m0->comp_f[C_Z], m0->comp_f[C_W], hitherYonTable, &ebx, &ecx);
 	// mov [eax],edx
-    m0->flags = edx.uint_val;
+    m0->flags = edx.v;
 
 	// mov edx,OUTCODES_NOT
-    edx.uint_val = OUTCODES_NOT;
+    edx.v = OUTCODES_NOT;
 	// mov eax,m1
-	OUTCODE_ORDINATE(m1->comp_f[C_X], m1->comp_f[C_W], &rightLeftTable, &ebx, &ecx);
+	OUTCODE_ORDINATE(m1->comp_f[C_X], m1->comp_f[C_W], rightLeftTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Y],[eax+4*C_W],topBottomTable,ebx,ecx
-    OUTCODE_ORDINATE(m1->comp_f[C_Y], m1->comp_f[C_W], &topBottomTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m1->comp_f[C_Y], m1->comp_f[C_W], topBottomTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Z],[eax+4*C_W],hitherYonTable,ebx,ecx
-    OUTCODE_ORDINATE(m1->comp_f[C_Z], m1->comp_f[C_W], &hitherYonTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m1->comp_f[C_Z], m1->comp_f[C_W], hitherYonTable, &ebx, &ecx);
 	// mov [eax],edx
-    m1->flags = edx.uint_val;
+    m1->flags = edx.v;
 
 	// mov edx,OUTCODES_NOT
-    edx.uint_val = OUTCODES_NOT;
+    edx.v = OUTCODES_NOT;
 	// mov eax,m2
 	// OUTCODE_ORDINATE [eax+4*C_X],[eax+4*C_W],rightLeftTable,ebx,ecx
-    OUTCODE_ORDINATE(m2->comp_f[C_X], m2->comp_f[C_W], &rightLeftTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m2->comp_f[C_X], m2->comp_f[C_W], rightLeftTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Y],[eax+4*C_W],topBottomTable,ebx,ecx
-    OUTCODE_ORDINATE(m2->comp_f[C_Y], m2->comp_f[C_W], &topBottomTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m2->comp_f[C_Y], m2->comp_f[C_W], topBottomTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Z],[eax+4*C_W],hitherYonTable,ebx,ecx
-    OUTCODE_ORDINATE(m2->comp_f[C_Z], m2->comp_f[C_W], &hitherYonTable, &ebx, &ecx);
+    OUTCODE_ORDINATE(m2->comp_f[C_Z], m2->comp_f[C_W], hitherYonTable, &ebx, &ecx);
 	// mov [eax],edx
-    m2->flags = edx.uint_val;
+    m2->flags = edx.v;
 	// push ebp
 
 	// mov ecx,m2
@@ -464,12 +463,12 @@ void averageVertices(struct br_renderer *renderer, brp_vertex *m0, brp_vertex *m
 
     // ; perform clip plane outcoding if neccessary.
     // mov edx,scache.user_clip_active
-    edx.uint_val = scache.user_clip_active;
+    edx.v = scache.user_clip_active;
     // mov edi,MAX_STATE_CLIP_PLANES-1
-    edi.uint_val = MAX_STATE_CLIP_PLANES-1;
+    edi.v = MAX_STATE_CLIP_PLANES-1;
     // test edx,edx
     // jz clipDone
-    if (edx.uint_val == 0) {
+    if (edx.v == 0) {
         goto clipDone;
     }
 
@@ -479,7 +478,7 @@ clipPlane:
     // assume ebp:ptr state_clip
     // cmp esi,BRT_PLANE
     // jne clipNext
-    if (esi.uint_val != BRT_PLANE) {
+    if (esi.v != BRT_PLANE) {
         goto clipNext;
     }
     // lea edx,[ebp].plane
@@ -487,90 +486,90 @@ clipPlane:
     // DOT_PRODUCT_4 esi,edx,dotProduct
     dotProduct = BrVector4Dot((br_vector4*)&BRP_VERTEX(eax)->comp_f[C_X], &clip->plane);
     // mov edx,dotProduct
-    edx.uint_val = dotProduct;
+    edx.v = dotProduct;
     // mov esi,[eax]
-    esi.uint_val = BRP_VERTEX(eax)->flags;
+    esi.v = BRP_VERTEX(eax)->flags;
     // test edx,080000000h
     // jz clip1
-    if (edx.uint_val == 0x80000000) {
+    if (edx.v == 0x80000000) {
         goto clip1;
     }
     // mov edx,OUTCODE_USER or OUTCODE_N_USER
-    edx.uint_val = OUTCODE_USER | OUTCODE_N_USER;
+    edx.v = OUTCODE_USER | OUTCODE_N_USER;
     // push ecx
     // -
     // mov ecx,edi
     // -
     // shl edx,cl
-    edx.uint_val <<= edi.bytes[0];  //using edi here
+    edx.v <<= edi.bytes[0];  //using edi here
     // pop ecx
     // -
     // xor esi,edx
-    esi.uint_val ^= edx.uint_val;
+    esi.v ^= edx.v;
     // mov [eax],esi
-    BRP_VERTEX(eax)->flags = esi.uint_val;
+    BRP_VERTEX(eax)->flags = esi.v;
 
 clip1:
     // lea esi,[ebx+4*C_X]
     // DOT_PRODUCT_4 esi,edx,dotProduct
     dotProduct = BrVector4Dot((br_vector4*)&BRP_VERTEX(esi)->comp_f[C_X], &clip->plane);
     // mov edx,dotProduct
-    edx.uint_val = dotProduct;
+    edx.v = dotProduct;
     // mov esi,[ebx]
-    esi.uint_val = BRP_VERTEX(ebx)->flags;
+    esi.v = BRP_VERTEX(ebx)->flags;
     // test edx,080000000h
     // jz clip1
-    if (edx.uint_val == 0x80000000) {
+    if (edx.v == 0x80000000) {
         goto clip1;
     }
     // mov edx,OUTCODE_USER or OUTCODE_N_USER
-    edx.uint_val = OUTCODE_USER | OUTCODE_N_USER;
+    edx.v = OUTCODE_USER | OUTCODE_N_USER;
     // push ecx
     // -
     // mov ecx,edi
     // -
     // shl edx,cl
-    edx.uint_val <<= edi.bytes[0];
+    edx.v <<= edi.bytes[0];
     // pop ecx
     // -
     // xor esi,edx
-    esi.uint_val ^= edx.uint_val;
+    esi.v ^= edx.v;
     // mov [ebx],esi
-    BRP_VERTEX(ebx)->flags = esi.uint_val;
+    BRP_VERTEX(ebx)->flags = esi.v;
 
 clip2:
     // lea esi,[ecx+4*C_X]
     // DOT_PRODUCT_4 esi,edx,dotProduct
     dotProduct = BrVector4Dot((br_vector4*)&BRP_VERTEX(ecx)->comp_f[C_X], &clip->plane);
     // mov edx,dotProduct
-    edx.uint_val = dotProduct;
+    edx.v = dotProduct;
     // mov esi,[ecx]
-    esi.uint_val = BRP_VERTEX(ecx)->flags;
+    esi.v = BRP_VERTEX(ecx)->flags;
     // test edx,080000000h
     // jz clip1
-    if (edx.uint_val == 0x80000000) {
+    if (edx.v == 0x80000000) {
         goto clip1;
     }
     // mov edx,OUTCODE_USER or OUTCODE_N_USER
-    edx.uint_val = OUTCODE_USER | OUTCODE_N_USER;
+    edx.v = OUTCODE_USER | OUTCODE_N_USER;
     // push ecx
     // -
     // mov ecx,edi
     // -
     // shl edx,cl
-    edx.uint_val <<= edi.bytes[0];
+    edx.v <<= edi.bytes[0];
     // pop ecx
     // -
     // xor esi,edx
-    esi.uint_val ^= edx.uint_val;
+    esi.v ^= edx.v;
     // mov [ebx],esi
-    BRP_VERTEX(ecx)->flags = esi.uint_val;
+    BRP_VERTEX(ecx)->flags = esi.v;
 
 clipNext:
 	// sub ebp,sizeof(state_clip)
     clip--;
 	// dec edi
-    edi.uint_val--;
+    edi.v--;
 	// jge clipPlane
     if (edi.int_val >= 0) {
         goto clipPlane;
@@ -579,28 +578,28 @@ clipNext:
 clipDone:
     // ;project if neccesary
     // mov edx,[eax]
-    edx.uint_val = BRP_VERTEX(ecx)->flags;
+    edx.v = BRP_VERTEX(ecx)->flags;
     // pop ebp
     // -
     // mov edi,[ebx]
-    edi.uint_val = BRP_VERTEX(ebx)->flags;
+    edi.v = BRP_VERTEX(ebx)->flags;
     // mov esi,[ecx]
-    esi.uint_val = BRP_VERTEX(ecx)->flags;
+    esi.v = BRP_VERTEX(ecx)->flags;
     // mov ebp,renderer
     // -
     // test edx,OUTCODES_ALL
     // jnz selectiveProjection
-    if (edx.uint_val != OUTCODES_ALL) {
+    if (edx.v != OUTCODES_ALL) {
         goto selectiveProjection;
     }
     // test edi,OUTCODES_ALL
     // jnz selectiveProjection
-    if (edi.uint_val != OUTCODES_ALL) {
+    if (edi.v != OUTCODES_ALL) {
         goto selectiveProjection;
     }
     // test esi,OUTCODES_ALL
     // jnz selectiveProjection
-    if (edi.uint_val != OUTCODES_ALL) {
+    if (edi.v != OUTCODES_ALL) {
         goto selectiveProjection;
     }
 

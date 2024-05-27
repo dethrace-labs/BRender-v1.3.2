@@ -131,66 +131,66 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 	workspace.v1 = ecx.ptr_val;
     ecx.float_val = ((brp_vertex *)ecx.ptr_val)->comp_f[C_SY];
     FSUBP_ST(1, 0); //	2area	dy1		dy2		dx1		dx2
-    ebx.uint_val ^= ebx.uint_val;
-    CMP(ecx.uint_val, eax.uint_val);
+    ebx.v ^= ebx.v;
+    CMP(ecx.v, eax.v);
 	workspace.v2 = edx.ptr_val;
     edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
     FDIVR(fp_one); //	1/2area	dy1		dy2		dx1		dx2
-	RCL_1(ebx);
-    CMP(edx.uint_val, eax.uint_val);
-    RCL_1(ebx);
-    CMP(edx.uint_val, ecx.uint_val)
-    RCL_1(ebx); // ebx now has 3 bit number characterising the order of the vertices.
+	RCL_1(ebx.v);
+    CMP(edx.v, eax.v);
+    RCL_1(ebx.v);
+    CMP(edx.v, ecx.v)
+    RCL_1(ebx.v); // ebx now has 3 bit number characterising the order of the vertices.
 
-    eax.uint_val = sort_table_0[ebx.uint_val];
-    edx.uint_val = sort_table_2[ebx.uint_val];
-    esi.uint_val = flip_table[ebx.uint_val];
-    ebx.uint_val = sort_table_1[ebx.uint_val];
+    eax.v = sort_table_0[ebx.v];
+    edx.v = sort_table_2[ebx.v];
+    esi.v = flip_table[ebx.v];
+    ebx.v = sort_table_1[ebx.v];
 
     // Load eax,ebx,edx with pointers to the three vertices in vertical order
-    eax.ptr_val = workspace.v0_array[eax.uint_val];
-    edx.ptr_val = workspace.v0_array[edx.uint_val];
-    ebx.ptr_val = workspace.v0_array[ebx.uint_val];
-    workspace.flip = esi.uint_val;
+    eax.ptr_val = workspace.v0_array[eax.v];
+    edx.ptr_val = workspace.v0_array[edx.v];
+    ebx.ptr_val = workspace.v0_array[ebx.v];
+    workspace.flip = esi.v;
 
     // Work out Y extents of triangle
     // ; Convert float to int using integer instructions, because FPU is in use doing division
     ebp.float_val = ((brp_vertex *)eax.ptr_val)->comp_f[C_SY];
-    ecx.uint_val = EXPONENT_OFFSET;
-    ecx.uint_val -= ebp.uint_val;
-    ebp.uint_val &= MASK_MANTISSA;
-    ecx.uint_val >>= 23;
-    ebp.uint_val |= IMPLICIT_ONE;
-    ebp.uint_val >>= ecx.bytes[0];
+    ecx.v = EXPONENT_OFFSET;
+    ecx.v -= ebp.v;
+    ebp.v &= MASK_MANTISSA;
+    ecx.v >>= 23;
+    ebp.v |= IMPLICIT_ONE;
+    ebp.v >>= ecx.bytes[0];
     esi.float_val = ((brp_vertex *)ebx.ptr_val)->comp_f[C_SY];
-    ecx.uint_val = EXPONENT_OFFSET;
-    ecx.uint_val -= esi.uint_val;
-    esi.uint_val &= MASK_MANTISSA;
-    ecx.uint_val >>= 23;
-    esi.uint_val |= IMPLICIT_ONE;
+    ecx.v = EXPONENT_OFFSET;
+    ecx.v -= esi.v;
+    esi.v &= MASK_MANTISSA;
+    ecx.v >>= 23;
+    esi.v |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    esi.uint_val >>= ecx.bytes[0];
+    esi.v >>= ecx.bytes[0];
 
     edi.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
-    ecx.uint_val = EXPONENT_OFFSET;
-    ecx.uint_val -= edi.uint_val;
-    edi.uint_val &= MASK_MANTISSA;
-    ecx.uint_val >>= 23;
-    edi.uint_val |= IMPLICIT_ONE;
+    ecx.v = EXPONENT_OFFSET;
+    ecx.v -= edi.v;
+    edi.v &= MASK_MANTISSA;
+    ecx.v >>= 23;
+    edi.v |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    edi.uint_val >>= ecx.bytes[0];
+    edi.v >>= ecx.bytes[0];
 
     // Catch special cases of empty top or bottom trapezoids
 
     // cmp(ebp, esi);
     // je(top_zero);
-    if(ebp.uint_val == esi.uint_val) {
+    if(ebp.v == esi.v) {
         goto top_zero;
     }
 
     // cmp(esi, edi);
     // je(bottom_zero);
-    if(esi.uint_val == edi.uint_val) {
+    if(esi.v == edi.v) {
         goto bottom_zero;
     }
 
@@ -256,42 +256,42 @@ count_cont:
     // ; Generate counts
     // ;
     // 		inc			ebp
-    ebp.uint_val++;
+    ebp.v++;
     // 		mov			ecx,esi
-    ecx.uint_val = esi.uint_val;
+    ecx.v = esi.v;
     // 		sub			ecx,ebp				;  count_t = (y_m-y_t)-1
-    ecx.uint_val -= ebp.uint_val;
+    ecx.v -= ebp.v;
     // 		mov			[workspace.t_y],ebp			; save for X intercept calcs
-    workspace.t_y = ebp.uint_val;
+    workspace.t_y = ebp.v;
     // 		mov			[workspace.topCount],ecx
     workspace.topCount = ecx.int_val;
     // 		inc			esi
-    esi.uint_val++;
+    esi.v++;
     // 		sub			edi,esi				;  count_b = (y_b-y_m)-1
-    edi.uint_val -= esi.uint_val;
+    edi.v -= esi.v;
     // 		mov			m_y,esi				; save for X intercept calcs
-    m_y = esi.uint_val;
+    m_y = esi.v;
     // 		mov			[workspace].bottomCount,edi
     workspace.bottomCount = edi.int_val;
     // 		mov			esi,[workspace.flip]
-    esi.uint_val = workspace.flip;
+    esi.v = workspace.flip;
 
     //     	; Generate LR/RL flag into esi (used to index convertion numbers below)
     // 	;
     // 			mov			edi,workspace.iarea
-    edi.uint_val = workspace.iarea;
+    edi.v = workspace.iarea;
 
 	// mov top_vertex,eax
 	top_mid_bot_vertices[0] = eax.ptr_val;
 
     // ;V
     // 			xor			esi,edi			; Build LR flag in bit 31
-    esi.uint_val ^= edi.uint_val;
+    esi.v ^= edi.v;
 	// mov		mid_vertex,ebx
 	top_mid_bot_vertices[1] = ebx.ptr_val;
     // ;V
     // 			shr			esi,31			; move down to bit 0
-    esi.uint_val >>= 31;
+    esi.v >>= 31;
 	// mov		bot_vertex,edx
 	top_mid_bot_vertices[2] = edx.ptr_val;
 
@@ -407,7 +407,7 @@ count_cont:
     // 		 FXCH		st(1)						;	x_2		gm+C	g1+C	x_1		x_m		g2
     FXCH(1);
     // 		fadd	fconv_d16_12[esi*8]	            ;	x_2+C	gm+C	g1+C	x_1		x_m		g2
-    FADD64(fconv_d16_12[esi.uint_val]);
+    FADD64(fconv_d16_12[esi.v]);
     // 		 FXCH		st(5)						;	g2		gm+C	g1+C	x_1		x_m		x_2+C
     FXCH(5);
     // 		fadd		fp_conv_d16		              ;	g2+C	gm+C	g1+C	x_1		x_m		x_2+C
@@ -421,20 +421,20 @@ count_cont:
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
     FSTP64(&workspace.x2);
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
-    FADD64(fconv_d16_12[esi.uint_val]);
+    FADD64(fconv_d16_12[esi.v]);
     // 		FXCH		st(1)						;	x_m		x_1+C	x_2+C
     FXCH(1);
     // 		fadd	fconv_d16_m[esi*8]				;	x_m+C	x_1+C	x_2+C
-    FADD64(fconv_d16_m[esi.uint_val]);
+    FADD64(fconv_d16_m[esi.v]);
 
     // 	; Load deltas back in registers
     // 	;
     // 		mov			edx,[workspace].xm	; read fixed d_xm
-    edx.uint_val = workspace.xm;
+    edx.v = workspace.xm;
     // 		mov			esi,[workspace].x1	; read fixed d_x1
-    esi.uint_val = workspace.x1;
+    esi.v = workspace.x1;
     // 		mov			edi,[workspace].x2	; read fixed d_x2
-    edi.uint_val = workspace.x2;
+    edi.v = workspace.x2;
     // 		mov		ebx,[workspace.v0]				; Start preparing for parmeter setup
     ebx.ptr_val = workspace.v0;
     // 		fstp real8 ptr [workspace].xm			;	x_1+C	x_2+C
@@ -445,31 +445,31 @@ count_cont:
 	FSTP64(&work_bot_i);
 
     // mov		work_main_d_i,edx
-	work_main_d_i = edx.uint_val;
+	work_main_d_i = edx.v;
 	// mov		work_top_d_i,esi
-	work_top_d_i = esi.uint_val;
+	work_top_d_i = esi.v;
 	// mov		work_bot_d_i,edi
-	work_bot_d_i = edi.uint_val;
+	work_bot_d_i = edi.v;
 	// mov		ecx,work_main_i
-	ecx.uint_val = work_main_i;
+	ecx.v = work_main_i;
     // 		sar			ecx,16
     ecx.int_val >>= 16;
     // mov		edx,work_main_d_i
-	edx.uint_val = work_main_d_i;
+	edx.v = work_main_d_i;
     // 		sar			edx,16			; get integer part of x delta down major edge
     edx.int_val >>= 16;
     // 		mov			[workspace.t_dx],ecx
-    workspace.t_dx = ecx.uint_val;
+    workspace.t_dx = ecx.v;
     // 		fild		[workspace.t_dx]			;	t_x		x_2+C
     FILD(workspace.t_dx);
     // 	; Generate floating point versions of x delta and x delta+4
     // 	;
     // 		mov			[workspace.xstep_0],edx
-    workspace.xstep_0 = edx.uint_val;
+    workspace.xstep_0 = edx.v;
     // 		inc edx
-    edx.uint_val++;
+    edx.v++;
     // 		mov			[workspace.xstep_1],edx
-    workspace.xstep_1 = edx.uint_val;
+    workspace.xstep_1 = edx.v;
     // 		mov			edx,[workspace.v2]				; Start preparing for parmeter setup
     edx.ptr_val = workspace.v2;
     // 												;	0		1		2		3		4		5		6		7
@@ -498,7 +498,7 @@ count_cont:
 top_zero:
     // cmp			ebp,edi			; Check for completely empty triangle
     // je			empty_triangle
-    if(ebp.uint_val == edi.uint_val) {
+    if(ebp.v == edi.v) {
         goto empty_triangle;
     }
     // 										;	0		1		2		3		4		5		6		7
@@ -579,7 +579,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// mov		ebp,bot_vertex
 	ebp.ptr_val = top_mid_bot_vertices[2];
 	// xor		ebx,ebx
-	ebx.uint_val = 0;
+	ebx.v = 0;
 
 	// mov		eax,[esi].comp_f[C_SX*4]
 	eax.float_val = BRP_VERTEX(esi)->comp_f[C_SX];
@@ -589,22 +589,22 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// mov		edx,[ebp].comp_f[C_SX*4]
 	edx.float_val = BRP_VERTEX(ebp)->comp_f[C_SX];
 	// cmp		ecx,eax
-	CMP(ecx.uint_val, eax.uint_val);
+	CMP(ecx.v, eax.v);
 
 	// rcl		ebx,1
-	RCL_1(ebx);
+	RCL_1(ebx.v);
 	// cmp		edx,eax
-	CMP(edx.uint_val, eax.uint_val);
+	CMP(edx.v, eax.v);
 
 	// rcl		ebx,1
-	RCL_1(ebx);
+	RCL_1(ebx.v);
 	// cmp		edx,ecx
-	CMP(edx.uint_val, ecx.uint_val);
+	CMP(edx.v, ecx.v);
 
 	// rcl		ebx,1			; ebx now has 3 bit number characterising the order of the vertices.
-	RCL_1(ebx);
+	RCL_1(ebx.v);
 	// xor		ecx,ecx
-	ecx.uint_val = 0;
+	ecx.v = 0;
 
 	// ; Determine the range of SX and SY values covered by the three vertices
 	// ;
@@ -614,17 +614,17 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	FLD(BRP_VERTEX(ebp)->comp_f[C_SY]);
 
 	// mov		eax,sort_table_0[ebx*4]
-	eax.uint_val = sort_table_0[ebx.uint_val];
+	eax.v = sort_table_0[ebx.v];
 	// mov		edx,sort_table_2[ebx*4]
-	edx.uint_val = sort_table_2[ebx.uint_val];
+	edx.v = sort_table_2[ebx.v];
 
 	// fsub	[esi].comp_f[C_SY*4]		;	yrange
 	FSUB(BRP_VERTEX(esi)->comp_f[C_SY]);
 
 	// mov		eax,[top_vertex+eax]
-	eax.ptr_val = top_mid_bot_vertices[eax.uint_val];
+	eax.ptr_val = top_mid_bot_vertices[eax.v];
 	// mov		edx,[top_vertex+edx]
-	edx.ptr_val = top_mid_bot_vertices[edx.uint_val];
+	edx.ptr_val = top_mid_bot_vertices[edx.v];
 
 	// fld		[edx].comp_f[C_SX*4]		;	xr		yrange
 	FLD(BRP_VERTEX(edx)->comp_f[C_SX]);
@@ -651,12 +651,12 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
     FSUB_ST(0, 2);
 
 	// rcl		ecx,1
-    RCL_1(ecx);
+    RCL_1(ecx.v);
 	// cmp		edx,eax
     CMP(edx.float_val, eax.float_val);
 
 	// rcl		ecx,1
-    RCL_1(ecx);
+    RCL_1(ecx.v);
 	// cmp		edx,ebx
     CMP(edx.float_val, ebx.float_val);
 
@@ -664,14 +664,14 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
     FSTP(&xr_yr);
 
 	// rcl		ecx,1			; ebx now has 3 bit number characterising the order of the vertices.
-    RCL_1(ecx);
+    RCL_1(ecx.v);
 	// mov		ebx,xr_yr
-    ebx.uint_val = xr_yr;
+    ebx.v = xr_yr;
 
 	// mov		eax,sort_table_0[ecx*4]
-    eax.uint_val = sort_table_0[ecx.uint_val];
+    eax.v = sort_table_0[ecx.v];
 	// mov		edx,sort_table_2[ecx*4]
-    edx.uint_val = sort_table_2[ecx.uint_val];
+    edx.v = sort_table_2[ecx.v];
 
 	// ; Select the larger of the SX and SY ranges by checking the sign of xrange-yrange
 	// ;
@@ -679,7 +679,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// ;
 	// test	ebx,080000000h
 	// je		xrange_larger
-    if ((ebx.uint_val & 0x80000000) == 0) {
+    if ((ebx.v & 0x80000000) == 0) {
         goto xrange_larger;
     }
 	// fxch	st(1)						;	yrange	xrange
@@ -689,9 +689,9 @@ xrange_larger:
     FSTP_ST(1);
 
 	// mov		eax,[top_vertex+eax]
-    eax.ptr_val = top_mid_bot_vertices[eax.uint_val];
+    eax.ptr_val = top_mid_bot_vertices[eax.v];
 	// mov		edx,[top_vertex+edx]
-    edx.ptr_val = top_mid_bot_vertices[edx.uint_val];
+    edx.ptr_val = top_mid_bot_vertices[edx.v];
 
 	// ; Determine the minimum and range of W values covered by the three vertices
 	// ;
@@ -734,17 +734,17 @@ xrange_larger:
     FSTP(&wmin_4);
 
     // mov		ecx,wr_sr
-    ecx.uint_val = wr_sr;
+    ecx.v = wr_sr;
     // mov		edx,wmin_4
-    edx.uint_val = wmin_4;
+    edx.v = wmin_4;
 
 	// ; Cheat if w_range * srange < w_min * cutoff
 	// ;
 	// ; 2 cycles
 	// ;
     // cmp		ecx,edx
-    CMP(ecx.uint_val, edx.uint_val);
-    int jb_flag = ecx.uint_val < edx.uint_val;
+    CMP(ecx.v, edx.v);
+    int jb_flag = ecx.v < edx.v;
     // mov		ecx,workspace_v1
     ecx.ptr_val = workspace.v1;
 
@@ -1070,25 +1070,25 @@ no_flip:
 	// ; 4-6 cycles + 0-3 cycles misprediction penalty
 	// ;
     // mov		eax,maxuv
-    eax.uint_val = maxuv;
+    eax.v = maxuv;
 	// ; Round up to a power of two
 	// ;
     // test	eax,MASK_MANTISSA
     // je		exact
-    if ((eax.uint_val & MASK_MANTISSA) == 0) {
+    if ((eax.v & MASK_MANTISSA) == 0) {
         goto exact;
     }
     // and		eax,not MASK_MANTISSA
-    eax.uint_val &= ~MASK_MANTISSA;
+    eax.v &= ~MASK_MANTISSA;
     // add		eax,1 shl EXPONENT_SHIFT
-    eax.uint_val += (1 << EXPONENT_SHIFT);
+    eax.v += (1 << EXPONENT_SHIFT);
 
 exact:
     // ; Multiply reciprocal by 2^28
 	// ;
 	// neg		eax
-    eax.uint_val = -eax.uint_val;
-    eax.uint_val += ((EXPONENT_BIAS * 2 + 28) << EXPONENT_SHIFT);
+    eax.v = -eax.v;
+    eax.v += ((EXPONENT_BIAS * 2 + 28) << EXPONENT_SHIFT);
 
     // ; Do parameter calculations for u and v
 	// ;
@@ -1114,7 +1114,7 @@ exact:
     // fxch	st(5)						;	du1		du1*b	dv1		dv2		v'q'0	du2*a	u'q'0	du2
     FXCH(5);
     // mov		maxuv,eax
-    maxuv = eax.uint_val;
+    maxuv = eax.v;
     // fmul	workspace_dx2_a				;	du1*d	du1*b	dv1		dv2		v'q'0	du2*a	u'q'0	du2
     FMUL(workspace_dx2_a);
     // fxch	st(1)						;	du1*b	du1*d	dv1		dv2		v'q'0	du2*a	u'q'0	du2
@@ -1202,17 +1202,17 @@ exact:
     // fxch	st(3)						;	dv1		v'q'0	dv2		dv2*a	dv1*b
     FXCH(3);
     // mov		eax,work.pu.currentpix
-    eax.uint_val = work.pu.currentpix;
+    eax.v = work.pu.currentpix;
     // mov		ebx,work.pu.d_carry
-    ebx.uint_val = work.pu.d_carry;
+    ebx.v = work.pu.d_carry;
     // fmul	workspace_dx2_a				;	dv1*d	v'q'0	dv2		dv2*a	dv1*b
     FMUL(workspace_dx2_a);
     // fxch	st(2)						;	dv2		v'q'0	dv1*d	dv2*a	dv1*b
     FXCH(2);
     // mov		work.pu.current,eax
-    work.pu.current = eax.uint_val;
+    work.pu.current = eax.v;
     // mov		work.pu.d_nocarry,ebx
-    work.pu.d_nocarry = ebx.uint_val;
+    work.pu.d_nocarry = ebx.v;
     // fmul	workspace_dx1_a				;	dv2*c	v'q'0	dv1*d	dv2*a	dv1*b
     FMUL(workspace_dx1_a);
     // fxch	st(4)						;	dv1*b	v'q'0	dv1*d	dv2*a	dv2*c
@@ -1283,13 +1283,13 @@ exact:
     FSTP64(&work.pv.d_carry);
 
     // mov		eax,work.pv.currentpix
-    eax.uint_val = work.pv.currentpix;
+    eax.v = work.pv.currentpix;
     // mov		ebx,work.pv.d_carry
-    ebx.uint_val = work.pv.d_carry;
+    ebx.v = work.pv.d_carry;
     // mov		work.pv.current,eax
-    work.pv.current = eax.uint_val;
+    work.pv.current = eax.v;
     // mov		work.pv.d_nocarry,ebx
-    work.pv.d_nocarry = ebx.uint_val;
+    work.pv.d_nocarry = ebx.v;
 
     // ; Do parameter calculations for q'
 	// ;
@@ -1413,15 +1413,15 @@ exact:
     // fstp	real8 ptr work.pq.currentpix ;	C+qdx
     FSTP64(&work.pq.currentpix);
     // mov		eax,work.pq.grad_x
-    eax.uint_val = work.pq.grad_x;
+    eax.v = work.pq.grad_x;
     // mov		ebx,work.pq.currentpix
-    ebx.uint_val = work.pq.currentpix;
+    ebx.v = work.pq.currentpix;
     // fstp	real8 ptr work.pq.grad_x	;
     FSTP64(&work.pq.grad_x);
     // mov		work.pq.d_nocarry,eax
-    work.pq.d_nocarry = eax.uint_val;
+    work.pq.d_nocarry = eax.v;
     // mov		work.pq.current,ebx
-    work.pq.current = ebx.uint_val;
+    work.pq.current = ebx.v;
 }
 
 void TriangleSetup_ZPT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {

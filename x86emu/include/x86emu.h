@@ -21,7 +21,7 @@ enum {
 
 typedef struct x86_reg {
     union {
-        uint32_t      uint_val;
+        uint32_t      v;
         int32_t       int_val;
         float         float_val;
         unsigned char bytes[8];
@@ -245,11 +245,11 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 	x86_state.cf = val1 < val2; \
     } while(0)
 
-#define RCL_1(reg) \
+#define RCL_1(val) \
     do { \
-    int msb = reg.uint_val & 0x80000000; \
+    int msb = val & 0x80000000; \
     /* rotate CF flag into lsb */ \
-    reg.uint_val = (reg.uint_val << 1) + x86_state.cf; \
+    val = (val << 1) + x86_state.cf; \
     /* rotate msb into CF */ \
     x86_state.cf = msb; \
     } while(0)

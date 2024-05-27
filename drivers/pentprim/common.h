@@ -60,6 +60,13 @@ static void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n) {
         op1 -= op2; \
     }
 
+#define ADD_SET_CF_D(op1, op2, dirn) \
+    if (dirn == DIR_F) { \
+        ADD_AND_SET_CF(op1, op2); \
+    } else { \
+        SUB_AND_SET_CF(op1, op2); \
+    }
+
 #define INC_D(op1, dirn) \
     if (dirn == DIR_F) { \
         op1++; \
@@ -72,9 +79,15 @@ static void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n) {
         goto label; \
     }
 
+#define JL_D(val, label, dirn) \
+    if ((dirn == DIR_F && val < 0) || (dirn == DIR_B && val > 0)) { \
+        goto label; \
+    }
+
 #define JLE_D(val, label, dirn) \
     if ((dirn == DIR_F && val <= 0) || (dirn == DIR_B && val >= 0)) { \
         goto label; \
     }
+
 
 #endif

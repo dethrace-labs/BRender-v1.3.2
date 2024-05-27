@@ -18,9 +18,9 @@ void DRAW_ZTB_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, 
 	MAKE_N_LOW_BIT_MASK(&mask,pow2);
 
 // 	mov ebp,workspace.&half&Count
-	ebp.uint_val = *halfCount;
+	ebp.v = *halfCount;
 // 	mov edx,workspace.s_z
-	edx.uint_val = workspace.s_z;
+	edx.v = workspace.s_z;
 
 // 	cmp ebp,0
 // 	jl done
@@ -29,33 +29,33 @@ void DRAW_ZTB_I8_D16_POW2(uint32_t *minorX, uint32_t *d_minorX, char direction, 
 	}
 
 // 	mov ebx,workspace.minorX
-	ebx.uint_val = *minorX;
+	ebx.v = *minorX;
 // 	mov eax,workspace.s_u
-	eax.uint_val = workspace.s_u;
+	eax.v = workspace.s_u;
 
 // 	mov ecx,workspace.xm
-	ecx.uint_val = workspace.xm;
+	ecx.v = workspace.xm;
 // 	mov esi,workspace.s_v
-	esi.uint_val = workspace.s_v;
+	esi.v = workspace.s_v;
 
 // 	mov workspace.c_u,eax
-	workspace.c_u = eax.uint_val;
+	workspace.c_u = eax.v;
 // 	mov workspace.c_v,esi
-	workspace.c_v = esi.uint_val;
+	workspace.c_v = esi.v;
 
 // 	mov edi,workspace.scanAddress
-	edi.uint_val = workspace.scanAddress;
+	edi.v = workspace.scanAddress;
 // 	; unpaired instruction
 drawLine:
 // 	shr ebx,16
-	ebx.uint_val = ebx.uint_val >> 16;
+	ebx.v = ebx.v >> 16;
 // 	mov ebp,workspace.depthAddress
-	ebp.uint_val = workspace.depthAddress;
+	ebp.v = workspace.depthAddress;
 
 // 	shr ecx,16
-	ecx.uint_val >>= 16;
+	ecx.v >>= 16;
 // 	add edi,ebx
-	edi.uint_val += ebx.uint_val;
+	edi.v += ebx.v;
 
 // 	ror edx,16
 	int16_t tmp = edx.short_val[0];
@@ -63,10 +63,10 @@ drawLine:
 	edx.short_val[1] = tmp;
 
 // 	lea ebp,[ebp+2*ebx]
-	ebp.uint_val += ebx.uint_val * 2;
+	ebp.v += ebx.v * 2;
 
 // 	sub ecx,ebx
-	ecx.uint_val -= ebx.uint_val;
+	ecx.v -= ebx.v;
 // 	jg_d lineDrawn,direction
 	if(direction == DRAW_LR) {
 		if (ecx.int_val > 0) {
@@ -80,23 +80,23 @@ drawLine:
 
 drawPixel:
 	// 	shr esi,16-pow2
-	esi.uint_val >>= (16 - pow2);
+	esi.v >>= (16 - pow2);
 	// 	mov bl,[ebp+2*ecx]
-	ebx.uint_val = ((uint16_t *)work.depth.base)[ebp.uint_val / 2 + ecx.int_val];
+	ebx.v = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
 
 	// 	shr eax,16
-	eax.uint_val >>= 16;
+	eax.v >>= 16;
 	// 	and esi,mask shl pow2
-	esi.uint_val &= (mask << pow2);
+	esi.v &= (mask << pow2);
 
 	// 	and eax,mask
-	eax.uint_val &= mask;
+	eax.v &= mask;
 	// 	mov bh,[ebp+2*ecx+1]
 
 	// 	or eax,esi
-	eax.uint_val |= esi.uint_val;
+	eax.v |= esi.v;
 	// 	mov esi,work.texture.base
-	esi.uint_val = WORK_TEXTURE_BASE;
+	esi.v = WORK_TEXTURE_BASE;
 
 	// 	cmp dx,bx ;two cycles
 	// 	ja noPlot
@@ -104,7 +104,7 @@ drawPixel:
         goto noPlot;
     }
 	// 	mov al,[esi+eax]
-	eax.bytes[0] = ((uint8_t *)work.texture.base)[esi.uint_val + eax.uint_val];
+	eax.bytes[0] = ((uint8_t *)work.texture.base)[esi.v + eax.v];
 	// mov esi,work.blend_table
 	esi.ptr_val = work.blend_table;
 
@@ -115,185 +115,157 @@ drawPixel:
     }
 
 	// mov ah,[edi+ecx]
-	eax.bytes[1] = ((uint8_t *)work.colour.base)[edi.uint_val + ecx.uint_val];
+	eax.bytes[1] = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
 
 	// 	mov [ebp+2*ecx],dl
 	// 	mov [ebp+2*ecx+1],dh
-	((uint16_t *)work.depth.base)[ebp.uint_val / 2 + ecx.int_val] = edx.short_val[0];
+	((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
 
 	// and eax,0ffffh
-	eax.uint_val &= 0xffff;
+	eax.v &= 0xffff;
 	// ;stall
 	// ;stall
 	// mov al,[esi+eax]
-	eax.bytes[0] = ((uint8_t *)esi.ptr_val)[eax.uint_val];
+	eax.bytes[0] = ((uint8_t *)esi.ptr_val)[eax.v];
 	// ;stall
 
 	// mov [edi+ecx],al
-	((uint8_t *)work.colour.base)[edi.uint_val + ecx.uint_val] = eax.bytes[0];
+	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.bytes[0];
 
 noPlot:
 	// mov ebx,workspace.d_z_x
-	ebx.uint_val = workspace.d_z_x;
+	ebx.v = workspace.d_z_x;
 
 	// add_d edx,ebx,direction
-	if (direction == DRAW_LR) {
-		ADD_AND_SET_CF(edx.uint_val, ebx.uint_val);
-	} else {
-		SUB_AND_SET_CF(edx.uint_val, ebx.uint_val);
-	}
+	ADD_SET_CF_D(edx.v, ebx.v, direction);
 	// mov esi,workspace.c_v
-	esi.uint_val = workspace.c_v;
+	esi.v = workspace.c_v;
 
 	// adc_d edx,0,direction
-	if (direction == DRAW_LR) {
-		ADC(edx.uint_val, 0);
-	} else {
-		SBB(edx.uint_val, 0);
-	}
+	ADC_D(edx.v, 0, direction);
 	// mov ebx,workspace.d_v_x
-	ebx.uint_val = workspace.d_v_x;
+	ebx.v = workspace.d_v_x;
 
 	// add_d esi,ebx,direction
-	if (direction == DRAW_LR) {
-		esi.uint_val += ebx.uint_val;
-	} else {
-		esi.uint_val -= ebx.uint_val;
-	}
+	ADD_D(esi.v, ebx.v, direction);
 	// mov eax,workspace.c_u
-	eax.uint_val = workspace.c_u;
+	eax.v = workspace.c_u;
 
 	// mov workspace.c_v,esi
-	workspace.c_v = esi.uint_val;
+	workspace.c_v = esi.v;
 	// mov ebx,workspace.d_u_x
-	ebx.uint_val = workspace.d_u_x;
+	ebx.v = workspace.d_u_x;
 
 	// add_d eax,ebx,direction
-	if (direction == DRAW_LR) {
-		eax.uint_val += ebx.uint_val;
-	} else {
-		eax.uint_val -= ebx.uint_val;
-	}
+	ADD_D(eax.v, ebx.v, direction);
 	// inc_d ecx,direction
-	if (direction == DRAW_LR) {
-		ecx.uint_val++;
-	} else {
-		ecx.uint_val--;
-	}
+	INC_D(ecx.v, direction);
 
 	// mov workspace.c_u,eax
-	workspace.c_u = eax.uint_val;
+	workspace.c_u = eax.v;
 	// jle_d drawPixel,direction
-	if (direction == DRAW_LR) {
-		if (ecx.int_val <= 0) {
-			goto drawPixel;
-		}
-	} else {
-		if (ecx.int_val >= 0) {
-			goto drawPixel;
-		}
-	}
+	JLE_D(ecx.int_val, drawPixel, direction);
 
 lineDrawn:
 	// ;perform per line updates
 
 	// 	mov ebp,workspace.xm_f
-	ebp.uint_val = workspace.xm_f;
+	ebp.v = workspace.xm_f;
 	// 	mov edi,workspace.d_xm_f
-	edi.uint_val = workspace.d_xm_f;
+	edi.v = workspace.d_xm_f;
 
 	// 	add ebp,edi
-	ADD_AND_SET_CF(ebp.uint_val, edi.uint_val);
+	ADD_AND_SET_CF(ebp.v, edi.v);
 
 	// 	mov eax,workspace.s_u
-	eax.uint_val = workspace.s_u;
+	eax.v = workspace.s_u;
 
 	// 	sbb edx,edx
-	SBB(edx.uint_val, edx.uint_val);
+	SBB(edx.v, edx.v);
 	// 	mov workspace.xm_f,ebp
-	workspace.xm_f = ebp.uint_val;
+	workspace.xm_f = ebp.v;
 
 	// 	mov ebp,workspace.depthAddress
-	ebp.uint_val = workspace.depthAddress;
+	ebp.v = workspace.depthAddress;
 	// 	mov ecx,work.depth.stride_b
-	ecx.uint_val = work.depth.stride_b;
+	ecx.v = work.depth.stride_b;
 
 	// 	add ebp,ecx
-	ebp.uint_val += ecx.uint_val;
+	ebp.v += ecx.v;
 	// 	mov ecx,[workspace.d_u_y_0+edx*8]
-	ecx.uint_val = ((uint32_t *)&workspace.d_u_y_0)[2 * edx.int_val];
+	ecx.v = ((uint32_t *)&workspace.d_u_y_0)[2 * edx.int_val];
 
 	// 	mov workspace.depthAddress,ebp
-	workspace.depthAddress = ebp.uint_val;
+	workspace.depthAddress = ebp.v;
 	// 	mov esi,workspace.s_v
-	esi.uint_val = workspace.s_v;
+	esi.v = workspace.s_v;
 
 	// 	add eax,ecx
-	eax.uint_val += ecx.uint_val;
+	eax.v += ecx.v;
 	// 	mov ebx,[workspace.d_v_y_0+edx*8]
-	ebx.uint_val = ((uint32_t *)&workspace.d_v_y_0)[2 * edx.int_val];
+	ebx.v = ((uint32_t *)&workspace.d_v_y_0)[2 * edx.int_val];
 
 	// 	mov workspace.s_u,eax
-	workspace.s_u = eax.uint_val;
+	workspace.s_u = eax.v;
 	// 	add esi,ebx
-	esi.uint_val += ebx.uint_val;
+	esi.v += ebx.v;
 
 	// 	mov workspace.c_u,eax
-	workspace.c_u = eax.uint_val;
+	workspace.c_u = eax.v;
 	// 	mov workspace.c_v,esi
-	workspace.c_v = esi.uint_val;
+	workspace.c_v = esi.v;
 
 	// 	mov ebp,workspace.s_z
-	ebp.uint_val = workspace.s_z;
+	ebp.v = workspace.s_z;
 	// 	mov edx,[workspace.d_z_y_0+edx*8]
-	edx.uint_val = ((uint32_t *)&workspace.d_z_y_0)[2 * edx.int_val];
+	edx.v = ((uint32_t *)&workspace.d_z_y_0)[2 * edx.int_val];
 
 	// 	mov workspace.s_v,esi
-	workspace.s_v = esi.uint_val;
+	workspace.s_v = esi.v;
 	// 	add edx,ebp
-	edx.uint_val += ebp.uint_val;
+	edx.v += ebp.v;
 
 // 	mov workspace.s_z,edx
-	workspace.s_z = edx.uint_val;
+	workspace.s_z = edx.v;
 // 	mov edi,workspace.scanAddress
-	edi.uint_val = workspace.scanAddress;
+	edi.v = workspace.scanAddress;
 
 // 	mov ebx,work.colour.stride_b
-	ebx.uint_val = work.colour.stride_b;
+	ebx.v = work.colour.stride_b;
 // 	mov ecx,workspace.d_&minorX
-	ecx.uint_val = *d_minorX;
+	ecx.v = *d_minorX;
 
 // 	add edi,ebx
-	edi.uint_val += ebx.uint_val;
+	edi.v += ebx.v;
 // 	mov ebx,workspace.minorX
-	ebx.uint_val = *minorX;
+	ebx.v = *minorX;
 
 // 	mov workspace.scanAddress,edi
-	workspace.scanAddress = edi.uint_val;
+	workspace.scanAddress = edi.v;
 // 	add ebx,ecx
-	ebx.uint_val += ecx.uint_val;
+	ebx.v += ecx.v;
 
 // 	mov workspace.minorX,ebx
-	*minorX = ebx.uint_val;
+	*minorX = ebx.v;
 // 	mov ecx,workspace.xm
-	ecx.uint_val = workspace.xm;
+	ecx.v = workspace.xm;
 
 // 	mov ebp,workspace.d_xm
-	ebp.uint_val = workspace.d_xm;
+	ebp.v = workspace.d_xm;
 // 	;unpaired instruction
 
 // 	add ecx,ebp
-	ecx.uint_val += ebp.uint_val;
+	ecx.v += ebp.v;
 // 	mov ebp,workspace.&half&Count
-	ebp.uint_val = *halfCount;
+	ebp.v = *halfCount;
 
 // 	dec ebp
-	ebp.uint_val--;
+	ebp.v--;
 // 	mov workspace.xm,ecx
-	workspace.xm = ecx.uint_val;
+	workspace.xm = ecx.v;
 
 // 	mov workspace.&half&Count,ebp
-	*halfCount = ebp.uint_val;
+	*halfCount = ebp.v;
 // 	jge drawLine
 	if (*halfCount >= 0) {
 		goto drawLine;
@@ -364,9 +336,9 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 	FADDP_ST(2, 0);
 // 	;x-stall
 // 	mov eax,workspace.xm
-    eax.uint_val = workspace.xm;
+    eax.v = workspace.xm;
 // 	mov ebx,workspace.d_xm
-	ebx.uint_val = workspace.d_xm;
+	ebx.v = workspace.d_xm;
 
 // 	faddp st(2),st					;	ca			da
 	FADDP_ST(2, 0);
@@ -374,14 +346,14 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 // 	;x-stall
 
 // 	shl eax,16
-	eax.uint_val <<= 16;
+	eax.v <<= 16;
 // 	mov edx,workspace.d_z_x
-	edx.uint_val = workspace.d_z_x;
+	edx.v = workspace.d_z_x;
 
 // 	shl ebx,16
-	ebx.uint_val <<= 16;
+	ebx.v <<= 16;
 // 	mov workspace.xm_f,eax
-	workspace.xm_f = eax.uint_val;
+	workspace.xm_f = eax.v;
 
 // 	fstp qword ptr workspace.scanAddress
 	FSTP64(&workspace.scanAddress);
@@ -389,15 +361,15 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 	FSTP64(&workspace.depthAddress);
 
 // 	mov workspace.d_xm_f,ebx
-	workspace.d_xm_f = ebx.uint_val;
+	workspace.d_xm_f = ebx.v;
 // 	cmp edx,80000000
-	CMP(edx.uint_val, 80000000);
+	CMP(edx.v, 80000000);
 
 // 	adc edx,-1
-	ADC(edx.uint_val, -1);
+	ADC(edx.v, -1);
 
 // 	mov	eax,workspace.flip
-	eax.uint_val = workspace.flip;
+	eax.v = workspace.flip;
 
 // 	ror edx,16
 	int16_t tmp = edx.short_val[0];
@@ -407,7 +379,7 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 // 	test eax,eax
 
 // 	mov workspace.d_z_x,edx
-	workspace.d_z_x = edx.uint_val;
+	workspace.d_z_x = edx.v;
 // 	jnz	drawRL
 
 // 	DRAW_ZT_I8_D16_POW2 x1,DRAW_LR,top,pow2
@@ -419,7 +391,7 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 // 	DRAW_ZT_I8_D16_POW2 x2,DRAW_RL,bottom,pow2
 // 	ret
 // eax is 0, ZF=1
-	if (eax.uint_val == 0) {
+	if (eax.v == 0) {
 		DRAW_ZTB_I8_D16_POW2 (&workspace.x1, &workspace.d_x1, DRAW_LR,&workspace.topCount,pow2);
 		DRAW_ZTB_I8_D16_POW2 (&workspace.x2, &workspace.d_x2, DRAW_LR,&workspace.bottomCount,pow2);
 	} else {

@@ -98,70 +98,70 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 
     FSUBP_ST(1, 0); //	2area	dy1		dy2		dx1		dx2
 
-    ebx.uint_val ^= ebx.uint_val;
-    CMP(ecx.uint_val, eax.uint_val);
+    ebx.v ^= ebx.v;
+    CMP(ecx.v, eax.v);
 
-    RCL_1(ebx);
+    RCL_1(ebx.v);
     edx.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
 
     FDIVR(fp_one); //	1/2area	dy1		dy2		dx1		dx2
 
-    CMP(edx.uint_val, eax.uint_val);
-    RCL_1(ebx);
+    CMP(edx.v, eax.v);
+    RCL_1(ebx.v);
 
 
-    CMP(edx.uint_val, ecx.uint_val)
-    RCL_1(ebx); // ebx now has 3 bit number characterising the order of the vertices.
+    CMP(edx.v, ecx.v)
+    RCL_1(ebx.v); // ebx now has 3 bit number characterising the order of the vertices.
 
-    eax.uint_val = sort_table_0[ebx.uint_val];
-    edx.uint_val = sort_table_2[ebx.uint_val];
-    esi.uint_val = flip_table[ebx.uint_val];
-    ebx.uint_val = sort_table_1[ebx.uint_val];
+    eax.v = sort_table_0[ebx.v];
+    edx.v = sort_table_2[ebx.v];
+    esi.v = flip_table[ebx.v];
+    ebx.v = sort_table_1[ebx.v];
 
     // Load eax,ebx,edx with pointers to the three vertices in vertical order
-    eax.ptr_val = workspace.v0_array[eax.uint_val];
-    edx.ptr_val = workspace.v0_array[edx.uint_val];
-    ebx.ptr_val = workspace.v0_array[ebx.uint_val];
-    workspace.flip = esi.uint_val;
+    eax.ptr_val = workspace.v0_array[eax.v];
+    edx.ptr_val = workspace.v0_array[edx.v];
+    ebx.ptr_val = workspace.v0_array[ebx.v];
+    workspace.flip = esi.v;
 
     // Work out Y extents of triangle
     // ; Convert float to int using integer instructions, because FPU is in use doing division
     ebp.float_val = ((brp_vertex *)eax.ptr_val)->comp_f[C_SY];
-    ecx.uint_val = EXPONENT_OFFSET;
-    ecx.uint_val -= ebp.uint_val;
-    ebp.uint_val &= MASK_MANTISSA;
-    ecx.uint_val >>= 23;
-    ebp.uint_val |= IMPLICIT_ONE;
-    ebp.uint_val >>= ecx.bytes[0];
+    ecx.v = EXPONENT_OFFSET;
+    ecx.v -= ebp.v;
+    ebp.v &= MASK_MANTISSA;
+    ecx.v >>= 23;
+    ebp.v |= IMPLICIT_ONE;
+    ebp.v >>= ecx.bytes[0];
     esi.float_val = ((brp_vertex *)ebx.ptr_val)->comp_f[C_SY];
-    ecx.uint_val = EXPONENT_OFFSET;
-    ecx.uint_val -= esi.uint_val;
-    esi.uint_val &= MASK_MANTISSA;
-    ecx.uint_val >>= 23;
-    esi.uint_val |= IMPLICIT_ONE;
+    ecx.v = EXPONENT_OFFSET;
+    ecx.v -= esi.v;
+    esi.v &= MASK_MANTISSA;
+    ecx.v >>= 23;
+    esi.v |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    esi.uint_val >>= ecx.bytes[0];
+    esi.v >>= ecx.bytes[0];
 
     edi.float_val = ((brp_vertex *)edx.ptr_val)->comp_f[C_SY];
-    ecx.uint_val = EXPONENT_OFFSET;
-    ecx.uint_val -= edi.uint_val;
-    edi.uint_val &= MASK_MANTISSA;
-    ecx.uint_val >>= 23;
-    edi.uint_val |= IMPLICIT_ONE;
+    ecx.v = EXPONENT_OFFSET;
+    ecx.v -= edi.v;
+    edi.v &= MASK_MANTISSA;
+    ecx.v >>= 23;
+    edi.v |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    edi.uint_val >>= ecx.bytes[0];
+    edi.v >>= ecx.bytes[0];
 
     // Catch special cases of empty top or bottom trapezoids
 
     // cmp(ebp, esi);
     // je(top_zero);
-    if(ebp.uint_val == esi.uint_val) {
+    if(ebp.v == esi.v) {
         goto top_zero;
     }
 
     // cmp(esi, edi);
     // je(bottom_zero);
-    if(esi.uint_val == edi.uint_val) {
+    if(esi.v == edi.v) {
         goto bottom_zero;
     }
 
@@ -227,39 +227,39 @@ count_cont:
     // ; Generate counts
     // ;
     // 		inc			ebp
-    ebp.uint_val++;
+    ebp.v++;
     // 		mov			ecx,esi
-    ecx.uint_val = esi.uint_val;
+    ecx.v = esi.v;
     // 		sub			ecx,ebp				;  count_t = (y_m-y_t)-1
-    ecx.uint_val -= ebp.uint_val;
+    ecx.v -= ebp.v;
     // 		mov			[workspace.t_y],ebp			; save for X intercept calcs
-    workspace.t_y = ebp.uint_val;
+    workspace.t_y = ebp.v;
     // 		mov			[workspace.topCount],ecx
     workspace.topCount = ecx.int_val;
     // 		inc			esi
-    esi.uint_val++;
+    esi.v++;
     // 		sub			edi,esi				;  count_b = (y_b-y_m)-1
-    edi.uint_val -= esi.uint_val;
+    edi.v -= esi.v;
     // 		mov			m_y,esi				; save for X intercept calcs
-    m_y = esi.uint_val;
+    m_y = esi.v;
     // 		mov			[workspace].bottomCount,edi
     workspace.bottomCount = edi.int_val;
     // 		mov			esi,[workspace.flip]
-    esi.uint_val = workspace.flip;
+    esi.v = workspace.flip;
 
     //     	; Generate LR/RL flag into esi (used to index convertion numbers below)
     // 	;
     // 			mov			edi,workspace.iarea
-    edi.uint_val = workspace.iarea;
+    edi.v = workspace.iarea;
     // ;V
     // 			xor			esi,edi			; Build LR flag in bit 31
-    esi.uint_val ^= edi.uint_val;
+    esi.v ^= edi.v;
     // ;V
     // 			shr			esi,31			; move down to bit 0
-    esi.uint_val >>= 31;
+    esi.v >>= 31;
     // ;V
     // 			mov			[workspace.flip],esi
-    workspace.flip = esi.uint_val;
+    workspace.flip = esi.v;
 
     // ;XXX Setup screen pointers and strides
     // ;
@@ -370,8 +370,8 @@ count_cont:
     // 		 FXCH		st(1)						;	x_2		gm+C	g1+C	x_1		x_m		g2
     FXCH(1);
     // 		fadd	fconv_d16_12[esi*8]	            ;	x_2+C	gm+C	g1+C	x_1		x_m		g2
-    assert(esi.uint_val >= 0 && esi.uint_val <= 1);
-    FADD64(fconv_d16_12[esi.uint_val]);
+    assert(esi.v >= 0 && esi.v <= 1);
+    FADD64(fconv_d16_12[esi.v]);
     // 		 FXCH		st(5)						;	g2		gm+C	g1+C	x_1		x_m		x_2+C
     FXCH(5);
     // 		fadd		fp_conv_d16		              ;	g2+C	gm+C	g1+C	x_1		x_m		x_2+C
@@ -385,20 +385,20 @@ count_cont:
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
     FSTP64(&workspace.x2);
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
-    FADD64(fconv_d16_12[esi.uint_val]);
+    FADD64(fconv_d16_12[esi.v]);
     // 		FXCH		st(1)						;	x_m		x_1+C	x_2+C
     FXCH(1);
     // 		fadd	fconv_d16_m[esi*8]				;	x_m+C	x_1+C	x_2+C
-    FADD64(fconv_d16_m[esi.uint_val]);
+    FADD64(fconv_d16_m[esi.v]);
 
     // 	; Load deltas back in registers
     // 	;
     // 		mov			edx,[workspace].xm	; read fixed d_xm
-    edx.uint_val = workspace.xm;
+    edx.v = workspace.xm;
     // 		mov			esi,[workspace].x1	; read fixed d_x1
-    esi.uint_val = workspace.x1;
+    esi.v = workspace.x1;
     // 		mov			edi,[workspace].x2	; read fixed d_x2
-    edi.uint_val = workspace.x2;
+    edi.v = workspace.x2;
     // 		mov		ebx,[workspace.v0]				; Start preparing for parmeter setup
     ebx.ptr_val = workspace.v0;
     // 		fstp real8 ptr [workspace].xm			;	x_1+C	x_2+C
@@ -407,27 +407,27 @@ count_cont:
     FSTP64(&workspace.x1);
 
     // 		mov			ecx,[workspace].xm
-    ecx.uint_val = workspace.xm;
+    ecx.v = workspace.xm;
     // 		mov			[workspace].xm+4,edx
-    workspace.d_xm = edx.uint_val;
+    workspace.d_xm = edx.v;
     // 		sar			ecx,16
     ecx.int_val >>= 16;
     // 		mov			[workspace].x1+4,esi
-    workspace.d_x1 = esi.uint_val;
+    workspace.d_x1 = esi.v;
     // 		sar			edx,16			; get integer part of x delta down major edge
     edx.int_val >>= 16;
     // 		mov			[workspace.t_dx],ecx
-    workspace.t_dx = ecx.uint_val;
+    workspace.t_dx = ecx.v;
     // 		fild		[workspace.t_dx]			;	t_x		x_2+C
     FILD(workspace.t_dx);
     // 	; Generate floating point versions of x delta and x delta+4
     // 	;
     // 		mov			[workspace.xstep_0],edx
-    workspace.xstep_0 = edx.uint_val;
+    workspace.xstep_0 = edx.v;
     // 		inc edx
-    edx.uint_val++;
+    edx.v++;
     // 		mov			[workspace.xstep_1],edx
-    workspace.xstep_1 = edx.uint_val;
+    workspace.xstep_1 = edx.v;
     // 		mov			edx,[workspace.v2]				; Start preparing for parmeter setup
     edx.ptr_val = workspace.v2;
     // 												;	0		1		2		3		4		5		6		7
@@ -447,7 +447,7 @@ count_cont:
     // 		fstp		[workspace.t_dx]			;	xstep_0	xstep_1
     FSTP(&workspace.t_dx);
     // 		mov			[workspace].x2+4,edi
-    workspace.d_x2 = edi.uint_val;
+    workspace.d_x2 = edi.v;
     // 		mov		ecx,[workspace.v1]				; Start preparing for parmeter setup
     ecx.ptr_val = workspace.v1;
     // 		fstp		[workspace.xstep_0]			;	step_1
@@ -463,7 +463,7 @@ count_cont:
 top_zero:
     // cmp			ebp,edi			; Check for completely empty triangle
     // je			empty_triangle
-    if(ebp.uint_val == edi.uint_val) {
+    if(ebp.v == edi.v) {
         goto empty_triangle;
     }
     // 										;	0		1		2		3		4		5		6		7
@@ -662,28 +662,28 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			fstp	real8 ptr d_p_x
     FSTP64(d_p_x);
     // 			mov		esi,dword ptr s_p
-    esi.uint_val = *s_p;
+    esi.v = *s_p;
     // 			mov		edi,dword ptr d_p_x
-    edi.uint_val = *d_p_x;
+    edi.v = *d_p_x;
     // 			fstp	real8 ptr s_p	;
     FSTP64(s_p);
     // 			fstp	real8 ptr d_p_x	;
     FSTP64(d_p_x);
     // 			mov		dword ptr s_p+4,esi
-    *((uint32_t*)s_p + 1) = esi.uint_val;
+    *((uint32_t*)s_p + 1) = esi.v;
     // 			mov		dword ptr d_p_x+4,edi
-    *((uint32_t*)d_p_x + 1) = edi.uint_val;
+    *((uint32_t*)d_p_x + 1) = edi.v;
     // if unsigned
     if(is_unsigned) {
         // 	; Remap from -1 to 1 signed to 0 to 1 unsigned
         // 	;
         // 			mov		esi,dword ptr s_p
         //mov(x86_op_reg(esi), x86_op_mem32(s_p));
-        esi.uint_val = *s_p;
+        esi.v = *s_p;
         // 			xor		esi,080000000h
-        esi.uint_val ^= 0x080000000;
+        esi.v ^= 0x080000000;
         // 			mov		dword ptr s_p,esi
-        *s_p = esi.uint_val;
+        *s_p = esi.v;
         // endif
     }
 }
@@ -698,7 +698,7 @@ static void SETUP_FLAGS()
     // 	mov ecx,workspace.v1
     ecx.ptr_val = workspace.v1;
     // 	mov esi,2
-    esi.uint_val = 2;
+    esi.v = 2;
     // if BASED_FIXED
     // 	mov ebx,dword ptr[edx+4*C_U]
     // 	mov ebp,dword ptr[eax+4*C_U]
@@ -743,29 +743,29 @@ static void SETUP_FLAGS()
     // 	fstp qword ptr workspace.scratch10
     FSTP64(&workspace.scratch10);
     // 	mov ebx,workspace.scratch6
-    ebx.uint_val = workspace.scratch6;
+    ebx.v = workspace.scratch6;
     // 	mov ebp,workspace.scratch8
-    ebp.uint_val = workspace.scratch8;
+    ebp.v = workspace.scratch8;
     // 	mov edi,workspace.scratch10
-    edi.uint_val = workspace.scratch10;
+    edi.v = workspace.scratch10;
     // endif
     // 	and ebx,0ffff0000h
     //and(x86_op_reg(&ebx), x86_op_imm(0xffff0000));
-    ebx.uint_val &= 0xffff0000;
+    ebx.v &= 0xffff0000;
     // 	and ebp,0ffff0000h
     //and(x86_op_reg(&ebp), x86_op_imm(0xffff0000));
-    ebp.uint_val &= 0xffff0000;
+    ebp.v &= 0xffff0000;
     // 	and edi,0ffff0000h
     //and(x86_op_reg(&edi), x86_op_imm(0xffff0000));
-    edi.uint_val &= 0xffff0000;
+    edi.v &= 0xffff0000;
     // 	cmp ebx,ebp
     // 	jne wrapped
-    if(ebx.uint_val != ebp.uint_val) {
+    if(ebx.v != ebp.v) {
         goto wrapped;
     }
     // 	cmp ebx,edi
     // 	jne wrapped
-    if(ebx.uint_val != edi.uint_val) {
+    if(ebx.v != edi.v) {
         goto wrapped;
     }
     // if BASED_FIXED
@@ -774,37 +774,37 @@ static void SETUP_FLAGS()
     // 	mov edi,dword ptr[ecx+4*C_V]
     // else
     // 	mov ebx,workspace.scratch0
-    ebx.uint_val = workspace.scratch0;
+    ebx.v = workspace.scratch0;
     // 	mov ebp,workspace.scratch2
-    ebp.uint_val = workspace.scratch2;
+    ebp.v = workspace.scratch2;
     // 	mov edi,workspace.scratch4
-    edi.uint_val = workspace.scratch4;
+    edi.v = workspace.scratch4;
     // endif
-    ebx.uint_val &= 0xffff0000;
+    ebx.v &= 0xffff0000;
     // 	and ebp,0ffff0000h
-    ebp.uint_val &= 0xffff0000;
+    ebp.v &= 0xffff0000;
     // 	and edi,0ffff0000h
-    edi.uint_val &= 0xffff0000;
+    edi.v &= 0xffff0000;
     // 	cmp ebx,ebp
     // 	jne wrapped
-    if(ebx.uint_val != ebp.uint_val) {
+    if(ebx.v != ebp.v) {
         goto wrapped;
     }
     // 	cmp ebx,edi
     // 	jne wrapped
-    if(ebx.uint_val != edi.uint_val) {
+    if(ebx.v != edi.v) {
         goto wrapped;
     }
 
     // 	mov esi,0
-    esi.uint_val = 0;
+    esi.v = 0;
 wrapped:
     // 	mov eax,workspace.flip
-    eax.uint_val = workspace.flip;
+    eax.v = workspace.flip;
     // 	or eax,esi
-    eax.uint_val |= esi.uint_val;
+    eax.v |= esi.v;
     // 	mov workspaceA.flags,eax
-    workspaceA.flags = eax.uint_val;
+    workspaceA.flags = eax.v;
     // endm
 }
 
@@ -812,13 +812,13 @@ static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param)
 {
     // local paramNegative
     // 	mov ebp,esi
-    ebp.uint_val = esi.uint_val;
+    ebp.v = esi.v;
     // 	mov eax,param
-    eax.uint_val = *param;
+    eax.v = *param;
 
     // 	test eax,80000000h
     // 	jnz paramNegative
-    if((eax.uint_val & 0x80000000) == 0) {
+    if((eax.v & 0x80000000) == 0) {
         // zf = 1;
     } else {
         // zf = 0;
@@ -826,19 +826,19 @@ static void REMOVE_INTEGER_PARTS_OF_PARAM(uint32_t *param)
     }
 
     // 	mov ebp,edi
-    ebp.uint_val = edi.uint_val;
+    ebp.v = edi.v;
 
     // 	and eax,ebp
-    eax.uint_val &= ebp.uint_val;
+    eax.v &= ebp.v;
 paramNegative:
     // 	and ebp,esi
-    ebp.uint_val &= esi.uint_val;
+    ebp.v &= esi.v;
 
     // 	or eax,ebp
-    eax.uint_val |= ebp.uint_val;
+    eax.v |= ebp.v;
 
     // 	mov param,eax
-    *param = eax.uint_val;
+    *param = eax.v;
     // endm
 }
 
@@ -846,9 +846,9 @@ static void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
 {
     // ; assumes 8.24 format
     // 	mov edi,0ffffffh
-    edi.uint_val = 0xffffff;
+    edi.v = 0xffffff;
     // 	mov esi,0ff000000h
-    esi.uint_val = 0xff000000;
+    esi.v = 0xff000000;
     // 	and workspace.s_u,0ffffffh
     workspace.s_u &= 0xffffff;
     // 	and workspace.s_v,0ffffffh
@@ -932,58 +932,58 @@ static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0
 static void SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS()
 {
     // 	mov ebx,workspaceA.sv
-    ebx.uint_val = workspaceA.sv;
+    ebx.v = workspaceA.sv;
     // 	shl ebx,16
-    ebx.uint_val <<= 16;
+    ebx.v <<= 16;
     // 	mov edx,workspaceA.dvx
-    edx.uint_val = workspaceA.dvx;
+    edx.v = workspaceA.dvx;
     // 	shl edx,16
-    edx.uint_val <<= 16;
+    edx.v <<= 16;
     // 	mov workspaceA.svf,ebx
-    workspaceA.svf = ebx.uint_val;
+    workspaceA.svf = ebx.v;
     // 	mov ebx,workspaceA.dvy0
-    ebx.uint_val = workspaceA.dvy0;
+    ebx.v = workspaceA.dvy0;
     // 	mov workspaceA.dvxf,edx
-    workspaceA.dvxf = edx.uint_val;
+    workspaceA.dvxf = edx.v;
     // 	shl ebx,16
-    ebx.uint_val <<= 16;
+    ebx.v <<= 16;
     // 	mov edx,workspaceA.dvy1
-    edx.uint_val = workspaceA.dvy1;
+    edx.v = workspaceA.dvy1;
     // 	shl edx,16
-    edx.uint_val <<= 16;
+    edx.v <<= 16;
     // 	mov workspaceA.dvy0f,ebx
-    workspaceA.dvy0f = ebx.uint_val;
+    workspaceA.dvy0f = ebx.v;
     // 	mov workspaceA.dvy1f,edx
-    workspaceA.dvy1f = edx.uint_val;
+    workspaceA.dvy1f = edx.v;
 
     // ;integer parts
 
     // 	mov ebx,workspaceA.sv
-    ebx.uint_val = workspaceA.sv;
+    ebx.v = workspaceA.sv;
     // 	sar ebx,16
     ebx.int_val >>= 16;
     // 	mov edx,workspaceA.dvx
-    edx.uint_val = workspaceA.dvx;
+    edx.v = workspaceA.dvx;
 
     // 	sar edx,16
     edx.int_val >>= 16;
     // 	mov workspaceA.sv,ebx
-    workspaceA.sv = ebx.uint_val;
+    workspaceA.sv = ebx.v;
 
     // 	mov ebx,workspaceA.dvy0
-    ebx.uint_val = workspaceA.dvy0;
+    ebx.v = workspaceA.dvy0;
     // 	mov workspaceA.dvx,edx
-    workspaceA.dvx = edx.uint_val;
+    workspaceA.dvx = edx.v;
     // 	sar ebx,16
     ebx.int_val >>= 16;
     // 	mov edx,workspaceA.dvy1
-    edx.uint_val = workspaceA.dvy1;
+    edx.v = workspaceA.dvy1;
     // 	sar edx,16
     edx.int_val >>= 16;
     // 	mov workspaceA.dvy0,ebx
-    workspaceA.dvy0 = ebx.uint_val;
+    workspaceA.dvy0 = ebx.v;
     // 	mov workspaceA.dvy1,edx
-    workspaceA.dvy1 = edx.uint_val;
+    workspaceA.dvy1 = edx.v;
 
     // endm
 }
@@ -1053,42 +1053,42 @@ static void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
 static void CREATE_CARRY_VERSIONS()
 {
     // mov eax,workspaceA.dvy0
-    eax.uint_val = workspaceA.dvy0;
+    eax.v = workspaceA.dvy0;
     // mov ebx,workspaceA.dvy1
-    ebx.uint_val = workspaceA.dvy1;
+    ebx.v = workspaceA.dvy1;
     // add eax,work.texture.stride_b
-    eax.uint_val += work.texture.stride_b;
+    eax.v += work.texture.stride_b;
     // mov ecx,workspaceA.dvx
-    ecx.uint_val = workspaceA.dvx;
+    ecx.v = workspaceA.dvx;
     // add ebx,work.texture.stride_b
-    ebx.uint_val += work.texture.stride_b;
+    ebx.v += work.texture.stride_b;
     // add ecx,work.texture.stride_b
-    ecx.uint_val += work.texture.stride_b;
+    ecx.v += work.texture.stride_b;
 
     // mov workspaceA.dvy0c,eax
-    workspaceA.dvy0c = eax.uint_val;
+    workspaceA.dvy0c = eax.v;
     // mov workspaceA.dvy1c,ebx
-    workspaceA.dvy1c = ebx.uint_val;
+    workspaceA.dvy1c = ebx.v;
     // mov workspaceA.dvxc,ecx
-    workspaceA.dvxc = ecx.uint_val;
+    workspaceA.dvxc = ecx.v;
 }
 
 static void WRAP_SETUP()
 {
     // mov ecx,
-    ecx.uint_val = work.texture.width_p;
+    ecx.v = work.texture.width_p;
     // mov eax,work.texture._size
-    eax.uint_val = work.texture.size;
+    eax.v = work.texture.size;
 
     // shl ecx,16
-    ecx.uint_val <<= 16;
+    ecx.v <<= 16;
     // add eax,work.texture.base
-    eax.uint_val += WORK_TEXTURE_BASE;
+    eax.v += WORK_TEXTURE_BASE;
     // mov workspaceA.uUpperBound,ecx
     workspaceA.uUpperBound = ecx.int_val;
 
     // mov workspaceA.vUpperBound,eax
-    workspaceA.vUpperBound = eax.uint_val;
+    workspaceA.vUpperBound = eax.v;
 }
 
 static void ARBITRARY_SETUP()

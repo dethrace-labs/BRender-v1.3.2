@@ -402,9 +402,9 @@ void rcl(x86_operand dest, int count)
     switch(dest.type) {
         case X86_OP_REG:
             while(count != 0) {
-                int msb = dest.reg->uint_val & 0x80000000;
+                int msb = dest.reg->v & 0x80000000;
                 // rotate CF flag into lsb
-                dest.reg->uint_val = (dest.reg->uint_val << 1) + x86_state.cf;
+                dest.reg->v = (dest.reg->v << 1) + x86_state.cf;
                 // rotate msb into CF
                 x86_state.cf = msb;
                 count--;

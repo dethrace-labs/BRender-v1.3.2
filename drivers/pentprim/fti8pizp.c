@@ -75,74 +75,74 @@ trapezium_render_size_params params[] = {
     { .pre = 0, .incu = 1, .decu = 1, .incv = 1, .decv = 1, .post1 = 0, .post2 = 0xffffffff },
 };
 
-void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
+static inline void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
     // ; Make temporary copies of parameters that change
 	// ;
 
     // mov		edx,work.pu.current
-    edx.uint_val = work.pu.current;
+    edx.v = work.pu.current;
     // mov		esi,work.pu.grad_x
-    esi.uint_val = work.pu.grad_x;
+    esi.v = work.pu.grad_x;
 
     if (udirn == eScan_direction_i) {
         // mov		ebx,work.pq.current
-        ebx.uint_val = work.pq.current;
+        ebx.v = work.pq.current;
         // mov		ecx,work.pq.grad_x
-        ecx.uint_val = work.pq.grad_x;
+        ecx.v = work.pq.grad_x;
         // sub		edx,ebx				; Move error into the range -1..0
-        edx.uint_val -= ebx.uint_val;
+        edx.v -= ebx.v;
         // sub		esi,ecx
-        esi.uint_val -= ecx.uint_val;
+        esi.v -= ecx.v;
     }
 
      // mov		ebp,work.pv.current
-    ebp.uint_val = work.pv.current;
+    ebp.v = work.pv.current;
     // mov		edi,work.pv.grad_x
-    edi.uint_val = work.pv.grad_x;
+    edi.v = work.pv.grad_x;
 
     // ifidni <vdirn>,<i>
     if (vdirn == eScan_direction_i) {
         // ifdifi <udirn>,<i>
         if (udirn != eScan_direction_i) {
             // mov		ebx,work.pq.current
-            ebx.uint_val = work.pq.current;
+            ebx.v = work.pq.current;
             // mov		ecx,work.pq.grad_x
-            ecx.uint_val = work.pq.grad_x;
+            ecx.v = work.pq.grad_x;
         }
 
         // sub		ebp,ebx				; Move error into the range -1..0
-        ebp.uint_val -= ebx.uint_val;
+        ebp.v -= ebx.v;
         // sub		edi,ecx
-        edi.uint_val -= ecx.uint_val;
+        edi.v -= ecx.v;
 
     }
 
     // mov		work.tsl.u_numerator, edx
-    work.tsl.u_numerator = edx.uint_val;
+    work.tsl.u_numerator = edx.v;
     // mov		work.tsl.du_numerator, esi
-    work.tsl.du_numerator = esi.uint_val;
+    work.tsl.du_numerator = esi.v;
     // mov		work.tsl.v_numerator, ebp
-    work.tsl.v_numerator = ebp.uint_val;
+    work.tsl.v_numerator = ebp.v;
     // mov		work.tsl.dv_numerator, edi
-    work.tsl.dv_numerator = edi.uint_val;
+    work.tsl.dv_numerator = edi.v;
     // mov		esi,work.texture.base
     esi.ptr_val = work.texture.base;
     // mov		eax,work.tsl.source
-    eax.uint_val = work.tsl.source;
+    eax.v = work.tsl.source;
     // mov		edi,work.tsl.start
     edi.ptr_val = work.tsl.start;
     // mov		ebp,work.tsl.zstart
     ebp.ptr_val = work.tsl.zstart;
     // mov		ebx,work_pz_current
-    ebx.uint_val = work_pz_current;
+    ebx.v = work_pz_current;
     // mov		edx,work.pq.current
-    edx.uint_val = work.pq.current;
+    edx.v = work.pq.current;
     // ror		ebx,16					; Swap z words
     ROR16(ebx);
     // mov		work.tsl.denominator,edx
-    work.tsl.denominator = edx.uint_val;
+    work.tsl.denominator = edx.v;
     // mov		work.tsl.z,ebx
-    work.tsl.z = ebx.uint_val;
+    work.tsl.z = ebx.v;
     // mov		work.tsl.dest,edi
     work.tsl.dest = edi.ptr_val;
 
@@ -163,7 +163,7 @@ next_pixel:
     // mov		dl,[ebp]
     edx.short_val[0] = *((uint16_t*)ebp.ptr_val);
     // mov		cl,[eax+esi]
-    ecx.bytes[0] = ((char*)esi.ptr_val)[eax.uint_val];
+    ecx.bytes[0] = ((char*)esi.ptr_val)[eax.v];
 
     // mov		dh,[ebp+1]
     // no-op - already read both depth bytes
@@ -200,14 +200,14 @@ next_pixel:
         // ; Look texel up in blend table, store texel
         // ;
         // and     ecx,0ffh
-        ecx.uint_val &= 0xff;
+        ecx.v &= 0xff;
         // mov     edx,work.blend_table
         edx.ptr_val = work.blend_table;
         // mov     ch,[edi]
         ecx.bytes[1] = *((uint8_t*)edi.ptr_val);
         // ;AGI stall
         // mov     cl,[edx+ecx]
-        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.uint_val];
+        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.v];
         // mov     [edi],cl
         *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
 
@@ -236,50 +236,33 @@ nodraw:
 	// ;
 
     // pre
-    eax.uint_val <<= params[size].pre;
+    eax.v <<= params[size].pre;
     // mov		ecx,work.tsl._end
     ecx.ptr_val = work.tsl.end;
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    if (dirn == DIR_F) {
-        edi.ptr_val++;
-    } else {
-        edi.ptr_val--;
-    }
+    INC_D(edi.ptr_val, dirn);
     // add_&dirn	ebp,2
-    if (dirn == DIR_F) {
-        ebp.ptr_val += 2;
-    } else {
-        ebp.ptr_val -= 2;
-    }
+    ADD_D(ebp.ptr_val, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
     if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
         return;
     }
 
-
     // ; Interpolate z
     // ;
     // mov		ecx,work.tsl.dz
-    ecx.uint_val = work.tsl.dz;
+    ecx.v = work.tsl.dz;
     // mov		work.tsl.dest,edi
     work.tsl.dest = edi.ptr_val;
     // add_&dirn	ebx,ecx
-    if (dirn == DIR_F) {
-    ADD_AND_SET_CF(ebx.uint_val, ecx.uint_val);
-    } else {
-        SUB_AND_SET_CF(ebx.uint_val, ecx.uint_val);
-    }
+    ADD_SET_CF_D(ebx.v, ecx.v, dirn);
     // mov		work.tsl.zdest,ebp
     work.tsl.zdest = ebp.ptr_val;
     // adc_&dirn	ebx,0		; carry into integer part of z
-    if (dirn == DIR_F) {
-        ADC(ebx.uint_val, 0);
-    } else {
-        SBB(ebx.uint_val, 0);
-    }
+    ADC_D(ebx.v, 0, dirn);
 
     // ; Perspective interpolation section
 	// ;
@@ -293,31 +276,23 @@ nodraw:
 	// ;
 
     // mov		edx,work.tsl.denominator
-    edx.uint_val = work.tsl.denominator;
+    edx.v = work.tsl.denominator;
     // mov		work.tsl.z,ebx
-    work.tsl.z = ebx.uint_val;
+    work.tsl.z = ebx.v;
     // mov		ebp,work.tsl.ddenominator
-    ebp.uint_val = work.tsl.ddenominator;
+    ebp.v = work.tsl.ddenominator;
     // mov		ebx,work.tsl.u_numerator
-    ebx.uint_val = work.tsl.u_numerator;
+    ebx.v = work.tsl.u_numerator;
     // mov		edi,work.tsl.du_numerator
-    edi.uint_val = work.tsl.du_numerator;
+    edi.v = work.tsl.du_numerator;
     // ; Interpolate u numerator and denominator
     // ;
     // add_&dirn	edx,ebp
-    if (dirn == DIR_F) {
-        edx.uint_val += ebp.uint_val;
-    } else {
-        edx.uint_val -= ebp.uint_val;
-    }
+    ADD_D(edx.v, ebp.v, dirn);
     // add_&dirn	ebx,edi
-    if (dirn == DIR_F) {
-        ebx.uint_val += edi.uint_val;
-    } else {
-        ebx.uint_val -= edi.uint_val;
-    }
+    ADD_D(ebx.v, edi.v, dirn);
     // mov		ecx,work.tsl.v_numerator
-    ecx.uint_val = work.tsl.v_numerator;
+    ecx.v = work.tsl.v_numerator;
 
     // ifidni <udirn>,<b>
     if (udirn == eScan_direction_b) {
@@ -334,15 +309,15 @@ deculoop:
         // decu
         eax.bytes[0] -= params[size].decu;
         // add		edi,ebp
-        edi.uint_val += ebp.uint_val;
+        edi.v += ebp.v;
         // add		ebx,edx
-        ebx.uint_val += edx.uint_val;
+        ebx.v += edx.v;
         // jl		deculoop
         if (ebx.int_val < 0) {
             goto deculoop;
         }
         // mov		work.tsl.du_numerator,edi
-        work.tsl.du_numerator = edi.uint_val;
+        work.tsl.du_numerator = edi.v;
         // jmp		doneu
         goto doneu;
 nodecu:
@@ -357,16 +332,16 @@ inculoop:
         // incu
         eax.bytes[0] += params[size].incu;
         // sub		edi,ebp
-        edi.uint_val -= ebp.uint_val;
+        edi.v -= ebp.v;
         // sub		ebx,edx
-        ebx.uint_val -= edx.uint_val;
+        ebx.v -= edx.v;
         // cmp		ebx,edx
         // jge		inculoop
         if (ebx.int_val > edx.int_val) {
             goto inculoop;
         }
         // mov		work.tsl.du_numerator,edi
-        work.tsl.du_numerator = edi.uint_val;
+        work.tsl.du_numerator = edi.v;
         // vslot
         // no op
 
@@ -401,14 +376,14 @@ stepuloop:
         // sub_&udirn	edi,ebp
         // sub_&udirn	ebx,edx
         if (udirn == eScan_direction_i) {
-            edi.uint_val -= ebp.uint_val;
-            SUB_AND_SET_CF(ebx.uint_val, edx.uint_val);
+            edi.v -= ebp.v;
+            SUB_AND_SET_CF(ebx.v, edx.v);
         } else if (udirn == eScan_direction_b) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ebx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ebx.v, edx.v);
         } else if (udirn == eScan_direction_d) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ebx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ebx.v, edx.v);
         }
 
         // jge_&udirn	stepuloop
@@ -421,7 +396,7 @@ stepuloop:
         }
 
 		// mov		work.tsl.du_numerator,edi
-        work.tsl.du_numerator = edi.uint_val;
+        work.tsl.du_numerator = edi.v;
 		// vslot
 
     }
@@ -429,19 +404,15 @@ stepuloop:
 
 doneu:
     // mov		edi,work.tsl.dv_numerator
-    edi.uint_val = work.tsl.dv_numerator;
+    edi.v = work.tsl.dv_numerator;
     // mov		work.tsl.u_numerator,ebx
-    work.tsl.u_numerator = ebx.uint_val;
+    work.tsl.u_numerator = ebx.v;
     // ; Interpolate v numerator
     // ;
     // add_&dirn	ecx,edi
-    if (dirn == DIR_F) {
-        ecx.uint_val += edi.uint_val;
-    } else {
-        ecx.uint_val -= edi.uint_val;
-    }
+    ADD_D(ecx.v, edi.v, dirn);
     // mov		work.tsl.denominator,edx
-    work.tsl.denominator = edx.uint_val;
+    work.tsl.denominator = edx.v;
 
 
     // ifidni <vdirn>,<b>
@@ -460,15 +431,15 @@ decvloop:
         // decv
         eax.bytes[1] -= params[size].decv;
         // add		edi,ebp
-        edi.uint_val += ebp.uint_val;
+        edi.v += ebp.v;
         // add		ecx,edx
-        ecx.uint_val += edx.uint_val;
+        ecx.v += edx.v;
         // jl		decvloop
         if (ecx.int_val < 0) {
             goto decvloop;
         }
         // mov		work.tsl.dv_numerator,edi
-        work.tsl.dv_numerator = edi.uint_val;
+        work.tsl.dv_numerator = edi.v;
         // jmp		donev
         goto donev;
 nodecv:
@@ -483,16 +454,16 @@ incvloop:
         // incv
         eax.bytes[1] += params[size].incv;
         // sub		edi,ebp
-        edi.uint_val -= ebp.uint_val;
+        edi.v -= ebp.v;
         // sub		ecx,edx
-        ecx.uint_val -= edx.uint_val;
+        ecx.v -= edx.v;
         // cmp		ecx,edx
         // jge		incvloop
         if (ecx.int_val >= edx.int_val) {
             goto incvloop;
         }
         // mov		work.tsl.dv_numerator,edi
-        work.tsl.dv_numerator = edi.uint_val;
+        work.tsl.dv_numerator = edi.v;
         // vslot
         // no-op
     } else {
@@ -527,27 +498,27 @@ stepvloop:
         // sub_&vdirn	ecx,edx
         // jge_&vdirn	stepvloop
         if (vdirn == eScan_direction_i) {
-            edi.uint_val -= ebp.uint_val;
-            SUB_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            edi.v -= ebp.v;
+            SUB_AND_SET_CF(ecx.v, edx.v);
             if (ecx.int_val >= 0) {
                 goto stepvloop;
             }
         } else if (vdirn == eScan_direction_b) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ecx.v, edx.v);
             if (ecx.int_val <= 0) {
                 goto stepvloop;
             }
         } else if (vdirn == eScan_direction_d) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ecx.v, edx.v);
             if (x86_state.cf == 0) {
                 goto stepvloop;
             }
         }
 
 		// mov		work.tsl.dv_numerator,edi
-        work.tsl.dv_numerator = edi.uint_val;
+        work.tsl.dv_numerator = edi.v;
 		// vslot
         // no-op
     }
@@ -557,91 +528,91 @@ donev:
 	// ; Fix wrapping of source offset after modification
 	// ;
     // post1
-    eax.uint_val >>= params[size].post1;
+    eax.v >>= params[size].post1;
     // mov	work.tsl.v_numerator,ecx
-    work.tsl.v_numerator = ecx.uint_val;
+    work.tsl.v_numerator = ecx.v;
 
     // post2
-    eax.uint_val &= params[size].post2;
+    eax.v &= params[size].post2;
     // mov		ebp,work.tsl.zdest
     ebp.ptr_val = work.tsl.zdest;
 
     // mov		ebx,work.tsl.z
-    ebx.uint_val = work.tsl.z;
+    ebx.v = work.tsl.z;
     // jmp		next_pixel
     goto next_pixel;
 }
 
-void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
+static inline void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
     // mov		edx,work.pu.current
-    edx.uint_val = work.pu.current;
+    edx.v = work.pu.current;
     // mov		esi,work.pu.grad_x
-    esi.uint_val = work.pu.grad_x;
+    esi.v = work.pu.grad_x;
 
     if (udirn == eScan_direction_i) {
         // mov		ebx,work.pq.current
-        ebx.uint_val = work.pq.current;
+        ebx.v = work.pq.current;
         // mov		ecx,work.pq.grad_x
-        ecx.uint_val = work.pq.grad_x;
+        ecx.v = work.pq.grad_x;
         // sub		edx,ebx				; Move error into the range -1..0
-        edx.uint_val -= ebx.uint_val;
+        edx.v -= ebx.v;
         // sub		esi,ecx
-        esi.uint_val -= ecx.uint_val;
+        esi.v -= ecx.v;
     }
 
      // mov		ebp,work.pv.current
-    ebp.uint_val = work.pv.current;
+    ebp.v = work.pv.current;
     // mov		edi,work.pv.grad_x
-    edi.uint_val = work.pv.grad_x;
+    edi.v = work.pv.grad_x;
 
     // ifidni <vdirn>,<i>
     if (vdirn == eScan_direction_i) {
         // ifdifi <udirn>,<i>
         if (udirn != eScan_direction_i) {
             // mov		ebx,work.pq.current
-            ebx.uint_val = work.pq.current;
+            ebx.v = work.pq.current;
             // mov		ecx,work.pq.grad_x
-            ecx.uint_val = work.pq.grad_x;
+            ecx.v = work.pq.grad_x;
         }
 
         // sub		ebp,ebx				; Move error into the range -1..0
-        ebp.uint_val -= ebx.uint_val;
+        ebp.v -= ebx.v;
         // sub		edi,ecx
-        edi.uint_val -= ecx.uint_val;
+        edi.v -= ecx.v;
 
     }
 
     // mov		work.tsl.u_numerator, edx
-    work.tsl.u_numerator = edx.uint_val;
+    work.tsl.u_numerator = edx.v;
     // mov		work.tsl.du_numerator, esi
-    work.tsl.du_numerator = esi.uint_val;
+    work.tsl.du_numerator = esi.v;
     // mov		work.tsl.v_numerator, ebp
-    work.tsl.v_numerator = ebp.uint_val;
+    work.tsl.v_numerator = ebp.v;
     // mov		work.tsl.dv_numerator, edi
-    work.tsl.dv_numerator = edi.uint_val;
+    work.tsl.dv_numerator = edi.v;
     // mov		esi,work.texture.base
     esi.ptr_val = work.texture.base;
     // mov		eax,work.tsl.source
-    eax.uint_val = work.tsl.source;
+    eax.v = work.tsl.source;
     // mov		edi,work.tsl.start
     edi.ptr_val = work.tsl.start;
     // mov		ebp,work.tsl.zstart
     ebp.ptr_val = work.tsl.zstart;
     // mov		ebx,work_pz_current
-    ebx.uint_val = work_pz_current;
+    ebx.v = work_pz_current;
 
     // mov		edx,work_pi_current
-    edx.uint_val = work_pi_current;
+    edx.v = work_pi_current;
     // ror		ebx,16					; Swap z words
     ROR16(ebx);
     // mov		work.tsl.i,edx
-    work.tsl.i = edx.uint_val;
+    work.tsl.i = edx.v;
     // mov		work.tsl.z,ebx
-    work.tsl.z = ebx.uint_val;
+    work.tsl.z = ebx.v;
     // mov		edx,work.pq.current
-    edx.uint_val = work.pq.current;
+    edx.v = work.pq.current;
     // mov		work.tsl.denominator,edx
-    work.tsl.denominator = edx.uint_val;
+    work.tsl.denominator = edx.v;
 
 next_pixel:
 	// ; Texel fetch and store section
@@ -660,11 +631,11 @@ next_pixel:
     // mov		dx,[ebp]
     edx.short_val[0] = *((uint16_t*)ebp.ptr_val);
     // xor		ecx,ecx
-    ecx.uint_val = 0;
+    ecx.v = 0;
     // mov		ebx,work.tsl.z
-    ebx.uint_val = work.tsl.z;
+    ebx.v = work.tsl.z;
     // mov		cl,[eax+esi]
-    ecx.bytes[0] = ((uint8_t*)esi.ptr_val)[eax.uint_val];
+    ecx.bytes[0] = ((uint8_t*)esi.ptr_val)[eax.v];
 
     // cmp		bx,dx
     // ja		nodraw
@@ -709,7 +680,7 @@ next_pixel:
         // mov     [ebp],bx
         *((uint16_t*)ebp.ptr_val) = ebx.short_val[0];
         // mov     cl,[ecx+edx]
-        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.uint_val];
+        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.v];
         // mov     [edi],cl
         *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
     }
@@ -730,23 +701,15 @@ nodraw:
 	// ;
 
     // pre
-    eax.uint_val <<= params[size].pre;
+    eax.v <<= params[size].pre;
     // mov		ecx,work.tsl._end
     ecx.ptr_val = work.tsl.end;
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    if (dirn == DIR_F) {
-        edi.ptr_val++;
-    } else {
-        edi.ptr_val--;
-    }
+    INC_D(edi.ptr_val, dirn);
     // add_&dirn	ebp,2
-    if (dirn == DIR_F) {
-        ebp.ptr_val += 2;
-    } else {
-        ebp.ptr_val -= 2;
-    }
+    ADD_D(ebp.ptr_val, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
     if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
@@ -757,29 +720,25 @@ nodraw:
     // ; Interpolate z and i
     // ;
     // mov		ecx,work.tsl.dz
-    ecx.uint_val = work.tsl.dz;
+    ecx.v = work.tsl.dz;
     // mov		edx,work.tsl._di
-    edx.uint_val = work.tsl.di;
+    edx.v = work.tsl.di;
     // add_&dirn	ebx,ecx
-    if (dirn == DIR_F) {
-    ADD_AND_SET_CF(ebx.uint_val, ecx.uint_val);
-    } else {
-        SUB_AND_SET_CF(ebx.uint_val, ecx.uint_val);
-    }
+    ADD_SET_CF_D(ebx.v, ecx.v, dirn);
     // mov		ecx,work.tsl.i
-    ecx.uint_val = work.tsl.i;
+    ecx.v = work.tsl.i;
     // adc_&dirn	ebx,0		; carry into integer part of z
-    ADC_D(ebx.uint_val, 0, dirn);
+    ADC_D(ebx.v, 0, dirn);
     // add_&dirn	ecx,edx
-    ADD_D(ecx.uint_val, edx.uint_val, dirn);
+    ADD_D(ecx.v, edx.v, dirn);
     // mov		work.tsl.dest,edi
     work.tsl.dest = edi.ptr_val;
     // mov		work.tsl.zdest,ebp
     work.tsl.zdest = ebp.ptr_val;
     // mov		work.tsl.z,ebx
-    work.tsl.z = ebx.uint_val;
+    work.tsl.z = ebx.v;
     // mov		work.tsl.i,ecx
-    work.tsl.i = ecx.uint_val;
+    work.tsl.i = ecx.v;
 
     // ; Perspective interpolation section
 	// ;
@@ -793,29 +752,21 @@ nodraw:
 	// ;
 
     // mov		edx,work.tsl.denominator
-    edx.uint_val = work.tsl.denominator;
+    edx.v = work.tsl.denominator;
     // mov		ebp,work.tsl.ddenominator
-    ebp.uint_val = work.tsl.ddenominator;
+    ebp.v = work.tsl.ddenominator;
     // mov		ebx,work.tsl.u_numerator
-    ebx.uint_val = work.tsl.u_numerator;
+    ebx.v = work.tsl.u_numerator;
     // mov		edi,work.tsl.du_numerator
-    edi.uint_val = work.tsl.du_numerator;
+    edi.v = work.tsl.du_numerator;
     // ; Interpolate u numerator and denominator
     // ;
     // add_&dirn	edx,ebp
-    if (dirn == DIR_F) {
-        edx.uint_val += ebp.uint_val;
-    } else {
-        edx.uint_val -= ebp.uint_val;
-    }
+    ADD_D(edx.v, ebp.v, dirn);
     // add_&dirn	ebx,edi
-    if (dirn == DIR_F) {
-        ebx.uint_val += edi.uint_val;
-    } else {
-        ebx.uint_val -= edi.uint_val;
-    }
+    ADD_D(ebx.v, edi.v, dirn);
     // mov		ecx,work.tsl.v_numerator
-    ecx.uint_val = work.tsl.v_numerator;
+    ecx.v = work.tsl.v_numerator;
 
     // ifidni <udirn>,<b>
     if (udirn == eScan_direction_b) {
@@ -832,15 +783,15 @@ deculoop:
         // decu
         eax.bytes[0] -= params[size].decu;
         // add		edi,ebp
-        edi.uint_val += ebp.uint_val;
+        edi.v += ebp.v;
         // add		ebx,edx
-        ebx.uint_val += edx.uint_val;
+        ebx.v += edx.v;
         // jl		deculoop
         if (ebx.int_val < 0) {
             goto deculoop;
         }
         // mov		work.tsl.du_numerator,edi
-        work.tsl.du_numerator = edi.uint_val;
+        work.tsl.du_numerator = edi.v;
         // jmp		doneu
         goto doneu;
 nodecu:
@@ -855,16 +806,16 @@ inculoop:
         // incu
         eax.bytes[0] += params[size].incu;
         // sub		edi,ebp
-        edi.uint_val -= ebp.uint_val;
+        edi.v -= ebp.v;
         // sub		ebx,edx
-        ebx.uint_val -= edx.uint_val;
+        ebx.v -= edx.v;
         // cmp		ebx,edx
         // jge		inculoop
         if (ebx.int_val > edx.int_val) {
             goto inculoop;
         }
         // mov		work.tsl.du_numerator,edi
-        work.tsl.du_numerator = edi.uint_val;
+        work.tsl.du_numerator = edi.v;
         // vslot
         // no op
 
@@ -899,14 +850,14 @@ stepuloop:
         // sub_&udirn	edi,ebp
         // sub_&udirn	ebx,edx
         if (udirn == eScan_direction_i) {
-            edi.uint_val -= ebp.uint_val;
-            SUB_AND_SET_CF(ebx.uint_val, edx.uint_val);
+            edi.v -= ebp.v;
+            SUB_AND_SET_CF(ebx.v, edx.v);
         } else if (udirn == eScan_direction_b) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ebx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ebx.v, edx.v);
         } else if (udirn == eScan_direction_d) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ebx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ebx.v, edx.v);
         }
 
         // jge_&udirn	stepuloop
@@ -919,7 +870,7 @@ stepuloop:
         }
 
 		// mov		work.tsl.du_numerator,edi
-        work.tsl.du_numerator = edi.uint_val;
+        work.tsl.du_numerator = edi.v;
 		// vslot
 
     }
@@ -927,19 +878,15 @@ stepuloop:
 
 doneu:
     // mov		edi,work.tsl.dv_numerator
-    edi.uint_val = work.tsl.dv_numerator;
+    edi.v = work.tsl.dv_numerator;
     // mov		work.tsl.u_numerator,ebx
-    work.tsl.u_numerator = ebx.uint_val;
+    work.tsl.u_numerator = ebx.v;
     // ; Interpolate v numerator
     // ;
     // add_&dirn	ecx,edi
-    if (dirn == DIR_F) {
-        ecx.uint_val += edi.uint_val;
-    } else {
-        ecx.uint_val -= edi.uint_val;
-    }
+    ADD_D(ecx.v, edi.v, dirn);
     // mov		work.tsl.denominator,edx
-    work.tsl.denominator = edx.uint_val;
+    work.tsl.denominator = edx.v;
 
 
     // ifidni <vdirn>,<b>
@@ -958,15 +905,15 @@ decvloop:
         // decv
         eax.bytes[1] -= params[size].decv;
         // add		edi,ebp
-        edi.uint_val += ebp.uint_val;
+        edi.v += ebp.v;
         // add		ecx,edx
-        ecx.uint_val += edx.uint_val;
+        ecx.v += edx.v;
         // jl		decvloop
         if (ecx.int_val < 0) {
             goto decvloop;
         }
         // mov		work.tsl.dv_numerator,edi
-        work.tsl.dv_numerator = edi.uint_val;
+        work.tsl.dv_numerator = edi.v;
         // jmp		donev
         goto donev;
 nodecv:
@@ -981,16 +928,16 @@ incvloop:
         // incv
         eax.bytes[1] += params[size].incv;
         // sub		edi,ebp
-        edi.uint_val -= ebp.uint_val;
+        edi.v -= ebp.v;
         // sub		ecx,edx
-        ecx.uint_val -= edx.uint_val;
+        ecx.v -= edx.v;
         // cmp		ecx,edx
         // jge		incvloop
         if (ecx.int_val >= edx.int_val) {
             goto incvloop;
         }
         // mov		work.tsl.dv_numerator,edi
-        work.tsl.dv_numerator = edi.uint_val;
+        work.tsl.dv_numerator = edi.v;
         // vslot
         // no-op
     } else {
@@ -1025,27 +972,27 @@ stepvloop:
         // sub_&vdirn	ecx,edx
         // jge_&vdirn	stepvloop
         if (vdirn == eScan_direction_i) {
-            edi.uint_val -= ebp.uint_val;
-            SUB_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            edi.v -= ebp.v;
+            SUB_AND_SET_CF(ecx.v, edx.v);
             if (ecx.int_val >= 0) {
                 goto stepvloop;
             }
         } else if (vdirn == eScan_direction_b) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ecx.v, edx.v);
             if (ecx.int_val <= 0) {
                 goto stepvloop;
             }
         } else if (vdirn == eScan_direction_d) {
-            edi.uint_val += ebp.uint_val;
-            ADD_AND_SET_CF(ecx.uint_val, edx.uint_val);
+            edi.v += ebp.v;
+            ADD_AND_SET_CF(ecx.v, edx.v);
             if (x86_state.cf == 0) {
                 goto stepvloop;
             }
         }
 
 		// mov		work.tsl.dv_numerator,edi
-        work.tsl.dv_numerator = edi.uint_val;
+        work.tsl.dv_numerator = edi.v;
 		// vslot
         // no-op
     }
@@ -1055,12 +1002,12 @@ donev:
 	// ; Fix wrapping of source offset after modification
 	// ;
     // post1
-    eax.uint_val >>= params[size].post1;
+    eax.v >>= params[size].post1;
     // mov	work.tsl.v_numerator,ecx
-    work.tsl.v_numerator = ecx.uint_val;
+    work.tsl.v_numerator = ecx.v;
 
     // post2
-    eax.uint_val &= params[size].post2;
+    eax.v &= params[size].post2;
     // mov		ebp,work.tsl.zdest
     ebp.ptr_val = work.tsl.zdest;
 
@@ -1093,23 +1040,23 @@ donev:
 // 	<>,<>
 
 
-void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, tFog_enabled fogging, tBlend_enabled blend) {
+static inline void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, tFog_enabled fogging, tBlend_enabled blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
-    ebx.uint_val = work_top_count;
+    ebx.v = work_top_count;
     // test	ebx,ebx
     // jl		done_trapezium
     if (ebx.int_val < 0) {
         return;
     }
     // mov		edi,work_top_i
-    edi.uint_val = work_top_i;
+    edi.v = work_top_i;
     // mov		ebp,work_main_i
-    ebp.uint_val = work_main_i;
+    ebp.v = work_main_i;
     // shr		edi,16				; get integer part of end of first scanline
-    edi.uint_val >>= 16;
+    edi.v >>= 16;
     // and		ebp,0ffffh			; get integer part of start of first scanline
-    ebp.uint_val &= 0xffff;
+    ebp.v &= 0xffff;
 
 scan_loop:
 
@@ -1121,40 +1068,40 @@ scan_loop:
         goto no_pixels;
     }
     // mov		eax,workspace.scanAddress
-    eax.uint_val = workspace.scanAddress;
+    eax.v = workspace.scanAddress;
     // mov		ebx,workspace.depthAddress
-    ebx.uint_val = workspace.depthAddress;
+    ebx.v = workspace.depthAddress;
     // add		edi,eax				; calculate end colour buffer pointer
-    edi.uint_val += eax.uint_val;
+    edi.v += eax.v;
     // add		eax,ebp				; calculate start colour buffer pointer
-    eax.uint_val += ebp.uint_val;
+    eax.v += ebp.v;
     // mov		work.tsl._end,edi
-    work.tsl.end =  ((char*)work.colour.base) + edi.uint_val;
+    work.tsl.end =  ((char*)work.colour.base) + edi.v;
     // lea		ebx,[ebx+ebp*2]		; calculate start depth buffer pointer
-    ebx.uint_val += ebp.uint_val * 2;
+    ebx.v += ebp.v * 2;
     // mov		work.tsl.start,eax
-    work.tsl.start = ((char*)work.colour.base) + eax.uint_val;
+    work.tsl.start = ((char*)work.colour.base) + eax.v;
     // mov		work.tsl.zstart,ebx
-    work.tsl.zstart = ((char*)work.depth.base) + ebx.uint_val;
+    work.tsl.zstart = ((char*)work.depth.base) + ebx.v;
 
     // ; Fix up the error values
 	// ;
      // mov		eax,work.tsl.source
-    eax.uint_val = work.tsl.source;
+    eax.v = work.tsl.source;
     // mov		ebx,work.pq.current
-    ebx.uint_val = work.pq.current;
+    ebx.v = work.pq.current;
     // mov		ecx,work.pq.grad_x
-    ecx.uint_val = work.pq.grad_x;
+    ecx.v = work.pq.grad_x;
     // mov		edx,work.pq.d_nocarry
-    edx.uint_val = work.pq.d_nocarry;
+    edx.v = work.pq.d_nocarry;
     // pre
-    eax.uint_val <<= params[size_param].pre;
+    eax.v <<= params[size_param].pre;
     // mov		ebp,work.pu.current
-    ebp.uint_val = work.pu.current;
+    ebp.v = work.pu.current;
     // mov		edi,work.pu.grad_x
-    edi.uint_val = work.pu.grad_x;
+    edi.v = work.pu.grad_x;
     // mov		esi,work.pu.d_nocarry
-    esi.uint_val = work.pu.d_nocarry;
+    esi.v = work.pu.d_nocarry;
     // cmp		ebp,ebx
     // jl		uidone
     if (ebp.int_val < ebx.int_val) {
@@ -1165,11 +1112,11 @@ uiloop:
     // incu							; work.tsl.source = incu(work.tsl.source)
     eax.bytes[0] += params[size_param].incu;
     // sub		edi,ecx					; work.pu.grad_x -= work.pq.grad_x
-    edi.uint_val -= ecx.uint_val;
+    edi.v -= ecx.v;
     // sub		esi,edx					; work.pu.d_nocarry -= work.pq.d_nocarry
-    esi.uint_val -= edx.uint_val;
+    esi.v -= edx.v;
     // sub		ebp,ebx					; work.pu.current -= work.pq.current
-    ebp.uint_val -= ebx.uint_val;
+    ebp.v -= ebx.v;
     // cmp		ebp,ebx
     // jge		uiloop
     if (ebp.int_val >= ebx.int_val) {
@@ -1188,11 +1135,11 @@ udloop:
     // decu							; work.tsl.source = decu(work.tsl.source)
     eax.bytes[0] -= params[size_param].decu;
     // add		edi,ecx					; work.pu.grad_x += work.pq.grad_x
-    edi.uint_val += ecx.uint_val;
+    edi.v += ecx.v;
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
-    esi.uint_val += edx.uint_val;
+    esi.v += edx.v;
     // add		ebp,ebx					; work.pu.current += work.pq.current
-    ADD_AND_SET_CF(ebp.uint_val, ebx.uint_val);
+    ADD_AND_SET_CF(ebp.v, ebx.v);
     // uslot
     // no-op
     // jl		udloop
@@ -1201,17 +1148,17 @@ udloop:
     }
 uddone:
     // mov		work.pu.current,ebp
-    work.pu.current = ebp.uint_val;
+    work.pu.current = ebp.v;
     // mov		work.pu.grad_x,edi
-    work.pu.grad_x = edi.uint_val;
+    work.pu.grad_x = edi.v;
     // mov		work.pu.d_nocarry,esi
-    work.pu.d_nocarry = esi.uint_val;
+    work.pu.d_nocarry = esi.v;
     // mov		ebp,work.pv.current
-    ebp.uint_val = work.pv.current;
+    ebp.v = work.pv.current;
     // mov		edi,work.pv.grad_x
-    edi.uint_val = work.pv.grad_x;
+    edi.v = work.pv.grad_x;
     // mov		esi,work.pv.d_nocarry
-    esi.uint_val = work.pv.d_nocarry;
+    esi.v = work.pv.d_nocarry;
     // cmp		ebp,ebx
     // jl		vidone
     if (ebp.int_val < ebx.int_val) {
@@ -1221,11 +1168,11 @@ viloop:
     // incv							; work.tsl.source = incv(work.tsl.source)
     eax.bytes[1] += params[size_param].incv;
     // sub		edi,ecx					; work.pv.grad_x -= work.pq.grad_x
-    edi.uint_val -= ecx.uint_val;
+    edi.v -= ecx.v;
     // sub		esi,edx					; work.pv.d_nocarry -= work.pq.d_nocarry
-    esi.uint_val -= edx.uint_val;
+    esi.v -= edx.v;
     // sub		ebp,ebx					; work.pv.current -= work.pq.current
-    ebp.uint_val -= ebx.uint_val;
+    ebp.v -= ebx.v;
     // cmp		ebp,ebx
     // jge		viloop
     if (ebp.int_val >= ebx.int_val) {
@@ -1243,11 +1190,11 @@ vdloop:
     // decv							; work.tsl.source = decv(work.tsl.source)
     eax.bytes[1] -= params[size_param].decv;
     // add		edi,ecx					; work.pv.grad_x += work.pq.grad_x
-    edi.uint_val += ecx.uint_val;
+    edi.v += ecx.v;
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
-    esi.uint_val += edx.uint_val;
+    esi.v += edx.v;
     // add		ebp,ebx					; work.pv.current += work.pq.current
-    ADD_AND_SET_CF(ebp.uint_val, ebx.uint_val);
+    ADD_AND_SET_CF(ebp.v, ebx.v);
     // uslot
     // no op
     // jl		vdloop
@@ -1258,31 +1205,27 @@ vddone:
     // ; Select scanline loop and jump to it
 	// ;
     // post1
-    eax.uint_val >>= params[size_param].post1;
+    eax.v >>= params[size_param].post1;
     // mov		work.pv.current,ebp
-    work.pv.current = ebp.uint_val;
+    work.pv.current = ebp.v;
     // post2
-    eax.uint_val &= params[size_param].post2;
+    eax.v &= params[size_param].post2;
     // mov		work.pv.grad_x,edi
-    work.pv.grad_x = edi.uint_val;
+    work.pv.grad_x = edi.v;
     // mov		work.pv.d_nocarry,esi
-    work.pv.d_nocarry = esi.uint_val;
+    work.pv.d_nocarry = esi.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		esi,work.pu.grad_x
-    esi.uint_val = work.pu.grad_x;
+    esi.v = work.pu.grad_x;
     // mov		ebp,work.pq.grad_x
-    ebp.uint_val = work.pq.grad_x;
+    ebp.v = work.pq.grad_x;
     // test	ebp,ebp
     // jl_&dirn	qd
-    if (dirn == DIR_F && ebp.int_val < 0 || dirn == DIR_B && ebp.int_val > 0) {
-        goto qd;
-    }
+    JL_D(ebp.int_val, qd, dirn);
     // test	esi,esi
     // jle_&dirn	qi_ud
-    if (dirn == DIR_F && esi.int_val <= 0 || dirn == DIR_B && esi.int_val >= 0) {
-        goto qi_ud;
-    }
+    JLE_D(esi.int_val, qi_ud, dirn);
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
@@ -1305,9 +1248,7 @@ qi_ud:
 qd:
     // test	esi,esi
     // jle_&dirn	qd_ud
-    if (dirn == DIR_F && esi.int_val <= 0 || dirn == DIR_B && esi.int_val >= 0) {
-        goto qd_ud;
-    }
+    JLE_D(esi.int_val, qd_ud, dirn);
 qd_ui:
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
@@ -1353,79 +1294,79 @@ no_pixels:
     // ; Updates for next scanline:
 	// ;
     // mov		eax,workspace.scanAddress
-    eax.uint_val = workspace.scanAddress;
+    eax.v = workspace.scanAddress;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,workspace.depthAddress
-    ecx.uint_val = workspace.depthAddress;
+    ecx.v = workspace.depthAddress;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // add		eax,ebx				; move down one line in colour buffer
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx				; move down one line in depth buffer
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
     // mov		ebp,work_main_i
-    ebp.uint_val = work_main_i;
+    ebp.v = work_main_i;
     // mov		eax,work_main_d_i
-    eax.uint_val = work_main_d_i;
+    eax.v = work_main_d_i;
     // add		ebp,eax				; step major edge
-    ADD_AND_SET_CF(ebp.uint_val, eax.uint_val);
+    ADD_AND_SET_CF(ebp.v, eax.v);
     // jc		carry
     if (x86_state.cf) {
         goto carry;
     }
     // mov		edi,work_top_i
-    edi.uint_val = work_top_i;
+    edi.v = work_top_i;
     // mov		work_main_i,ebp
-    work_main_i = ebp.uint_val;
+    work_main_i = ebp.v;
     // mov		eax,work_top_d_i
-    eax.uint_val = work_top_d_i;
+    eax.v = work_top_d_i;
     // add		edi,eax				; step minor edge
-    edi.uint_val += eax.uint_val;
+    edi.v += eax.v;
     // mov		eax,work.pq.current
-    eax.uint_val = work.pq.current;
+    eax.v = work.pq.current;
     // mov		work_top_i,edi
-    work_top_i = edi.uint_val;
+    work_top_i = edi.v;
     // mov		ebx,work.pq.d_nocarry
-    ebx.uint_val = work.pq.d_nocarry;
+    ebx.v = work.pq.d_nocarry;
     // shr		edi,16				; get integer part of end of next scanline
-    edi.uint_val >>= 16;
+    edi.v >>= 16;
     // add		eax,ebx				; step q according to carry from major edge
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // and		ebp,0ffffh			; get integer part of start of next scanline
-    ebp.uint_val &= 0xffff;
+    ebp.v &= 0xffff;
     // mov		work.pq.current,eax
-    work.pq.current = eax.uint_val;
+    work.pq.current = eax.v;
     // mov		eax,work_pz_current
-    eax.uint_val = work_pz_current;
+    eax.v = work_pz_current;
     // mov		ebx,work_pz_d_nocarry
-    ebx.uint_val = work_pz_d_nocarry;
+    ebx.v = work_pz_d_nocarry;
     // add		eax,ebx				; step z according to carry from major edge
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // mov		ebx,work.pv.current
-    ebx.uint_val = work.pv.current;
+    ebx.v = work.pv.current;
     // mov		work_pz_current,eax
-    work_pz_current = eax.uint_val;
+    work_pz_current = eax.v;
     // mov		eax,work.pu.current
-    eax.uint_val = work.pu.current;
+    eax.v = work.pu.current;
     // add		eax,work.pu.d_nocarry	; step u according to carry from major edge
-    eax.uint_val += work.pu.d_nocarry;
+    eax.v += work.pu.d_nocarry;
     // add		ebx,work.pv.d_nocarry	; step v according to carry from major edge
-    ebx.uint_val += work.pv.d_nocarry;
+    ebx.v += work.pv.d_nocarry;
     // mov		work.pu.current,eax
-    work.pu.current = eax.uint_val;
+    work.pu.current = eax.v;
     // mov		ecx,work_top_count
-    ecx.uint_val = work_top_count;
+    ecx.v = work_top_count;
     // mov		work.pv.current,ebx
-    work.pv.current = ebx.uint_val;
+    work.pv.current = ebx.v;
     // dec		ecx					; decrement line counter
-    ecx.uint_val--;
+    ecx.v--;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // jge		scan_loop
     if (ecx.int_val >= 0) {
         goto scan_loop;
@@ -1435,82 +1376,82 @@ no_pixels:
 
 carry:
     // adc		ebp,0
-    ADC(ebp.uint_val, 0);
+    ADC(ebp.v, 0);
     // mov		edi,work_top_i
-    edi.uint_val = work_top_i;
+    edi.v = work_top_i;
     // mov		work_main_i,ebp
-    work_main_i = ebp.uint_val;
+    work_main_i = ebp.v;
     // mov		eax,work_top_d_i
-    eax.uint_val = work_top_d_i;
+    eax.v = work_top_d_i;
     // add		edi,eax				; step minor edge
-    edi.uint_val += eax.uint_val;
+    edi.v += eax.v;
     // mov		eax,work.pq.current
-    eax.uint_val = work.pq.current;
+    eax.v = work.pq.current;
     // mov		work_top_i,edi
-    work_top_i = edi.uint_val;
+    work_top_i = edi.v;
     // mov		ebx,work.pq.d_carry
-    ebx.uint_val = work.pq.d_carry;
+    ebx.v = work.pq.d_carry;
     // shr		edi,16				; get integer part of end of next scanline
-    edi.uint_val >>= 16;
+    edi.v >>= 16;
     // add		eax,ebx				; step q according to carry from major edge
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // and		ebp,0ffffh			; get integer part of start of next scanline
-    ebp.uint_val &= 0xffff;
+    ebp.v &= 0xffff;
     // mov		work.pq.current,eax
-    work.pq.current = eax.uint_val;
+    work.pq.current = eax.v;
     // mov		eax,work_pz_current
-    eax.uint_val = work_pz_current;
+    eax.v = work_pz_current;
     // mov		ebx,work_pz_d_carry
-    ebx.uint_val = work_pz_d_carry;
+    ebx.v = work_pz_d_carry;
     // add		eax,ebx				; step z according to carry from major edge
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // mov		ebx,work.pv.current
-    ebx.uint_val = work.pv.current;
+    ebx.v = work.pv.current;
     // mov		work_pz_current,eax
-    work_pz_current = eax.uint_val;
+    work_pz_current = eax.v;
     // mov		eax,work.pu.current
-    eax.uint_val = work.pu.current;
+    eax.v = work.pu.current;
     // add		eax,work.pu.d_nocarry	; step u according to carry from major edge
-    eax.uint_val += work.pu.d_nocarry;
+    eax.v += work.pu.d_nocarry;
     // add		ebx,work.pv.d_nocarry	; step v according to carry from major edge
-    ebx.uint_val += work.pv.d_nocarry;
+    ebx.v += work.pv.d_nocarry;
     // add		eax,work.pu.grad_x	; avoids the need to fixup nocarry and carry
-    eax.uint_val += work.pu.grad_x;
+    eax.v += work.pu.grad_x;
     // add		ebx,work.pv.grad_x	; versions
-    ebx.uint_val += work.pv.grad_x;
+    ebx.v += work.pv.grad_x;
     // mov		work.pu.current,eax
-    work.pu.current = eax.uint_val;
+    work.pu.current = eax.v;
     // mov		ecx,work_top_count
-    ecx.uint_val = work_top_count;
+    ecx.v = work_top_count;
     // mov		work.pv.current,ebx
-    work.pv.current = ebx.uint_val;
+    work.pv.current = ebx.v;
     // dec		ecx					; decrement line counter
-    ecx.uint_val--;
+    ecx.v--;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // jge		scan_loop
     if (ecx.int_val >= 0) {
         goto scan_loop;
     }
 }
 
-void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param, tFog_enabled fog, tBlend_enabled blend) {
+static inline void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param, tFog_enabled fog, tBlend_enabled blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
-    ebx.uint_val = work_top_count;
+    ebx.v = work_top_count;
     // test	ebx,ebx
     // jl		done_trapezium
     if (ebx.int_val < 0) {
         return;
     }
     // mov		edi,work_top_i
-    edi.uint_val = work_top_i;
+    edi.v = work_top_i;
     // mov		ebp,work_main_i
-    ebp.uint_val = work_main_i;
+    ebp.v = work_main_i;
     // shr		edi,16				; get integer part of end of first scanline
-    edi.uint_val >>= 16;
+    edi.v >>= 16;
     // and		ebp,0ffffh			; get integer part of start of first scanline
-    ebp.uint_val &= 0xffff;
+    ebp.v &= 0xffff;
 
 scan_loop:
 
@@ -1522,40 +1463,40 @@ scan_loop:
         goto no_pixels;
     }
     // mov		eax,workspace.scanAddress
-    eax.uint_val = workspace.scanAddress;
+    eax.v = workspace.scanAddress;
     // mov		ebx,workspace.depthAddress
-    ebx.uint_val = workspace.depthAddress;
+    ebx.v = workspace.depthAddress;
     // add		edi,eax				; calculate end colour buffer pointer
-    edi.uint_val += eax.uint_val;
+    edi.v += eax.v;
     // add		eax,ebp				; calculate start colour buffer pointer
-    eax.uint_val += ebp.uint_val;
+    eax.v += ebp.v;
     // mov		work.tsl._end,edi
-    work.tsl.end =  ((char*)work.colour.base) + edi.uint_val;
+    work.tsl.end =  ((char*)work.colour.base) + edi.v;
     // lea		ebx,[ebx+ebp*2]		; calculate start depth buffer pointer
-    ebx.uint_val += ebp.uint_val * 2;
+    ebx.v += ebp.v * 2;
     // mov		work.tsl.start,eax
-    work.tsl.start = ((char*)work.colour.base) + eax.uint_val;
+    work.tsl.start = ((char*)work.colour.base) + eax.v;
     // mov		work.tsl.zstart,ebx
-    work.tsl.zstart = ((char*)work.depth.base) + ebx.uint_val;
+    work.tsl.zstart = ((char*)work.depth.base) + ebx.v;
 
     // ; Fix up the error values
 	// ;
      // mov		eax,work.tsl.source
-    eax.uint_val = work.tsl.source;
+    eax.v = work.tsl.source;
     // mov		ebx,work.pq.current
-    ebx.uint_val = work.pq.current;
+    ebx.v = work.pq.current;
     // mov		ecx,work.pq.grad_x
-    ecx.uint_val = work.pq.grad_x;
+    ecx.v = work.pq.grad_x;
     // mov		edx,work.pq.d_nocarry
-    edx.uint_val = work.pq.d_nocarry;
+    edx.v = work.pq.d_nocarry;
     // pre
-    eax.uint_val <<= params[size_param].pre;
+    eax.v <<= params[size_param].pre;
     // mov		ebp,work.pu.current
-    ebp.uint_val = work.pu.current;
+    ebp.v = work.pu.current;
     // mov		edi,work.pu.grad_x
-    edi.uint_val = work.pu.grad_x;
+    edi.v = work.pu.grad_x;
     // mov		esi,work.pu.d_nocarry
-    esi.uint_val = work.pu.d_nocarry;
+    esi.v = work.pu.d_nocarry;
     // cmp		ebp,ebx
     // jl		uidone
     if (ebp.int_val < ebx.int_val) {
@@ -1566,11 +1507,11 @@ uiloop:
     // incu							; work.tsl.source = incu(work.tsl.source)
     eax.bytes[0] += params[size_param].incu;
     // sub		edi,ecx					; work.pu.grad_x -= work.pq.grad_x
-    edi.uint_val -= ecx.uint_val;
+    edi.v -= ecx.v;
     // sub		esi,edx					; work.pu.d_nocarry -= work.pq.d_nocarry
-    esi.uint_val -= edx.uint_val;
+    esi.v -= edx.v;
     // sub		ebp,ebx					; work.pu.current -= work.pq.current
-    ebp.uint_val -= ebx.uint_val;
+    ebp.v -= ebx.v;
     // cmp		ebp,ebx
     // jge		uiloop
     if (ebp.int_val >= ebx.int_val) {
@@ -1589,11 +1530,11 @@ udloop:
     // decu							; work.tsl.source = decu(work.tsl.source)
     eax.bytes[0] -= params[size_param].decu;
     // add		edi,ecx					; work.pu.grad_x += work.pq.grad_x
-    edi.uint_val += ecx.uint_val;
+    edi.v += ecx.v;
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
-    esi.uint_val += edx.uint_val;
+    esi.v += edx.v;
     // add		ebp,ebx					; work.pu.current += work.pq.current
-    ADD_AND_SET_CF(ebp.uint_val, ebx.uint_val);
+    ADD_AND_SET_CF(ebp.v, ebx.v);
     // uslot
     // no-op
     // jl		udloop
@@ -1602,17 +1543,17 @@ udloop:
     }
 uddone:
     // mov		work.pu.current,ebp
-    work.pu.current = ebp.uint_val;
+    work.pu.current = ebp.v;
     // mov		work.pu.grad_x,edi
-    work.pu.grad_x = edi.uint_val;
+    work.pu.grad_x = edi.v;
     // mov		work.pu.d_nocarry,esi
-    work.pu.d_nocarry = esi.uint_val;
+    work.pu.d_nocarry = esi.v;
     // mov		ebp,work.pv.current
-    ebp.uint_val = work.pv.current;
+    ebp.v = work.pv.current;
     // mov		edi,work.pv.grad_x
-    edi.uint_val = work.pv.grad_x;
+    edi.v = work.pv.grad_x;
     // mov		esi,work.pv.d_nocarry
-    esi.uint_val = work.pv.d_nocarry;
+    esi.v = work.pv.d_nocarry;
     // cmp		ebp,ebx
     // jl		vidone
     if (ebp.int_val < ebx.int_val) {
@@ -1622,11 +1563,11 @@ viloop:
     // incv							; work.tsl.source = incv(work.tsl.source)
     eax.bytes[1] += params[size_param].incv;
     // sub		edi,ecx					; work.pv.grad_x -= work.pq.grad_x
-    edi.uint_val -= ecx.uint_val;
+    edi.v -= ecx.v;
     // sub		esi,edx					; work.pv.d_nocarry -= work.pq.d_nocarry
-    esi.uint_val -= edx.uint_val;
+    esi.v -= edx.v;
     // sub		ebp,ebx					; work.pv.current -= work.pq.current
-    ebp.uint_val -= ebx.uint_val;
+    ebp.v -= ebx.v;
     // cmp		ebp,ebx
     // jge		viloop
     if (ebp.int_val >= ebx.int_val) {
@@ -1644,11 +1585,11 @@ vdloop:
     // decv							; work.tsl.source = decv(work.tsl.source)
     eax.bytes[1] -= params[size_param].decv;
     // add		edi,ecx					; work.pv.grad_x += work.pq.grad_x
-    edi.uint_val += ecx.uint_val;
+    edi.v += ecx.v;
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
-    esi.uint_val += edx.uint_val;
+    esi.v += edx.v;
     // add		ebp,ebx					; work.pv.current += work.pq.current
-    ADD_AND_SET_CF(ebp.uint_val, ebx.uint_val);
+    ADD_AND_SET_CF(ebp.v, ebx.v);
     // uslot
     // no op
     // jl		vdloop
@@ -1659,31 +1600,27 @@ vddone:
     // ; Select scanline loop and jump to it
 	// ;
     // post1
-    eax.uint_val >>= params[size_param].post1;
+    eax.v >>= params[size_param].post1;
     // mov		work.pv.current,ebp
-    work.pv.current = ebp.uint_val;
+    work.pv.current = ebp.v;
     // post2
-    eax.uint_val &= params[size_param].post2;
+    eax.v &= params[size_param].post2;
     // mov		work.pv.grad_x,edi
-    work.pv.grad_x = edi.uint_val;
+    work.pv.grad_x = edi.v;
     // mov		work.pv.d_nocarry,esi
-    work.pv.d_nocarry = esi.uint_val;
+    work.pv.d_nocarry = esi.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		esi,work.pu.grad_x
-    esi.uint_val = work.pu.grad_x;
+    esi.v = work.pu.grad_x;
     // mov		ebp,work.pq.grad_x
-    ebp.uint_val = work.pq.grad_x;
+    ebp.v = work.pq.grad_x;
     // test	ebp,ebp
     // jl_&dirn	qd
-    if (dirn == DIR_F && ebp.int_val < 0 || dirn == DIR_B && ebp.int_val > 0) {
-        goto qd;
-    }
+    JL_D(ebp.int_val, qd, dirn);
     // test	esi,esi
     // jle_&dirn	qi_ud
-    if (dirn == DIR_F && esi.int_val <= 0 || dirn == DIR_B && esi.int_val >= 0) {
-        goto qi_ud;
-    }
+    JLE_D(esi.int_val, qi_ud, dirn);
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
@@ -1706,9 +1643,7 @@ qi_ud:
 qd:
     // test	esi,esi
     // jle_&dirn	qd_ud
-    if (dirn == DIR_F && esi.int_val <= 0 || dirn == DIR_B && esi.int_val >= 0) {
-        goto qd_ud;
-    }
+    JLE_D(esi.int_val, qd_ud, dirn);
 qd_ui:
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
@@ -1754,85 +1689,85 @@ no_pixels:
     // ; Updates for next scanline:
 	// ;
     // mov		eax,workspace.scanAddress
-    eax.uint_val = workspace.scanAddress;
+    eax.v = workspace.scanAddress;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,workspace.depthAddress
-    ecx.uint_val = workspace.depthAddress;
+    ecx.v = workspace.depthAddress;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // add		eax,ebx				; move down one line in colour buffer
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx				; move down one line in depth buffer
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
     // mov		ebp,work_main_i
-    ebp.uint_val = work_main_i;
+    ebp.v = work_main_i;
     // mov		eax,work_main_d_i
-    eax.uint_val = work_main_d_i;
+    eax.v = work_main_d_i;
     // add		ebp,eax				; step major edge
-    ADD_AND_SET_CF(ebp.uint_val, eax.uint_val);
+    ADD_AND_SET_CF(ebp.v, eax.v);
     // jc		carry
     if (x86_state.cf) {
         goto carry;
     }
     // mov		edi,work_top_i
-    edi.uint_val = work_top_i;
+    edi.v = work_top_i;
     // mov		work_main_i,ebp
-    work_main_i = ebp.uint_val;
+    work_main_i = ebp.v;
     // mov		eax,work_top_d_i
-    eax.uint_val = work_top_d_i;
+    eax.v = work_top_d_i;
     // add		edi,eax				; step minor edge
-    edi.uint_val += eax.uint_val;
+    edi.v += eax.v;
     // mov		eax,work.pq.current
-    eax.uint_val = work.pq.current;
+    eax.v = work.pq.current;
     // mov		work_top_i,edi
-    work_top_i = edi.uint_val;
+    work_top_i = edi.v;
     // mov		ebx,work.pq.d_nocarry
-    ebx.uint_val = work.pq.d_nocarry;
+    ebx.v = work.pq.d_nocarry;
     // shr		edi,16				; get integer part of end of next scanline
-    edi.uint_val >>= 16;
+    edi.v >>= 16;
     // add		eax,ebx				; step q according to carry from major edge
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // and		ebp,0ffffh			; get integer part of start of next scanline
-    ebp.uint_val &= 0xffff;
+    ebp.v &= 0xffff;
     // mov		work.pq.current,eax
-    work.pq.current = eax.uint_val;
+    work.pq.current = eax.v;
     // mov		eax,work_pz_current
-    eax.uint_val = work_pz_current;
+    eax.v = work_pz_current;
 
     // mov		ebx,work_pi_current
-    ebx.uint_val = work_pi_current;
+    ebx.v = work_pi_current;
     // add		eax,work_pz_d_nocarry	; step z according to carry from major edge
-    eax.uint_val += work_pz_d_nocarry;
+    eax.v += work_pz_d_nocarry;
     // add		ebx,work_pi_d_nocarry	; step i according to carry from major edge
-    ebx.uint_val += work_pi_d_nocarry;
+    ebx.v += work_pi_d_nocarry;
     // mov		work_pz_current,eax
-    work_pz_current = eax.uint_val;
+    work_pz_current = eax.v;
     // mov		work_pi_current,ebx
-    work_pi_current = ebx.uint_val;     // ZPTI
+    work_pi_current = ebx.v;     // ZPTI
     // mov		eax,work.pu.current
-    eax.uint_val = work.pu.current;
+    eax.v = work.pu.current;
     // mov		ebx,work.pv.current     // ZPTI
-    ebx.uint_val = work.pv.current;
+    ebx.v = work.pv.current;
 
     // add		eax,work.pu.d_nocarry	; step u according to carry from major edge
-    eax.uint_val += work.pu.d_nocarry;
+    eax.v += work.pu.d_nocarry;
     // add		ebx,work.pv.d_nocarry	; step v according to carry from major edge
-    ebx.uint_val += work.pv.d_nocarry;
+    ebx.v += work.pv.d_nocarry;
     // mov		work.pu.current,eax
-    work.pu.current = eax.uint_val;
+    work.pu.current = eax.v;
     // mov		ecx,work_top_count
-    ecx.uint_val = work_top_count;
+    ecx.v = work_top_count;
     // mov		work.pv.current,ebx
-    work.pv.current = ebx.uint_val;
+    work.pv.current = ebx.v;
     // dec		ecx					; decrement line counter
-    ecx.uint_val--;
+    ecx.v--;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // jge		scan_loop
     if (ecx.int_val >= 0) {
         goto scan_loop;
@@ -1842,67 +1777,67 @@ no_pixels:
 
 carry:
     // adc		ebp,0
-    ADC(ebp.uint_val, 0);
+    ADC(ebp.v, 0);
     // mov		edi,work_top_i
-    edi.uint_val = work_top_i;
+    edi.v = work_top_i;
     // mov		work_main_i,ebp
-    work_main_i = ebp.uint_val;
+    work_main_i = ebp.v;
     // mov		eax,work_top_d_i
-    eax.uint_val = work_top_d_i;
+    eax.v = work_top_d_i;
     // add		edi,eax				; step minor edge
-    edi.uint_val += eax.uint_val;
+    edi.v += eax.v;
     // mov		eax,work.pq.current
-    eax.uint_val = work.pq.current;
+    eax.v = work.pq.current;
     // mov		work_top_i,edi
-    work_top_i = edi.uint_val;
+    work_top_i = edi.v;
     // mov		ebx,work.pq.d_carry
-    ebx.uint_val = work.pq.d_carry;
+    ebx.v = work.pq.d_carry;
     // shr		edi,16				; get integer part of end of next scanline
-    edi.uint_val >>= 16;
+    edi.v >>= 16;
     // add		eax,ebx				; step q according to carry from major edge
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // and		ebp,0ffffh			; get integer part of start of next scanline
-    ebp.uint_val &= 0xffff;
+    ebp.v &= 0xffff;
     // mov		work.pq.current,eax
-    work.pq.current = eax.uint_val;
+    work.pq.current = eax.v;
     // mov		eax,work_pz_current
-    eax.uint_val = work_pz_current;
+    eax.v = work_pz_current;
     // mov		ebx,work_pz_d_carry
 
     // mov		ebx,work_pi_current
-    ebx.uint_val = work_pi_current;
+    ebx.v = work_pi_current;
     // add		eax,work_pz_d_carry	; step z according to carry from major edge
-    eax.uint_val += work_pz_d_carry;
+    eax.v += work_pz_d_carry;
     // add		ebx,work_pi_d_carry	; step i according to carry from major edge
-    ebx.uint_val += work_pi_d_carry;
+    ebx.v += work_pi_d_carry;
 
 
     // mov		work_pz_current,eax
-    work_pz_current = eax.uint_val;
+    work_pz_current = eax.v;
     // mov		work_pi_current,ebx
-    work_pi_current = ebx.uint_val;
+    work_pi_current = ebx.v;
     // mov		eax,work.pu.current
-    eax.uint_val = work.pu.current;
+    eax.v = work.pu.current;
     // mov		ebx,work.pv.current
-    ebx.uint_val = work.pv.current;
+    ebx.v = work.pv.current;
     // add		eax,work.pu.d_nocarry	; step u according to carry from major edge
-    eax.uint_val += work.pu.d_nocarry;
+    eax.v += work.pu.d_nocarry;
     // add		ebx,work.pv.d_nocarry	; step v according to carry from major edge
-    ebx.uint_val += work.pv.d_nocarry;
+    ebx.v += work.pv.d_nocarry;
     // add		eax,work.pu.grad_x	; avoids the need to fixup nocarry and carry
-    eax.uint_val += work.pu.grad_x;
+    eax.v += work.pu.grad_x;
     // add		ebx,work.pv.grad_x	; versions
-    ebx.uint_val += work.pv.grad_x;
+    ebx.v += work.pv.grad_x;
     // mov		work.pu.current,eax
-    work.pu.current = eax.uint_val;
+    work.pu.current = eax.v;
     // mov		ecx,work_top_count
-    ecx.uint_val = work_top_count;
+    ecx.v = work_top_count;
     // mov		work.pv.current,ebx
-    work.pv.current = ebx.uint_val;
+    work.pv.current = ebx.v;
     // dec		ecx					; decrement line counter
-    ecx.uint_val--;
+    ecx.v--;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // jge		scan_loop
     if (ecx.int_val >= 0) {
         goto scan_loop;
@@ -1944,122 +1879,122 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
     // mov		esi,work_main_y
-    esi.uint_val = work_main_y;
+    esi.v = work_main_y;
     // mov		eax,work.colour.base
-    eax.uint_val = WORK_COLOUR_BASE;
+    eax.v = WORK_COLOUR_BASE;
     // dec		esi
-    esi.uint_val--;
+    esi.v--;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,work.depth.base
-    ecx.uint_val = WORK_DEPTH_BASE;
+    ecx.v = WORK_DEPTH_BASE;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // imul	ebx,esi
     ebx.int_val *= esi.int_val;
     // imul	edx,esi
     edx.int_val *= esi.int_val;
     // add		eax,ebx
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // dec		eax
-    eax.uint_val--;
+    eax.v--;
     // sub		ecx,2
-    ecx.uint_val -= 2;
+    ecx.v -= 2;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
 
     // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
 	// ; Copy some values into perspective texture mappng workspace
 	// ; Calculate offset of starting pixel in texture map
 	// ;
     // mov		eax,work_main_i
-    eax.uint_val = work_main_i;
+    eax.v = work_main_i;
     // mov		ebx,work_main_d_i
-    ebx.uint_val = work_main_d_i;
+    ebx.v = work_main_d_i;
     // ror		eax,16
     ROR16(eax);
     // cmp		ebx,80000000h
-    CMP(ebx.uint_val, 0x80000000);
+    CMP(ebx.v, 0x80000000);
     // adc		ebx,-1
-    ADC(ebx.uint_val, -1);
+    ADC(ebx.v, -1);
     // mov		ecx,work_pz_grad_x
-    ecx.uint_val = work_pz_grad_x;
+    ecx.v = work_pz_grad_x;
     // ror		ebx,16
     ROR16(ebx);
     // cmp		ecx,80000000h
-    CMP(ecx.uint_val, 0x80000000);
+    CMP(ecx.v, 0x80000000);
     // adc		ecx,-1
-    ADC(ecx.uint_val, -1);
+    ADC(ecx.v, -1);
 
 
     // mov		edx,work_pi_grad_x
-    edx.uint_val = work_pi_grad_x;
+    edx.v = work_pi_grad_x;
 	// 	ror		ecx,16
     ROR16(ecx);
 	// 	cmp		edx,80000000h
-    CMP(edx.uint_val, 0x80000000);
+    CMP(edx.v, 0x80000000);
 	// 	adc		edx,-1
-    ADC(edx.uint_val, -1);
+    ADC(edx.v, -1);
 
     // mov		work_main_i,eax
-    work_main_i = eax.uint_val;
+    work_main_i = eax.v;
 
 
     // mov		al,byte ptr work.awsl.u_current
     eax.bytes[0] = work.awsl.u_current;
 
     // mov		work_main_d_i,ebx
-    work_main_d_i = ebx.uint_val;
+    work_main_d_i = ebx.v;
 
     // mov		ah,byte ptr work.awsl.v_current
     eax.bytes[1] = work.awsl.v_current;
 
     // mov		work.tsl.dz,ecx
-    work.tsl.dz = ecx.uint_val;
+    work.tsl.dz = ecx.v;
 
     // shl		al,2
     eax.bytes[0] <<= 2;
     // mov		work.tsl._di,edx
-    work.tsl.di = edx.uint_val;
+    work.tsl.di = edx.v;
 
     // shr		eax,2
-    eax.uint_val >>= 2;
+    eax.v >>= 2;
     // mov		ebx,work.pq.grad_x
-    ebx.uint_val = work.pq.grad_x;
+    ebx.v = work.pq.grad_x;
     // and		eax,63*65
-    eax.uint_val &= 63*65;
+    eax.v &= 63*65;
     // mov		work.tsl.ddenominator,ebx
-    work.tsl.ddenominator = ebx.uint_val;
+    work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		eax,work.tsl.direction
-    eax.uint_val = work.tsl.direction;
+    eax.v = work.tsl.direction;
 
     // ; Check scan direction and use appropriate rasteriser
 	// ;
     // test	eax,eax
     // jnz		reversed
-    if (eax.uint_val != 0) {
+    if (eax.v != 0) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_64_f
     TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_f
    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // ret
@@ -2070,17 +2005,17 @@ reversed:
     // call    TrapeziumRender_ZPT_I8_D16_64_b
    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
     TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
 }
@@ -2113,58 +2048,58 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
     // mov		esi,work_main_y
-    esi.uint_val = work_main_y;
+    esi.v = work_main_y;
     // mov		eax,work.colour.base
-    eax.uint_val = WORK_COLOUR_BASE;
+    eax.v = WORK_COLOUR_BASE;
     // dec		esi
-    esi.uint_val--;
+    esi.v--;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,work.depth.base
-    ecx.uint_val = WORK_DEPTH_BASE;
+    ecx.v = WORK_DEPTH_BASE;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // imul	ebx,esi
     ebx.int_val *= esi.int_val;
     // imul	edx,esi
     edx.int_val *= esi.int_val;
     // add		eax,ebx
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // dec		eax
-    eax.uint_val--;
+    eax.v--;
     // sub		ecx,2
-    ecx.uint_val -= 2;
+    ecx.v -= 2;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
 
     // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
 	// ; Copy some values into perspective texture mappng workspace
 	// ; Calculate offset of starting pixel in texture map
 	// ;
     // mov		eax,work_main_i
-    eax.uint_val = work_main_i;
+    eax.v = work_main_i;
     // mov		ebx,work_main_d_i
-    ebx.uint_val = work_main_d_i;
+    ebx.v = work_main_d_i;
     // ror		eax,16
     ROR16(eax);
     // cmp		ebx,80000000h
-    CMP(ebx.uint_val, 0x80000000);
+    CMP(ebx.v, 0x80000000);
     // adc		ebx,-1
-    ADC(ebx.uint_val, -1);
+    ADC(ebx.v, -1);
     // mov		ecx,work_pz_grad_x
-    ecx.uint_val = work_pz_grad_x;
+    ecx.v = work_pz_grad_x;
     // ror		ebx,16
     ROR16(ebx);
     // cmp		ecx,80000000h
-    CMP(ecx.uint_val, 0x80000000);
+    CMP(ecx.v, 0x80000000);
     // adc		ecx,-1
-    ADC(ecx.uint_val, -1);
+    ADC(ecx.v, -1);
     // mov		work_main_i,eax
-    work_main_i = eax.uint_val;
+    work_main_i = eax.v;
     // ror		ecx,16
     ROR16(ecx);
     // mov		al,byte ptr work.awsl.u_current
@@ -2172,45 +2107,45 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     // mov		ah,byte ptr work.awsl.v_current
     eax.bytes[1] = work.awsl.v_current;
     // mov		work_main_d_i,ebx
-    work_main_d_i = ebx.uint_val;
+    work_main_d_i = ebx.v;
     // shl		al,2
     eax.bytes[0] <<= 2;
     // mov		work.tsl.dz,ecx
-    work.tsl.dz = ecx.uint_val;
+    work.tsl.dz = ecx.v;
     // shr		eax,2
-    eax.uint_val >>= 2;
+    eax.v >>= 2;
     // mov		ebx,work.pq.grad_x
-    ebx.uint_val = work.pq.grad_x;
+    ebx.v = work.pq.grad_x;
     // and		eax,63*65
-    eax.uint_val &= 63*65;
+    eax.v &= 63*65;
     // mov		work.tsl.ddenominator,ebx
-    work.tsl.ddenominator = ebx.uint_val;
+    work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		eax,work.tsl.direction
-    eax.uint_val = work.tsl.direction;
+    eax.v = work.tsl.direction;
 
     // ; Check scan direction and use appropriate rasteriser
 	// ;
     // test	eax,eax
     // jnz		reversed
-    if (eax.uint_val != 0) {
+    if (eax.v != 0) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_64_f
     TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_f
    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // ret
@@ -2221,17 +2156,17 @@ reversed:
     // call    TrapeziumRender_ZPT_I8_D16_64_b
    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
     TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
 
@@ -2275,108 +2210,108 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
     // mov		esi,work_main_y
-    esi.uint_val = work_main_y;
+    esi.v = work_main_y;
     // mov		eax,work.colour.base
-    eax.uint_val = WORK_COLOUR_BASE;
+    eax.v = WORK_COLOUR_BASE;
     // dec		esi
-    esi.uint_val--;
+    esi.v--;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,work.depth.base
-    ecx.uint_val = WORK_DEPTH_BASE;
+    ecx.v = WORK_DEPTH_BASE;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // imul	ebx,esi
     ebx.int_val *= esi.int_val;
     // imul	edx,esi
     edx.int_val *= esi.int_val;
     // add		eax,ebx
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // dec		eax
-    eax.uint_val--;
+    eax.v--;
     // sub		ecx,2
-    ecx.uint_val -= 2;
+    ecx.v -= 2;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
 
     // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
 	// ; Copy some values into perspective texture mappng workspace
 	// ; Calculate offset of starting pixel in texture map
 	// ;
     // mov		eax,work_main_i
-    eax.uint_val = work_main_i;
+    eax.v = work_main_i;
     // mov		ebx,work_main_d_i
-    ebx.uint_val = work_main_d_i;
+    ebx.v = work_main_d_i;
     // ror		eax,16
     ROR16(eax);
     // cmp		ebx,80000000h
-    CMP(ebx.uint_val, 0x80000000);
+    CMP(ebx.v, 0x80000000);
     // adc		ebx,-1
-    ADC(ebx.uint_val, -1);
+    ADC(ebx.v, -1);
     // mov		ecx,work_pz_grad_x
-    ecx.uint_val = work_pz_grad_x;
+    ecx.v = work_pz_grad_x;
     // ror		ebx,16
     ROR16(ebx);
     // cmp		ecx,80000000h
-    CMP(ecx.uint_val, 0x80000000);
+    CMP(ecx.v, 0x80000000);
     // adc		ecx,-1
-    ADC(ecx.uint_val, -1);
+    ADC(ecx.v, -1);
     // mov		edx,work_pi_grad_x
-    edx.uint_val = work_pi_grad_x;
+    edx.v = work_pi_grad_x;
     // ror		ecx,16
     ROR16(ecx);
     // cmp		edx,80000000h
-    CMP(edx.uint_val, 0x80000000);
+    CMP(edx.v, 0x80000000);
     // adc		edx,-1
-    ADC(edx.uint_val, -1);
+    ADC(edx.v, -1);
     // mov		work_main_i,eax
-    work_main_i = eax.uint_val;
+    work_main_i = eax.v;
     // xor		eax,eax
-    eax.uint_val = 0;
+    eax.v = 0;
     // mov		work_main_d_i,ebx
-    work_main_d_i = ebx.uint_val;
+    work_main_d_i = ebx.v;
     // mov		al,byte ptr work.awsl.u_current
     eax.bytes[0] = work.awsl.u_current & 0xff;
     // mov		work.tsl.dz,ecx
-    work.tsl.dz = ecx.uint_val;
+    work.tsl.dz = ecx.v;
     // mov		ah,byte ptr work.awsl.v_current
     eax.bytes[1] = work.awsl.v_current & 0xff;
     // mov		work.tsl._di,edx
-    work.tsl.di = edx.uint_val;
+    work.tsl.di = edx.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		ebx,work.pq.grad_x
-    ebx.uint_val = work.pq.grad_x;
+    ebx.v = work.pq.grad_x;
     // mov		work.tsl.ddenominator,ebx
-    work.tsl.ddenominator = ebx.uint_val;
+    work.tsl.ddenominator = ebx.v;
     // mov		eax,work.tsl.direction
-    eax.uint_val = work.tsl.direction;
+    eax.v = work.tsl.direction;
 
     // ; Check scan direction and use appropriate rasteriser
 	// ;
     // test	eax,eax
     // jnz		reversed
-    if (eax.uint_val != 0) {
+    if (eax.v != 0) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPTI_I8_D16_256_f
     TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTI_I8_D16_256_f
    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // ret
@@ -2387,17 +2322,17 @@ reversed:
     // call    TrapeziumRender_ZPTI_I8_D16_64_b
    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTI_I8_D16_64_b
     TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
 }
@@ -2430,100 +2365,100 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
     // mov		esi,work_main_y
-    esi.uint_val = work_main_y;
+    esi.v = work_main_y;
     // mov		eax,work.colour.base
-    eax.uint_val = WORK_COLOUR_BASE;
+    eax.v = WORK_COLOUR_BASE;
     // dec		esi
-    esi.uint_val--;
+    esi.v--;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,work.depth.base
-    ecx.uint_val = WORK_DEPTH_BASE;
+    ecx.v = WORK_DEPTH_BASE;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // imul	ebx,esi
     ebx.int_val *= esi.int_val;
     // imul	edx,esi
     edx.int_val *= esi.int_val;
     // add		eax,ebx
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // dec		eax
-    eax.uint_val--;
+    eax.v--;
     // sub		ecx,2
-    ecx.uint_val -= 2;
+    ecx.v -= 2;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
 
     // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
 	// ; Copy some values into perspective texture mappng workspace
 	// ; Calculate offset of starting pixel in texture map
 	// ;
     // mov		eax,work_main_i
-    eax.uint_val = work_main_i;
+    eax.v = work_main_i;
     // mov		ebx,work_main_d_i
-    ebx.uint_val = work_main_d_i;
+    ebx.v = work_main_d_i;
     // ror		eax,16
     ROR16(eax);
     // cmp		ebx,80000000h
-    CMP(ebx.uint_val, 0x80000000);
+    CMP(ebx.v, 0x80000000);
     // adc		ebx,-1
-    ADC(ebx.uint_val, -1);
+    ADC(ebx.v, -1);
     // mov		ecx,work_pz_grad_x
-    ecx.uint_val = work_pz_grad_x;
+    ecx.v = work_pz_grad_x;
     // ror		ebx,16
     ROR16(ebx);
     // cmp		ecx,80000000h
-    CMP(ecx.uint_val, 0x80000000);
+    CMP(ecx.v, 0x80000000);
     // adc		ecx,-1
-    ADC(ecx.uint_val, -1);
+    ADC(ecx.v, -1);
     // mov		work_main_i,eax
-    work_main_i = eax.uint_val;
+    work_main_i = eax.v;
     // ror		ecx,16
     ROR16(ecx);
     // mov		work_main_d_i,ebx
-    work_main_d_i = ebx.uint_val;
+    work_main_d_i = ebx.v;
     // xor eax,eax
-    eax.uint_val = 0;
+    eax.v = 0;
     // mov		work.tsl.dz,ecx
-    work.tsl.dz = ecx.uint_val;
+    work.tsl.dz = ecx.v;
     // mov		al,byte ptr work.awsl.u_current
     eax.bytes[0] = work.awsl.u_current;
     // mov		ebx,work.pq.grad_x
-    ebx.uint_val = work.pq.grad_x;
+    ebx.v = work.pq.grad_x;
     // mov		ah,byte ptr work.awsl.v_current
     eax.bytes[1] = work.awsl.v_current;
     // mov		work.tsl.ddenominator,ebx
-    work.tsl.ddenominator = ebx.uint_val;
+    work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		eax,work.tsl.direction
-    eax.uint_val = work.tsl.direction;
+    eax.v = work.tsl.direction;
 
     // ; Check scan direction and use appropriate rasteriser
 	// ;
     // test	eax,eax
     // jnz		reversed
-    if (eax.uint_val != 0) {
+    if (eax.v != 0) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_256_f
     TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_256_f
    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // ret
@@ -2534,17 +2469,17 @@ reversed:
     // call    TrapeziumRender_ZPT_I8_D16_64_b
    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
     TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
 }
@@ -2668,58 +2603,58 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, ...) {
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
     // mov		esi,work_main_y
-    esi.uint_val = work_main_y;
+    esi.v = work_main_y;
     // mov		eax,work.colour.base
-    eax.uint_val = WORK_COLOUR_BASE;
+    eax.v = WORK_COLOUR_BASE;
     // dec		esi
-    esi.uint_val--;
+    esi.v--;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,work.depth.base
-    ecx.uint_val = WORK_DEPTH_BASE;
+    ecx.v = WORK_DEPTH_BASE;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // imul	ebx,esi
     ebx.int_val *= esi.int_val;
     // imul	edx,esi
     edx.int_val *= esi.int_val;
     // add		eax,ebx
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // dec		eax
-    eax.uint_val--;
+    eax.v--;
     // sub		ecx,2
-    ecx.uint_val -= 2;
+    ecx.v -= 2;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
 
     // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
 	// ; Copy some values into perspective texture mappng workspace
 	// ; Calculate offset of starting pixel in texture map
 	// ;
     // mov		eax,work_main_i
-    eax.uint_val = work_main_i;
+    eax.v = work_main_i;
     // mov		ebx,work_main_d_i
-    ebx.uint_val = work_main_d_i;
+    ebx.v = work_main_d_i;
     // ror		eax,16
     ROR16(eax);
     // cmp		ebx,80000000h
-    CMP(ebx.uint_val, 0x80000000);
+    CMP(ebx.v, 0x80000000);
     // adc		ebx,-1
-    ADC(ebx.uint_val, -1);
+    ADC(ebx.v, -1);
     // mov		ecx,work_pz_grad_x
-    ecx.uint_val = work_pz_grad_x;
+    ecx.v = work_pz_grad_x;
     // ror		ebx,16
     ROR16(ebx);
     // cmp		ecx,80000000h
-    CMP(ecx.uint_val, 0x80000000);
+    CMP(ecx.v, 0x80000000);
     // adc		ecx,-1
-    ADC(ecx.uint_val, -1);
+    ADC(ecx.v, -1);
     // mov		work_main_i,eax
-    work_main_i = eax.uint_val;
+    work_main_i = eax.v;
     // ror		ecx,16
     ROR16(ecx);
     // mov		al,byte ptr work.awsl.u_current
@@ -2727,45 +2662,45 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, ...) {
     // mov		ah,byte ptr work.awsl.v_current
     eax.bytes[1] = work.awsl.v_current;
     // mov		work_main_d_i,ebx
-    work_main_d_i = ebx.uint_val;
+    work_main_d_i = ebx.v;
     // shl		al,2
     eax.bytes[0] <<= 2;
     // mov		work.tsl.dz,ecx
-    work.tsl.dz = ecx.uint_val;
+    work.tsl.dz = ecx.v;
     // shr		eax,2
-    eax.uint_val >>= 2;
+    eax.v >>= 2;
     // mov		ebx,work.pq.grad_x
-    ebx.uint_val = work.pq.grad_x;
+    ebx.v = work.pq.grad_x;
     // and		eax,63*65
-    eax.uint_val &= 63*65;
+    eax.v &= 63*65;
     // mov		work.tsl.ddenominator,ebx
-    work.tsl.ddenominator = ebx.uint_val;
+    work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		eax,work.tsl.direction
-    eax.uint_val = work.tsl.direction;
+    eax.v = work.tsl.direction;
 
     // ; Check scan direction and use appropriate rasteriser
 	// ;
     // test	eax,eax
     // jnz		reversed
-    if (eax.uint_val != 0) {
+    if (eax.v != 0) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPTB_I8_D16_64_f
     TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTB_I8_D16_64_f
    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_yes);
     // ret
@@ -2776,17 +2711,17 @@ reversed:
     // call    TrapeziumRender_ZPTB_I8_D16_64_b
    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTB_I8_D16_64_b
     TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_yes);
 
@@ -2839,100 +2774,100 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, ...) {
     // ; Calculate address of first scanline in colour and depth buffers
 	// ;
     // mov		esi,work_main_y
-    esi.uint_val = work_main_y;
+    esi.v = work_main_y;
     // mov		eax,work.colour.base
-    eax.uint_val = WORK_COLOUR_BASE;
+    eax.v = WORK_COLOUR_BASE;
     // dec		esi
-    esi.uint_val--;
+    esi.v--;
     // mov		ebx,work.colour.stride_b
-    ebx.uint_val = work.colour.stride_b;
+    ebx.v = work.colour.stride_b;
     // mov		ecx,work.depth.base
-    ecx.uint_val = WORK_DEPTH_BASE;
+    ecx.v = WORK_DEPTH_BASE;
     // mov		edx,work.depth.stride_b
-    edx.uint_val = work.depth.stride_b;
+    edx.v = work.depth.stride_b;
     // imul	ebx,esi
     ebx.int_val *= esi.int_val;
     // imul	edx,esi
     edx.int_val *= esi.int_val;
     // add		eax,ebx
-    eax.uint_val += ebx.uint_val;
+    eax.v += ebx.v;
     // add		ecx,edx
-    ecx.uint_val += edx.uint_val;
+    ecx.v += edx.v;
     // dec		eax
-    eax.uint_val--;
+    eax.v--;
     // sub		ecx,2
-    ecx.uint_val -= 2;
+    ecx.v -= 2;
     // mov		workspace.scanAddress,eax
-    workspace.scanAddress = eax.uint_val;
+    workspace.scanAddress = eax.v;
     // mov		workspace.depthAddress,ecx
-    workspace.depthAddress = ecx.uint_val;
+    workspace.depthAddress = ecx.v;
 
     // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
 	// ; Copy some values into perspective texture mappng workspace
 	// ; Calculate offset of starting pixel in texture map
 	// ;
     // mov		eax,work_main_i
-    eax.uint_val = work_main_i;
+    eax.v = work_main_i;
     // mov		ebx,work_main_d_i
-    ebx.uint_val = work_main_d_i;
+    ebx.v = work_main_d_i;
     // ror		eax,16
     ROR16(eax);
     // cmp		ebx,80000000h
-    CMP(ebx.uint_val, 0x80000000);
+    CMP(ebx.v, 0x80000000);
     // adc		ebx,-1
-    ADC(ebx.uint_val, -1);
+    ADC(ebx.v, -1);
     // mov		ecx,work_pz_grad_x
-    ecx.uint_val = work_pz_grad_x;
+    ecx.v = work_pz_grad_x;
     // ror		ebx,16
     ROR16(ebx);
     // cmp		ecx,80000000h
-    CMP(ecx.uint_val, 0x80000000);
+    CMP(ecx.v, 0x80000000);
     // adc		ecx,-1
-    ADC(ecx.uint_val, -1);
+    ADC(ecx.v, -1);
     // mov		work_main_i,eax
-    work_main_i = eax.uint_val;
+    work_main_i = eax.v;
     // ror		ecx,16
     ROR16(ecx);
     // mov		work_main_d_i,ebx
-    work_main_d_i = ebx.uint_val;
+    work_main_d_i = ebx.v;
     // xor eax,eax
-    eax.uint_val = 0;
+    eax.v = 0;
     // mov		work.tsl.dz,ecx
-    work.tsl.dz = ecx.uint_val;
+    work.tsl.dz = ecx.v;
     // mov		al,byte ptr work.awsl.u_current
     eax.bytes[0] = work.awsl.u_current;
     // mov		ebx,work.pq.grad_x
-    ebx.uint_val = work.pq.grad_x;
+    ebx.v = work.pq.grad_x;
     // mov		ah,byte ptr work.awsl.v_current
     eax.bytes[1] = work.awsl.v_current;
     // mov		work.tsl.ddenominator,ebx
-    work.tsl.ddenominator = ebx.uint_val;
+    work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax
-    work.tsl.source = eax.uint_val;
+    work.tsl.source = eax.v;
     // mov		eax,work.tsl.direction
-    eax.uint_val = work.tsl.direction;
+    eax.v = work.tsl.direction;
 
     // ; Check scan direction and use appropriate rasteriser
 	// ;
     // test	eax,eax
     // jnz		reversed
-    if (eax.uint_val != 0) {
+    if (eax.v != 0) {
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_256_f
     TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_256_f
    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_yes);
     // ret
@@ -2943,17 +2878,17 @@ reversed:
     // call    TrapeziumRender_ZPT_I8_D16_64_b
    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
-    eax.uint_val = work_bot_i;
+    eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
-    ebx.uint_val = work_bot_d_i;
+    ebx.v = work_bot_d_i;
     // mov		ecx,work_bot_count
-    ecx.uint_val = work_bot_count;
+    ecx.v = work_bot_count;
     // mov		work_top_i,eax
-    work_top_i = eax.uint_val;
+    work_top_i = eax.v;
     // mov		work_top_d_i,ebx
-    work_top_d_i = ebx.uint_val;
+    work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
-    work_top_count = ecx.uint_val;
+    work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
     TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_yes);
 }
