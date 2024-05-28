@@ -34,6 +34,8 @@ close(DB);
 #
 while (<>) {
 
+	print;
+
 	# Ignore comments
 	#
 	next if(/^#/);
