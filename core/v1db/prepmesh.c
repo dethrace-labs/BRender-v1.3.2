@@ -53,7 +53,7 @@ struct prep_vertex {
  * on their first vertex - all similar vertices are the singly linked in
  * a chain
  */
-static struct pm_temp_edge {
+struct pm_temp_edge {
 	struct pm_temp_edge  *next; /* next in chain */
 	br_uint_16 first;		/* First vertex */
 	br_uint_16 last;			/* Last Vertex */

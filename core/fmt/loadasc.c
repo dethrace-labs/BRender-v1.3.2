@@ -128,7 +128,7 @@ br_uint_32 BR_PUBLIC_ENTRY BrFmtASCLoad(char *name,
 		case K_NAMED_OBJECT:
 
 			/*
-			 * Extract name 
+			 * Extract name
 			 */
 			BrSScanf(line_tail,"\"%64[^\"]",object_name);
 			break;
@@ -139,7 +139,7 @@ br_uint_32 BR_PUBLIC_ENTRY BrFmtASCLoad(char *name,
 
 			/*
 			 * make sure a face has been read
-			 */	
+			 */
 			if(cface > 0)
 				mp->faces[cface-1].material = BrMaterialFind(material_name);
 			break;
@@ -180,7 +180,7 @@ br_uint_32 BR_PUBLIC_ENTRY BrFmtASCLoad(char *name,
 			 */
 			if(cvert != vnum || cvert >= mp->nvertices)
 				break;
-			
+
 			mp->vertices[cvert].p.v[0] = BrFloatToScalar(vx);
 			mp->vertices[cvert].p.v[1] = BrFloatToScalar(vy);
 			mp->vertices[cvert].p.v[2] = BrFloatToScalar(vz);
@@ -214,11 +214,11 @@ br_uint_32 BR_PUBLIC_ENTRY BrFmtASCLoad(char *name,
 		case K_SMOOTHING:
 			/*
 			 * Add smoothing group to last face
-			 */	
+			 */
 			if(cface > 0) {
 				mp->faces[cface-1].smoothing = 0;
 
-				while(i = BrStrToL(line_tail,&line_tail,0)) {
+				while((i = BrStrToL(line_tail,&line_tail,0))) {
 
 					mp->faces[cface-1].smoothing |= 1<<((i-1) % 16);
 

@@ -36,7 +36,7 @@ struct scan_parameter {
 	br_fixed_ls	d_nocarry;	/*   ""              ""      no carry   ""    	*/
 	br_fixed_ls	grad_x;		/* Gradient of parameter along X axis			*/
 	br_fixed_ls	grad_y;		/* Gradient of parameter along Y axis			*/
-};
+} __attribute__((aligned(8)));
 
 /*
  * Arbitrary width scan line data
@@ -52,7 +52,7 @@ struct arbitrary_width_scan {
     int du_int,du_int_nocarry,du_int_carry;
     unsigned v_current,dv,dv_carry,dv_nocarry;
     int dsource,dsource_carry,dsource_nocarry;
-};
+} __attribute__((aligned(8)));;
 
 /*
  * Perspective texture mapper data
@@ -78,7 +78,7 @@ struct perspective_scan {
 	int du_numerator_nocarry;
 	int dv_numerator_nocarry;
 	int y;	/***********/
-};
+} __attribute__((aligned(8)));;
 
 /*
  * A minimal description of a pixelmap (with all origins and

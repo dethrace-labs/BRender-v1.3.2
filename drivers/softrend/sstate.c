@@ -4,7 +4,7 @@
  * $Id: sstate.c 1.1 1997/12/10 16:52:39 jon Exp $
  * $Locker: $
  *
- * Stored renderer state 
+ * Stored renderer state
  */
 #include <stddef.h>
 #include <string.h>
@@ -70,7 +70,7 @@ br_error StateCopyToStored(struct br_renderer_state_stored *dest, struct state_a
 				PrimitiveStateStateCopy(dest->pstate, src->pstate, copy_mask);
 			else
 				PrimitiveStateStateDefault(dest->pstate, copy_mask);
-			
+
 		} else if(src->pstate) {
 			/*
 			 * Create new dest. state and copy into it
@@ -96,20 +96,22 @@ br_error StateCopyToStored(struct br_renderer_state_stored *dest, struct state_a
 	/*
 	 * Copy cache, or mark destination's cache as invalid as necessary
 	 */
-	if (copy_mask & MASK_STATE_CACHE)
-		
+	if (copy_mask & MASK_STATE_CACHE) {
+
 		if (src->cache.valid && dest->cull.timestamp == src->cull.timestamp &&
 			dest->surface.timestamp == src->surface.timestamp) {
-			
+
 			if (dest->timestamp_cache != src->timestamp_cache) {
 
 				dest->cache = src->cache;
 				dest->timestamp_cache = src->timestamp_cache;
 			}
 
-		} else 
+		} else {
 
 			dest->cache.valid = BR_FALSE;
+		}
+	}
 
 	return BRE_OK;
 }
@@ -144,7 +146,7 @@ br_error StateCopyFromStored(struct state_all *dest, struct br_renderer_state_st
 				PrimitiveStateStateCopy(dest->pstate, src->pstate, copy_mask);
 			else
 				PrimitiveStateStateDefault(dest->pstate, copy_mask);
-			
+
 		} else if(src->pstate) {
 			/*
 			 * Create new dest. state and copy into it
@@ -170,20 +172,22 @@ br_error StateCopyFromStored(struct state_all *dest, struct br_renderer_state_st
 	/*
 	 * Copy cache, or mark destination's cache as invalid as necessary
 	 */
-	if (copy_mask & MASK_STATE_CACHE)
-		
+	if (copy_mask & MASK_STATE_CACHE) {
+
 		if (src->cache.valid && dest->cull.timestamp == src->cull.timestamp &&
 			dest->surface.timestamp == src->surface.timestamp) {
-			
+
 			if (dest->timestamp_cache != src->timestamp_cache) {
 
 				dest->cache = src->cache;
 				dest->timestamp_cache = src->timestamp_cache;
 			}
 
-		} else 
+		} else {
 
 			dest->cache.valid = BR_FALSE;
+		}
+	}
 
 	return BRE_OK;
 }
@@ -275,4 +279,3 @@ static const struct br_renderer_state_stored_dispatch rendererStateStoredDispatc
 	BR_CMETHOD_REF(br_object,							queryAll),
 	BR_CMETHOD_REF(br_object,							queryAllSize),
 };
-

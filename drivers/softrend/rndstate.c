@@ -364,7 +364,7 @@ br_error StateCopy(struct state_all *dest, struct state_all *src, br_uint_32 cop
 	/*
 	 * Copy cache, or mark destination's cache as invalid as necessary
 	 */
-	if (copy_mask & MASK_STATE_CACHE)
+	if (copy_mask & MASK_STATE_CACHE) {
 
 		if (src->cache.valid && dest->cull.timestamp == src->cull.timestamp &&
 			dest->surface.timestamp == src->surface.timestamp) {
@@ -375,9 +375,11 @@ br_error StateCopy(struct state_all *dest, struct state_all *src, br_uint_32 cop
 				dest->timestamp_cache = src->timestamp_cache;
 			}
 
-		} else
+		} else {
 
 			dest->cache.valid = BR_FALSE;
+		}
+	}
 
 	return BRE_OK;
 }
@@ -729,6 +731,9 @@ br_error BR_CMETHOD_DECL(br_renderer_soft,stateMask)
 
 		case BRT_CLIP:
 			m |= MASK_STATE_CLIP;
+			break;
+
+		default:
 			break;
 		}
 	}

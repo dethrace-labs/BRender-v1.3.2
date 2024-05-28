@@ -38,25 +38,25 @@ br_output_facility *OutputFacilitySDL2CreateGeneric(br_device *dev);
 
 br_device_pixelmap *DevicePixelmapSDL2Allocate(br_device *dev, br_output_facility *outfcty, SDL_Window *window,
                                                SDL_Surface *surface, br_boolean owned);
-br_boolean          DevicePixelmapSDL2IsOurs(const br_pixelmap *pm);
+br_boolean          DevicePixelmapSDL2IsOurs( br_pixelmap *pm);
 void               *DevicePixelmapSDLMemAddress(br_device_pixelmap *self, br_int_32 x, br_int_32 y);
 
 /*
  * devclut.c
  */
-br_device_clut *DeviceClutSDL2Allocate(br_device_pixelmap *pm, const char *identifier);
+br_device_clut *DeviceClutSDL2Allocate(br_device_pixelmap *pm,  char *identifier);
 
-br_boolean DeviceClutSDL2IsOurs(const br_device_clut *pm);
+br_boolean DeviceClutSDL2IsOurs( br_device_clut *pm);
 
 /*
  * surface.c
  */
-br_clip_result DevicePixelmapSDL2PointClip(SDL_Point *out, const br_point *in, const br_pixelmap *pm);
-br_clip_result DevicePixelmapSDL2LineClip(SDL_Point *s_out, SDL_Point *e_out, const br_point *s_in,
-                                          const br_point *e_in, const br_pixelmap *pm);
-br_clip_result DevicePixelmapSDL2RectangleClip(SDL_Rect *out, const br_rectangle *in, const br_pixelmap *pm);
-br_clip_result DevicePixelmapSDL2RectangleClipTwo(SDL_Rect *r_out, SDL_Point *p_out, const br_rectangle *r_in,
-                                                  const br_point *p_in, const br_pixelmap *pm_dst, const br_pixelmap *pm_src);
+br_clip_result DevicePixelmapSDL2PointClip(SDL_Point *out,  br_point *in,  br_pixelmap *pm);
+br_clip_result DevicePixelmapSDL2LineClip(SDL_Point *s_out, SDL_Point *e_out,  br_point *s_in,
+                                           br_point *e_in,  br_pixelmap *pm);
+br_clip_result DevicePixelmapSDL2RectangleClip(SDL_Rect *out,  br_rectangle *in,  br_pixelmap *pm);
+br_clip_result DevicePixelmapSDL2RectangleClipTwo(SDL_Rect *r_out, SDL_Point *p_out,  br_rectangle *r_in,
+                                                   br_point *p_in,  br_pixelmap *pm_dst,  br_pixelmap *pm_src);
 
 /*
  * If the pixelmap exposes an SDL surface, get it.
@@ -71,9 +71,9 @@ SDL_Surface *DevicePixelmapSDL2GetSurface(br_pixelmap *pm, br_boolean ignore_loc
  */
 br_device_clut *DevicePixelmapSDL2GetCLUT(br_pixelmap *pm);
 
-br_error DeviceSDL2SetPalette(SDL_Palette *pal, br_int_32 index, br_int_32 count, const br_colour *entries, br_boolean has_alpha);
+br_error DeviceSDL2SetPalette(SDL_Palette *pal, br_int_32 index, br_int_32 count,  br_colour *entries, br_boolean has_alpha);
 br_error DeviceSDL2SetPaletteFromCLUT(SDL_Palette *pal, br_device_clut *clut);
-br_error DeviceSDL2SetPaletteFromMap(SDL_Palette *pal, const br_pixelmap *map);
+br_error DeviceSDL2SetPaletteFromMap(SDL_Palette *pal,  br_pixelmap *map);
 br_error DeviceClutSDL2CopyToSurface(SDL_Surface *surf, br_pixelmap *pm, br_device_clut *fallback);
 
 /*
@@ -84,7 +84,7 @@ br_error DevicePixelmapSDL2BlitSurface(br_pixelmap *src, SDL_Rect *sr, br_pixelm
 /*
  * glrend.c
  */
-br_error    DevicePixelmapSDL2CreateGL(const pixelmap_new_tokens *pt, br_device_pixelmap **ppmap);
+br_error    DevicePixelmapSDL2CreateGL( pixelmap_new_tokens *pt, br_device_pixelmap **ppmap);
 SDL_Window *DevicePixelmapSDL2GetWindowGL(br_pixelmap *pm);
 
 #ifdef __cplusplus

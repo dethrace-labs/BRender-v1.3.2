@@ -2484,7 +2484,7 @@ br_error BR_PUBLIC_ENTRY BrModelFileCount(const char *filename, br_uint_16 *num)
 	if (num != NULL)
 		*num = 0;
 
-	df = DfOpen(filename, 0, BR_SCALAR_TOKEN);
+	df = DfOpen((char*)filename, 0, BR_SCALAR_TOKEN);
 
 	if (df == NULL)
 		return BRE_FAIL;
@@ -2508,7 +2508,7 @@ br_error BR_PUBLIC_ENTRY BrActorFileCount(const char *filename, br_uint_16 *num)
 	if (num != NULL)
 		*num = 0;
 
-	df = DfOpen(filename, 0, BR_SCALAR_TOKEN);
+	df = DfOpen((char*)filename, 0, BR_SCALAR_TOKEN);
 
 	if (df == NULL)
 		return BRE_FAIL;
@@ -2532,7 +2532,7 @@ br_error BR_PUBLIC_ENTRY BrMaterialFileCount(const char *filename, br_uint_16 *n
 	if (num != NULL)
 		*num = 0;
 
-	df = DfOpen(filename, 0, BR_SCALAR_TOKEN);
+	df = DfOpen((char*)filename, 0, BR_SCALAR_TOKEN);
 
 	if (df == NULL)
 		return BRE_FAIL;

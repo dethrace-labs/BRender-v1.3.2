@@ -362,7 +362,9 @@ br_error BR_EXPORT BrObjectContainerFree(br_object_container *self, br_token typ
 {
 	br_error r;
 	br_object **handles;
-	br_int_32 count,n,i;
+	br_uint_32 count;
+    br_int_32 n,i;
+
 
 	r = ObjectContainerCount(self, &count, type, pattern, tv);
 

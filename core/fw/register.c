@@ -26,7 +26,7 @@ void *BrRegistryNew(br_registry *reg)
 	 * Intitialise linked list
 	 */
 	BrNewList(&reg->list);
-	
+
 	/*
 	 * List is empty
 	 */
@@ -214,7 +214,7 @@ int BrRegistryCount(br_registry *reg, char *pattern)
 
 	UASSERT(reg != NULL);
 
-	if(pattern == NULL) 
+	if(pattern == NULL)
 		return reg->count;
 
 	/*
@@ -248,12 +248,12 @@ int BrRegistryEnum(br_registry *reg, char *pattern,
 	 */
 	if(pattern == NULL) {
 		BR_FOR_LIST_R(&reg->list,e)
-			if(r = callback(e->item,arg))
+			if((r = callback(e->item,arg)))
 				return r;
 	} else {
 		BR_FOR_LIST_R(&reg->list,e)
 			if(BrNamePatternMatch(pattern,e->item->identifier))
-				if(r = callback(e->item,arg))
+				if((r = callback(e->item,arg)))
 					return r;
 	}
 	return 0;
@@ -364,4 +364,3 @@ void *BrRegistryRemoveStatic(br_registry *reg, void *item)
 	return NULL;
 }
 #endif
-

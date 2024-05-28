@@ -96,7 +96,7 @@ static const struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
 br_device_pixelmap * DevicePixelmapMemAllocate(br_uint_8 type,br_uint_16 w,br_uint_16 h, void *pixels, int flags)
 {
 	br_device_pixelmap *pm;
-	struct pm_type_info *tip = pmTypeInfo+type;
+	const struct pm_type_info *tip = pmTypeInfo+type;
 
 
 	pm = BrResAllocate(_pixelmap.res,sizeof(*pm),BR_MEMORY_PIXELMAP);
@@ -108,7 +108,7 @@ br_device_pixelmap * DevicePixelmapMemAllocate(br_uint_8 type,br_uint_16 w,br_ui
 	/*
 	 * Fill in base structure
 	 */
-	pm->dispatch = & devicePixelmapDispatch;
+	pm->dispatch = (struct br_device_pixelmap_dispatch*)&devicePixelmapDispatch;
 
 	pm->pm_identifier = NULL;
 	pm->pm_type = type;
@@ -162,7 +162,7 @@ br_device_pixelmap * DevicePixelmapMemAllocate(br_uint_8 type,br_uint_16 w,br_ui
 void _CheckDispatch(br_device_pixelmap *pm)
 {
 	if(pm->dispatch == NULL)
-		pm->dispatch = &devicePixelmapDispatch;
+		pm->dispatch = (struct br_device_pixelmap_dispatch*)&devicePixelmapDispatch;
 }
 
 
@@ -197,7 +197,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_mem, allocateSub)(br_device_pixelmap
 	/*
 	 * Set dispatch table
 	 */
-	pm->dispatch = &devicePixelmapDispatch;
+	pm->dispatch = (struct br_device_pixelmap_dispatch*)&devicePixelmapDispatch;
 
 	/*
 	 * Pixel rows may not be contiguous
@@ -250,7 +250,7 @@ static struct br_tv_template * BR_CMETHOD_DECL(br_device_pixelmap_mem,queryTempl
 {
     if(_pixelmap.device_pixelmap_template == NULL)
         _pixelmap.device_pixelmap_template = BrTVTemplateAllocate(_pixelmap.res,
-            devicePixelmapTemplateEntries, BR_ASIZE(devicePixelmapTemplateEntries));
+            (struct br_tv_template_entry*)devicePixelmapTemplateEntries, BR_ASIZE(devicePixelmapTemplateEntries));
 
     return _pixelmap.device_pixelmap_template;
 }
@@ -266,7 +266,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_mem, validSource)
 br_error BR_CMETHOD_DECL(br_device_pixelmap_mem, resize)(br_device_pixelmap *self, br_int_32 width, br_int_32 height)
 {
     char *pixels;
-	struct pm_type_info *tip = pmTypeInfo+self->pm_type;
+	const struct pm_type_info *tip = pmTypeInfo+self->pm_type;
 	br_int_16 old_row_bytes;
 
 	/*

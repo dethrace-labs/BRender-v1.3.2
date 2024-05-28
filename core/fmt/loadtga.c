@@ -55,15 +55,15 @@ enum {
 };
 
 static struct {
-    
+
     	char image_type;
 	char pixel_bits;
     	char supported;
 	void * (*read_func)(char *line,void *fh);			/* read 1 line of image data from file */
 	void (*copy_func)(br_pixelmap *map,char *line,int row);		/* copy 1 line of data to pixelmap */
-	
+
 } Supported_TGA_types[]={
-    
+
    	{BR_TGA_UNCOMPRESSED_PALETTE	, 8,	YES,	ReadLine_Uncomp_8,	CopyLine_8},
 	{BR_TGA_UNCOMPRESSED_RGB	, 15,	YES,	ReadLine_Uncomp_16,	CopyLine_16},
 	{BR_TGA_UNCOMPRESSED_RGB	, 16,	YES,	ReadLine_Uncomp_16,	CopyLine_16},
@@ -120,7 +120,8 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 	br_int_32 ystart,yend,dy;
 	br_uint_32 bytes_per_line,palette_size;
 
-	unsigned char *mblock,supported;
+	char *mblock;
+	unsigned char supported;
 
 	fh = BrFileOpenRead(name,0,NULL,&open_mode);
 
@@ -155,7 +156,7 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 			bytes_per_line = TGAheader.width*2;
 			palette_size = 0;
 			break;
-			
+
 		case(24):type = BR_PMT_RGB_888;
 			bytes_per_line = TGAheader.width*3;
 			palette_size = 0;
@@ -164,12 +165,12 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 			  * If flags & BR_PMT_RGBA_8888, pixelmap->type = flags
 			  */
 
-			  
+
 			type = (flags & BR_PMT_RGBA_8888)?BR_PMT_RGBA_8888:BR_PMT_RGBX_888;
 			bytes_per_line = TGAheader.width*4;
 			palette_size = 0;
 			break;
-			 
+
 		default:BR_ERROR2("%d bit TGA file '%s' not supported",TGAheader.bits,name);
 			break;
 	}
@@ -193,13 +194,13 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 
 	BrFileAdvance(TGAheader.identsize,fh);
 	pm = BrPixelmapAllocate(type,TGAheader.width,TGAheader.depth,NULL,0);
-	
+
 	pm->identifier=BrResStrDup(pm,name);
 
 	/*
 	 * Get palette,allocate pixelmap for palette data
 	 */
-	
+
 	if(TGAheader.colourmaptype)
 	{
 	    	switch(TGAheader.bits)
@@ -207,14 +208,14 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 			/*
 			 * Allow for nasties that have true colour image with palette
 			 */
-		    
+
 			default:BrFileAdvance(TGAheader.colourmaplength * (( TGAheader.colourmapbits ) >> 3),fh);
 				break;
-				
+
 		    	case(8):pm->map = BrPixelmapAllocate(BR_PMT_RGBX_888,1,256,NULL,0);
 
 				pm->map->identifier=BrResStrDup(pm->map,name);
-		
+
 				switch(TGAheader.colourmapbits)
 				{
 					case(16):for(i=TGAheader.colourmapstart; i<TGAheader.colourmaplength; i++)
@@ -222,25 +223,25 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 							if(i >= 256) break;
 							if(BrFileRead(&RGB_16,1,sizeof(RGB_16),fh) != sizeof(RGB_16))
 								BR_ERROR1("Unable to read palette from '%s'",name);
-		
+
 							((char *)(pm->map->pixels))[i*4+RED]   = ((RGB_16      ) & 0x1f) << 3;
 							((char *)(pm->map->pixels))[i*4+GRN] = ((RGB_16 >> 5 ) & 0x1f) << 3;
 							((char *)(pm->map->pixels))[i*4+BLU] = ((RGB_16 >> 10) & 0x1f) << 3;
 							((char *)(pm->map->pixels))[i*4+PAD] = 0;
 						}
 						break;
-					
+
 					case(24):for(i=TGAheader.colourmapstart; i<TGAheader.colourmaplength; i++)
 						{
 							if(i >= 256) break;
 							if(BrFileRead(&RGB_24,1,sizeof(RGB_24),fh) != sizeof(RGB_24))
 								BR_ERROR1("Unable to read palette from '%s'",name);
-								
+
 							((char *)(pm->map->pixels))[i*4+RED] = RGB_24.red;
 							((char *)(pm->map->pixels))[i*4+GRN] = RGB_24.green;
 							((char *)(pm->map->pixels))[i*4+BLU] = RGB_24.blue;
 							((char *)(pm->map->pixels))[i*4+PAD] = 0;
-						}	
+						}
 						break;
 				}
 				break;
@@ -260,7 +261,7 @@ br_pixelmap * BR_PUBLIC_ENTRY BrFmtTGALoad(char *name,br_uint_32 flags)
 
 		Supported_TGA_types[supported].copy_func(pm,mblock,i);
 	}
-	
+
 	BrFileClose(fh);
 
 	return pm;
@@ -284,12 +285,12 @@ static void * ReadLine_Comp_8(char *line,void *fh)
 		if(BrFileRead(&ch,1,1,fh) != 1)
 			return NULL;
 		size = (ch & 0x7f)+1;
-		
+
 		if(ch & 0x80)	/* run of pixels */
 		{
 		    	if(BrFileRead(&ch,1,1,fh) != 1)
 				return NULL;
-	
+
 			for(i=0; i< (int)size; i++)
 				line[n+i] = ch;
 		}
@@ -299,11 +300,11 @@ static void * ReadLine_Comp_8(char *line,void *fh)
 			{
 			    	if(BrFileRead(&ch,1,1,fh) != 1)
 					return NULL;
-					
+
 				line[n+i] = ch;
 			}
 		}
-		
+
 		n += size;
 	}
 	while (n < TGAheader.width);
@@ -318,7 +319,7 @@ static void * ReadLine_Uncomp_16(char *line,void *fh)
 	{
 	    	if(BrFileRead(&RGB_16,1,sizeof(RGB_16),fh) != sizeof(RGB_16))
 			return NULL;
-			
+
 		line[i*2] = RGB_16 & 0xff;
 		line[i*2+1]   = (RGB_16 >> 8) &0xff;
 	}
@@ -335,12 +336,12 @@ static void * ReadLine_Comp_16(char *line,void *fh)
 		if(BrFileRead(&ch,1,1,fh) != 1)
 			return NULL;
 		size = (ch & 0x7f)+1;
-		
+
 		if(ch & 0x80)	/* run of pixels */
 		{
 		    	if(BrFileRead(&RGB_16,1,sizeof(RGB_16),fh) != sizeof(RGB_16))
 				return NULL;
-	
+
 			for(i=0; i<(int)size; i++)
 			{
 				line[(n+i)*2] = RGB_16 & 0xff;
@@ -353,12 +354,12 @@ static void * ReadLine_Comp_16(char *line,void *fh)
 			{
 			    	if(BrFileRead(&RGB_16,1,sizeof(RGB_16),fh) != sizeof(RGB_16))
 					return NULL;
-					
+
 				line[(n+i)*2] = RGB_16 & 0xff;
 				line[(n+i)*2+1]   = (RGB_16 >> 8) &0xff;
 			}
 		}
-		
+
 		n += size;
 
 	}
@@ -374,7 +375,7 @@ static void * ReadLine_Uncomp_24(char *line,void *fh)
 	{
 	    	if(BrFileRead(&RGB_24,1,sizeof(RGB_24),fh) != sizeof(RGB_24))
 			return NULL;
-			
+
 		line[i*3]   = RGB_24.blue;
 		line[i*3+1] = RGB_24.green;
 		line[i*3+2] = RGB_24.red;
@@ -392,12 +393,12 @@ static void * ReadLine_Comp_24(char *line,void *fh)
 		if(BrFileRead(&ch,1,1,fh) != 1)
 			return NULL;
 		size = (ch & 0x7f)+1;
-		
+
 		if(ch & 0x80)	/* run of pixels */
 		{
 		    	if(BrFileRead(&RGB_24,1,sizeof(RGB_24),fh) != sizeof(RGB_24))
 				return NULL;
-	
+
 			for(i=0; i<(int)size; i++)
 			{
 				line[(n+i)*3]   = RGB_24.blue;
@@ -411,13 +412,13 @@ static void * ReadLine_Comp_24(char *line,void *fh)
 			{
 			    	if(BrFileRead(&RGB_24,1,sizeof(RGB_24),fh) != sizeof(RGB_24))
 					return NULL;
-					
+
 				line[(n+i)*3]   = RGB_24.blue;
 				line[(n+i)*3+1] = RGB_24.green;
 				line[(n+i)*3+2] = RGB_24.red;
 			}
 		}
-		
+
 		n += size;
 
 	}
@@ -433,7 +434,7 @@ static void * ReadLine_Uncomp_32(char *line,void *fh)
 	{
 	    	if(BrFileRead(&RGB_32,1,sizeof(RGB_32),fh) != sizeof(RGB_32))
 			return NULL;
-			
+
 		line[i*4]   = RGB_32.blue;
 		line[i*4+1] = RGB_32.green;
 		line[i*4+2] = RGB_32.red;
@@ -452,12 +453,12 @@ static void * ReadLine_Comp_32(char *line,void *fh)
 		if(BrFileRead(&ch,1,1,fh) != 1)
 			return NULL;
 		size = (ch & 0x7f)+1;
-		
+
 		if(ch & 0x80)	/* run of pixels */
 		{
 		    	if(BrFileRead(&RGB_32,1,sizeof(RGB_32),fh) != sizeof(RGB_32))
 				return NULL;
-	
+
 			for(i=0; i<(int)size; i++)
 			{
 				line[(n+i)*4]   = RGB_32.blue;
@@ -472,14 +473,14 @@ static void * ReadLine_Comp_32(char *line,void *fh)
 			{
 			    	if(BrFileRead(&RGB_32,1,sizeof(RGB_32),fh) != sizeof(RGB_32))
 					return NULL;
-					
+
 				line[(n+i)*4]   = RGB_32.blue;
 				line[(n+i)*4+1] = RGB_32.green;
 				line[(n+i)*4+2] = RGB_32.red;
 				line[(n+i)*4+3] = RGB_32.x;
 			}
 		}
-		
+
 		n += size;
 
 	}

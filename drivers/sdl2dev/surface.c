@@ -2,7 +2,7 @@
 #include "pm.h"
 #include <brassert.h>
 
-br_clip_result DevicePixelmapSDL2PointClip(SDL_Point *out, const br_point *in, const br_pixelmap *pm)
+br_clip_result DevicePixelmapSDL2PointClip(SDL_Point *out, br_point *in, br_pixelmap *pm)
 {
     br_clip_result r;
     br_point       tmp;
@@ -18,8 +18,8 @@ br_clip_result DevicePixelmapSDL2PointClip(SDL_Point *out, const br_point *in, c
     return r;
 }
 
-br_clip_result DevicePixelmapSDL2LineClip(SDL_Point *s_out, SDL_Point *e_out, const br_point *s_in,
-                                          const br_point *e_in, const br_pixelmap *pm)
+br_clip_result DevicePixelmapSDL2LineClip(SDL_Point *s_out, SDL_Point *e_out,  br_point *s_in,
+                                           br_point *e_in,  br_pixelmap *pm)
 {
     br_clip_result r;
     br_point       stmp, etmp;
@@ -39,7 +39,7 @@ br_clip_result DevicePixelmapSDL2LineClip(SDL_Point *s_out, SDL_Point *e_out, co
     return r;
 }
 
-br_clip_result DevicePixelmapSDL2RectangleClip(SDL_Rect *out, const br_rectangle *in, const br_pixelmap *pm)
+br_clip_result DevicePixelmapSDL2RectangleClip(SDL_Rect *out,  br_rectangle *in,  br_pixelmap *pm)
 {
     br_clip_result r;
     br_rectangle   tmp;
@@ -57,8 +57,8 @@ br_clip_result DevicePixelmapSDL2RectangleClip(SDL_Rect *out, const br_rectangle
     return r;
 }
 
-br_clip_result DevicePixelmapSDL2RectangleClipTwo(SDL_Rect *r_out, SDL_Point *p_out, const br_rectangle *r_in,
-                                                  const br_point *p_in, const br_pixelmap *pm_dst, const br_pixelmap *pm_src)
+br_clip_result DevicePixelmapSDL2RectangleClipTwo(SDL_Rect *r_out, SDL_Point *p_out,  br_rectangle *r_in,
+                                                   br_point *p_in,  br_pixelmap *pm_dst,  br_pixelmap *pm_src)
 {
     br_clip_result r;
     br_rectangle   rect;
@@ -166,7 +166,7 @@ static br_error maybe_allocate_surface(SDL_Surface **out_surf, br_boolean *chang
     return BRE_OK;
 }
 
-br_error DeviceSDL2SetPalette(SDL_Palette *pal, br_int_32 index, br_int_32 count, const br_colour *entries, br_boolean has_alpha)
+br_error DeviceSDL2SetPalette(SDL_Palette *pal, br_int_32 index, br_int_32 count,  br_colour *entries, br_boolean has_alpha)
 {
     SDL_Color cols[MAX_CLUT_ENTRIES];
 
@@ -227,7 +227,7 @@ br_error DeviceSDL2SetPaletteFromCLUT(SDL_Palette *pal, br_device_clut *clut)
     return DeviceSDL2SetPalette(pal, 0, pal->ncolors, colours, BR_FALSE);
 }
 
-br_error DeviceSDL2SetPaletteFromMap(SDL_Palette *pal, const br_pixelmap *map)
+br_error DeviceSDL2SetPaletteFromMap(SDL_Palette *pal,  br_pixelmap *map)
 {
     br_boolean has_alpha;
 
@@ -280,7 +280,7 @@ br_error DeviceClutSDL2CopyToSurface(SDL_Surface *surf, br_pixelmap *pm, br_devi
     return BRE_FAIL;
 }
 
-static int xblit(SDL_Surface *src, const SDL_Rect *sr, SDL_Surface *dst, SDL_Rect *dr, br_sdl_blit_cbfn blit)
+static int xblit(SDL_Surface *src,  SDL_Rect *sr, SDL_Surface *dst, SDL_Rect *dr, br_sdl_blit_cbfn blit)
 {
     /*
      * Handle two special cases that SDL doesn't support.

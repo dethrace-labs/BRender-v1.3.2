@@ -587,7 +587,7 @@ static void GEOMETRY_CALL AddReplicateConstant(struct br_geometry *self, struct 
 {
    	if(rend.block->constant_mask == (1 << C_I)) {
 		PrimBlockAddBoth(renderer, (brp_render_fn *)OpTriangleReplicateConstantI);
-	} else if(rend.block->constant_mask == (1 << C_R)|(1 << C_G)|(1 << C_B)) {
+	} else if(rend.block->constant_mask == ((1 << C_R)|(1 << C_G)|(1 << C_B))) {
 		PrimBlockAddBoth(renderer, (brp_render_fn *)OpTriangleReplicateConstantRGB);
 	} else {
 		PrimBlockAddBoth(renderer, (brp_render_fn *)OpTriangleReplicateConstant);
@@ -672,6 +672,8 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 			case BRT_TRIANGLE:
 				PrimBlockAddBoth(renderer, (brp_render_fn *)OpHeapAddTriangleConvert);
 				break;
+			default:
+				break;
 			}
 		} else {
 			switch(rend.block->type) {
@@ -683,6 +685,8 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 				break;
 			case BRT_TRIANGLE:
 				PrimBlockAddBoth(renderer, (brp_render_fn *)OpHeapAddTriangle);
+				break;
+			default:
 				break;
 			}
 		}
@@ -708,6 +712,8 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 				break;
 			case BRT_TRIANGLE:
 				PrimBlockAddBoth(renderer, (brp_render_fn *)RenderConvert3);
+				break;
+			default:
 				break;
 			}
 		}
@@ -769,6 +775,9 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 			SubdivideSetThreshold(rend.block->subdivide_tolerance);
         }
 		break;
+
+	default:
+		break;
 	}
 
 	/*
@@ -787,7 +796,7 @@ static void GEOMETRY_CALL V1Faces_GeometryFnsUpdate(struct br_geometry *self, st
 	/*
 	 * Quad based texture mapping
 	 */
-	if((renderer->state.surface.mapping_source == BRT_QUAD)) {
+	if(renderer->state.surface.mapping_source == BRT_QUAD) {
 
 		PrimBlockAddBoth(renderer, (brp_render_fn *)OpTriangleMapQuad);
 

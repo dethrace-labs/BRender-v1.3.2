@@ -90,7 +90,7 @@ static void eyeInModel(br_renderer *self)
 	 * If reached here, then we need to invert model_to_screen
 	 */
 	BrMatrix4Inverse(&s2m, &scache.model_to_screen);
-	
+
 	scache.eye_m.v[0] = s2m.m[Z][0];
 	scache.eye_m.v[1] = s2m.m[Z][1];
 	scache.eye_m.v[2] = s2m.m[Z][2];
@@ -118,7 +118,7 @@ void StaticCacheUpdate_PerScene(br_renderer *self)
 	 */
 	scache.user_clip_active = BR_FALSE;
 
-	for(i = 0; i < MAX_STATE_CLIP_PLANES; i++)	
+	for(i = 0; i < MAX_STATE_CLIP_PLANES; i++)
 		if(self->state.clip[i].type == BRT_PLANE)
 			scache.user_clip_active = BR_TRUE;
 
@@ -182,7 +182,7 @@ br_error CacheUpdate(br_renderer *self)
 	PrimitiveStateRangesQuery(self->state.pstate,
 		self->state.cache.comp_offsets, self->state.cache.comp_scales,
 		NUM_COMPONENTS);
-	
+
 	/*
 	 * Merge surface map_transform with ranges
 	 */
@@ -213,10 +213,10 @@ br_error CacheUpdate(br_renderer *self)
 	 */
 	if (self->state.surface.mapping_source == BRT_QUAD) {
 
-		self->state.cache.quad_transformed[0].v[0] = 
+		self->state.cache.quad_transformed[0].v[0] =
 			self->state.cache.map_transform.m[2][0];
 
-		self->state.cache.quad_transformed[0].v[1] = 
+		self->state.cache.quad_transformed[0].v[1] =
 			self->state.cache.map_transform.m[2][1];
 
 		self->state.cache.quad_transformed[1].v[0] =
@@ -366,7 +366,7 @@ void ActiveLightsFind(br_renderer *self)
 		if (scache.ambient_blue > BR_SCALAR(1.0))
 			scache.ambient_blue = BR_SCALAR(1.0);
 
-		scache.use_ambient_colour = 
+		scache.use_ambient_colour =
 			scache.ambient_red != BR_SCALAR(1.0) ||
 			scache.ambient_green != BR_SCALAR(1.0) ||
 			scache.ambient_blue != BR_SCALAR(1.0);
@@ -384,7 +384,7 @@ void ActiveLightsFind(br_renderer *self)
 #endif
 
 	alp = scache.lights;
-	
+
 	/*
 	 * Find all model space lights
 	 */
@@ -554,7 +554,7 @@ void ActiveLightsUpdate(br_renderer *self)
 		if (scache.ambient_blue > BR_SCALAR(1.0))
 			scache.ambient_blue = BR_SCALAR(1.0);
 
-		scache.use_ambient_colour = 
+		scache.use_ambient_colour =
 			scache.ambient_red != BR_SCALAR(1.0) ||
 			scache.ambient_green != BR_SCALAR(1.0) ||
 			scache.ambient_blue != BR_SCALAR(1.0);
@@ -594,7 +594,7 @@ void ActiveLightsUpdate(br_renderer *self)
 					continue;
 				}
 			}
-		
+
 			break;
 
 		case BRT_DIRECT:
@@ -642,7 +642,7 @@ void ActiveLightsUpdate(br_renderer *self)
 					alp->culled = BR_TRUE;
 					continue;
 				}
-		
+
 			BrMatrix34TApplyV(&alp->direction,&alp->s->direction,&self->state.matrix.model_to_view);
 			BrVector3Normalise(&alp->direction,&alp->direction);
 
@@ -653,7 +653,7 @@ void ActiveLightsUpdate(br_renderer *self)
 					alp->culled = BR_TRUE;
 					continue;
 				}
-		
+
 			break;
 
 		case BRT_POINT:
@@ -669,7 +669,10 @@ void ActiveLightsUpdate(br_renderer *self)
 					alp->culled = BR_TRUE;
 					continue;
 				}
-		
+
+			break;
+
+		default:
 			break;
 		}
 
@@ -678,7 +681,7 @@ void ActiveLightsUpdate(br_renderer *self)
 				for (plane = region->planes, new_plane = new_region->planes, j = 0; j < region->nplanes; j++, plane++, new_plane++)
 					BrMatrix34ApplyPlaneEquation(new_plane, plane, &scache.view_to_model);
 	}
-	
+
 	if (scache.nlights_view > 0) {
 
 		/*
@@ -720,7 +723,7 @@ void ActiveLightsUpdate(br_renderer *self)
 						continue;
 					}
 				}
-			
+
 				break;
 
 			case BRT_DIRECT:
@@ -760,7 +763,7 @@ void ActiveLightsUpdate(br_renderer *self)
 						alp->culled = BR_TRUE;
 						continue;
 					}
-			
+
 				if (alp->s->angle_cull)
 
 					if (!sphereIntersectsCone(rend.v11model->radius, &light_pos, &alp->direction, alp->s->angle_outer)) {
@@ -768,7 +771,7 @@ void ActiveLightsUpdate(br_renderer *self)
 						alp->culled = BR_TRUE;
 						continue;
 					}
-			
+
 				break;
 
 			case BRT_POINT:
@@ -785,7 +788,10 @@ void ActiveLightsUpdate(br_renderer *self)
 						alp->culled = BR_TRUE;
 						continue;
 					}
-			
+
+				break;
+
+			default:
 				break;
 			}
 		}
@@ -958,8 +964,9 @@ br_int_32 GenerateSurfaceFunctions(br_renderer *self, surface_fn **fns, br_uint_
 				fns[f++] = SurfaceColourLitPrelit;
 			else
 				fns[f++] = SurfaceColourLit;
-		else
+		else {
 			fns[f++] = SurfaceColourUnlit;
+		}
 	} else if(mask & (CM_UR|CM_UG|CM_UB)) {
     	/* Unlit RGB
 	     */
@@ -968,12 +975,13 @@ br_int_32 GenerateSurfaceFunctions(br_renderer *self, surface_fn **fns, br_uint_
 
 	/* Alpha
 	 */
-	if(mask & CM_A)
+	if(mask & CM_A){
 		if(self->state.surface.opacity_source == BRT_GEOMETRY) {
 			fns[f++] = SurfaceAlphaPrealpha;
 		} else {
 			fns[f++] = SurfaceAlpha;
 		}
+	}
 
 	/* Linear Z
 	 */
@@ -1027,7 +1035,7 @@ br_uint_32 ComponentMaskToSlots(br_uint_32 cm)
 	for(i=0; cm; i++, cm /= 2)
 		if(cm & 1)
 			m |= bits[i];
-		
+
 	return m;
 }
 
@@ -1098,4 +1106,3 @@ void PrimBlockAddBoth(br_renderer *renderer, brp_render_fn *fn)
 	PrimBlockAdd(renderer, fn);
 	PrimBlockOnScreenAdd(renderer, fn);
 }
-

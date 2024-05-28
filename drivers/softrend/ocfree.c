@@ -20,7 +20,8 @@ br_error ObjectContainerFree(br_object_container *self, br_token type, char *pat
 {
 	br_error r;
 	br_object **handles;
-	br_int_32 count,n,i;
+	br_uint_32 count;
+	br_int_32 n,i;
 
 	r = ObjectContainerCount(self, &count, type, pattern, tv);
 
@@ -41,4 +42,3 @@ br_error ObjectContainerFree(br_object_container *self, br_token type, char *pat
 
 	return BRE_OK;
 }
-

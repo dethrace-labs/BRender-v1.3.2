@@ -500,6 +500,9 @@ void TemplateActions(struct state_all *state, br_token part, br_int_32 index, br
 		case BRT_CLIP:
 			state->timestamp_clips = Timestamp();
 			break;
+
+		default:
+			break;
 		}
 	}
 

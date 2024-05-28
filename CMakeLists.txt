@@ -57,6 +57,7 @@ add_library(BRender::DDI ALIAS brender-ddi)
 option(BRENDER_BUILD_TOOLS "Build Tools" OFF)
 option(BRENDER_BUILD_EXAMPLES "Build Examples" OFF)
 option(BRENDER_DISABLE_INSTALL "Disable installation" OFF)
+option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 
 # if (BRENDER_BUILD_TOOLS)
 #     add_subdirectory(tools)

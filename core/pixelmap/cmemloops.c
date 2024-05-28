@@ -185,7 +185,7 @@ br_uint_32 _MemPixelGet(char *dest, br_uint_32 dest_qual, br_uint_32 bytes)
     }
 }
 
-void _MemFill_A(char *dest, br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp, br_uint_32 colour)
+void _MemFill_A(uint8_t *dest, br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp, br_uint_32 colour)
 {
     /* 32-bit */
     if(bpp == 4) {
@@ -273,7 +273,7 @@ br_uint_16 _GetSysQual(void) {
     return 0;
 }
 
-void BR_ASM_CALL _MemFillFPU_A(char *dest,
+void BR_ASM_CALL _MemFillFPU_A(uint8_t *dest,
 	br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp,
 	br_uint_32 colour) {
 

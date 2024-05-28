@@ -582,7 +582,7 @@ static br_uint_16 encoding[] = {
     offsetof(br_glyphs_t, glyph_space),
 };
 
-static br_uint_8 widths[] = {
+static br_int_8 widths[] = {
     width_space,
     width_space,
     width_space,

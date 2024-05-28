@@ -76,7 +76,7 @@ void SetupRenderBuffer(struct render_buffer *rb, br_device_pixelmap *pm)
 	rb->stride_p = pm->pm_row_bytes / bpp;
 	rb->size = pm->pm_height * pm->pm_row_bytes;
 
-	rb->base = (char *)(pm->pm_pixels)+ 
+	rb->base = (char *)(pm->pm_pixels)+
 		pm->pm_base_y * pm->pm_row_bytes +
 		pm->pm_base_x * bpp;
 
@@ -154,7 +154,7 @@ struct br_buffer_stored * BufferStoredSoftAllocate(struct br_primitive_library *
 	if(self == NULL)
 		return NULL;
 
-	self->dispatch = &bufferStoredDispatch;
+	self->dispatch = (struct br_buffer_stored_dispatch*)&bufferStoredDispatch;
 	self->identifier = ident;
     self->device = plib->device;
 	self->plib = plib;
@@ -182,7 +182,7 @@ static br_error BR_CMETHOD_DECL(br_buffer_stored_soft, update)(
 	struct br_device_pixelmap *pm,
 	br_token_value *tv)
 {
-	
+
 	SetupRenderBuffer(&self->buffer,pm);
 
 	return BRE_OK;
@@ -215,7 +215,7 @@ static struct br_tv_template * BR_CMETHOD_DECL(br_buffer_stored_soft,templateQue
 {
     if(self->device->templates.bufferStoredTemplate == NULL)
         self->device->templates.bufferStoredTemplate = BrTVTemplateAllocate(self->device,
-            bufferStoredTemplateEntries, BR_ASIZE(bufferStoredTemplateEntries));
+            (struct br_tv_template_entry*)bufferStoredTemplateEntries, BR_ASIZE(bufferStoredTemplateEntries));
 
     return self->device->templates.bufferStoredTemplate;
 }
@@ -245,4 +245,3 @@ static const struct br_buffer_stored_dispatch bufferStoredDispatch = {
 
 	BR_CMETHOD_REF(br_buffer_stored_soft,	update),
 };
-

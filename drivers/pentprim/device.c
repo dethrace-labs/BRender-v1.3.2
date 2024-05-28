@@ -44,7 +44,7 @@ br_device * DeviceSoftPrimAllocate(char * identifier)
 	self->res = BrResAllocate(self, 0, BR_MEMORY_DRIVER);
 
     self->identifier = identifier;
-	self->dispatch = &deviceDispatch;
+	self->dispatch = (struct br_device_dispatch*)&deviceDispatch;
 	self->device = self;
 
 	self->object_list = BrObjectListAllocate(self);
@@ -52,7 +52,7 @@ br_device * DeviceSoftPrimAllocate(char * identifier)
     /*
      * Some useful tokens for debug queries
      */
-#if DEBUG	
+#if DEBUG
 	BrTokenCreate("OPAQUE_MAP_B",	BRT_BOOLEAN);
 	BrTokenCreate("NO_SKIP_B",		BRT_BOOLEAN);
 	BrTokenCreate("BLOCK_P",		BRT_POINTER);
@@ -94,7 +94,7 @@ static struct br_tv_template * BR_CMETHOD_DECL(br_device_softprim,templateQuery)
 {
     if(self->templates.deviceTemplate == NULL)
         self->templates.deviceTemplate = BrTVTemplateAllocate(self,
-            deviceTemplateEntries,
+            (struct br_tv_template_entry*)deviceTemplateEntries,
             BR_ASIZE(deviceTemplateEntries));
 
     return self->templates.deviceTemplate;
@@ -139,4 +139,3 @@ static const struct br_device_dispatch deviceDispatch = {
 	BR_CMETHOD_REF(br_object_container, findMany),
 	BR_CMETHOD_REF(br_object_container, count),
 };
-

@@ -27,7 +27,7 @@ static struct br_device_pixelmap_dispatch devicePixelmapDispatch;
  */
 #define F(f) offsetof(struct br_device_pixelmap, f)
 
-br_boolean DevicePixelmapSDL2IsOurs(const br_pixelmap *pm)
+br_boolean DevicePixelmapSDL2IsOurs(br_pixelmap *pm)
 {
     return ((br_device_pixelmap *)pm)->dispatch == &devicePixelmapDispatch;
 }
@@ -370,7 +370,7 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl2, copy)(br_device_pixelma
         .h = src->pm_height,
     };
 
-    if(DevicePixelmapSDL2RectangleClip(&drect, &r, (const br_pixelmap *)self) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2RectangleClip(&drect, &r, (br_pixelmap *)self) == BR_CLIP_REJECT)
         return BRE_OK;
 
     drect.x += self->pm_base_x;
@@ -470,10 +470,10 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl2, rectangleStretchCopyTo)
 {
     SDL_Rect srect, drect;
 
-    if(DevicePixelmapSDL2RectangleClip(&srect, s, (const br_pixelmap *)src) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2RectangleClip(&srect, s, (br_pixelmap *)src) == BR_CLIP_REJECT)
         return BRE_OK;
 
-    if(DevicePixelmapSDL2RectangleClip(&drect, d, (const br_pixelmap *)self) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2RectangleClip(&drect, d, (br_pixelmap *)self) == BR_CLIP_REJECT)
         return BRE_OK;
 
     drect.x += self->pm_base_x;
@@ -508,10 +508,10 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl2, rectangleStretchCopyFro
 {
     SDL_Rect srect, drect;
 
-    if(DevicePixelmapSDL2RectangleClip(&srect, s, (const br_pixelmap *)self) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2RectangleClip(&srect, s, (br_pixelmap *)self) == BR_CLIP_REJECT)
         return BRE_OK;
 
-    if(DevicePixelmapSDL2RectangleClip(&drect, d, (const br_pixelmap *)dest) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2RectangleClip(&drect, d, (br_pixelmap *)dest) == BR_CLIP_REJECT)
         return BRE_OK;
 
     drect.x += self->pm_base_x;
@@ -542,7 +542,7 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl2, pixelSet)(br_device_pix
     SDL_Point point;
     SDL_Color col;
 
-    if(DevicePixelmapSDL2PointClip(&point, p, (const br_pixelmap *)self) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2PointClip(&point, p, (br_pixelmap *)self) == BR_CLIP_REJECT)
         goto memory_fallback;
 
     point.x += self->pm_base_x;
@@ -584,7 +584,7 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl2, line)(br_device_pixelma
     SDL_Point spoint, epoint;
     SDL_Color col;
 
-    if(DevicePixelmapSDL2LineClip(&spoint, &epoint, s, e, (const br_pixelmap *)self) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2LineClip(&spoint, &epoint, s, e, (br_pixelmap *)self) == BR_CLIP_REJECT)
         return BRE_OK;
 
     spoint.x += self->pm_base_x;
@@ -628,7 +628,7 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl2, rectangleFill)(br_devic
 {
     SDL_Rect rect;
 
-    if(DevicePixelmapSDL2RectangleClip(&rect, r, (const br_pixelmap *)self) == BR_CLIP_REJECT)
+    if(DevicePixelmapSDL2RectangleClip(&rect, r, (br_pixelmap *)self) == BR_CLIP_REJECT)
         return BRE_OK;
 
     rect.x += self->pm_base_x;

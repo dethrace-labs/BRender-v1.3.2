@@ -269,6 +269,8 @@ static br_error BR_CMETHOD_DECL(br_primitive_library_soft, mask)(
 		case BRT_OUTPUT:
 			m |= MASK_STATE_OUTPUT;
 			break;
+		default:
+			break;
 		}
 	}
 

@@ -39,7 +39,7 @@ void BR_PUBLIC_ENTRY BrPixelmapBegin(void)
 	 * Register all our resource classes
 	 */
 	for(i=0; i < BR_ASIZE(resourceClasses); i++)
-		BrResClassAdd(resourceClasses+i);
+		BrResClassAdd((br_resource_class*)(resourceClasses+i));
 
 	/*
 	 * Export DLL

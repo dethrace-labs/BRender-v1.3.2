@@ -22,7 +22,7 @@ static struct br_tv_template_entry deviceClutTemplateEntries[] = {
 };
 #undef F
 
-br_boolean DeviceClutSDL2IsOurs(const br_device_clut *clut)
+br_boolean DeviceClutSDL2IsOurs(br_device_clut *clut)
 {
     return clut->dispatch == &deviceClutDispatch;
 }
@@ -30,7 +30,7 @@ br_boolean DeviceClutSDL2IsOurs(const br_device_clut *clut)
 /*
  * Create a new device CLUT
  */
-br_device_clut *DeviceClutSDL2Allocate(br_device_pixelmap *pm, const char *identifier)
+br_device_clut *DeviceClutSDL2Allocate(br_device_pixelmap *pm, char *identifier)
 {
     br_device_clut *self;
 

@@ -20,7 +20,7 @@ typedef struct br_device_clut {
     /*
      * Standard handle identifier
      */
-    const char *identifier;
+    char *identifier;
 
     /*
      * Device pointer

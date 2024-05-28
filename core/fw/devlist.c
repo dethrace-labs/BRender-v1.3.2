@@ -14,8 +14,8 @@ BR_RCS_ID("$Id: devlist.c 1.1 1997/12/10 16:41:06 jon Exp $")
 
 extern br_framework_state BR_ASM_DATA fw ;
 
-/* Add drivers specified in the BRENDER_DRIVERS configuration entry 
- * This is only done once, so check it has not already been done    
+/* Add drivers specified in the BRENDER_DRIVERS configuration entry
+ * This is only done once, so check it has not already been done
  */
 
 static br_error AddRequestedDrivers()
@@ -29,7 +29,7 @@ static br_error AddRequestedDrivers()
 
        if ( *devstr != '\0' )
           BrDevAddConfig(devstr);
-      
+
        fw.bAlreadyLoadedDrivers = BR_TRUE ;
     }
 
@@ -56,7 +56,7 @@ static br_error devAdd(br_device **pdev, br_device_begin_fn *dev_begin, char *ar
 
 	if(dev == NULL)
 		return BRE_FAIL;
-	
+
 	/*
 	 * Got device, find free slot
 	 */
@@ -84,7 +84,7 @@ static br_error devAdd(br_device **pdev, br_device_begin_fn *dev_begin, char *ar
 		return BRE_NO_MEMORY;
 	}
 
-	for(i=0; i < fw.ndev_slots; i++) 
+	for(i=0; i < fw.ndev_slots; i++)
 		new_slots[i] = fw.dev_slots[i];
 
 	BrResFree(fw.dev_slots);
@@ -118,7 +118,7 @@ br_error BR_RESIDENT_ENTRY BrDevAdd(br_device **pdev, char * image, char *args)
 	 * Try and load up device
 	 */
 	dev_image = BrImageReference(image);
-	
+
 	if(dev_image == NULL) {
 		return BRE_FAIL;
 	}
@@ -169,7 +169,7 @@ br_error BR_RESIDENT_ENTRY BrDevCheckAdd(br_device **pdev, char *name, char *arg
 
 /*
  * Take a config string and split it into <dev_args>{;<dev_args>}
- * 
+ *
  * Add each device in turn with it's arguments
  */
 br_error BR_RESIDENT_ENTRY BrDevAddConfig(char *config)
@@ -185,13 +185,13 @@ br_error BR_RESIDENT_ENTRY BrDevAddConfig(char *config)
 		 */
 		for(end = config; *end != '\0' && *end != ';' ; end++)
 			;
-		
+
 		n = end - config;
-		
+
 		if(n) {
 			/*
 			 * Make a copy of this device string
-			 */	
+			 */
 			BrMemCpy(tmp, config, n);
 			tmp[n] = '\0';
 			dev = tmp;
@@ -214,13 +214,13 @@ br_error BR_RESIDENT_ENTRY BrDevAddConfig(char *config)
 				dev++;
 
 			n = BrStrLen(dev);
-			
+
 			if(n) {
 				while(BrIsSpace(dev[n-1])) {
 					dev[n-1] = '\0';
 					n--;
 				}
-				
+
 				BrDevAdd(NULL, dev, arg);
 			}
 		}
@@ -282,7 +282,7 @@ br_error BR_RESIDENT_ENTRY BrDevFind(struct br_device **pdev, char *pattern)
 				if(pdev)
 					*pdev = fw.dev_slots[i].dev;
 				return BRE_OK;
-			}				
+			}
 		}
 	}
 
@@ -381,7 +381,7 @@ br_error BR_RESIDENT_ENTRY BrDevContainedFindMany(struct br_object **objects, br
 br_error BR_RESIDENT_ENTRY BrDevContainedCount(br_int_32 *pcount, br_token type, char *pattern, br_token_value *tv)
 {
 	int i;
-	br_int_32 n,total = 0;
+	br_uint_32 n,total = 0;
 	br_error r;
 
    AddRequestedDrivers();

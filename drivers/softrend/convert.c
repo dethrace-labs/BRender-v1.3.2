@@ -83,7 +83,7 @@ void ConvertVertex(brp_vertex *dest, brp_vertex *src)
 			dest[0].comp_f[C_Q] = src[0].comp_f[C_Q];
 #endif
 
-	if(m = 0x0000ffff ^ (rend.block->convert_mask_i | rend.block->convert_mask_x | rend.block->convert_mask_f))
+	if((m = 0x0000ffff ^ (rend.block->convert_mask_i | rend.block->convert_mask_x | rend.block->convert_mask_f)))
 		for(c = 0; m; c++, m >>=1)
 			if(m & 1)
 				dest[0].comp[c] = src->comp[c];
@@ -148,7 +148,7 @@ void BR_ASM_CALL RenderConvert1(struct brp_block *block,
 			outv[0].comp_f[C_Q] = v0->comp_f[C_Q];
 #endif
 
-	if(m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f))
+	if((m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f)))
 		for(c = 0; m; c++, m >>=1)
 			if(m & 1)
                                 outv[0].comp_i[c] = v0->comp_i[c];
@@ -233,7 +233,7 @@ void BR_ASM_CALL RenderConvert2(struct brp_block *block, ...)
 		}
 #endif
 
-	if(m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f))
+	if((m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f)))
 		for(c = 0; m; c++, m >>=1)
 			if(m & 1) {
                                 outv[0].comp_i[c] = v0->comp_i[c];
@@ -328,7 +328,7 @@ void BR_ASM_CALL RenderConvert3(struct brp_block *block, ...)
 		}
 #endif
 
-	if(m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f))
+	if((m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f)))
 		for(c = 0; m; c++, m >>=1)
 			if(m & 1) {
                                 outv[0].comp_i[c] = v0->comp_i[c];
@@ -421,7 +421,7 @@ void BR_ASM_CALL RenderConvert4(struct brp_block *block,
 		}
 #endif
 
-	if(m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f))
+	if((m=0x0000ffff^(rend.block->convert_mask_i|rend.block->convert_mask_x|rend.block->convert_mask_f)))
 		for(c = 0; m; c++, m >>=1)
 			if(m & 1) {
                                 outv[0].comp_i[c] = v0->comp_i[c];

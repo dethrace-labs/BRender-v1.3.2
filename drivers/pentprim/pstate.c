@@ -68,7 +68,7 @@ struct br_primitive_state * PrimitiveStateSoftAllocate(struct br_primitive_libra
 		return NULL;
 
 	self->plib = plib;
-	self->dispatch = &primitiveStateDispatch;
+	self->dispatch = (struct br_primitive_state_dispatch*)&primitiveStateDispatch;
     self->device = plib->device;
 
 	/*
@@ -108,7 +108,7 @@ static struct br_tv_template * BR_CMETHOD_DECL(br_primitive_state_soft,templateQ
 {
     if(self->device->templates.primitiveStateTemplate == NULL)
         self->device->templates.primitiveStateTemplate = BrTVTemplateAllocate(self->device,
-            primitiveStateTemplateEntries,
+            (struct br_tv_template_entry*)primitiveStateTemplateEntries,
             BR_ASIZE(primitiveStateTemplateEntries));
 
     return self->device->templates.primitiveStateTemplate;
@@ -333,6 +333,9 @@ static br_tv_template *findTemplate(struct br_primitive_state *self, br_token pa
             partOutputTemplateEntries, BR_ASIZE(partOutputTemplateEntries));
 
 	    return self->device->templates.partOutputTemplate;
+
+	default:
+		break;
 	}
 
 	return NULL;
@@ -381,6 +384,9 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partSet)(
 		self->out.timestamp = Timestamp();
 		if(m)
 			self->out.timestamp_major = Timestamp();
+		break;
+
+	default:
 		break;
 	}
 
@@ -437,6 +443,9 @@ static br_error BR_CMETHOD_DECL(br_primitive_state_soft, partSetMany)(
 		self->out.timestamp = Timestamp();
 		if(m)
 			self->out.timestamp_major = Timestamp();
+		break;
+
+	default:
 		break;
 	}
 

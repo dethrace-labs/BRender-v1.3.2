@@ -1,5 +1,4 @@
 #include "brender.h"
-#include "priminfo.h"
 #include "fpsetup.h"
 #include "x86emu.h"
 #include <stdarg.h>

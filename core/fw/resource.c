@@ -136,7 +136,7 @@ static struct resource_header *UserToRes(void *r)
 #else
     p -= offsetof(struct resource_header, class) + sizeof(((struct resource_header *)NULL)->class);
 #endif
-	struct resource_header *res = p;
+	struct resource_header *res = (struct resource_header *)p;
 
 #if BR_RES_TAGGING
     UASSERT(res->magic_ptr == res);
@@ -454,7 +454,7 @@ br_uint_32 BR_RESIDENT_ENTRY BrResChildEnum(void *vres, br_resenum_cbfn *callbac
 	ASSERT(callback != NULL);
 
 	BR_FOR_SIMPLELIST(&res->children,rp)
-		if(r = callback(ResToUser(rp),arg))
+		if((r = callback(ResToUser(rp),arg)))
 			return r;
 
 	return 0;

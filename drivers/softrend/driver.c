@@ -59,7 +59,7 @@ br_device * BR_EXPORT BrDrv1SoftRendBegin(char *arguments)
 }
 
 #ifdef DEFINE_BR_ENTRY_POINT
-br_device *BR_EXPORT BrDrv1Begin(const char *arguments)
+br_device *BR_EXPORT BrDrv1Begin(char *arguments)
 {
     return BrDrv1SoftRendBegin(arguments);
 }

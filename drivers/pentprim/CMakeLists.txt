@@ -146,11 +146,10 @@ set_target_properties(pentprim PROPERTIES
 		OUTPUT_NAME "softprmf"
 		)
 
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
+if(BRENDER_ASAN_ENABLED)
 	set(CMAKE_C_FLAGS
 		"${CMAKE_C_FLAGS}  -fsanitize=undefined -fsanitize=address"
 	)
-
 	target_compile_options(pentprim PUBLIC -fsanitize=address)
 	target_link_options(pentprim
 			BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,undefined

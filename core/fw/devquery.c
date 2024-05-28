@@ -239,7 +239,8 @@ br_error BR_PUBLIC_ENTRY BrOutputFacilityEnum(char *name,
 {
     br_device *device;
     br_object **objects;
-    br_int_32 max, n;
+    br_uint_32 max;
+    br_int_32 n;
     br_error r;
     br_boolean terminate = BR_FALSE, remove = BR_FALSE;
 
