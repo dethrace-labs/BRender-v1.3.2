@@ -40,6 +40,18 @@ while (<>) {
 	#
 	next if(/^#/);
 
+	if(/^\$none$/) {
+		print "none found...\n";
+		$name = "\Unone";
+
+		$type_ext{"none"} = "";
+		$type_tok{"none"} = $name;
+		$type_member{"none"} = "";
+		$token_val{$name} = "none";
+		$token_id{$name} = $current++;
+		next;
+	}
+
 	# Look for a type definition
 	#
 	# if(/^\$\s*(\w\w*)\s*(\w*)/) {
@@ -47,7 +59,7 @@ while (<>) {
 		# Add type to type table
 		#
 		print "here\n";
-		print "$1 $2 $3\n";
+		print ",$1, ,$2, ,$3,\n";
 
 		$name = "\U$1";
 
@@ -68,6 +80,7 @@ while (<>) {
 	# Look for a token definition
 	#
 	if(/\s*(\w\w*)\s*(\w\w*)/) {
+
 		die "Unknown type: $2" unless $type_tok{$2} ;
 
 		$name = "\U$1$type_ext{$2}";
