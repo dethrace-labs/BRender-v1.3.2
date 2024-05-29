@@ -34,31 +34,12 @@ close(DB);
 #
 while (<>) {
 
+	# strip out windows newlines
 	s/\R\z//;
-	print;
 
 	# Ignore comments
 	#
 	next if(/^#/);
-
-	if(/\$none$/) {
-		print "none1found";
-	}
-	if(/\$none/) {
-		print "none2found";
-	}
-
-	if(/^\$none$/) {
-		print "none found...\n";
-		$name = "\Unone";
-
-		$type_ext{"none"} = "";
-		$type_tok{"none"} = $name;
-		$type_member{"none"} = "";
-		$token_val{$name} = "none";
-		$token_id{$name} = $current++;
-		next;
-	}
 
 	# Look for a type definition
 	#
@@ -66,8 +47,6 @@ while (<>) {
 	if(/^\$\s*(\w+)(?:\s+(\w+)\s+(\w+)?)?$/) {
 		# Add type to type table
 		#
-		print "here\n";
-		print ",$1, ,$2, ,$3,\n";
 
 		$name = "\U$1";
 
