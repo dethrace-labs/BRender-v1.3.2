@@ -48,7 +48,7 @@ while (<>) {
 		#
 		print "here\n";
 		print "$1 $2 $3\n";
-		die
+
 		$name = "\U$1";
 
 		$type_ext{$1} = $2;
