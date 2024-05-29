@@ -40,6 +40,13 @@ while (<>) {
 	#
 	next if(/^#/);
 
+	if(/\$none$/) {
+		print "none1found";
+	}
+	if(/\$none/) {
+		print "none2found";
+	}
+
 	if(/^\$none$/) {
 		print "none found...\n";
 		$name = "\Unone";
