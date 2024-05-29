@@ -34,6 +34,7 @@ close(DB);
 #
 while (<>) {
 
+	s/\R\z//;
 	print;
 
 	# Ignore comments
