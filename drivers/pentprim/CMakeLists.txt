@@ -128,7 +128,7 @@ add_library(pentprim
 		zb8p2ltb.c
 
 		${PRIM_FILES}
-)
+ "compiler.h")
 
 target_compile_definitions(pentprim PRIVATE "-DPARTS=0xffff")
 

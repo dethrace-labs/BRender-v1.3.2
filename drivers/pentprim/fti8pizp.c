@@ -242,9 +242,9 @@ nodraw:
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    INC_D(edi.ptr_val, dirn);
+    INC_D(((uint8_t*)edi.ptr_val), dirn);
     // add_&dirn	ebp,2
-    ADD_D(ebp.ptr_val, 2, dirn);
+    ADD_D((uint8_t*)ebp.ptr_val, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
     if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
@@ -707,9 +707,9 @@ nodraw:
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    INC_D(edi.ptr_val, dirn);
+    INC_D(((uint8_t*)edi.ptr_val), dirn);
     // add_&dirn	ebp,2
-    ADD_D(ebp.ptr_val, 2, dirn);
+    ADD_D((uint8_t*)ebp.ptr_val, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
     if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
