@@ -15,7 +15,7 @@ extern "C" {
 
 #ifndef _NO_PROTOTYPES
 
-br_associative_array *BrAssociativeArrayAllocate();
+br_associative_array *BrAssociativeArrayAllocate(void);
 br_error BrAssociativeArraySet(br_associative_array *array, br_token t, br_value v);
 br_error BrAssociativeArrayRemove(br_associative_array *array, br_token t);
 br_error BrAssociativeArrayQuery( br_associative_array *array, br_token t, br_value *value);

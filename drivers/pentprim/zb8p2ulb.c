@@ -66,7 +66,7 @@ drawLine:
 // 	sub ecx,ebx
 	ecx.v -= ebx.v;
 // 	jg_d lineDrawn,direction
-	JG_D(ecx.int_val > 0, lineDrawn, direction);
+	JG_D(ecx.int_val, lineDrawn, direction);
 
 drawPixel:
 	// 	shr esi,16-pow2

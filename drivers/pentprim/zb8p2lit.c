@@ -55,7 +55,7 @@ drawLine:
     // sub ecx,edx
     ecx.v -= edx.v;
     // jg_d lineDrawn,direction
-    JG_D(ecx.int_val > 0, lineDrawn, direction);
+    JG_D(ecx.int_val, lineDrawn, direction);
     // ror ebx,16
     ROR16(ebx);
     // mov workspace.scratch1,ebp
