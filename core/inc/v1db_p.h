@@ -337,11 +337,11 @@ void BR_PUBLIC_ENTRY BrRendererBegin(br_pixelmap *destination,
 
 void BR_PUBLIC_ENTRY BrRendererEnd(void);
 
-void BR_PUBLIC_ENTRY BrRendererFrameBegin();
-void BR_PUBLIC_ENTRY BrRendererFrameEnd();
+void BR_PUBLIC_ENTRY BrRendererFrameBegin(void);
+void BR_PUBLIC_ENTRY BrRendererFrameEnd(void);
 
-// void BR_PUBLIC_ENTRY BrRendererFocusLossBegin();
-// void BR_PUBLIC_ENTRY BrRendererFocusLossEnd();
+void BR_PUBLIC_ENTRY BrRendererFocusLossBegin(void);
+void BR_PUBLIC_ENTRY BrRendererFocusLossEnd(void);
 
 /*
  * Renderering - Z Buffer

@@ -161,14 +161,14 @@ next_pixel:
 	// ;
 
     // mov		dl,[ebp]
-    edx.short_val[0] = *((uint16_t*)ebp.ptr_v);
+    edx.short_val[0] = *ebp.ptr_16;
     // mov		cl,[eax+esi]
-    ecx.l = ((char*)esi.ptr_v)[eax.v];
+    ecx.l = esi.ptr_8[eax.v];
 
     // mov		dh,[ebp+1]
     // no-op - already read both depth bytes
     // mov		edi,work.tsl.dest
-    edi.ptr_v = work.tsl.dest;
+    edi.ptr_8 = (uint8_t*)work.tsl.dest;
 
     // cmp		bx,dx
     // ja		nodraw
@@ -202,22 +202,22 @@ next_pixel:
         // and     ecx,0ffh
         ecx.v &= 0xff;
         // mov     edx,work.blend_table
-        edx.ptr_v = work.blend_table;
+        edx.ptr_8 = work.blend_table;
         // mov     ch,[edi]
-        ecx.h = *((uint8_t*)edi.ptr_v);
+        ecx.h = *edi.ptr_8;
         // ;AGI stall
         // mov     cl,[edx+ecx]
-        ecx.l = ((uint8_t*)edx.ptr_v)[ecx.v];
+        ecx.l = edx.ptr_8[ecx.v];
         // mov     [edi],cl
-        *((uint8_t*)edi.ptr_v) = ecx.l;
+        *edi.ptr_8 = ecx.l;
 
     } else {
         // ; Store texel and z
 	    // ;
         // mov     [ebp],bx
-        *((uint16_t*)ebp.ptr_v) = ebx.short_val[0];
+        *ebp.ptr_16 = ebx.short_val[0];
         // mov     [edi],cl
-        *((uint8_t*)edi.ptr_v) = ecx.l;
+        *edi.ptr_8 = ecx.l;
     }
 
 nodraw:
@@ -1145,6 +1145,9 @@ udloop:
     // no-op
     // jl		udloop
     if (x86_state.sf != x86_state.of) {
+        if (ebp.int_val >= 0) {
+            printf("wrong!\n");
+        }
         goto udloop;
     }
 uddone:
@@ -1200,6 +1203,9 @@ vdloop:
     // no op
     // jl		vdloop
     if (x86_state.sf != x86_state.of) {
+        if (ebp.int_val >= 0) {
+            printf("wrong!\n");
+        }
         goto vdloop;
     }
 vddone:
@@ -1540,6 +1546,9 @@ udloop:
     // no-op
     // jl		udloop
     if (x86_state.sf != x86_state.of) {
+        if (ebp.int_val >= 0) {
+            printf("wrong!\n");
+        }
         goto udloop;
     }
 uddone:
@@ -1595,6 +1604,9 @@ vdloop:
     // no op
     // jl		vdloop
     if (x86_state.sf != x86_state.of) {
+        if (ebp.int_val >= 0) {
+            printf("wrong!\n");
+        }
         goto vdloop;
     }
 vddone:

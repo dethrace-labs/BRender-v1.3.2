@@ -66,9 +66,7 @@ drawLine:
 	edi.v += ebx.v;
 
 // 	ror edx,16
-	int16_t tmp = edx.short_val[0];
-	edx.short_val[0] = edx.short_val[1];
-	edx.short_val[1] = tmp;
+	ROR16(edx);
 
 // 	lea ebp,[ebp+2*ebx]
 	ebp.v += ebx.v * 2;
@@ -76,15 +74,7 @@ drawLine:
 // 	sub ecx,ebx
 	ecx.v -= ebx.v;
 // 	jg_d lineDrawn,direction
-	if(direction == DRAW_LR) {
-		if (ecx.int_val > 0) {
-			goto lineDrawn;
-		}
-	} else {
-		if (ecx.int_val < 0) {
-			goto lineDrawn;
-		}
-	}
+	JG_D(ecx.int_val > 0, lineDrawn, direction);
 
 drawPixel:
 // 	shr esi,16-pow2
@@ -368,9 +358,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, int s
 	eax.v = workspace.flip;
 
 // 	ror edx,16
-	int16_t tmp = edx.short_val[0];
-	edx.short_val[0] = edx.short_val[1];
-	edx.short_val[1] = tmp;
+	ROR16(edx);
 
 // 	test eax,eax
 

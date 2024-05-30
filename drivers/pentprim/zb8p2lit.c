@@ -55,15 +55,7 @@ drawLine:
     // sub ecx,edx
     ecx.v -= edx.v;
     // jg_d lineDrawn,direction
-    if(direction == DRAW_LR) {
-		if (ecx.int_val > 0) {
-			goto lineDrawn;
-		}
-	} else {
-		if (ecx.int_val < 0) {
-			goto lineDrawn;
-		}
-	}
+    JG_D(ecx.int_val > 0, lineDrawn, direction);
     // ror ebx,16
     ROR16(ebx);
     // mov workspace.scratch1,ebp
@@ -361,9 +353,7 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int 
 	eax.v = workspace.flip;
 
 // 	ror edx,16
-	int16_t tmp = edx.short_val[0];
-	edx.short_val[0] = edx.short_val[1];
-	edx.short_val[1] = tmp;
+    ROR16(edx);
 
 // 	test eax,eax
 

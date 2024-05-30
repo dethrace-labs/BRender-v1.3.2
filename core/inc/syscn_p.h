@@ -16,7 +16,7 @@ extern "C" {
 #ifndef _NO_PROTOTYPES
 
 
-br_error BrSystemConfigBegin();
+br_error BrSystemConfigBegin(void);
 br_error BR_PUBLIC_ENTRY BrSystemConfigLoad( br_token t, char *Param1, void *Param2 );
 br_error BR_PUBLIC_ENTRY BrSystemConfigSave( br_token t, char *Param1, void *Param2 );
 br_error BR_PUBLIC_ENTRY BrSystemConfigQueryString( br_token t, char *string, int max_size );
