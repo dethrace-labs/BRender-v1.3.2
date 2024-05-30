@@ -187,10 +187,27 @@ void SURFACE_CALL SurfaceMapGeometryMapShift(br_renderer *self,
 #endif
 
 #ifndef OpTriangleMapQuad
-void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, union brp_vertex *v0, union brp_vertex *v1, union brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, ...)
 {
-	BrFailure("JeffH FIXME: %s:%d", __FILE__, __LINE__);
+	va_list va;
+	brp_vertex *v0;
+    brp_vertex *v1;
+    brp_vertex *v2;
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
+    br_vector4   *fp_eqn;
+    struct temp_face *tfp;
+
+    va_start(va, block);
+    v0          = va_arg(va, brp_vertex *);
+    v1          = va_arg(va, brp_vertex *);
+    v2          = va_arg(va, brp_vertex *);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
+    fp_eqn      = va_arg(va, br_vector4 *);
+    tfp         = va_arg(va, struct temp_face *);
+    va_end(va);
+
 	br_vector2 *qv = (br_vector2 *)&rend.renderer->state.cache.quad_transformed;
 
 	switch (rend.face_flags[rend.current_index] & BR_FACEF_QUAD_MASK) {

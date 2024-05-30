@@ -1,5 +1,10 @@
 project(softcube)
 
+find_package(SDL2 CONFIG)
+if(NOT SDL2_FOUND)
+    find_package(SDL2 MODULE REQUIRED)
+endif()
+
 add_executable(softcube16 main.c)
 target_compile_definitions(softcube16 PUBLIC -DSDL_MAIN_HANDLED -DSOFTCUBE_16BIT)
 target_compile_options(softcube16 PUBLIC )

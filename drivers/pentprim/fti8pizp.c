@@ -126,13 +126,13 @@ static inline void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int 
     // mov		work.tsl.dv_numerator, edi
     work.tsl.dv_numerator = edi.v;
     // mov		esi,work.texture.base
-    esi.ptr_val = work.texture.base;
+    esi.ptr_v = work.texture.base;
     // mov		eax,work.tsl.source
     eax.v = work.tsl.source;
     // mov		edi,work.tsl.start
-    edi.ptr_val = work.tsl.start;
+    edi.ptr_v = work.tsl.start;
     // mov		ebp,work.tsl.zstart
-    ebp.ptr_val = work.tsl.zstart;
+    ebp.ptr_v = work.tsl.zstart;
     // mov		ebx,work_pz_current
     ebx.v = work_pz_current;
     // mov		edx,work.pq.current
@@ -144,7 +144,7 @@ static inline void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int 
     // mov		work.tsl.z,ebx
     work.tsl.z = ebx.v;
     // mov		work.tsl.dest,edi
-    work.tsl.dest = edi.ptr_val;
+    work.tsl.dest = edi.ptr_v;
 
 next_pixel:
 	// ; Texel fetch and store section
@@ -161,14 +161,14 @@ next_pixel:
 	// ;
 
     // mov		dl,[ebp]
-    edx.short_val[0] = *((uint16_t*)ebp.ptr_val);
+    edx.short_val[0] = *((uint16_t*)ebp.ptr_v);
     // mov		cl,[eax+esi]
-    ecx.bytes[0] = ((char*)esi.ptr_val)[eax.v];
+    ecx.l = ((char*)esi.ptr_v)[eax.v];
 
     // mov		dh,[ebp+1]
     // no-op - already read both depth bytes
     // mov		edi,work.tsl.dest
-    edi.ptr_val = work.tsl.dest;
+    edi.ptr_v = work.tsl.dest;
 
     // cmp		bx,dx
     // ja		nodraw
@@ -180,7 +180,7 @@ next_pixel:
 	// ;
     // test	cl,cl
     // jz		nodraw
-    if (ecx.bytes[0] == 0) {
+    if (ecx.l == 0) {
         goto nodraw;
     }
 
@@ -202,22 +202,22 @@ next_pixel:
         // and     ecx,0ffh
         ecx.v &= 0xff;
         // mov     edx,work.blend_table
-        edx.ptr_val = work.blend_table;
+        edx.ptr_v = work.blend_table;
         // mov     ch,[edi]
-        ecx.bytes[1] = *((uint8_t*)edi.ptr_val);
+        ecx.h = *((uint8_t*)edi.ptr_v);
         // ;AGI stall
         // mov     cl,[edx+ecx]
-        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.v];
+        ecx.l = ((uint8_t*)edx.ptr_v)[ecx.v];
         // mov     [edi],cl
-        *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
+        *((uint8_t*)edi.ptr_v) = ecx.l;
 
     } else {
         // ; Store texel and z
 	    // ;
         // mov     [ebp],bx
-        *((uint16_t*)ebp.ptr_val) = ebx.short_val[0];
+        *((uint16_t*)ebp.ptr_v) = ebx.short_val[0];
         // mov     [edi],cl
-        *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
+        *((uint8_t*)edi.ptr_v) = ecx.l;
     }
 
 nodraw:
@@ -238,16 +238,17 @@ nodraw:
     // pre
     eax.v <<= params[size].pre;
     // mov		ecx,work.tsl._end
-    ecx.ptr_val = work.tsl.end;
+    ecx.ptr_v = work.tsl.end;
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    INC_D(((uint8_t*)edi.ptr_val), dirn);
+    INC_D(edi.ptr_8, dirn);
     // add_&dirn	ebp,2
-    ADD_D((uint8_t*)ebp.ptr_val, 2, dirn);
+    ADD_D(ebp.ptr_8, 2, dirn);
+
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
-    if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
+    if (dirn == DIR_F && edi.ptr_v > ecx.ptr_v || dirn == DIR_B && edi.ptr_v < ecx.ptr_v) {
         return;
     }
 
@@ -256,11 +257,11 @@ nodraw:
     // mov		ecx,work.tsl.dz
     ecx.v = work.tsl.dz;
     // mov		work.tsl.dest,edi
-    work.tsl.dest = edi.ptr_val;
+    work.tsl.dest = edi.ptr_v;
     // add_&dirn	ebx,ecx
     ADD_SET_CF_D(ebx.v, ecx.v, dirn);
     // mov		work.tsl.zdest,ebp
-    work.tsl.zdest = ebp.ptr_val;
+    work.tsl.zdest = ebp.ptr_v;
     // adc_&dirn	ebx,0		; carry into integer part of z
     ADC_D(ebx.v, 0, dirn);
 
@@ -307,7 +308,7 @@ nodraw:
         // ;
 deculoop:
         // decu
-        eax.bytes[0] -= params[size].decu;
+        eax.l -= params[size].decu;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ebx,edx
@@ -330,7 +331,7 @@ nodecu:
         // ;
 inculoop:
         // incu
-        eax.bytes[0] += params[size].incu;
+        eax.l += params[size].incu;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ebx,edx
@@ -364,12 +365,12 @@ stepuloop:
         // ifidni <udirn>,<i>
         // incu
         if (udirn == eScan_direction_i) {
-            eax.bytes[0] += params[size].incu;
+            eax.l += params[size].incu;
         }
         // else
 		// decu
         else {
-            eax.bytes[0] -= params[size].decu;
+            eax.l -= params[size].decu;
         }
         // endif
 
@@ -429,7 +430,7 @@ doneu:
         // ;
 decvloop:
         // decv
-        eax.bytes[1] -= params[size].decv;
+        eax.h -= params[size].decv;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ecx,edx
@@ -452,7 +453,7 @@ nodecv:
         // ;
 incvloop:
         // incv
-        eax.bytes[1] += params[size].incv;
+        eax.h += params[size].incv;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ecx,edx
@@ -489,9 +490,9 @@ stepvloop:
         //         decv
         // endif
         if (vdirn == eScan_direction_i) {
-            eax.bytes[1] += params[size].incv;
+            eax.h += params[size].incv;
         } else {
-            eax.bytes[1] -= params[size].decv;
+            eax.h -= params[size].decv;
         }
 
         // sub_&vdirn	edi,ebp
@@ -535,7 +536,7 @@ donev:
     // post2
     eax.v &= params[size].post2;
     // mov		ebp,work.tsl.zdest
-    ebp.ptr_val = work.tsl.zdest;
+    ebp.ptr_v = work.tsl.zdest;
 
     // mov		ebx,work.tsl.z
     ebx.v = work.tsl.z;
@@ -591,13 +592,13 @@ static inline void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int
     // mov		work.tsl.dv_numerator, edi
     work.tsl.dv_numerator = edi.v;
     // mov		esi,work.texture.base
-    esi.ptr_val = work.texture.base;
+    esi.ptr_v = work.texture.base;
     // mov		eax,work.tsl.source
     eax.v = work.tsl.source;
     // mov		edi,work.tsl.start
-    edi.ptr_val = work.tsl.start;
+    edi.ptr_v = work.tsl.start;
     // mov		ebp,work.tsl.zstart
-    ebp.ptr_val = work.tsl.zstart;
+    ebp.ptr_v = work.tsl.zstart;
     // mov		ebx,work_pz_current
     ebx.v = work_pz_current;
 
@@ -629,13 +630,13 @@ next_pixel:
 	// ;
 
     // mov		dx,[ebp]
-    edx.short_val[0] = *((uint16_t*)ebp.ptr_val);
+    edx.short_val[0] = *((uint16_t*)ebp.ptr_v);
     // xor		ecx,ecx
     ecx.v = 0;
     // mov		ebx,work.tsl.z
     ebx.v = work.tsl.z;
     // mov		cl,[eax+esi]
-    ecx.bytes[0] = ((uint8_t*)esi.ptr_val)[eax.v];
+    ecx.l = ((uint8_t*)esi.ptr_v)[eax.v];
 
     // cmp		bx,dx
     // ja		nodraw
@@ -646,15 +647,15 @@ next_pixel:
     // ; Get intensity
 	// ;
     // mov		edx,work.shade_table
-    edx.ptr_val = work.shade_table;
+    edx.ptr_v = work.shade_table;
     // mov		ch,byte ptr (work.tsl.i+2)
-    ecx.bytes[1] = BYTE2(work.tsl.i);
+    ecx.h = BYTE2(work.tsl.i);
 
 	// ; Test for transparency
 	// ;
     // test	cl,cl
     // jz		nodraw
-    if (ecx.bytes[0] == 0) {
+    if (ecx.l == 0) {
         goto nodraw;
     }
 
@@ -678,11 +679,11 @@ next_pixel:
         // ; Look texel up in shade table, store texel and z
 	    // ;
         // mov     [ebp],bx
-        *((uint16_t*)ebp.ptr_val) = ebx.short_val[0];
+        *((uint16_t*)ebp.ptr_v) = ebx.short_val[0];
         // mov     cl,[ecx+edx]
-        ecx.bytes[0] = ((uint8_t*)edx.ptr_val)[ecx.v];
+        ecx.l = ((uint8_t*)edx.ptr_v)[ecx.v];
         // mov     [edi],cl
-        *((uint8_t*)edi.ptr_val) = ecx.bytes[0];
+        *((uint8_t*)edi.ptr_v) = ecx.l;
     }
 
 nodraw:
@@ -703,16 +704,16 @@ nodraw:
     // pre
     eax.v <<= params[size].pre;
     // mov		ecx,work.tsl._end
-    ecx.ptr_val = work.tsl.end;
+    ecx.ptr_v = work.tsl.end;
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    INC_D(((uint8_t*)edi.ptr_val), dirn);
+    INC_D(edi.ptr_v, dirn);
     // add_&dirn	ebp,2
-    ADD_D((uint8_t*)ebp.ptr_val, 2, dirn);
+    ADD_D(ebp.ptr_v, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
-    if (dirn == DIR_F && edi.ptr_val > ecx.ptr_val || dirn == DIR_B && edi.ptr_val < ecx.ptr_val) {
+    if (dirn == DIR_F && edi.ptr_v > ecx.ptr_v || dirn == DIR_B && edi.ptr_v < ecx.ptr_v) {
         return;
     }
 
@@ -732,9 +733,9 @@ nodraw:
     // add_&dirn	ecx,edx
     ADD_D(ecx.v, edx.v, dirn);
     // mov		work.tsl.dest,edi
-    work.tsl.dest = edi.ptr_val;
+    work.tsl.dest = edi.ptr_v;
     // mov		work.tsl.zdest,ebp
-    work.tsl.zdest = ebp.ptr_val;
+    work.tsl.zdest = ebp.ptr_v;
     // mov		work.tsl.z,ebx
     work.tsl.z = ebx.v;
     // mov		work.tsl.i,ecx
@@ -781,7 +782,7 @@ nodraw:
         // ;
 deculoop:
         // decu
-        eax.bytes[0] -= params[size].decu;
+        eax.l -= params[size].decu;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ebx,edx
@@ -804,7 +805,7 @@ nodecu:
         // ;
 inculoop:
         // incu
-        eax.bytes[0] += params[size].incu;
+        eax.l += params[size].incu;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ebx,edx
@@ -838,12 +839,12 @@ stepuloop:
         // ifidni <udirn>,<i>
         // incu
         if (udirn == eScan_direction_i) {
-            eax.bytes[0] += params[size].incu;
+            eax.l += params[size].incu;
         }
         // else
 		// decu
         else {
-            eax.bytes[0] -= params[size].decu;
+            eax.l -= params[size].decu;
         }
         // endif
 
@@ -903,7 +904,7 @@ doneu:
         // ;
 decvloop:
         // decv
-        eax.bytes[1] -= params[size].decv;
+        eax.h -= params[size].decv;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ecx,edx
@@ -926,7 +927,7 @@ nodecv:
         // ;
 incvloop:
         // incv
-        eax.bytes[1] += params[size].incv;
+        eax.h += params[size].incv;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ecx,edx
@@ -963,9 +964,9 @@ stepvloop:
         //         decv
         // endif
         if (vdirn == eScan_direction_i) {
-            eax.bytes[1] += params[size].incv;
+            eax.h += params[size].incv;
         } else {
-            eax.bytes[1] -= params[size].decv;
+            eax.h -= params[size].decv;
         }
 
         // sub_&vdirn	edi,ebp
@@ -1009,10 +1010,10 @@ donev:
     // post2
     eax.v &= params[size].post2;
     // mov		ebp,work.tsl.zdest
-    ebp.ptr_val = work.tsl.zdest;
+    ebp.ptr_v = work.tsl.zdest;
 
     // mov		edi,work.tsl.dest
-    edi.ptr_val = work.tsl.dest;
+    edi.ptr_v = work.tsl.dest;
     // jmp		next_pixel
     goto next_pixel;
 }
@@ -1110,7 +1111,7 @@ scan_loop:
 
 uiloop:
     // incu							; work.tsl.source = incu(work.tsl.source)
-    eax.bytes[0] += params[size_param].incu;
+    eax.l += params[size_param].incu;
     // sub		edi,ecx					; work.pu.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pu.d_nocarry -= work.pq.d_nocarry
@@ -1133,7 +1134,7 @@ uidone:
     }
 udloop:
     // decu							; work.tsl.source = decu(work.tsl.source)
-    eax.bytes[0] -= params[size_param].decu;
+    eax.l -= params[size_param].decu;
     // add		edi,ecx					; work.pu.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
@@ -1166,7 +1167,7 @@ uddone:
     }
 viloop:
     // incv							; work.tsl.source = incv(work.tsl.source)
-    eax.bytes[1] += params[size_param].incv;
+    eax.h += params[size_param].incv;
     // sub		edi,ecx					; work.pv.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pv.d_nocarry -= work.pq.d_nocarry
@@ -1188,7 +1189,7 @@ vidone:
     }
 vdloop:
     // decv							; work.tsl.source = decv(work.tsl.source)
-    eax.bytes[1] -= params[size_param].decv;
+    eax.h -= params[size_param].decv;
     // add		edi,ecx					; work.pv.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
@@ -1505,7 +1506,7 @@ scan_loop:
 
 uiloop:
     // incu							; work.tsl.source = incu(work.tsl.source)
-    eax.bytes[0] += params[size_param].incu;
+    eax.l += params[size_param].incu;
     // sub		edi,ecx					; work.pu.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pu.d_nocarry -= work.pq.d_nocarry
@@ -1528,7 +1529,7 @@ uidone:
     }
 udloop:
     // decu							; work.tsl.source = decu(work.tsl.source)
-    eax.bytes[0] -= params[size_param].decu;
+    eax.l -= params[size_param].decu;
     // add		edi,ecx					; work.pu.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
@@ -1561,7 +1562,7 @@ uddone:
     }
 viloop:
     // incv							; work.tsl.source = incv(work.tsl.source)
-    eax.bytes[1] += params[size_param].incv;
+    eax.h += params[size_param].incv;
     // sub		edi,ecx					; work.pv.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pv.d_nocarry -= work.pq.d_nocarry
@@ -1583,7 +1584,7 @@ vidone:
     }
 vdloop:
     // decv							; work.tsl.source = decv(work.tsl.source)
-    eax.bytes[1] -= params[size_param].decv;
+    eax.h -= params[size_param].decv;
     // add		edi,ecx					; work.pv.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
@@ -1945,19 +1946,19 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
 
 
     // mov		al,byte ptr work.awsl.u_current
-    eax.bytes[0] = work.awsl.u_current;
+    eax.l = work.awsl.u_current;
 
     // mov		work_main_d_i,ebx
     work_main_d_i = ebx.v;
 
     // mov		ah,byte ptr work.awsl.v_current
-    eax.bytes[1] = work.awsl.v_current;
+    eax.h = work.awsl.v_current;
 
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
 
     // shl		al,2
-    eax.bytes[0] <<= 2;
+    eax.l <<= 2;
     // mov		work.tsl._di,edx
     work.tsl.di = edx.v;
 
@@ -2103,13 +2104,13 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     // ror		ecx,16
     ROR16(ecx);
     // mov		al,byte ptr work.awsl.u_current
-    eax.bytes[0] = work.awsl.u_current;
+    eax.l = work.awsl.u_current;
     // mov		ah,byte ptr work.awsl.v_current
-    eax.bytes[1] = work.awsl.v_current;
+    eax.h = work.awsl.v_current;
     // mov		work_main_d_i,ebx
     work_main_d_i = ebx.v;
     // shl		al,2
-    eax.bytes[0] <<= 2;
+    eax.l <<= 2;
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
     // shr		eax,2
@@ -2275,11 +2276,11 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
     // mov		work_main_d_i,ebx
     work_main_d_i = ebx.v;
     // mov		al,byte ptr work.awsl.u_current
-    eax.bytes[0] = work.awsl.u_current & 0xff;
+    eax.l = work.awsl.u_current & 0xff;
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
     // mov		ah,byte ptr work.awsl.v_current
-    eax.bytes[1] = work.awsl.v_current & 0xff;
+    eax.h = work.awsl.v_current & 0xff;
     // mov		work.tsl._di,edx
     work.tsl.di = edx.v;
     // mov		work.tsl.source,eax
@@ -2426,11 +2427,11 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
     // mov		al,byte ptr work.awsl.u_current
-    eax.bytes[0] = work.awsl.u_current;
+    eax.l = work.awsl.u_current;
     // mov		ebx,work.pq.grad_x
     ebx.v = work.pq.grad_x;
     // mov		ah,byte ptr work.awsl.v_current
-    eax.bytes[1] = work.awsl.v_current;
+    eax.h = work.awsl.v_current;
     // mov		work.tsl.ddenominator,ebx
     work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax
@@ -2658,13 +2659,13 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, ...) {
     // ror		ecx,16
     ROR16(ecx);
     // mov		al,byte ptr work.awsl.u_current
-    eax.bytes[0] = work.awsl.u_current;
+    eax.l = work.awsl.u_current;
     // mov		ah,byte ptr work.awsl.v_current
-    eax.bytes[1] = work.awsl.v_current;
+    eax.h = work.awsl.v_current;
     // mov		work_main_d_i,ebx
     work_main_d_i = ebx.v;
     // shl		al,2
-    eax.bytes[0] <<= 2;
+    eax.l <<= 2;
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
     // shr		eax,2
@@ -2835,11 +2836,11 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, ...) {
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
     // mov		al,byte ptr work.awsl.u_current
-    eax.bytes[0] = work.awsl.u_current;
+    eax.l = work.awsl.u_current;
     // mov		ebx,work.pq.grad_x
     ebx.v = work.pq.grad_x;
     // mov		ah,byte ptr work.awsl.v_current
-    eax.bytes[1] = work.awsl.v_current;
+    eax.h = work.awsl.v_current;
     // mov		work.tsl.ddenominator,ebx
     work.tsl.ddenominator = ebx.v;
     // mov		work.tsl.source,eax

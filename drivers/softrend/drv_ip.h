@@ -309,8 +309,7 @@ void SURFACE_CALL SurfaceMapGeometryMapScaleTranslate(br_renderer *self, br_vect
 void SURFACE_CALL SurfaceMapGeometryMapCopy(br_renderer *self, br_vector3 *p, br_vector2 *map, br_vector3 *n, br_colour colour, br_scalar *comp);
 void SURFACE_CALL SurfaceMapGeometryMapShift(br_renderer *self, br_vector3 *p, br_vector2 *map, br_vector3 *n, br_colour colour, br_scalar *comp);
 
-void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, union brp_vertex *v0, union brp_vertex *v1, union brp_vertex *v2,
-	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp);
+void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, ...);
 
 /*
  * alpha.c

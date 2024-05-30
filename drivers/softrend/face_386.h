@@ -23,4 +23,3 @@ void BR_ASM_CALL OpTriangleMapQuad_A(struct brp_block *block, union brp_vertex *
 };
 #endif
 #endif
-

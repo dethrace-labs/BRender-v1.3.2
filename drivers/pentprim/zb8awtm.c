@@ -395,10 +395,10 @@ drawPixel:
     }
 
     // 	mov bl,[esi+eax]
-    ebx.bytes[0] = ((uint8_t *)work.texture.base)[esi.v + eax.v];
+    ebx.l = ((uint8_t *)work.texture.base)[esi.v + eax.v];
     // 	test bl,bl
     // 	jz noPlot
-    if(ebx.bytes[0] == 0) {
+    if(ebx.l == 0) {
         goto noPlot;
     }
 
@@ -431,17 +431,17 @@ drawPixel:
         if (blend == eBlend_yes) {
             //     mov eax,work.blend_table
             //     mov bh,[edi+ecx]
-            ebx.bytes[1] = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
+            ebx.h = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
             //     mov bl,[eax+ebx]
-            ebx.bytes[0] = ((uint8_t *)work.blend_table)[ebx.v];
+            ebx.l = ((uint8_t *)work.blend_table)[ebx.v];
             //     mov [edi+ecx],bl
-            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.bytes[0];
+            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // else
         } else {
             //     mov [ebp+2*ecx],dx
             ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
             // 	   mov [edi+ecx],bl
-            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.bytes[0];
+            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // endif
         }
     // endif
@@ -629,17 +629,17 @@ drawPixel:
     }
 
     // 	mov bl,[esi+eax]
-    ebx.bytes[0] = ((uint8_t *)work.texture.base)[esi.v + eax.v];
+    ebx.l = ((uint8_t *)work.texture.base)[esi.v + eax.v];
 
     // mov eax,work.shade_table
     //eax.ptr_val = work.shade_table;
 
 	// mov bh,byte ptr workspace.c_i+2
-    ebx.bytes[1] = BYTE2(workspace.c_i);
+    ebx.h = BYTE2(workspace.c_i);
 
     // 	test bl,bl
     // 	jz noPlot
-    if(ebx.bytes[0] == 0) {
+    if(ebx.l == 0) {
         goto noPlot;
     }
 
@@ -671,22 +671,22 @@ drawPixel:
         // if blend
         if (blend == eBlend_yes) {
             // mov bl,byte ptr [eax+ebx]
-            ebx.bytes[0] = ((uint8_t *)work.shade_table)[ebx.v];
+            ebx.l = ((uint8_t *)work.shade_table)[ebx.v];
             //     mov eax,work.blend_table
             //     mov bh,[edi+ecx]
-            ebx.bytes[1] = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
+            ebx.h = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
             //     mov bl,[eax+ebx]
-            ebx.bytes[0] = ((uint8_t *)work.blend_table)[ebx.v];
+            ebx.l = ((uint8_t *)work.blend_table)[ebx.v];
             //     mov [edi+ecx],bl
-            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.bytes[0];
+            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // else
         } else {
             // mov bl,byte ptr [eax+ebx]
-            ebx.bytes[0] = ((uint8_t *)work.shade_table)[ebx.v];
+            ebx.l = ((uint8_t *)work.shade_table)[ebx.v];
 	        // mov [ebp+2*ecx],dx
             ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
             // 	   mov [edi+ecx],bl
-            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.bytes[0];
+            ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // endif
         }
     // endif

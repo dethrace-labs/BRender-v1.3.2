@@ -697,13 +697,13 @@ void SubdivideSetThreshold(br_int_32 subdivide_tolerance)
  * be processed, and whether it is completely on screen
  */
 static void triangleSubdivideCheck(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp);
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp);
 static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-    br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp);
+    br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp);
 
 
 static void triangleSubdivide(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp)
 {
 	br_uint_32 combined_codes;
 
@@ -726,7 +726,7 @@ static void triangleSubdivide(int depth, struct brp_block *block, brp_vertex *v0
  * Special case of subdivision for on screen triangles
  */
 static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-    br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+    br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp)
 {
     brp_vertex mid0,mid1,mid2;
 
@@ -759,7 +759,7 @@ static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_ve
  */
 
 static void triangleSubdivideCheck(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp)
 {
     brp_vertex mid0,mid1,mid2;
 

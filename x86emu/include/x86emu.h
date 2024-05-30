@@ -24,9 +24,18 @@ typedef struct x86_reg {
         uint32_t      v;
         int32_t       int_val;
         float         float_val;
-        unsigned char bytes[8];
+        //unsigned char bytes[8];
+        struct {
+            // "low" byte
+            uint8_t l;
+            // "high" byte
+            uint8_t h;
+        };
         uint16_t    short_val[2];
-        void         *ptr_val;
+        // these are a bit of a hack to allow 64bit pointers on occasion
+        void         *ptr_v;
+        uint8_t     *ptr_8;
+        uint16_t     *ptr_16;
     };
 
 } x86_reg;

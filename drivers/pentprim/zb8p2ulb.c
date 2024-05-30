@@ -104,18 +104,18 @@ drawPixel:
         goto noPlot;
     }
 	// 	mov al,[esi+eax]
-	eax.bytes[0] = ((uint8_t *)work.texture.base)[esi.v + eax.v];
+	eax.l = ((uint8_t *)work.texture.base)[esi.v + eax.v];
 	// mov esi,work.blend_table
-	esi.ptr_val = work.blend_table;
+	esi.ptr_v = work.blend_table;
 
 	// 	test al,al
 	// 	jz noPlot
-	if(eax.bytes[0] == 0) {
+	if(eax.l == 0) {
         goto noPlot;
     }
 
 	// mov ah,[edi+ecx]
-	eax.bytes[1] = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
+	eax.h = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
 
 	// 	mov [ebp+2*ecx],dl
 	// 	mov [ebp+2*ecx+1],dh
@@ -126,11 +126,11 @@ drawPixel:
 	// ;stall
 	// ;stall
 	// mov al,[esi+eax]
-	eax.bytes[0] = ((uint8_t *)esi.ptr_val)[eax.v];
+	eax.l = ((uint8_t *)esi.ptr_v)[eax.v];
 	// ;stall
 
 	// mov [edi+ecx],al
-	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.bytes[0];
+	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.l;
 
 noPlot:
 	// mov ebx,workspace.d_z_x

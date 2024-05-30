@@ -123,10 +123,10 @@ drawPixel:
     }
 
 // 	mov [ebp+2*ecx],dl
+// 	mov [ebp+2*ecx+1],dh
 	((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
 // 	mov [edi+ecx],al
-// 	mov [ebp+2*ecx+1],dh
-	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.bytes[0];
+	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.l;
 
 noPlot:
 // 	mov ebx,workspace.d_z_x
