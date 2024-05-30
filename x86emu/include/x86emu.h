@@ -271,4 +271,6 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.x86_swap = dest.short_val[0]; \
 	dest.short_val[0] = dest.short_val[1]; \
 	dest.short_val[1] = x86_state.x86_swap;
+
+
 #endif

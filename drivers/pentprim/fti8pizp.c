@@ -630,13 +630,13 @@ next_pixel:
 	// ;
 
     // mov		dx,[ebp]
-    edx.short_val[0] = *((uint16_t*)ebp.ptr_v);
+    edx.short_val[0] = *ebp.ptr_16;
     // xor		ecx,ecx
     ecx.v = 0;
     // mov		ebx,work.tsl.z
     ebx.v = work.tsl.z;
     // mov		cl,[eax+esi]
-    ecx.l = ((uint8_t*)esi.ptr_v)[eax.v];
+    ecx.l = esi.ptr_8[eax.v];
 
     // cmp		bx,dx
     // ja		nodraw
@@ -647,7 +647,7 @@ next_pixel:
     // ; Get intensity
 	// ;
     // mov		edx,work.shade_table
-    edx.ptr_v = work.shade_table;
+    edx.ptr_8 = work.shade_table;
     // mov		ch,byte ptr (work.tsl.i+2)
     ecx.h = BYTE2(work.tsl.i);
 
@@ -679,11 +679,11 @@ next_pixel:
         // ; Look texel up in shade table, store texel and z
 	    // ;
         // mov     [ebp],bx
-        *((uint16_t*)ebp.ptr_v) = ebx.short_val[0];
+        *ebp.ptr_16 = ebx.short_val[0];
         // mov     cl,[ecx+edx]
-        ecx.l = ((uint8_t*)edx.ptr_v)[ecx.v];
+        ecx.l = edx.ptr_8[ecx.v];
         // mov     [edi],cl
-        *((uint8_t*)edi.ptr_v) = ecx.l;
+        *edi.ptr_8 = ecx.l;
     }
 
 nodraw:
@@ -704,13 +704,13 @@ nodraw:
     // pre
     eax.v <<= params[size].pre;
     // mov		ecx,work.tsl._end
-    ecx.ptr_v = work.tsl.end;
+    ecx.ptr_8 = (uint8_t*)work.tsl.end;
     // ; Update destinations and check for end of scan
     // ;
     // inc_&dirn	edi
-    INC_D(edi.ptr_v, dirn);
+    INC_D(edi.ptr_8, dirn);
     // add_&dirn	ebp,2
-    ADD_D(ebp.ptr_v, 2, dirn);
+    ADD_D(ebp.ptr_8, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
     if (dirn == DIR_F && edi.ptr_v > ecx.ptr_v || dirn == DIR_B && edi.ptr_v < ecx.ptr_v) {
