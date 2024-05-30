@@ -1145,7 +1145,7 @@ udloop:
     // no-op
     // jl		udloop
     if (x86_state.sf != x86_state.of) {
-        if (ebp.int_val >= 0) {
+        if (ebp.int_val < 0) {
             printf("wrong!\n");
         }
         goto udloop;
@@ -1203,7 +1203,7 @@ vdloop:
     // no op
     // jl		vdloop
     if (x86_state.sf != x86_state.of) {
-        if (ebp.int_val >= 0) {
+        if (ebp.int_val < 0) {
             printf("wrong!\n");
         }
         goto vdloop;
