@@ -244,16 +244,6 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.cf = val1 < val2; \
     x86_state.zf = val1 == val2;
 
-#define ADD_AND_SET_CF(val1, val2) \
-    do { \
-    int sign_a = (int32_t)val1 >> 31;  \
-    int sign_b = (int32_t)val2 >> 31; \
-    val1 += val2; \
-    x86_state.sf = (int32_t)val1 >> 31; \
-    x86_state.of = ((~(sign_a ^ sign_b)) & (sign_a ^ x86_state.sf)) >> 31; \
-	x86_state.cf = val1 < val2; \
-    } while(0)
-
 #define RCL_1(val) \
     do { \
     int msb = val & 0x80000000; \
@@ -263,10 +253,13 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.cf = msb; \
     } while(0)
 
+#define ADD_AND_SET_CF(val1, val2) \
+    val1 += val2; \
+	x86_state.cf = val1 < val2;
+
 #define SUB_AND_SET_CF(val1, val2) \
     x86_state.cf = val1 < val2; \
     val1 -= val2;
-
 
 #define ADC(val1, val2) \
     val1 += val2 + x86_state.cf;

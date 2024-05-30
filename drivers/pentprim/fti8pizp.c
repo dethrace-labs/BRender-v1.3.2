@@ -1144,10 +1144,7 @@ udloop:
     // uslot
     // no-op
     // jl		udloop
-    if (x86_state.sf != x86_state.of) {
-        if (ebp.int_val < 0) {
-            printf("wrong!\n");
-        }
+    if (ebp.int_val < 0) {
         goto udloop;
     }
 uddone:
@@ -1202,10 +1199,7 @@ vdloop:
     // uslot
     // no op
     // jl		vdloop
-    if (x86_state.sf != x86_state.of) {
-        if (ebp.int_val < 0) {
-            printf("wrong!\n");
-        }
+    if (ebp.int_val < 0) {
         goto vdloop;
     }
 vddone:
@@ -1545,10 +1539,7 @@ udloop:
     // uslot
     // no-op
     // jl		udloop
-    if (x86_state.sf != x86_state.of) {
-        if (ebp.int_val >= 0) {
-            printf("wrong!\n");
-        }
+    if (ebp.int_val < 0) {
         goto udloop;
     }
 uddone:
@@ -1603,10 +1594,7 @@ vdloop:
     // uslot
     // no op
     // jl		vdloop
-    if (x86_state.sf != x86_state.of) {
-        if (ebp.int_val >= 0) {
-            printf("wrong!\n");
-        }
+    if (ebp.int_val < 0) {
         goto vdloop;
     }
 vddone:
