@@ -45,7 +45,7 @@
 #elif defined (_MSC_VER)
 
 #ifndef __H2INC__
-#pragma pack()
+//#pragma pack()
 #endif
 
 /*

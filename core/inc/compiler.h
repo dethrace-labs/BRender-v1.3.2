@@ -165,7 +165,7 @@ typedef float br_float;
 
 #ifndef __H2INC__
 #pragma warning(disable:4103)
-#pragma pack(4)
+//#pragma pack(4)
 #endif
 
 /*

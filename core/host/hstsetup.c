@@ -80,7 +80,7 @@ static host_info hostInfo = {
 		| HOST_CAPS_PROTECTED_INT_HOOK
 		| HOST_CAPS_EXCEPTION_HOOK
 		| HOST_CAPS_BASE_SELECTORS_WRITE,
-#elif defined(__WIN_32__)
+#elif defined(_WIN32) || defined(_WIN64)
 	"Microsoft WIN32",
 	0,
 #else

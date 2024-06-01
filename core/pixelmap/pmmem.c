@@ -93,17 +93,25 @@ static const struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
 };
 #undef F
 
+#include <stdio.h>
 br_device_pixelmap * DevicePixelmapMemAllocate(br_uint_8 type,br_uint_16 w,br_uint_16 h, void *pixels, int flags)
 {
 	br_device_pixelmap *pm;
+	br_pixelmap *pm2;
 	const struct pm_type_info *tip = pmTypeInfo+type;
 
 
 	pm = BrResAllocate(_pixelmap.res,sizeof(*pm),BR_MEMORY_PIXELMAP);
-
-
-
-	UASSERT(type < BR_ASIZE(pmTypeInfo));
+	pm2 = pm;
+	printf("size of pm %d, pm2 %d\n", sizeof(pm), sizeof(pm2));
+	int a = offsetof(br_device_pixelmap, pm_pixels_qualifier);
+	int b = offsetof(br_pixelmap, pixels_qualifier);
+	printf("a %d, b %d\n", a, b);
+	 //24, 24
+	a = offsetof(br_device_pixelmap, pm_map);
+	 b = offsetof(br_pixelmap, map);
+	// 32, 28
+	 UASSERT(type < BR_ASIZE(pmTypeInfo));
 
 	/*
 	 * Fill in base structure
