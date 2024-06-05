@@ -25,32 +25,6 @@ void BR_CALLBACK _BrEndHook(void)
 
 static char primitive_heap[1500 * 1024];
 
-typedef struct br_device_pixelmap2 {
-    /*
-     * Dispatch table
-     */
-    void* dispatch;
-
-    /*
-     * Standard pixelmap members
-     */
-    char* pm_identifier;
-
-    void* pm_pixels;
-
-        /*
-         * Optional device speicific information
-         */
-        br_uint_32  pm_pixels_qualifier;
-
-        /*
-         * Optional pixel map when pixels are indexed.
-         */
-        struct br_pixelmap* pm_map;
-
-} br_device_pixelmap2;
-
-
 
 int main(int argc, char **argv)
 {
@@ -62,14 +36,6 @@ int main(int argc, char **argv)
     br_error     err;
 
     BrBegin();
-
-    int a = offsetof(br_device_pixelmap, pm_pixels_qualifier);
-    int b = offsetof(br_pixelmap, pixels_qualifier);
-    printf("a %d, b %d\n", a, b);
-    //24, 24
-    a = offsetof(br_device_pixelmap, pm_map);
-    b = offsetof(br_pixelmap, map);
-    int c = offsetof(br_device_pixelmap2, pm_map);
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{

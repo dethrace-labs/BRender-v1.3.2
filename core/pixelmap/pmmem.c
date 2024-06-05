@@ -93,7 +93,6 @@ static const struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
 };
 #undef F
 
-#include <stdio.h>
 br_device_pixelmap * DevicePixelmapMemAllocate(br_uint_8 type,br_uint_16 w,br_uint_16 h, void *pixels, int flags)
 {
 	br_device_pixelmap *pm;
