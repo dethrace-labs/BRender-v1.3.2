@@ -45,7 +45,8 @@
 #elif defined (_MSC_VER)
 
 #ifndef __H2INC__
-//#pragma pack()
+// jeff: removed explicit packing - causes problems in other translation units where this is not applied
+// #pragma pack()
 #endif
 
 /*
@@ -71,6 +72,3 @@
 #endif
 
 #endif
-
-
-

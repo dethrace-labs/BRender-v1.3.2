@@ -36,17 +36,17 @@ typedef struct br_device_pixelmap2 {
      */
     char* pm_identifier;
 
-    void* pm_pixels;														
-        
-        /*																		
-         * Optional device speicific information								
-         */																		
-        br_uint_32  pm_pixels_qualifier;										
-        
-        /*																		
-         * Optional pixel map when pixels are indexed.						
-         */																		
-        struct br_pixelmap* pm_map;											
+    void* pm_pixels;
+
+        /*
+         * Optional device speicific information
+         */
+        br_uint_32  pm_pixels_qualifier;
+
+        /*
+         * Optional pixel map when pixels are indexed.
+         */
+        struct br_pixelmap* pm_map;
 
 } br_device_pixelmap2;
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     //err = BrDevBegin(&screen, "SDL2");
     screen = BrPixelmapAllocate(BR_PMT_INDEX_8, 640, 480, NULL, BR_PMAF_NORMAL);
 
-    
+
 
     {
 #if defined(SOFTCUBE_16BIT)
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     colour_buffer->origin_y = depth_buffer->origin_y = colour_buffer->height >> 1;
 
     br_pixelmap *pal_std;
-    if((pal_std = BrPixelmapLoad("C:/Games/DBG/DATA/REG/PALETTES/DRRENDER.PAL")) == NULL) {
+    if((pal_std = BrPixelmapLoad("/opt/CARMA/DATA/REG/PALETTES/DRRENDER.PAL")) == NULL) {
         //Error("APP", "Error loading std.pal");
         goto create_fail;
     }
@@ -170,30 +170,30 @@ int main(int argc, char **argv)
     BrMaterialFindHook(BrMaterialFindFailedLoad);
 
     char* pm_names[] = {
-        "C:/Games/DBG/DATA/PIXELMAP/GASPUMP.PIX",
-        "C:/Games/DBG/DATA/PIXELMAP/TRAFCLIT.PIX",
-        "C:/Games/DBG/DATA/PIXELMAP/EAGREDL.PIX",
-        "C:/Games/DBG/DATA/PIXELMAP/SCREWIE.PIX",
-        "C:/Games/DBG/DATA/PIXELMAP/TASSLE.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/GASPUMP.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/TRAFCLIT.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/SCREWIE.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/TASSLE.PIX",
     };
     char* mat_names[] = {
-        "C:/Games/DBG/DATA/MATERIAL/GASPUMP.MAT",
-        "C:/Games/DBG/DATA/MATERIAL/TRFCLITE.MAT",
-        "C:/Games/DBG/DATA/MATERIAL/EAGLE.MAT",
-        "C:/Games/DBG/DATA/MATERIAL/SCREWIE.MAT",
-        "C:/Games/DBG/DATA/MATERIAL/TASSLE.MAT",
-        "C:/Games/DBG/DATA/REG/MATERIAL/SIMPMAT.MAT"
+        "/opt/CARMA/DATA/MATERIAL/GASPUMP.MAT",
+        "/opt/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/TASSLE.MAT",
+        "/opt/CARMA/DATA/REG/MATERIAL/SIMPMAT.MAT"
     };
     char *mdl_names[] = {
-        "C:/Games/DBG/DATA/MODELS/&00GAS.DAT",
-        "C:/Games/DBG/DATA/MODELS/&03TRAFF.DAT",
-        "C:/Games/DBG/DATA/MODELS/EAGLE.DAT",
-        "C:/Games/DBG/DATA/MODELS/EAGLEX.DAT",
-        "C:/Games/DBG/DATA/MODELS/SCREWIE.DAT",
-        "C:/Games/DBG/DATA/MODELS/TASSLE.DAT",
+        "/opt/CARMA/DATA/MODELS/&00GAS.DAT",
+        "/opt/CARMA/DATA/MODELS/&03TRAFF.DAT",
+        "/opt/CARMA/DATA/MODELS/EAGLE.DAT",
+        "/opt/CARMA/DATA/MODELS/EAGLEX.DAT",
+        "/opt/CARMA/DATA/MODELS/SCREWIE.DAT",
+        "/opt/CARMA/DATA/MODELS/TASSLE.DAT",
     };
 
-    br_pixelmap *fog = BrPixelmapLoad("C:/Games/DBG/DATA/SHADETAB/STAAAAAA.TAB");
+    br_pixelmap *fog = BrPixelmapLoad("/opt/CARMA/DATA/SHADETAB/STAAAAAA.TAB");
     BrMapAdd(fog);
 
     for (int i = 0; i < sizeof(pm_names) / sizeof(char*); i++) {
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
                 // tmp[j]->flags &= ~BR_MATF_LIGHT;
                 // tmp[j]->index_shade = fog;
                 // tmp[j]->ka = 0.5f;
-                BrMaterialUpdate(tmp[j], BR_MATU_ALL);
+                //BrMaterialUpdate(tmp[j], BR_MATU_ALL);
             }
         }
         int loaded  = BrMaterialAddMany(tmp, count);
@@ -227,14 +227,14 @@ int main(int argc, char **argv)
         BrModelAddMany(tmp, count);
     }
 
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/&00GAS.ACT");
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/&03TRAFF.ACT");
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/EAGLE.ACT");
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/SCREWIE.ACT");
-    cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/EAGLEX.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&00GAS.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&03TRAFF.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
+    // cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/SCREWIE.ACT");
+    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/&03TRAFF.ACT");
 
-    cube2 = BrActorLoad("C:/Games/DBG/DATA/ACTORS/EAGLEX.ACT");
-    BrMatrix34Translate(&cube2->t.t.mat, 0, 0.3, 0.2);
+    // cube2 = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLEX.ACT");
+    // BrMatrix34Translate(&cube2->t.t.mat, 0, 0.3, 0.2);
     // cube->render_style = BR_RSTYLE_EDGES;
 
     // only wheel
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 
     // cube->children = NULL;
     BrActorAdd(world, cube);
-    BrActorAdd(world, cube2);
+    // BrActorAdd(world, cube2);
 
 
 
