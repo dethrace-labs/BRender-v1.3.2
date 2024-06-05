@@ -157,4 +157,8 @@ if(BRENDER_ASAN_ENABLED)
 	)
 endif()
 
+if(NOT MSVC)
+	target_compile_options(pentprim PRIVATE -fno-strict-aliasing)
+endif()
+
 add_library(BRender::Drivers::SoftPrim ALIAS pentprim)
