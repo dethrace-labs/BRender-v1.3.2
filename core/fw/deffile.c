@@ -47,5 +47,5 @@ br_filesystem BrNullFilesystem = {
 /*
  * Global variable that can be overridden by linking something first
  */
-br_filesystem *_BrDefaultFilesystem = &BrNullFilesystem;
+//br_filesystem *_BrDefaultFilesystem = &BrNullFilesystem;
 

@@ -3,8 +3,8 @@
 
 #include "priminfo.h"
 
-extern long  fconv_d16_12[2];
-extern long  fconv_d16_m[2];
+extern uint64_t  fconv_d16_12[2];
+extern uint64_t  fconv_d16_m[2];
 extern float fp_one        ;
 extern float fp_two        ;
 extern float fp_four        ;

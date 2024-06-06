@@ -400,6 +400,7 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
+
 void BR_ASM_CALL TriangleRender_ZTB_I8_D16_64(brp_block *block, ...) {
     va_list     va;
     va_start(va, block);
