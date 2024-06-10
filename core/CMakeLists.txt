@@ -48,13 +48,6 @@ set_target_properties(brender PROPERTIES
         EXPORT_NAME "Core" # To get BRender::Core when exported.
         )
 
-# https://gitlab.kitware.com/cmake/cmake/-/issues/17356
-if (BUILD_SHARED_LIBS)
-    set_target_properties(${BRENDER_TARGETS} PROPERTIES
-            POSITION_INDEPENDENT_CODE ON
-            )
-endif ()
-
 ##
 # BRender DDI target.
 # Same as Core, but exposes the DDI headers.
