@@ -24,9 +24,18 @@ typedef struct x86_reg {
         uint32_t      v;
         int32_t       int_val;
         float         float_val;
-        unsigned char bytes[8];
+        //unsigned char bytes[8];
+        struct {
+            // "low" byte
+            uint8_t l;
+            // "high" byte
+            uint8_t h;
+        };
         uint16_t    short_val[2];
-        void         *ptr_val;
+        // these are a bit of a hack to allow 64bit pointers on occasion
+        void         *ptr_v;
+        uint8_t     *ptr_8;
+        uint16_t     *ptr_16;
     };
 
 } x86_reg;
@@ -138,7 +147,10 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     ST_(i) = x86_state.x87_swap;
 
 #define FLD_ST(i) \
-    x86_state.x87_stack[++x86_state.x87_stack_top] = ST_(i);
+    do { \
+    double v = ST_(i); \
+    x86_state.x87_stack[++x86_state.x87_stack_top] = v; \
+    } while (0);
 
 #define FLD(val_ptr) \
     x86_state.x87_stack[++x86_state.x87_stack_top] = *(float *)&val_ptr;
@@ -235,16 +247,6 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.cf = val1 < val2; \
     x86_state.zf = val1 == val2;
 
-#define ADD_AND_SET_CF(val1, val2) \
-    do { \
-    int sign_a = (int32_t)val1 >> 31;  \
-    int sign_b = (int32_t)val2 >> 31; \
-    val1 += val2; \
-    x86_state.sf = (int32_t)val1 >> 31; \
-    x86_state.of = ((~(sign_a ^ sign_b)) & (sign_a ^ x86_state.sf)) >> 31; \
-	x86_state.cf = val1 < val2; \
-    } while(0)
-
 #define RCL_1(val) \
     do { \
     int msb = val & 0x80000000; \
@@ -254,10 +256,13 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.cf = msb; \
     } while(0)
 
+#define ADD_AND_SET_CF(val1, val2) \
+    val1 += val2; \
+	x86_state.cf = val1 < val2;
+
 #define SUB_AND_SET_CF(val1, val2) \
     x86_state.cf = val1 < val2; \
     val1 -= val2;
-
 
 #define ADC(val1, val2) \
     val1 += val2 + x86_state.cf;
@@ -269,4 +274,6 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     x86_state.x86_swap = dest.short_val[0]; \
 	dest.short_val[0] = dest.short_val[1]; \
 	dest.short_val[1] = x86_state.x86_swap;
+
+
 #endif

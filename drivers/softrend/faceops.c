@@ -30,8 +30,8 @@ void BR_ASM_CALL OpTriangleClip(struct brp_block *block, ...)
     brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16 *fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -39,8 +39,8 @@ void BR_ASM_CALL OpTriangleClip(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
@@ -70,8 +70,8 @@ void BR_ASM_CALL OpTriangleClipConstantSurf(struct brp_block *block, ...)
     brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16 *fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -79,8 +79,8 @@ void BR_ASM_CALL OpTriangleClipConstantSurf(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16 *);
+    fp_edges    = va_arg(va, br_uint_16 *);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
@@ -92,8 +92,8 @@ void BR_ASM_CALL OpTriangleClipConstantSurf(struct brp_block *block, ...)
 
 	if((clipped = FaceClip(rend.renderer, clip_in, rend.renderer->state.cache.clip_slots, tfp->codes, 3, &nclipped))) {
 
-		vp_p = rend.vertex_p + (*fp_vertices)[0];
-		vp_map = rend.vertex_map + (*fp_vertices)[0];
+		vp_p = rend.vertex_p + *fp_vertices;
+		vp_map = rend.vertex_map + *fp_vertices;
 
 		if(rend.renderer->state.surface.colour_source == BRT_GEOMETRY)
 			colour = rend.face_colours[rend.current_index];
@@ -129,8 +129,9 @@ void BR_ASM_CALL OpTriangleConstantSurf(struct brp_block *block, ...)
     brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
+
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -138,14 +139,14 @@ void BR_ASM_CALL OpTriangleConstantSurf(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
 
-	vp_p = rend.vertex_p + (*fp_vertices)[0];
-	vp_map = rend.vertex_map + (*fp_vertices)[0];
+	vp_p = rend.vertex_p + fp_vertices[0];
+	vp_map = rend.vertex_map + fp_vertices[0];
 
 	if(rend.renderer->state.surface.colour_source == BRT_GEOMETRY)
 		colour = rend.face_colours[rend.current_index];
@@ -168,8 +169,8 @@ void BR_ASM_CALL OpTriangleTwoSidedConstantSurf(struct brp_block *block, ...)
     brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -177,14 +178,14 @@ void BR_ASM_CALL OpTriangleTwoSidedConstantSurf(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
 
-	vp_p = rend.vertex_p + (*fp_vertices)[0];
-	vp_map = rend.vertex_map + (*fp_vertices)[0];
+	vp_p = rend.vertex_p + fp_vertices[0];
+	vp_map = rend.vertex_map + fp_vertices[0];
 
 	if(rend.renderer->state.surface.colour_source == BRT_GEOMETRY)
 		colour = rend.face_colours[rend.current_index];
@@ -218,8 +219,8 @@ void BR_ASM_CALL OpTriangleMappingWrapFix(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -227,8 +228,8 @@ void BR_ASM_CALL OpTriangleMappingWrapFix(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
@@ -285,8 +286,8 @@ void BR_ASM_CALL OpTriangleRelightTwoSided(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -294,8 +295,8 @@ void BR_ASM_CALL OpTriangleRelightTwoSided(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
@@ -314,12 +315,12 @@ void BR_ASM_CALL OpTriangleRelightTwoSided(struct brp_block *block, ...)
 
 			if((tv[v].flags & (TVDIR_FRONT | TVDIR_BACK)) == (TVDIR_FRONT | TVDIR_BACK)) {
 
-				vp_p = rend.vertex_p + (*fp_vertices)[v];
-				vp_map = rend.vertex_map + (*fp_vertices)[v];
-				vp_n = rend.vertex_n + (*fp_vertices)[v];
+				vp_p = rend.vertex_p + fp_vertices[v];
+				vp_map = rend.vertex_map + fp_vertices[v];
+				vp_n = rend.vertex_n + fp_vertices[v];
 
 				if(rend.renderer->state.surface.colour_source == BRT_GEOMETRY)
-					colour = rend.vertex_colours[(*fp_vertices)[v]];
+					colour = rend.vertex_colours[fp_vertices[v]];
 
 				BrVector3Negate(&rev_normal, vp_n);
 
@@ -342,34 +343,34 @@ void BR_ASM_CALL OpTriangleToLines(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
 
     va_list va;
     va_start(va, block);
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     va_end(va);
 
 	/*
 	 * Generate a line for each unrendered edge
 	 */
-	if(!rend.edge_flags[(*fp_edges)[0]]) {
+	if(!rend.edge_flags[fp_edges[0]]) {
 		block->chain->render(block->chain, v0, v1);
-		rend.edge_flags[(*fp_edges)[0]] = 1;
+		rend.edge_flags[fp_edges[0]] = 1;
 	}
 
-	if(!rend.edge_flags[(*fp_edges)[1]]) {
+	if(!rend.edge_flags[fp_edges[1]]) {
 		block->chain->render(block->chain, v1, v2);
-		rend.edge_flags[(*fp_edges)[1]] = 1;
+		rend.edge_flags[fp_edges[1]] = 1;
 	}
 
-	if(!rend.edge_flags[(*fp_edges)[2]]) {
+	if(!rend.edge_flags[fp_edges[2]]) {
 		block->chain->render(block->chain, v2, v0);
-		rend.edge_flags[(*fp_edges)[2]] = 1;
+		rend.edge_flags[fp_edges[2]] = 1;
 	}
 }
 
@@ -385,16 +386,16 @@ void BR_ASM_CALL OpTriangleReplicateConstant(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
 
     va_list va;
     va_start(va, block);
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     va_end(va);
 
 	m = rend.block->constant_mask;
@@ -415,16 +416,16 @@ void BR_ASM_CALL OpTriangleReplicateConstantI(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
 
     va_list va;
     va_start(va, block);
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     va_end(va);
 
 	v1->comp[C_I] = v2->comp[C_I] = v0->comp[C_I];
@@ -440,16 +441,16 @@ void BR_ASM_CALL OpTriangleReplicateConstantRGB(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
 
     va_list va;
     va_start(va, block);
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     va_end(va);
 
 	v1->comp[C_R] = v2->comp[C_R] = v0->comp[C_R];
@@ -464,31 +465,31 @@ void BR_ASM_CALL OpTriangleToPoints(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
+    br_uint_16 *fp_vertices;
 
     va_list va;
     va_start(va, block);
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
     va_end(va);
 	/*
 	 * Generate a point for each unrendered vertex
 	 */
-	if(!rend.vertex_flags[(*fp_vertices)[0]] && !(v0->flags & OUTCODES_ALL)) {
+	if(!rend.vertex_flags[fp_vertices[0]] && !(v0->flags & OUTCODES_ALL)) {
 		block->chain->render(block->chain, v0);
-		rend.vertex_flags[(*fp_vertices)[0]] = 1;
+		rend.vertex_flags[fp_vertices[0]] = 1;
 	}
 
-	if(!rend.vertex_flags[(*fp_vertices)[1]] && !(v1->flags & OUTCODES_ALL)) {
+	if(!rend.vertex_flags[fp_vertices[1]] && !(v1->flags & OUTCODES_ALL)) {
 		block->chain->render(block->chain, v1);
-		rend.vertex_flags[(*fp_vertices)[1]] = 1;
+		rend.vertex_flags[fp_vertices[1]] = 1;
 	}
 
-	if(!rend.vertex_flags[(*fp_vertices)[2]] && !(v2->flags & OUTCODES_ALL)) {
+	if(!rend.vertex_flags[fp_vertices[2]] && !(v2->flags & OUTCODES_ALL)) {
 		block->chain->render(block->chain, v2);
-		rend.vertex_flags[(*fp_vertices)[2]] = 1;
+		rend.vertex_flags[fp_vertices[2]] = 1;
 	}
 }
 
@@ -497,32 +498,32 @@ void BR_ASM_CALL OpTriangleToPoints_OS(struct brp_block *block, ...)
 	brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
+    br_uint_16 *fp_vertices;
 
     va_list va;
     va_start(va, block);
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
     va_end(va);
 
 	/*
 	 * Generate a point for each unrendered vertex
 	 */
-	if(!rend.vertex_flags[(*fp_vertices)[0]]) {
+	if(!rend.vertex_flags[fp_vertices[0]]) {
 		block->chain->render(block->chain, v0);
-		rend.vertex_flags[(*fp_vertices)[0]] = 1;
+		rend.vertex_flags[fp_vertices[0]] = 1;
 	}
 
-	if(!rend.vertex_flags[(*fp_vertices)[1]]) {
+	if(!rend.vertex_flags[fp_vertices[1]]) {
 		block->chain->render(block->chain, v1);
-		rend.vertex_flags[(*fp_vertices)[1]] = 1;
+		rend.vertex_flags[fp_vertices[1]] = 1;
 	}
 
-	if(!rend.vertex_flags[(*fp_vertices)[2]]) {
+	if(!rend.vertex_flags[fp_vertices[2]]) {
 		block->chain->render(block->chain, v2);
-		rend.vertex_flags[(*fp_vertices)[2]] = 1;
+		rend.vertex_flags[fp_vertices[2]] = 1;
 	}
 }
 
@@ -696,13 +697,13 @@ void SubdivideSetThreshold(br_int_32 subdivide_tolerance)
  * be processed, and whether it is completely on screen
  */
 static void triangleSubdivideCheck(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp);
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp);
 static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-    br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp);
+    br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp);
 
 
 static void triangleSubdivide(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp)
 {
 	br_uint_32 combined_codes;
 
@@ -725,7 +726,7 @@ static void triangleSubdivide(int depth, struct brp_block *block, brp_vertex *v0
  * Special case of subdivision for on screen triangles
  */
 static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-    br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+    br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp)
 {
     brp_vertex mid0,mid1,mid2;
 
@@ -758,7 +759,7 @@ static void triangleSubdivideOnScreen(int depth, struct brp_block *block, brp_ve
  */
 
 static void triangleSubdivideCheck(int depth, struct brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp)
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges, br_vector4 *fp_eqn, struct temp_face *tfp)
 {
     brp_vertex mid0,mid1,mid2;
 
@@ -803,8 +804,8 @@ void BR_ASM_CALL OpTriangleSubdivide(struct brp_block *block, ...)
     brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -812,8 +813,8 @@ void BR_ASM_CALL OpTriangleSubdivide(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);
@@ -834,8 +835,8 @@ void BR_ASM_CALL OpTriangleSubdivideOnScreen(struct brp_block *block, ...)
     brp_vertex *v0;
     brp_vertex *v1;
     brp_vertex *v2;
-    br_uint_16(*fp_vertices)[3];
-    br_uint_16(*fp_edges)[3];
+    br_uint_16 *fp_vertices;
+    br_uint_16* fp_edges;
     br_vector4       *fp_eqn;
     struct temp_face *tfp;
 
@@ -843,8 +844,8 @@ void BR_ASM_CALL OpTriangleSubdivideOnScreen(struct brp_block *block, ...)
     v0          = va_arg(va, brp_vertex *);
     v1          = va_arg(va, brp_vertex *);
     v2          = va_arg(va, brp_vertex *);
-    fp_vertices = va_arg(va, br_uint_16(*)[3]);
-    fp_edges    = va_arg(va, br_uint_16(*)[3]);
+    fp_vertices = va_arg(va, br_uint_16*);
+    fp_edges    = va_arg(va, br_uint_16*);
     fp_eqn      = va_arg(va, br_vector4 *);
     tfp         = va_arg(va, struct temp_face *);
     va_end(va);

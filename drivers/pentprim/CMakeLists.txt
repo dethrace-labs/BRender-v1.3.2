@@ -126,6 +126,7 @@ add_library(pentprim
 		zb8.c
 		zb8p2ulb.c
 		zb8p2ltb.c
+		compiler.h
 
 		${PRIM_FILES}
 )
@@ -154,6 +155,10 @@ if(BRENDER_ASAN_ENABLED)
 	target_link_options(pentprim
 			BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,undefined
 	)
+endif()
+
+if(NOT MSVC)
+	target_compile_options(pentprim PRIVATE -fno-strict-aliasing)
 endif()
 
 add_library(BRender::Drivers::SoftPrim ALIAS pentprim)

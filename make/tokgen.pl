@@ -34,6 +34,9 @@ close(DB);
 #
 while (<>) {
 
+	# strip out windows newlines
+	s/\R\z//;
+
 	# Ignore comments
 	#
 	next if(/^#/);
@@ -44,6 +47,7 @@ while (<>) {
 	if(/^\$\s*(\w+)(?:\s+(\w+)\s+(\w+)?)?$/) {
 		# Add type to type table
 		#
+
 		$name = "\U$1";
 
 		$type_ext{$1} = $2;
@@ -63,6 +67,7 @@ while (<>) {
 	# Look for a token definition
 	#
 	if(/\s*(\w\w*)\s*(\w\w*)/) {
+
 		die "Unknown type: $2" unless $type_tok{$2} ;
 
 		$name = "\U$1$type_ext{$2}";

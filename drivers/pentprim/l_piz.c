@@ -48,6 +48,9 @@ void BR_ASM_CALL LineRenderPIZ2I(struct brp_block *block, ...)
     v1          = va_arg(va, brp_vertex *);
 	va_end(va);
 
+	di = 0;
+	dz = 0;
+
         x0 = v0->comp_x[C_SX];
         y0 = v0->comp_x[C_SY];
         x1 = v1->comp_x[C_SX];

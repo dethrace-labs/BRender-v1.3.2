@@ -56,7 +56,7 @@ drawLine:
     // mov edx,eax ;needed to insure upper parts of reg are correct for the first pixel
     edx.v = eax.v;
     // mov bl,byte ptr workspace.colour
-    ebx.bytes[0] = workspace.colour & 0xff;
+    ebx.l = workspace.colour & 0xff;
 drawPixel:
     // ;regs ebp,depth edi,dest esi,dz eax,c_z ebx, ecx,count edx,old_z
     // adc_d eax,0,direction
@@ -74,7 +74,7 @@ drawPixel:
     // mov [ebp+2*ecx],ax
     ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = eax.short_val[0];
     // mov [edi+ecx],bl
-    ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.bytes[0];
+    ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
 noPlot:
     // add_d eax,esi,direction ;wastes a cycle here
     ADD_SET_CF_D(eax.v, esi.v, direction);
@@ -158,11 +158,11 @@ void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, ...) {
     workspace.v2 = v2;
 
     // mov	eax,v0
-    eax.ptr_val = v0;
+    eax.ptr_v = v0;
 	// mov	ecx,v1
-    ecx.ptr_val = v1;
+    ecx.ptr_v = v1;
 	// mov	edx,v2
-    edx.ptr_val = v2;
+    edx.ptr_v = v2;
 	// mov workspace.v0,eax
     workspace.v0 = v0;
 	// mov workspace.v1,ecx

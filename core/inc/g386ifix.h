@@ -31,7 +31,7 @@ __inline static const long IFixedDiv(long a, long b)
 	register long __r;
 
 	__asm (
-		"movl	%%eax,%%edx\n" 
+		"movl	%%eax,%%edx\n"
 		"shll	$16,%%eax\n"
 		"sarl	$16,%%edx\n"
 		"idivl	%2\n"
@@ -309,7 +309,7 @@ __inline static const long IFixedSqr4(
 /*
  * New version using direct expansion
  */
-#if 0
+
 #define BrFixedMul(__a,__b)							\
 ({													\
 	long __r;										\
@@ -442,5 +442,3 @@ __inline static const long IFixedSqr4(
 													\
 	__r;											\
 })
-#endif
-

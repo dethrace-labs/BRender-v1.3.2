@@ -8,8 +8,8 @@ static float fp_half         = 0.5f;
 static float fp_one         = 1.0f;
 static float dotProduct;
 
-#define BRP_VERTEX(reg) ((brp_vertex *)reg.ptr_val)
-#define BR_RENDERER(reg) ((struct br_renderer *)reg.ptr_val)
+#define BRP_VERTEX(reg) ((brp_vertex *)reg.ptr_v)
+#define BR_RENDERER(reg) ((struct br_renderer *)reg.ptr_v)
 
 int rightLeftTable[] = {
      OUTCODE_RIGHT | OUTCODE_N_RIGHT,
@@ -111,14 +111,14 @@ void OUTCODE_ORDINATE(float lValue, float rValue, int*tableName1, x86_reg *reg0,
     // or esi,reg1
     esi.v |= reg1->v;
     // lea reg0,tableName1
-    reg0->ptr_val = tableName1;
+    reg0->ptr_v = tableName1;
     // shr esi,28
     esi.v >>= 28;
     // ;stall
     // ;stall
     // ;stall
     // mov reg0,[reg0+4*esi]
-    reg0->v = ((uint32_t*)reg0->ptr_val)[esi.v];
+    reg0->v = ((uint32_t*)reg0->ptr_v)[esi.v];
     // ;stall
     // xor edx,reg0
     edx.v ^= reg0->v;
@@ -295,17 +295,17 @@ void averageVerticesOnScreen(struct br_renderer *renderer, brp_vertex *dest1, br
                                          brp_vertex *dest3, brp_vertex *src1, brp_vertex *src2, brp_vertex *src3) {
 
 	// mov edi,v1
-    edi.ptr_val = src2;
+    edi.ptr_v = src2;
     // mov esi,v2
-    esi.ptr_val = src3;
+    esi.ptr_v = src3;
     // mov ecx,m2
-    ecx.ptr_val = dest3;
+    ecx.ptr_v = dest3;
     // mov edx,v0
-    edx.ptr_val = src1;
+    edx.ptr_v = src1;
     // mov eax,m0
-    eax.ptr_val = dest1;
+    eax.ptr_v = dest1;
     // mov ebx,m1
-    ebx.ptr_val = dest2;
+    ebx.ptr_v = dest2;
 
     COMPUTE_COMPONENT_MID_POINT_VALUES(C_X);
 	COMPUTE_COMPONENT_MID_POINT_VALUES(C_Y);
@@ -392,17 +392,17 @@ void averageVertices(struct br_renderer *renderer, brp_vertex *m0, brp_vertex *m
     br_vector4 *brv4;
 
 	// mov edi,v1
-    edi.ptr_val = v1;
+    edi.ptr_v = v1;
     // mov esi,v2
-    esi.ptr_val = v2;
+    esi.ptr_v = v2;
     // mov ecx,m2
-    ecx.ptr_val = m2;
+    ecx.ptr_v = m2;
     // mov edx,v0
-    edx.ptr_val = v0;
+    edx.ptr_v = v0;
     // mov eax,m0
-    eax.ptr_val = m0;
+    eax.ptr_v = m0;
     // mov ebx,m1
-    ebx.ptr_val = m1;
+    ebx.ptr_v = m1;
 
     // ;perform averaging.
 	COMPUTE_COMPONENT_MID_POINT_VALUES(C_X);
@@ -420,7 +420,7 @@ void averageVertices(struct br_renderer *renderer, brp_vertex *m0, brp_vertex *m
     // mov edx,OUTCODES_NOT
     edx.v = OUTCODES_NOT;
 	// mov eax,m0
-    eax.ptr_val = m0;
+    eax.ptr_v = m0;
 	// OUTCODE_ORDINATE [eax+4*C_X],[eax+4*C_W],rightLeftTable,ebx,ecx
     OUTCODE_ORDINATE(m0->comp_f[C_X], m0->comp_f[C_W], rightLeftTable, &ebx, &ecx);
 	// OUTCODE_ORDINATE [eax+4*C_Y],[eax+4*C_W],topBottomTable,ebx,ecx
@@ -459,7 +459,7 @@ void averageVertices(struct br_renderer *renderer, brp_vertex *m0, brp_vertex *m
 
 	// mov ebx,m1
 	// mov ebp,renderer
-    ebp.ptr_val = renderer;
+    ebp.ptr_v = renderer;
 
     // ; perform clip plane outcoding if neccessary.
     // mov edx,scache.user_clip_active
@@ -501,7 +501,7 @@ clipPlane:
     // mov ecx,edi
     // -
     // shl edx,cl
-    edx.v <<= edi.bytes[0];  //using edi here
+    edx.v <<= edi.l;  //using edi here
     // pop ecx
     // -
     // xor esi,edx
@@ -529,7 +529,7 @@ clip1:
     // mov ecx,edi
     // -
     // shl edx,cl
-    edx.v <<= edi.bytes[0];
+    edx.v <<= edi.l;
     // pop ecx
     // -
     // xor esi,edx
@@ -557,7 +557,7 @@ clip2:
     // mov ecx,edi
     // -
     // shl edx,cl
-    edx.v <<= edi.bytes[0];
+    edx.v <<= edi.l;
     // pop ecx
     // -
     // xor esi,edx

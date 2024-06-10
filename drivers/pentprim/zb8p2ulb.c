@@ -58,9 +58,7 @@ drawLine:
 	edi.v += ebx.v;
 
 // 	ror edx,16
-	int16_t tmp = edx.short_val[0];
-	edx.short_val[0] = edx.short_val[1];
-	edx.short_val[1] = tmp;
+	ROR16(edx);
 
 // 	lea ebp,[ebp+2*ebx]
 	ebp.v += ebx.v * 2;
@@ -68,15 +66,7 @@ drawLine:
 // 	sub ecx,ebx
 	ecx.v -= ebx.v;
 // 	jg_d lineDrawn,direction
-	if(direction == DRAW_LR) {
-		if (ecx.int_val > 0) {
-			goto lineDrawn;
-		}
-	} else {
-		if (ecx.int_val < 0) {
-			goto lineDrawn;
-		}
-	}
+	JG_D(ecx.int_val, lineDrawn, direction);
 
 drawPixel:
 	// 	shr esi,16-pow2
@@ -104,18 +94,18 @@ drawPixel:
         goto noPlot;
     }
 	// 	mov al,[esi+eax]
-	eax.bytes[0] = ((uint8_t *)work.texture.base)[esi.v + eax.v];
+	eax.l = ((uint8_t *)work.texture.base)[esi.v + eax.v];
 	// mov esi,work.blend_table
-	esi.ptr_val = work.blend_table;
+	esi.ptr_v = work.blend_table;
 
 	// 	test al,al
 	// 	jz noPlot
-	if(eax.bytes[0] == 0) {
+	if(eax.l == 0) {
         goto noPlot;
     }
 
 	// mov ah,[edi+ecx]
-	eax.bytes[1] = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
+	eax.h = ((uint8_t *)work.colour.base)[edi.v + ecx.v];
 
 	// 	mov [ebp+2*ecx],dl
 	// 	mov [ebp+2*ecx+1],dh
@@ -126,11 +116,11 @@ drawPixel:
 	// ;stall
 	// ;stall
 	// mov al,[esi+eax]
-	eax.bytes[0] = ((uint8_t *)esi.ptr_val)[eax.v];
+	eax.l = ((uint8_t *)esi.ptr_v)[eax.v];
 	// ;stall
 
 	// mov [edi+ecx],al
-	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.bytes[0];
+	((uint8_t *)work.colour.base)[edi.v + ecx.v] = eax.l;
 
 noPlot:
 	// mov ebx,workspace.d_z_x
@@ -372,9 +362,7 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 	eax.v = workspace.flip;
 
 // 	ror edx,16
-	int16_t tmp = edx.short_val[0];
-	edx.short_val[0] = edx.short_val[1];
-	edx.short_val[1] = tmp;
+	ROR16(edx);
 
 // 	test eax,eax
 
@@ -412,6 +400,7 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_32(brp_block *block, ...) {
     // Not implemented
     BrAbort();
 }
+
 void BR_ASM_CALL TriangleRender_ZTB_I8_D16_64(brp_block *block, ...) {
     va_list     va;
     va_start(va, block);

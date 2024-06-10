@@ -165,7 +165,8 @@ typedef float br_float;
 
 #ifndef __H2INC__
 #pragma warning(disable:4103)
-#pragma pack(4)
+// jeff: removed explicit packing - causes problems in other translation units where this is not applied
+// #pragma pack(4)
 #endif
 
 /*

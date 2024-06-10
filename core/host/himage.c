@@ -33,7 +33,7 @@ void * BR_RESIDENT_ENTRY HostImageLookupOrdinal(void *img, br_uint_32 ordinal)
 }
 #endif
 
-#ifdef __WIN_32__
+#if defined(_WIN32) || defined(_WIN64)
 
 #include <windows.h>
 

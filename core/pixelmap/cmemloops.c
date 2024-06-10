@@ -98,35 +98,37 @@ static void COPY_BITS_CORE_1(char *dest, br_uint_32 d_stride, br_uint_8 *src, br
 }
 
 static void COPY_BITS_CORE_N(char *dest, br_int_32 d_stride, br_uint_8 *src, br_uint_32 s_stride, br_uint_32 nrows,
-                             br_uint_32 bpp, br_uint_32 colour, br_uint_8 himask, br_uint_8 lomask)
+                             br_uint_32 bpp, br_int_32 count_bytes, br_uint_32 colour, br_uint_8 himask, br_uint_8 lomask)
 {
     char      c;
-    br_int_32 bppt = (br_int_32)(bpp << 3);
+    char *dest_row;
+    br_uint_8 *src_row;
     do {
-        c = *(src)&lomask;
-
+        c = *((br_uint_8*)src)&lomask;
+        dest_row = dest;
+        src_row = src;
 h_loop:
         ++src;
 h_loop_last:
         // Set destination pixels according to byte mask
         bc_inner_loop(dest, bpp, colour, c);
 
-        c = *src;
+        c = *(br_uint_8*)src;
         dest += 8 * bpp;
-        --bppt;
+        --count_bytes;
 
-        if(bppt > 0)
+        if(count_bytes > 0)
             goto h_loop;
-        if(bppt < 0)
+        if(count_bytes < 0)
             goto done_row;
 
         // If it is the last byte, mask and look one final time
-        c &= lomask;
+        c &= himask;
         goto h_loop_last;
 
 done_row:
-        dest += d_stride;
-        src += s_stride;
+        dest = dest_row + d_stride;
+        src = src_row + s_stride;
         --nrows;
     } while(nrows);
 }
@@ -139,9 +141,10 @@ void _MemCopyBits_A(
 {
     br_uint_8 himask = bit_to_mask_e[end_bit & 7];
     br_uint_8 lomask = bit_to_mask_s[start_bit];
+    br_uint_32 count_bytes = end_bit >> 3;
 
-    if((end_bit >> 3) && (bpp >= 1 && bpp <= 4))
-        COPY_BITS_CORE_N(dest, d_stride, src, s_stride, nrows, bpp, colour, himask, lomask);
+    if(count_bytes != 0 && (bpp >= 1 && bpp <= 4))
+        COPY_BITS_CORE_N(dest, d_stride, src, s_stride, nrows, bpp, count_bytes, colour, himask, lomask);
     else if(bpp >= 1 && bpp <= 4)
         COPY_BITS_CORE_1(dest, d_stride, src, s_stride, nrows, bpp, colour, himask, lomask);
 }

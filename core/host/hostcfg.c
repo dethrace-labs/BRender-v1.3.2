@@ -13,7 +13,7 @@
 #include "host.h"
 
 
-#ifdef __WIN_32__
+#if defined(_WIN32) || defined(_WIN64)
 #define DEFAULT_DEVICE "DDRAW"
 #else
 #define DEFAULT_DEVICE "MCGA"
@@ -36,7 +36,7 @@ char * BR_RESIDENT_ENTRY HostDefaultDevice()
 
 
 
-#ifdef __WIN_32__
+#if defined(_WIN32) || defined(_WIN64)
 
 #include <windows.h>
 

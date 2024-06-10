@@ -8,7 +8,7 @@
 #define _FIXED_H_
 
 #ifndef INLINE_FIXED
-#define INLINE_FIXED 1
+#define INLINE_FIXED 0  /* jeff: avoid pulling in inline _asm code... */
 #endif
 
 /*

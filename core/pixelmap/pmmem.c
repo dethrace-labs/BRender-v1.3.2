@@ -100,9 +100,6 @@ br_device_pixelmap * DevicePixelmapMemAllocate(br_uint_8 type,br_uint_16 w,br_ui
 
 
 	pm = BrResAllocate(_pixelmap.res,sizeof(*pm),BR_MEMORY_PIXELMAP);
-
-
-
 	UASSERT(type < BR_ASIZE(pmTypeInfo));
 
 	/*

@@ -18,11 +18,6 @@ if (BUILD_SHARED_LIBS)
     message(FATAL_ERROR "BUILD_SHARED_LIBS is not supported at this time.")
 endif ()
 
-option(BRENDER_DISABLE_FINDSDL "Disable searching for SDL2" OFF)
-if (NOT BRENDER_DISABLE_FINDSDL)
-    find_package(SDL2)
-endif ()
-
 option(BRENDER_BUILD_DRIVERS "Build Drivers" ON)
 option(BRENDER_BUILD_SOFT "Build Software Renderer" ON)
 
@@ -54,7 +49,6 @@ add_library(BRender::Full ALIAS brender-full)
 add_library(BRender::DDI ALIAS brender-ddi)
 
 
-option(BRENDER_BUILD_TOOLS "Build Tools" OFF)
 option(BRENDER_BUILD_EXAMPLES "Build Examples" OFF)
 option(BRENDER_DISABLE_INSTALL "Disable installation" OFF)
 option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
@@ -63,7 +57,7 @@ option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 #     add_subdirectory(tools)
 # endif ()
 
-if (BRENDER_BUILD_EXAMPLES AND BRENDER_BUILD_DRIVERS AND TARGET SDL2::SDL2)
+if (BRENDER_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif ()
 

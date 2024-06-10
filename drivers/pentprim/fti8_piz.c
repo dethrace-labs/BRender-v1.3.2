@@ -144,7 +144,7 @@ pixel_loop:
     // mov	[edi+ebp*2],dx		; store pixel and depth (prefix cannot be avoided since
     ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val] = edx.short_val[0];
     // mov	[esi+ebp],al		; two byte writes would fill the write buffers)
-    ((uint8_t *)work.colour.base)[esi.v + ebp.v] = eax.bytes[0];
+    ((uint8_t *)work.colour.base)[esi.v + ebp.v] = eax.l;
 
 pixel_behind:
 
@@ -266,19 +266,19 @@ void BR_ASM_CALL TriangleRender_ZI_I8_D16(brp_block *block, ...) {
     // ; Get pointers to vertex structures
 	// ;
 	// 	mov	eax,pvertex_0
-    eax.ptr_val = v0;
+    eax.ptr_v = v0;
 	// 	mov	ecx,pvertex_1
-    ecx.ptr_val = v1;
+    ecx.ptr_v = v1;
 
 	// 	mov	edx,pvertex_2
-    edx.ptr_val = v2;
+    edx.ptr_v = v2;
 	// 	mov	workspace.v0,eax
-    workspace.v0 = eax.ptr_val;
+    workspace.v0 = eax.ptr_v;
 
 	// 	mov	workspace.v1,ecx
-    workspace.v1 = ecx.ptr_val;
+    workspace.v1 = ecx.ptr_v;
 	// 	mov	workspace.v2,edx
-    workspace.v2 = edx.ptr_val;
+    workspace.v2 = edx.ptr_v;
 
 	// ; Call new floating point setup routine
 	// ;

@@ -2,7 +2,8 @@
 #define FPWORK_H
 
 #include <stdint.h>
-#include "../softrend/ddi/priminfo.h"
+#include "priminfo.h"
+#include "compiler.h"
 
 // ; Layout of workspace for floating point Pentium optimized setup for rasterisers
 // ;
@@ -14,7 +15,7 @@ typedef struct counts_tag_t {
     } data;
 } counts_tag_t;
 
-struct workspace_t {
+struct ALIGN(8) workspace_t {
     // qwords start here
 
     uint32_t xm;
@@ -126,7 +127,7 @@ struct workspace_t {
 #define m_y        workspace.t_dy
 #define sort_value workspace.top_vertex
 
-struct ArbitraryWidthWorkspace_t {
+struct ALIGN(8) ArbitraryWidthWorkspace_t {
     uint32_t su;
     uint32_t pad0;
 
@@ -168,7 +169,7 @@ struct ArbitraryWidthWorkspace_t {
 
     uint32_t flags;
     char    *retAddress;
-} __attribute__((aligned(8)));
+} ;
 
 extern struct workspace_t               workspace;
 extern struct ArbitraryWidthWorkspace_t workspaceA;

@@ -55,15 +55,7 @@ drawLine:
     // sub ecx,edx
     ecx.v -= edx.v;
     // jg_d lineDrawn,direction
-    if(direction == DRAW_LR) {
-		if (ecx.int_val > 0) {
-			goto lineDrawn;
-		}
-	} else {
-		if (ecx.int_val < 0) {
-			goto lineDrawn;
-		}
-	}
+    JG_D(ecx.int_val, lineDrawn, direction);
     // ror ebx,16
     ROR16(ebx);
     // mov workspace.scratch1,ebp
@@ -95,19 +87,19 @@ drawPixel:
     // cmp bx,dx ;two cycles
 
     // mov al,[esi+eax]
-    eax.bytes[0] = ((uint8_t *)work.texture.base)[esi.v + eax.v];
+    eax.l = ((uint8_t *)work.texture.base)[esi.v + eax.v];
     // mov ah,byte ptr[workspace.c_i+2]
-    eax.bytes[1] = BYTE2(workspace.c_i);
+    eax.h = BYTE2(workspace.c_i);
     // ja noPlot
     if (ebx.short_val[0] > edx.short_val[0]) {
         goto noPlot;
     }
     // test al,al
-    int original_pixel_is_0 = eax.bytes[0] == 0;
+    int original_pixel_is_0 = eax.l == 0;
     // mov esi,workspace.scratch0
     esi.v = workspace.scratch0;
     // mov al,[edi+eax]
-    eax.bytes[0] = ((uint8_t *)work.shade_table)[edi.v + eax.v]; // get lit pixel
+    eax.l = ((uint8_t *)work.shade_table)[edi.v + eax.v]; // get lit pixel
     // jz noPlot
     if (original_pixel_is_0) {
         goto noPlot;
@@ -115,7 +107,7 @@ drawPixel:
     // mov [ebp+2*ecx],bx ;two cycles
     ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = ebx.short_val[0];
     // mov [esi+ecx],al
-    ((uint8_t *)work.colour.base)[esi.v + ecx.v] = eax.bytes[0];
+    ((uint8_t *)work.colour.base)[esi.v + ecx.v] = eax.l;
 
 noPlot:
     // mov eax,workspace.c_i
@@ -361,9 +353,7 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int 
 	eax.v = workspace.flip;
 
 // 	ror edx,16
-	int16_t tmp = edx.short_val[0];
-	edx.short_val[0] = edx.short_val[1];
-	edx.short_val[1] = tmp;
+    ROR16(edx);
 
 // 	test eax,eax
 

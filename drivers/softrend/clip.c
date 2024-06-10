@@ -429,7 +429,7 @@ union brp_vertex *FaceClip(br_renderer *self, union brp_vertex *clip_in, br_uint
  * Render a clipped face using the current block
  */
 void ClippedRenderTriangles(struct br_renderer *renderer, brp_block *block, union brp_vertex *cp_in, int n,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3])
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges)
 {
 	int i;
 	union brp_vertex *tvp;

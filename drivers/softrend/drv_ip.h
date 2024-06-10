@@ -236,7 +236,7 @@ void ConvertVertex(brp_vertex *dest, brp_vertex *src);
  */
 union brp_vertex *FaceClip(br_renderer *self, union brp_vertex *clip_in, br_uint_32 mask, br_uint_32 codes, int n, int *n_out);
 void ClippedRenderTriangles(struct br_renderer *renderer, brp_block *block, union brp_vertex *cp_in, int n,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3]);
+	br_uint_16 *fp_vertices, br_uint_16 *fp_edges);
 br_boolean ClipLine(br_renderer *self, union brp_vertex *out, union brp_vertex *v0, union brp_vertex *v1, br_uint_32 mask, br_uint_32 codes);
 void ClippedRenderLine(struct br_renderer *renderer, brp_block *block, union brp_vertex *cp_in);
 
@@ -309,8 +309,7 @@ void SURFACE_CALL SurfaceMapGeometryMapScaleTranslate(br_renderer *self, br_vect
 void SURFACE_CALL SurfaceMapGeometryMapCopy(br_renderer *self, br_vector3 *p, br_vector2 *map, br_vector3 *n, br_colour colour, br_scalar *comp);
 void SURFACE_CALL SurfaceMapGeometryMapShift(br_renderer *self, br_vector3 *p, br_vector2 *map, br_vector3 *n, br_colour colour, br_scalar *comp);
 
-void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, union brp_vertex *v0, union brp_vertex *v1, union brp_vertex *v2,
-	br_uint_16 (*fp_vertices)[3], br_uint_16 (*fp_edges)[3], br_vector4 *fp_eqn, struct temp_face *tfp);
+void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, ...);
 
 /*
  * alpha.c
