@@ -189,7 +189,7 @@ static inline void PER_SCAN_ZTI(int32_t *halfCount, char wrap_flag, uint32_t *mi
     esi.v = edi.v;
 
     // add ecx,[workspace.d_i_y_0+8*edi]
-    ecx.v = ((uint32_t *)&workspace.d_i_y_0)[2 * edi.int_val];
+    ecx.v += ((uint32_t *)&workspace.d_i_y_0)[2 * edi.int_val];
 	// mov edx,workspaceA.su
     edx.v = workspaceA.su;
 	// mov workspace.s_i,ecx
