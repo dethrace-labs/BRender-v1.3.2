@@ -37,6 +37,8 @@ jobs:
       - name: 'Configure (CMake)'
         id: configure
         run: |
+          ls -lah . \
+          ls -lah cmake \
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.platform.cmake-toolchain-file }} \
