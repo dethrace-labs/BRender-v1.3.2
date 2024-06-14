@@ -34,11 +34,12 @@ jobs:
         if: runner.os == 'Windows'
         with:
           arch: ${{ matrix.platform.arch }}
+      - name: ls
+        run: |
+          ls -lah . && ls -lah cmake
       - name: 'Configure (CMake)'
         id: configure
         run: |
-          ls -lah . \
-          ls -lah cmake \
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.platform.cmake-toolchain-file }} \
