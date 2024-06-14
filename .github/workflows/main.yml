@@ -39,6 +39,7 @@ jobs:
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.platform.cmake-toolchain-file }} \
             ${{ matrix.platform.cmake-args }}
       - name: 'Build (CMake)'
         run: |
