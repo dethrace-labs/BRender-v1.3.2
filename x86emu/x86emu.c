@@ -26,11 +26,11 @@ x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 // //     return 1;
 // // }
 
-void fail()
-{
-    printf("x86emu::fail\n");
-    exit(1);
-}
+//void fail()
+//{
+//    printf("x86emu::fail\n");
+//    exit(1);
+//}
 
 // void fpu_pop()
 // {
@@ -397,23 +397,23 @@ void fail()
 //     }
 // }
 
-void rcl(x86_operand dest, int count)
-{
-    switch(dest.type) {
-        case X86_OP_REG:
-            while(count != 0) {
-                int msb = dest.reg->v & 0x80000000;
-                // rotate CF flag into lsb
-                dest.reg->v = (dest.reg->v << 1) + x86_state.cf;
-                // rotate msb into CF
-                x86_state.cf = msb;
-                count--;
-            }
-            break;
-        default:
-            fail();
-    }
-}
+// void rcl(x86_operand dest, int count)
+// {
+//    switch(dest.type) {
+//        case X86_OP_REG:
+//            while(count != 0) {
+//                int msb = dest.reg->v & 0x80000000;
+//                // rotate CF flag into lsb
+//                dest.reg->v = (dest.reg->v << 1) + x86_state.cf;
+//                // rotate msb into CF
+//                x86_state.cf = msb;
+//                count--;
+//            }
+//            break;
+//        default:
+//            fail();
+//    }
+//}
 
 // void sub(x86_operand dest, x86_operand src)
 // {

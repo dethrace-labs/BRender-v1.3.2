@@ -384,13 +384,13 @@ drawLine:
 
 drawPixel:
     // 	mov bx,[ebp+2*ecx]
-    ebx.short_val[0] = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
+    ebx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
     // 	mov dx,word ptr workspace.c_z+2
-    edx.short_val[0] = ((uint16_t *)&workspace.c_z)[1];
+    edx.short_low = ((uint16_t *)&workspace.c_z)[1];
 
     // 	cmp dx,bx
     // 	ja noPlot
-    if(edx.short_val[0] > ebx.short_val[0]) {
+    if(edx.short_low > ebx.short_low) {
         goto noPlot;
     }
 
@@ -439,7 +439,7 @@ drawPixel:
         // else
         } else {
             //     mov [ebp+2*ecx],dx
-            ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
+            ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_low;
             // 	   mov [edi+ecx],bl
             ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // endif
@@ -618,13 +618,13 @@ drawLine:
 
 drawPixel:
     // 	mov bx,[ebp+2*ecx]
-    ebx.short_val[0] = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
+    ebx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
     // 	mov dx,word ptr workspace.c_z+2
-    edx.short_val[0] = ((uint16_t *)&workspace.c_z)[1];
+    edx.short_low = ((uint16_t *)&workspace.c_z)[1];
 
     // 	cmp dx,bx
     // 	ja noPlot
-    if(edx.short_val[0] > ebx.short_val[0]) {
+    if(edx.short_low > ebx.short_low) {
         goto noPlot;
     }
 
@@ -684,7 +684,7 @@ drawPixel:
             // mov bl,byte ptr [eax+ebx]
             ebx.l = ((uint8_t *)work.shade_table)[ebx.v];
 	        // mov [ebp+2*ecx],dx
-            ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
+            ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_low;
             // 	   mov [edi+ecx],bl
             ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // endif

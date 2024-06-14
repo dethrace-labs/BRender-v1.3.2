@@ -64,7 +64,7 @@ drawPixel:
     // mov dl,[ebp+2*ecx]
     // ;The following line needs some more experimentation to prove its usefullness in real application
     // mov dh,[ebp+2*ecx+1]
-    edx.short_val[0] = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
+    edx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
     // cmp eax,edx
     // ja noPlot
     if (eax.v > edx.v) {
@@ -72,7 +72,7 @@ drawPixel:
     }
     // ; writes
     // mov [ebp+2*ecx],ax
-    ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = eax.short_val[0];
+    ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = eax.short_low;
     // mov [edi+ecx],bl
     ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
 noPlot:

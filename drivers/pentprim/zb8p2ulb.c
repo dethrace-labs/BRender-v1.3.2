@@ -90,7 +90,7 @@ drawPixel:
 
 	// 	cmp dx,bx ;two cycles
 	// 	ja noPlot
-    if(edx.short_val[0] > ebx.short_val[0]) {
+    if(edx.short_low > ebx.short_low) {
         goto noPlot;
     }
 	// 	mov al,[esi+eax]
@@ -109,7 +109,7 @@ drawPixel:
 
 	// 	mov [ebp+2*ecx],dl
 	// 	mov [ebp+2*ecx+1],dh
-	((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_val[0];
+	((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_low;
 
 	// and eax,0ffffh
 	eax.v &= 0xffff;
