@@ -91,7 +91,7 @@ drawPixel:
     // mov ah,byte ptr[workspace.c_i+2]
     eax.h = BYTE2(workspace.c_i);
     // ja noPlot
-    if (ebx.short_val[0] > edx.short_val[0]) {
+    if (ebx.short_low > edx.short_low) {
         goto noPlot;
     }
     // test al,al
@@ -105,7 +105,7 @@ drawPixel:
         goto noPlot;
     }
     // mov [ebp+2*ecx],bx ;two cycles
-    ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = ebx.short_val[0];
+    ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = ebx.short_low;
     // mov [esi+ecx],al
     ((uint8_t *)work.colour.base)[esi.v + ecx.v] = eax.l;
 

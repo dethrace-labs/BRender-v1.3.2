@@ -4,20 +4,20 @@
 #include <stdint.h>
 #include <math.h>
 
-enum X86_OP {
-    X86_OP_REG,
-    X86_OP_MEM32,
-    X86_OP_PTR,
-    X86_OP_IMM
-};
+// enum X86_OP {
+//     X86_OP_REG,
+//     X86_OP_MEM32,
+//     X86_OP_PTR,
+//     X86_OP_IMM
+// };
 
-enum {
-    X87_OP_FLOAT,
-    X87_OP_DOUBLE,
-    X87_OP_ST,
-    X87_OP_MEM32,
-    X87_OP_MEM64
-};
+// enum {
+//     X87_OP_FLOAT,
+//     X87_OP_DOUBLE,
+//     X87_OP_ST,
+//     X87_OP_MEM32,
+//     X87_OP_MEM64
+// };
 
 typedef struct x86_reg {
     union {
@@ -26,12 +26,29 @@ typedef struct x86_reg {
         float         float_val;
         //unsigned char bytes[8];
         struct {
+#if BR_ENDIAN_BIG
+            uint16_t pad1;
+            // "high" byte
+            uint8_t h;
+            // "low" byte
+            uint8_t l;
+#else
             // "low" byte
             uint8_t l;
             // "high" byte
             uint8_t h;
+#endif
         };
-        uint16_t    short_val[2];
+        //uint16_t    short_val[2];
+        struct {
+#if BR_ENDIAN_BIG
+            uint16_t short_high;
+            uint16_t short_low;
+#else
+            uint16_t short_low;
+            uint16_t short_high;
+#endif
+        };
         // these are a bit of a hack to allow 64bit pointers on occasion
         void         *ptr_v;
         uint8_t     *ptr_8;
@@ -40,43 +57,43 @@ typedef struct x86_reg {
 
 } x86_reg;
 
-typedef union x86_mem {
+// typedef union x86_mem {
     // uint32_t      uint_val;
     // float         float_val;
-    void *ptr_val;
+    // void *ptr_val;
     // unsigned char bytes[8];
 
-} x86_mem;
+// } x86_mem;
 
-typedef struct x86_operand {
-    union {
-        x86_reg *reg;
-        x86_mem  mem;
-        void    *ptr;
-        uint32_t imm;
-    };
-    char type;
-} x86_operand;
+// typedef struct x86_operand {
+//     union {
+//         x86_reg *reg;
+//         x86_mem  mem;
+//         void    *ptr;
+//         uint32_t imm;
+//     };
+//     char type;
+// } x86_operand;
 
-typedef struct x87_operand {
-    struct { // union?
-        float         float_val;
-        double        double_val;
-        int           st_index;
-        void         *mem;
-        unsigned char bytes[8];
-    };
-    char type;
-} x87_operand;
+// typedef struct x87_operand {
+//     struct { // union?
+//         float         float_val;
+//         double        double_val;
+//         int           st_index;
+//         void         *mem;
+//         unsigned char bytes[8];
+//     };
+//     char type;
+// } x87_operand;
 
-x87_operand x87_op_f(float f);
-x87_operand x87_op_i(int i);
-x87_operand x87_op_mem32(void *ptr);
-x87_operand x87_op_mem64(void *ptr);
-x86_operand x86_op_reg(x86_reg *r);
-x86_operand x86_op_mem32(void *bytes);
-x86_operand x86_op_ptr(void *ptr);
-x86_operand x86_op_imm(uint32_t imm);
+// x87_operand x87_op_f(float f);
+// x87_operand x87_op_i(int i);
+// x87_operand x87_op_mem32(void *ptr);
+// x87_operand x87_op_mem64(void *ptr);
+// x86_operand x86_op_reg(x86_reg *r);
+// x86_operand x86_op_mem32(void *bytes);
+// x86_operand x86_op_ptr(void *ptr);
+// x86_operand x86_op_imm(uint32_t imm);
 
 // extern x86_reg *eax, *ebx, *ecx, *edx, *esi, *ebp, *edi;
 // void            x86emu_init();
@@ -271,9 +288,9 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
     val1 = val1 - (val2 + x86_state.cf);
 
 #define ROR16(dest) \
-    x86_state.x86_swap = dest.short_val[0]; \
-	dest.short_val[0] = dest.short_val[1]; \
-	dest.short_val[1] = x86_state.x86_swap;
+    x86_state.x86_swap = dest.short_low; \
+	dest.short_low = dest.short_high; \
+	dest.short_high = x86_state.x86_swap;
 
 
 #endif

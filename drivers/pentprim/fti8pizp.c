@@ -161,7 +161,7 @@ next_pixel:
 	// ;
 
     // mov		dl,[ebp]
-    edx.short_val[0] = *ebp.ptr_16;
+    edx.short_low = *ebp.ptr_16;
     // mov		cl,[eax+esi]
     ecx.l = esi.ptr_8[eax.v];
 
@@ -172,7 +172,7 @@ next_pixel:
 
     // cmp		bx,dx
     // ja		nodraw
-    if (ebx.short_val[0] > edx.short_val[0]) {
+    if (ebx.short_low > edx.short_low) {
         goto nodraw;
     }
 
@@ -215,7 +215,7 @@ next_pixel:
         // ; Store texel and z
 	    // ;
         // mov     [ebp],bx
-        *ebp.ptr_16 = ebx.short_val[0];
+        *ebp.ptr_16 = ebx.short_low;
         // mov     [edi],cl
         *edi.ptr_8 = ecx.l;
     }
@@ -630,7 +630,7 @@ next_pixel:
 	// ;
 
     // mov		dx,[ebp]
-    edx.short_val[0] = *ebp.ptr_16;
+    edx.short_low = *ebp.ptr_16;
     // xor		ecx,ecx
     ecx.v = 0;
     // mov		ebx,work.tsl.z
@@ -640,7 +640,7 @@ next_pixel:
 
     // cmp		bx,dx
     // ja		nodraw
-    if (ebx.short_val[0] > edx.short_val[0]) {
+    if (ebx.short_low > edx.short_low) {
         goto nodraw;
     }
 
@@ -679,7 +679,7 @@ next_pixel:
         // ; Look texel up in shade table, store texel and z
 	    // ;
         // mov     [ebp],bx
-        *ebp.ptr_16 = ebx.short_val[0];
+        *ebp.ptr_16 = ebx.short_low;
         // mov     cl,[ecx+edx]
         ecx.l = edx.ptr_8[ecx.v];
         // mov     [edi],cl

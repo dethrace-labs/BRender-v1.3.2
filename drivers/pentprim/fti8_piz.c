@@ -123,7 +123,7 @@ pixel_loop:
     // adc_&dirn	edx,0		; carry into integer part of z
     ADC_D(edx.v, 0, dirn);
     // mov	bl,[edi+ebp*2]		; fetch old z
-    ebx.short_val[0] = ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val];
+    ebx.short_low = ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val];
 
     // add_&dirn	eax,ecx		; step i
     ADD_SET_CF_D(eax.v, ecx.v, dirn);
@@ -142,7 +142,7 @@ pixel_loop:
     }
 
     // mov	[edi+ebp*2],dx		; store pixel and depth (prefix cannot be avoided since
-    ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val] = edx.short_val[0];
+    ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val] = edx.short_low;
     // mov	[esi+ebp],al		; two byte writes would fill the write buffers)
     ((uint8_t *)work.colour.base)[esi.v + ebp.v] = eax.l;
 
