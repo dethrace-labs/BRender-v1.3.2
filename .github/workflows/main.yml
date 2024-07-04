@@ -34,6 +34,11 @@ jobs:
         if: runner.os == 'Windows'
         with:
           arch: ${{ matrix.platform.arch }}
+      - name: Install Linux dependencies
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.platform.apt-packages }}
       - name: 'Configure (CMake)'
         id: configure
         run: |
