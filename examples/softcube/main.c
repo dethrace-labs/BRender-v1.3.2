@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 
         camera         = BrActorAdd(world, BrActorAllocate(BR_ACTOR_CAMERA, NULL));
         camera->t.type = BR_TRANSFORM_MATRIX34;
-        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.1), BR_SCALAR(0), BR_SCALAR(2.0));
+        BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0), BR_SCALAR(1.4));
         // BrMatrix34Translate(&camera->t.t.mat, BR_SCALAR(0.0), BR_SCALAR(0.5), BR_SCALAR(1));
 
         camera_data           = (br_camera *)camera->type_data;
@@ -136,30 +136,30 @@ int main(int argc, char **argv)
     BrMaterialFindHook(BrMaterialFindFailedLoad);
 
     char* pm_names[] = {
-        "C:/Games/CARMA/DATA/PIXELMAP/GASPUMP.PIX",
-        "C:/Games/CARMA/DATA/PIXELMAP/TRAFCLIT.PIX",
-        "C:/Games/CARMA/DATA/PIXELMAP/EAGREDL.PIX",
-        "C:/Games/CARMA/DATA/PIXELMAP/SCREWIE.PIX",
-        "C:/Games/CARMA/DATA/PIXELMAP/TASSLE.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/GASPUMP.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/TRAFCLIT.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/EAGREDL.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/SCREWIE.PIX",
+        "/opt/CARMA/DATA/PIXELMAP/TASSLE.PIX",
     };
     char* mat_names[] = {
-        "C:/Games/CARMA/DATA/MATERIAL/GASPUMP.MAT",
-        "C:/Games/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
-        "C:/Games/CARMA/DATA/MATERIAL/EAGLE.MAT",
-        "C:/Games/CARMA/DATA/MATERIAL/SCREWIE.MAT",
-        "C:/Games/CARMA/DATA/MATERIAL/TASSLE.MAT",
-        "C:/Games/CARMA/DATA/REG/MATERIAL/SIMPMAT.MAT"
+        "/opt/CARMA/DATA/MATERIAL/GASPUMP.MAT",
+        "/opt/CARMA/DATA/MATERIAL/TRFCLITE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/EAGLE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/SCREWIE.MAT",
+        "/opt/CARMA/DATA/MATERIAL/TASSLE.MAT",
+        "/opt/CARMA/DATA/REG/MATERIAL/SIMPMAT.MAT"
     };
     char *mdl_names[] = {
-        "C:/Games/CARMA/DATA/MODELS/&00GAS.DAT",
-        "C:/Games/CARMA/DATA/MODELS/&03TRAFF.DAT",
-        "C:/Games/CARMA/DATA/MODELS/EAGLE.DAT",
-        "C:/Games/CARMA/DATA/MODELS/EAGLEX.DAT",
-        "C:/Games/CARMA/DATA/MODELS/SCREWIE.DAT",
-        "C:/Games/CARMA/DATA/MODELS/TASSLE.DAT",
+        "/opt/CARMA/DATA/MODELS/&00GAS.DAT",
+        "/opt/CARMA/DATA/MODELS/&03TRAFF.DAT",
+        "/opt/CARMA/DATA/MODELS/EAGLE.DAT",
+        "/opt/CARMA/DATA/MODELS/EAGLEX.DAT",
+        "/opt/CARMA/DATA/MODELS/SCREWIE.DAT",
+        "/opt/CARMA/DATA/MODELS/TASSLE.DAT",
     };
 
-    br_pixelmap *fog = BrPixelmapLoad("C:/Games/CARMA/DATA/SHADETAB/STAAAAAA.TAB");
+    br_pixelmap *fog = BrPixelmapLoad("/opt/CARMA/DATA/SHADETAB/STAAAAAA.TAB");
     BrMapAdd(fog);
 
     for (int i = 0; i < sizeof(pm_names) / sizeof(char*); i++) {
@@ -193,13 +193,13 @@ int main(int argc, char **argv)
         BrModelAddMany(tmp, count);
     }
 
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/&00GAS.ACT");
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/&03TRAFF.ACT");
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/EAGLE.ACT");
-    // cube = BrActorLoad("C:/Games/DBG/DATA/ACTORS/SCREWIE.ACT");
-    cube = BrActorLoad("C:/Games/CARMA/DATA/ACTORS/EAGLE.ACT");
+    // cube = BrActorLoad("/opt/DBG/DATA/ACTORS/&00GAS.ACT");
+    // cube = BrActorLoad("/opt/DBG/DATA/ACTORS/&03TRAFF.ACT");
+    // cube = BrActorLoad("/opt/DBG/DATA/ACTORS/EAGLE.ACT");
+    // cube = BrActorLoad("/opt/DBG/DATA/ACTORS/SCREWIE.ACT");
+    cube = BrActorLoad("/opt/CARMA/DATA/ACTORS/EAGLE.ACT");
 
-    //cube2 = BrActorLoad("C:/Games/DBG/DATA/ACTORS/&00GAS.ACT");
+    //cube2 = BrActorLoad("/opt/DBG/DATA/ACTORS/&00GAS.ACT");
     //BrMatrix34Translate(&cube2->t.t.mat, 0, 0.3, 0.2);
     //cube->render_style = BR_RSTYLE_EDGES;
 
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
 
 
     BrMatrix34RotateX(&cube->t.t.mat, BR_ANGLE_DEG(-20));
-    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(50));
+    BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(150));
     //BrMatrix34RotateX(&cube2->t.t.mat, BR_ANGLE_DEG(-20));
 
     light = BrActorAdd(world, BrActorAllocate(BR_ACTOR_LIGHT, NULL));
@@ -257,10 +257,10 @@ int main(int argc, char **argv)
         Uint32 startTicks = SDL_GetTicks();
         Uint64 startPerf  = SDL_GetPerformanceCounter();
 
-        BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
+        //BrMatrix34PostRotateY(&cube->t.t.mat, BR_ANGLE_DEG(BR_SCALAR(60) * BR_SCALAR(dt)));
 
         BrRendererFrameBegin();
-        BrPixelmapFill(colour_buffer, 255);
+        BrPixelmapFill(colour_buffer, 0);
         BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
         BrZbSceneRender(world, camera, colour_buffer, depth_buffer);
