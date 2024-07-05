@@ -292,8 +292,15 @@ softiz:TriangleRender_ZTI_I8_D16_16 = [z_buffered, triangle, index8, texture16x1
 softiz:TriangleRender_ZT_I8_D16_16 = [z_buffered, triangle, index8, texture16x16]
 
 softiz:TriangleRender_ZT_I8_D16_8_FLAT = [z_buffered, triangle, index8, texture8x8, constant_intensity]
-softiz:TriangleRender_ZTI_I8_D16_8 = [z_buffered, triangle, index8, texture8x8,interpolated_intensity]
-softiz:TriangleRender_ZT_I8_D16_8 = [z_buffered, triangle, index8, texture8x8]
+
+# jeff: The float-based renderer doesn't support 8x8 textures.
+# These two functions are not exported from `SOFTIZF.BDD`, so the original behavior was to fallback to
+# the arbitrary width renderer.
+# Possibly because of static linking, these functions get called directly (incorrectly)
+# Commenting out for now.
+
+#softiz:TriangleRender_ZTI_I8_D16_8 = [z_buffered, triangle, index8, texture8x8,interpolated_intensity]
+#softiz:TriangleRender_ZT_I8_D16_8 = [z_buffered, triangle, index8, texture8x8]
 
 #########################################
 #(Arbitrary Width)
