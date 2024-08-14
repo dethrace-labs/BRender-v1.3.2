@@ -1873,7 +1873,9 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, ...) {
     // jc TriangleRasterise_ZTI_I8_D16_64
     if (x86_state.cf) {
         va_list l;
+        va_start(l, block);
         TriangleRender_ZTI_I8_D16_POW2(block, 6, 1, l);
+        va_end(l);
         return;
     }
 
@@ -2042,7 +2044,9 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, ...) {
     // jc TriangleRasterise_ZT_I8_D16_64
     if (x86_state.cf) {
         va_list l;
+        va_start(l, block);
         TriangleRender_ZT_I8_D16_POW2(block, 6, 1, l);
+        va_end(l);
         return;
     }
 
@@ -2204,7 +2208,9 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, ...) {
     // jc TriangleRasterise_ZTI_I8_D16_256
     if (x86_state.cf) {
         va_list l;
+        va_start(l, block);
         TriangleRender_ZTI_I8_D16_POW2(block, 8, 1, l);
+        va_end(l);
         return;
     }
 
@@ -2359,7 +2365,9 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, ...) {
     // jc TriangleRasterise_ZT_I8_D16_256
     if (x86_state.cf) {
         va_list l;
+        va_start(l, block);
         TriangleRender_ZT_I8_D16_POW2(block, 8, 1, l);
+        va_end(l);
         return;
     }
 
@@ -2594,7 +2602,9 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, ...) {
     // jc TriangleRasterise_ZTB_I8_D16_64
     if (x86_state.cf) {
         va_list l;
+        va_start(l, block);
         TriangleRender_ZTB_I8_D16_POW2(block, 6, 1, l);
+        va_end(l);
         return;
     }
 #else
@@ -2765,7 +2775,9 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, ...) {
     // jc TriangleRasterise_ZTB_I8_D16_256
     if (x86_state.cf) {
         va_list l;
+        va_start(l, block);
         TriangleRender_ZTB_I8_D16_POW2(block, 8, 1, l);
+        va_end(l);
         return;
     }
 #else
