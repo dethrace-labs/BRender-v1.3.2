@@ -114,8 +114,12 @@ typedef float br_float;
  */
 #pragma off (unreferenced);
 
+#ifndef BR_ENDIAN_BIG
 #define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
 #define BR_ENDIAN_LITTLE	1
+#endif
 
 #ifndef __H2INC__
 #pragma pack(4);
@@ -160,8 +164,12 @@ typedef float br_float;
 
 #define BR_HAS_FAR	0
 
+#ifndef BR_ENDIAN_BIG
 #define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
 #define BR_ENDIAN_LITTLE	1
+#endif
 
 #ifndef __H2INC__
 #pragma warning(disable:4103)
@@ -208,8 +216,12 @@ typedef float br_float;
 
 #define BR_HAS_FAR	0
 
+#ifndef BR_ENDIAN_BIG
 #define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
 #define BR_ENDIAN_LITTLE	1
+#endif
 
 #ifndef __H2INC__
 #pragma option -a4
@@ -255,8 +267,12 @@ typedef float br_float;
 
 #define BR_HAS_FAR	0
 
+#ifndef BR_ENDIAN_BIG
 #define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
 #define BR_ENDIAN_LITTLE	1
+#endif
 
 /*
  * IBM CSet++
@@ -297,8 +313,12 @@ typedef float br_float;
 
 #define BR_HAS_FAR	0
 
+#ifndef BR_ENDIAN_BIG
 #define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
 #define BR_ENDIAN_LITTLE	1
+#endif
 
 /*
  * Intel reference compiler
@@ -342,8 +362,12 @@ typedef float br_float;
 
 #define BR_HAS_FAR	0
 
+#ifndef BR_ENDIAN_BIG
 #define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
 #define BR_ENDIAN_LITTLE	1
+#endif
 
 #endif
 

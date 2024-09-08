@@ -538,6 +538,9 @@ static int FopRead_OLD_FACES_1(br_datafile *df, br_uint_32 id, br_uint_32 length
 	 * Convert smoothing groups to bitmask
 	 */
 	for(i=0; i< mp->nfaces; i++) {
+#if BR_ENDIAN_BIG
+		mp->faces[i].smoothing >>= 8;
+#endif
 		if(mp->faces[i].smoothing == 0)
 			mp->faces[i].smoothing = (br_uint_16)~0;
 		else
@@ -1009,6 +1012,9 @@ static int FopRead_MATERIAL_OLDEST(br_datafile *df, br_uint_32 id, br_uint_32 le
 	mp = BrMaterialAllocate(NULL);
 	df->res = mp;
     df->prims->struct_read(df,&br_material_oldest_F, mp);
+#if BR_ENDIAN_BIG
+	mp->flags >>= 16;
+#endif
 	df->res = NULL;
 
 	/*

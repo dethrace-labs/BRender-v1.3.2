@@ -386,7 +386,7 @@ drawPixel:
     // 	mov bx,[ebp+2*ecx]
     ebx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
     // 	mov dx,word ptr workspace.c_z+2
-    edx.short_low = ((uint16_t *)&workspace.c_z)[1];
+    edx.short_low = workspace.c_z >> 16;
 
     // 	cmp dx,bx
     // 	ja noPlot
@@ -620,7 +620,7 @@ drawPixel:
     // 	mov bx,[ebp+2*ecx]
     ebx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
     // 	mov dx,word ptr workspace.c_z+2
-    edx.short_low = ((uint16_t *)&workspace.c_z)[1];
+    edx.short_low = workspace.c_z >> 16;
 
     // 	cmp dx,bx
     // 	ja noPlot
@@ -865,9 +865,9 @@ void TriangleRender_ZT_I8_D16(brp_block *block, ...)
     // 	faddp st(2),st					;	ca			da
     FADDP_ST(2, 0);
     // 	fstp qword ptr workspace.scanAddress
-    FSTP64(&workspace.scanAddress);
+    FSTP64(&workspace.scanAddress_double);
     // 	fstp qword ptr workspace.depthAddress
-    FSTP64(&workspace.depthAddress);
+    FSTP64(&workspace.depthAddress_double);
 
     // 	mov eax,work.texture.base
     eax.v = WORK_TEXTURE_BASE;
@@ -983,9 +983,9 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16(brp_block *block, ...) {
     // 	faddp st(2),st					;	ca			da
     FADDP_ST(2, 0);
     // 	fstp qword ptr workspace.scanAddress
-    FSTP64(&workspace.scanAddress);
+    FSTP64(&workspace.scanAddress_double);
     // 	fstp qword ptr workspace.depthAddress
-    FSTP64(&workspace.depthAddress);
+    FSTP64(&workspace.depthAddress_double);
 
     // 	mov eax,work.texture.base
     eax.v = WORK_TEXTURE_BASE;
@@ -1133,9 +1133,9 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16(brp_block *block, ...) {
     // 	faddp st(2),st					;	ca			da
     FADDP_ST(2, 0);
     // 	fstp qword ptr workspace.scanAddress
-    FSTP64(&workspace.scanAddress);
+    FSTP64(&workspace.scanAddress_double);
     // 	fstp qword ptr workspace.depthAddress
-    FSTP64(&workspace.depthAddress);
+    FSTP64(&workspace.depthAddress_double);
 
     // 	mov eax,work.texture.base
     eax.v = WORK_TEXTURE_BASE;

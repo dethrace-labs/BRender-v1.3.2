@@ -380,11 +380,11 @@ count_cont:
     // 		 FXCH		st(2)						;	g1+C	gm+C	g2+C	x_1		x_m		x_2+C
     FXCH(2);
     // 		fstp real8 ptr [workspace].x1			;	gm+C	g2+C	x_1		x_m		x_2+C
-    FSTP64(&workspace.x1);
+    FSTP64(&workspace.x1_double);
     // 		fstp real8 ptr [workspace].xm			;	g2+C	x_1		x_m		x_2+C
-    FSTP64(&workspace.xm);
+    FSTP64(&workspace.xm_double);
     // 		fstp real8 ptr [workspace].x2			;	x_1		x_m		x_2+C
-    FSTP64(&workspace.x2);
+    FSTP64(&workspace.x2_double);
     // 		fadd	fconv_d16_12[esi*8]				;	x_1+C	x_m		x_2+C
     FADD64(fconv_d16_12[esi.v]);
     // 		FXCH		st(1)						;	x_m		x_1+C	x_2+C
@@ -403,9 +403,9 @@ count_cont:
     // 		mov		ebx,[workspace.v0]				; Start preparing for parmeter setup
     ebx.ptr_v = workspace.v0;
     // 		fstp real8 ptr [workspace].xm			;	x_1+C	x_2+C
-    FSTP64(&workspace.xm);
+    FSTP64(&workspace.xm_double);
     // 		fstp real8 ptr [workspace].x1			;	x_2+C
-    FSTP64(&workspace.x1);
+    FSTP64(&workspace.x1_double);
 
     // 		mov			ecx,[workspace].xm
     ecx.v = workspace.xm;
@@ -437,7 +437,7 @@ count_cont:
     // 		 FXCH		st(1)						;	x_2+C	t_dx
     FXCH(1);
     // 		fstp real8 ptr [workspace].x2			;	t_dx
-    FSTP64(&workspace.x2);
+    FSTP64(&workspace.x2_double);
 
     // 		fild		[workspace.xstep_0]			;	xstep_0	t_dx
     FILD(workspace.xstep_0);
@@ -528,7 +528,7 @@ ecx : ptr to       vertex1;
 edx : ptr to       vertex2;
 ebp : ptr to param block;
 ;*/
-void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t *d_p_x, uint32_t conv, int is_unsigned)
+void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, fp64_t *s_p, fp64_t *d_p_x, uint32_t conv, int is_unsigned)
 {
 
     // 		assume eax: ptr brp_vertex, ebx: ptr brp_vertex, ecx: ptr brp_vertex, edx: ptr brp_vertex
@@ -659,32 +659,32 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, uint32_t *s_p, uint32_t
     // 			 FXCH	st(2)			; 	C+pdy_1	C+pdy_0	C+pstrt	C+pdx
     FXCH(2);
     // 			fstp	real8 ptr s_p
-    FSTP64(s_p);
+    FSTP64(&s_p->double_val);
     // 			fstp	real8 ptr d_p_x
-    FSTP64(d_p_x);
+    FSTP64(&d_p_x->double_val);
     // 			mov		esi,dword ptr s_p
-    esi.v = *s_p;
+    esi.v = s_p->dword_low;
     // 			mov		edi,dword ptr d_p_x
-    edi.v = *d_p_x;
+    edi.v = d_p_x->dword_low;
     // 			fstp	real8 ptr s_p	;
-    FSTP64(s_p);
+    FSTP64(&s_p->double_val);
     // 			fstp	real8 ptr d_p_x	;
-    FSTP64(d_p_x);
+    FSTP64(&d_p_x->double_val);
     // 			mov		dword ptr s_p+4,esi
-    *((uint32_t*)s_p + 1) = esi.v;
+    s_p->dword_high = esi.v;
     // 			mov		dword ptr d_p_x+4,edi
-    *((uint32_t*)d_p_x + 1) = edi.v;
+    d_p_x->dword_high = edi.v;
     // if unsigned
     if(is_unsigned) {
         // 	; Remap from -1 to 1 signed to 0 to 1 unsigned
         // 	;
         // 			mov		esi,dword ptr s_p
         //mov(x86_op_reg(esi), x86_op_mem32(s_p));
-        esi.v = *s_p;
+        esi.v = s_p->dword_low;
         // 			xor		esi,080000000h
         esi.v ^= 0x080000000;
         // 			mov		dword ptr s_p,esi
-        *s_p = esi.v;
+        s_p->dword_low = esi.v;
         // endif
     }
 }
@@ -732,17 +732,17 @@ static void SETUP_FLAGS()
     // 	 FXCH st(2)
     FXCH(2);
     // 	fstp qword ptr workspace.scratch0
-    FSTP64(&workspace.scratch0);
+    FSTP64(&workspace.scratch0_double);
     // 	fstp qword ptr workspace.scratch2
-    FSTP64(&workspace.scratch2);
+    FSTP64(&workspace.scratch2_double);
     // 	fstp qword ptr workspace.scratch4
-    FSTP64(&workspace.scratch4);
+    FSTP64(&workspace.scratch4_double);
     // 	fstp qword ptr workspace.scratch6
-    FSTP64(&workspace.scratch6);
+    FSTP64(&workspace.scratch6_double);
     // 	fstp qword ptr workspace.scratch8
-    FSTP64(&workspace.scratch8);
+    FSTP64(&workspace.scratch8_double);
     // 	fstp qword ptr workspace.scratch10
-    FSTP64(&workspace.scratch10);
+    FSTP64(&workspace.scratch10_double);
     // 	mov ebx,workspace.scratch6
     ebx.v = workspace.scratch6;
     // 	mov ebp,workspace.scratch8
@@ -866,8 +866,8 @@ static void REMOVE_INTEGER_PARTS_OF_PARAMETERS()
 }
 
 // MULTIPLY_UP_PARAM_VALUES macro param,dimension,magic ;24 cycles
-static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, void *a_sp, void *a_dpx,
-                              void *a_dpy1, void *a_dpy0, uint32_t dimension, uint32_t magic)
+static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0, int32_t d_p_y_1, fp64_t *a_sp, fp64_t *a_dpx,
+                              fp64_t *a_dpy1, fp64_t *a_dpy0, uint32_t dimension, uint32_t magic)
 {
     // ;										st(0)		st(1)		st(2)		st(3)		st(4)		st(5) st(6) st(7)
     assert(x86_state.x87_stack_top == -1);
@@ -919,13 +919,13 @@ static void MULTIPLY_UP_PARAM_VALUES(int32_t s_p, int32_t d_p_x, int32_t d_p_y_0
     // 	 FXCH st(2)						;	spdx		dpdxdx		dpdy1dx		dpdy0dx
     FXCH(2);
     // 	fstp qword ptr workspaceA.s&param		;	dpdxdx		dpdy1dx		dpdy0dx
-    FSTP64(a_sp);
+    FSTP64(&a_sp->double_val);
     // 	fstp qword ptr workspaceA.d&param&x	;	dpdy1dx		dpdy0dx
-    FSTP64(a_dpx);
+    FSTP64(&a_dpx->double_val);
     // 	fstp qword ptr workspaceA.d&param&y1	;	dpdy0dx
-    FSTP64(a_dpy1);
+    FSTP64(&a_dpy1->double_val);
     // 	fstp qword ptr workspaceA.d&param&y0	;
-    FSTP64(a_dpy0);
+    FSTP64(&a_dpy0->double_val);
     // endm
 }
 
@@ -1041,13 +1041,13 @@ static void MULTIPLY_UP_V_BY_STRIDE(uint32_t magic)
     // 	 FXCH st(2)						;	spdx		dpdxdx		dpdy1dx		dpdy0dx
     FXCH(2);
     // 	fstp qword ptr workspaceA.sv			;	dpdxdx		dpdy1dx		dpdy0dx
-    FSTP64(&workspaceA.sv);
+    FSTP64(&workspaceA.sv_double);
     // 	fstp qword ptr workspaceA.dvx			;	dpdy1dx		dpdy0dx
-    FSTP64(&workspaceA.dvx);
+    FSTP64(&workspaceA.dvx_double);
     // 	fstp qword ptr workspaceA.dvy1		;	dpdy0dx
-    FSTP64(&workspaceA.dvy1);
+    FSTP64(&workspaceA.dvy1_double);
     // 	fstp qword ptr workspaceA.dvy0		;
-    FSTP64(&workspaceA.dvy0);
+    FSTP64(&workspaceA.dvy0_double);
     // endm
 }
 
@@ -1099,12 +1099,12 @@ static void ARBITRARY_SETUP()
     REMOVE_INTEGER_PARTS_OF_PARAMETERS();
 
     // MULTIPLY_UP_PARAM_VALUES(u, width_p, fp_conv_d8r);
-    MULTIPLY_UP_PARAM_VALUES(workspace.s_u, workspace.d_u_x, workspace.d_u_y_0, workspace.d_u_y_1, &workspaceA.su,
-                             &workspaceA.dux, &workspaceA.duy1, &workspaceA.duy0, work.texture.width_p, fp_conv_d8r);
+    MULTIPLY_UP_PARAM_VALUES(workspace.s_u, workspace.d_u_x, workspace.d_u_y_0, workspace.d_u_y_1, &workspaceA.su_double,
+                             &workspaceA.dux_double, &workspaceA.duy1_double, &workspaceA.duy0_double, work.texture.width_p, fp_conv_d8r);
 
     // MULTIPLY_UP_PARAM_VALUES(v, height, fp_conv_d8r);
-    MULTIPLY_UP_PARAM_VALUES(workspace.s_v, workspace.d_v_x, workspace.d_v_y_0, workspace.d_v_y_1, &workspaceA.sv,
-                             &workspaceA.dvx, &workspaceA.dvy1, &workspaceA.dvy0, work.texture.height, fp_conv_d8r);
+    MULTIPLY_UP_PARAM_VALUES(workspace.s_v, workspace.d_v_x, workspace.d_v_y_0, workspace.d_v_y_1, &workspaceA.sv_double,
+                             &workspaceA.dvx_double, &workspaceA.dvy1_double, &workspaceA.dvy0_double, work.texture.height, fp_conv_d8r);
 
     SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
     MULTIPLY_UP_V_BY_STRIDE(fp_conv_d);
@@ -1128,25 +1128,25 @@ void TriangleSetup_Z(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
 }
 
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i_double,&workspace.d_i_x_double,fp_conv_d16, 0);
 }
 
 void TriangleSetup_ZTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i,&workspace.d_i_x,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u_double,&workspace.d_u_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v_double,&workspace.d_v_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i_double,&workspace.d_i_x_double,fp_conv_d16, 0);
 }
 
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
@@ -1154,9 +1154,9 @@ void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z,&workspace.d_z_x,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u,&workspace.d_u_x,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v,&workspace.d_v_x,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u_double,&workspace.d_u_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v_double,&workspace.d_v_x_double,fp_conv_d16, 0);
 }
 
 void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
@@ -1165,9 +1165,9 @@ void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
         return;
     }
 
-    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z, &workspace.d_z_x, fp_conv_d16, 1);
-    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u, &workspace.d_u_x, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z_double, &workspace.d_z_x_double, fp_conv_d16, 1);
+    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u_double, &workspace.d_u_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v_double, &workspace.d_v_x_double, fp_conv_d24, 0);
     ARBITRARY_SETUP();
 }
 
@@ -1177,9 +1177,9 @@ void TriangleSetup_ZTI_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
         return;
     }
 
-    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z, &workspace.d_z_x, fp_conv_d16, 1);
-    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u, &workspace.d_u_x, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v, &workspace.d_v_x, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_I, "_i", &workspace.s_i, &workspace.d_i_x, fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z_double, &workspace.d_z_x_double, fp_conv_d16, 1);
+    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u_double, &workspace.d_u_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v_double, &workspace.d_v_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_I, "_i", &workspace.s_i_double, &workspace.d_i_x_double, fp_conv_d16, 0);
     ARBITRARY_SETUP();
 }
