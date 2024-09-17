@@ -31,6 +31,7 @@ set(PIXELMAP_FILES
         pmmem.c
         pmmem.h
         pmnull.c
+        pmfail.c
         pmsetup.c
         quantize.c
         scale.c
