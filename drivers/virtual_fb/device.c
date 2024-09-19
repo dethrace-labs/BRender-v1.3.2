@@ -47,6 +47,29 @@ static const struct br_tv_template_entry deviceTemplateEntries[] = {
 #undef _F
 
 /*
+ * List of tokens which are not significant in matching (for output facilities)
+ */
+// clang-format off
+static const br_token insignificantMatchTokens[] = {
+    BRT_VIRTUALFB_DOUBLEBUFFER_CALLBACK_P,
+	BRT_VIRTUALFB_PALETTE_CHANGED_CALLBACK_P,
+    BR_NULL_TOKEN,
+};
+
+/*
+ * Default token matching does nothing other than make all tokens match
+ *
+ * makes a copy of token/value list
+ */
+struct token_match {
+    br_token_value* original;
+    br_token_value* query;
+    br_int_32 n;
+    void* extra;
+    br_size_t extra_size;
+};
+
+/*
  * Set up a static device object
  */
 br_device* DeviceVirtualFBAllocate(char* identifier) {
@@ -67,7 +90,7 @@ br_device* DeviceVirtualFBAllocate(char* identifier) {
     /*
      * Build CLUT object
      */
-    self->clut = DeviceClutVirtualFBAllocate(self, "Hardware-CLUT");
+    self->clut = DeviceClutVirtualFBAllocate(self, "VirtualFB-CLUT");
 
     return self;
 }
@@ -109,6 +132,64 @@ static void* BR_CMETHOD_DECL(br_device_virtualfb, listQuery)(br_device* self) {
     return self->object_list;
 }
 
+void* BR_CMETHOD_DECL(br_device_virtualfb, tokensMatchBegin)(struct br_device* self, br_token t, br_token_value* tv) {
+    struct token_match* tm;
+    br_int_32 i;
+
+    if (tv == NULL)
+        return NULL;
+
+    tm = BrResAllocate(self->res, sizeof(*tm), BR_MEMORY_APPLICATION);
+    tm->original = tv;
+
+    for (i = 0; tv[i].t != BR_NULL_TOKEN; i++)
+        ;
+
+    tm->n = i + 1;
+    tm->query = BrResAllocate(tm, tm->n * sizeof(br_token_value), BR_MEMORY_APPLICATION);
+    BrMemCpy(tm->query, tv, i * sizeof(br_token_value));
+    return (void*)tm;
+}
+
+br_boolean BR_CMETHOD_DECL(br_device_virtualfb, tokensMatch)(struct br_object_container* self, br_object* h, void* arg) {
+    struct token_match* tm = arg;
+    br_size_t s;
+    br_int_32 n;
+
+    if (arg == NULL)
+        return BR_TRUE;
+
+    /*
+     * Make a query on the object and then compare with the original tokens
+     */
+    ObjectQueryManySize(h, &s, tm->query);
+
+    if (s > tm->extra_size) {
+        if (tm->extra)
+            BrResFree(tm->extra);
+        tm->extra = BrResAllocate(tm, s, BR_MEMORY_APPLICATION);
+        tm->extra_size = s;
+    }
+
+    ObjectQueryMany(h, tm->query, tm->extra, tm->extra_size, &n);
+
+    /*
+     * Ensure that all tokens were found
+     */
+    if (tm->query[n].t != BR_NULL_TOKEN)
+        return BR_FALSE;
+
+    /*
+     * Compare the two token lists
+     */
+    return BrTokenValueComparePartial(tm->original, tm->query, insignificantMatchTokens);
+}
+
+void BR_CMETHOD_DECL(br_device_virtualfb, tokensMatchEnd)(struct br_object_container* self, void* arg) {
+    if (arg)
+        BrResFree(arg);
+}
+
 /*
  * Default dispatch table for device
  */
@@ -133,9 +214,9 @@ static struct br_device_dispatch deviceDispatch = {
     BR_CMETHOD_REF(br_object, queryAllSize),
 
     BR_CMETHOD_REF(br_device_virtualfb, listQuery),
-    BR_CMETHOD_REF(br_object_container, tokensMatchBegin),
-    BR_CMETHOD_REF(br_object_container, tokensMatch),
-    BR_CMETHOD_REF(br_object_container, tokensMatchEnd),
+    BR_CMETHOD_REF(br_device_virtualfb, tokensMatchBegin),
+    BR_CMETHOD_REF(br_device_virtualfb, tokensMatch),
+    BR_CMETHOD_REF(br_device_virtualfb, tokensMatchEnd),
     BR_CMETHOD_REF(br_object_container, addFront),
     BR_CMETHOD_REF(br_object_container, removeFront),
     BR_CMETHOD_REF(br_object_container, remove),

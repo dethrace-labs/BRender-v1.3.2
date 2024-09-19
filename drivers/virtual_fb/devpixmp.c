@@ -79,26 +79,57 @@ static struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
         F(clut),
         BRTV_QUERY | BRTV_ALL,
         BRTV_CONV_COPY,
-    },
+    }
+};
+#undef F
+
+struct pixelmapNewTokens {
+    br_int_32 width;
+    br_int_32 height;
+
+    br_device_pixelmap_virtualdb_doublebuffer_cbfn* doublebuffer_cbfn;
+    void* palette_changed_cbfn;
+};
+
+#define F(f) offsetof(struct pixelmapNewTokens, f)
+static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
+    { BRT(WIDTH_I32), F(width), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(HEIGHT_I32), F(height), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(VIRTUALFB_DOUBLEBUFFER_CALLBACK_P), F(doublebuffer_cbfn), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(VIRTUALFB_PALETTE_CHANGED_CALLBACK_P), F(palette_changed_cbfn), BRTV_SET, BRTV_CONV_COPY }
 };
 #undef F
 
 /*
  * Create a new device pixelmap and set a display mode
  */
-br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_facility* facility, br_uint_16 w, br_uint_16 h) {
+br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_facility* facility, br_token_value* tv) {
     br_device_pixelmap* self;
     br_error r;
     br_uint_16 original_mode;
     br_uint_16 sel;
+    br_int_32 count;
+
+    struct pixelmapNewTokens pt = {
+        .width = -1,
+        .height = -1,
+        .doublebuffer_cbfn = NULL,
+        .palette_changed_cbfn = NULL,
+    };
 
     if (dev->active)
         return NULL;
 
+    if (dev->templates.devicePixelmapNewTemplate == NULL) {
+        dev->templates.devicePixelmapNewTemplate = BrTVTemplateAllocate(dev, pixelmapNewTemplateEntries,
+            BR_ASIZE(pixelmapNewTemplateEntries));
+    }
+
     dev->active = BR_TRUE;
 
-    self = BrResAllocate(DeviceVirtualFBResource(dev),
-        sizeof(*self), BR_MEMORY_OBJECT_DATA);
+    self = BrResAllocate(DeviceVirtualFBResource(dev), sizeof(*self), BR_MEMORY_OBJECT_DATA);
+
+    BrTokenValueSetMany(&pt, &count, NULL, tv, dev->templates.devicePixelmapNewTemplate);
 
     self->dispatch = &devicePixelmapDispatch;
     self->pm_identifier = ObjectIdentifier(facility);
@@ -106,12 +137,7 @@ br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_fa
     self->restore_mode = BR_TRUE;
     self->original_mode = original_mode;
 
-    self->pm_pixels = (void*)0xA0000;
-
     self->pm_type = BR_PMT_INDEX_8;
-    self->pm_width = w;
-    self->pm_height = h;
-    self->pm_row_bytes = BIOS_STRIDE;
     self->pm_origin_x = 0;
     self->pm_origin_y = 0;
 
@@ -119,8 +145,16 @@ br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_fa
     self->pm_base_x = 0;
     self->pm_base_y = 0;
 
+    self->pm_width = pt.width;
+    self->pm_row_bytes = pt.width;
+    self->pm_height = pt.height;
+    self->doublebuffer_cbfn = pt.doublebuffer_cbfn;
+
+    self->pm_pixels = BrResAllocate(self, self->pm_row_bytes * self->pm_height, BR_MEMORY_PIXELS);
+
     self->output_facility = facility;
     self->clut = DeviceVirtualFBClut(dev);
+    self->clut->palette_changed_cbfn = pt.palette_changed_cbfn;
 
     ObjectContainerAddFront(facility, (br_object*)self);
 
@@ -154,13 +188,23 @@ static br_int_32 BR_CMETHOD_DECL(br_device_pixelmap_virtualfb, space)(br_device_
     return sizeof(br_device_pixelmap);
 }
 
-static struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_vga, queryTemplate)(br_device_pixelmap* self) {
+static struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_virtualfb, queryTemplate)(br_device_pixelmap* self) {
     if (self->device->templates.devicePixelmapTemplate == NULL)
         self->device->templates.devicePixelmapTemplate = BrTVTemplateAllocate(self->device,
             devicePixelmapTemplateEntries,
             BR_ASIZE(devicePixelmapTemplateEntries));
 
     return self->device->templates.devicePixelmapTemplate;
+}
+
+static br_error BR_CMETHOD_DECL(br_device_pixelmap_virtualfb, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
+    br_error result;
+
+    if (self->doublebuffer_cbfn) {
+        self->doublebuffer_cbfn(src);
+    }
+
+    return BRE_OK;
 }
 
 /*
@@ -178,7 +222,7 @@ static struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
     BR_CMETHOD_REF(br_device_pixelmap_virtualfb, device),
     BR_CMETHOD_REF(br_device_pixelmap_virtualfb, space),
 
-    BR_CMETHOD_REF(br_device_pixelmap_vga, queryTemplate),
+    BR_CMETHOD_REF(br_device_pixelmap_virtualfb, queryTemplate),
     BR_CMETHOD_REF(br_object, query),
     BR_CMETHOD_REF(br_object, queryBuffer),
     BR_CMETHOD_REF(br_object, queryMany),
@@ -195,7 +239,7 @@ static struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
     BR_CMETHOD_REF(br_device_pixelmap_mem, copyTo),
     BR_CMETHOD_REF(br_device_pixelmap_mem, copyFrom),
     BR_CMETHOD_REF(br_device_pixelmap_mem, fill),
-    BR_CMETHOD_REF(br_device_pixelmap_gen, doubleBuffer),
+    BR_CMETHOD_REF(br_device_pixelmap_virtualfb, doubleBuffer),
 
     BR_CMETHOD_REF(br_device_pixelmap_gen, copyDirty),
     BR_CMETHOD_REF(br_device_pixelmap_gen, copyToDirty),

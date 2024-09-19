@@ -121,12 +121,12 @@ static br_error BR_CMETHOD_DECL(br_device_clut_virtualfb, entrySetMany)(br_devic
     if (index + count > 256)
         return BRE_OVERFLOW;
 
-    // outp(VGA_PAL_WRITE,index);
-
     for (i = 0; i < count; i++) {
-        // outp(VGA_PAL_DATA,BR_RED(entries[i]) >> 2);
-        // outp(VGA_PAL_DATA,BR_GRN(entries[i]) >> 2);
-        // outp(VGA_PAL_DATA,BR_BLU(entries[i]) >> 2);
+        self->entries[index + i] = entries[i];
+    }
+
+    if (self->palette_changed_cbfn) {
+        self->palette_changed_cbfn(self->entries);
     }
 
     return BRE_OK;

@@ -104,6 +104,9 @@ static struct br_tv_template_entry outputFacilityTemplateEntries[] = {
         BRTV_QUERY | BRTV_ALL | BRTV_ABS,
         BRTV_CONV_COPY,
     },
+    // Passed to pixelmapNew
+    { BRT(VIRTUALFB_DOUBLEBUFFER_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
+    { BRT(VIRTUALFB_PALETTE_CHANGED_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
 };
 #undef F
 
@@ -187,7 +190,7 @@ static br_error BR_CMETHOD_DECL(br_output_facility_virtualfb, pixelmapNew)(br_ou
     /*
      * Create device pixelmap structure pointing at display memory
      */
-    pm = DevicePixelmapVirtualFBAllocate(ObjectDevice(self), self, self->width, self->height);
+    pm = DevicePixelmapVirtualFBAllocate(ObjectDevice(self), self, tv);
 
     if (pm == NULL)
         return BRE_FAIL;

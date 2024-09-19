@@ -35,7 +35,7 @@ br_output_facility* OutputFacilityVirtualFBAllocate(br_device* dev, char* identi
 /*
  * devpixmp.c
  */
-br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_facility* type, br_uint_16 w, br_uint_16 h);
+br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_facility* type, br_token_value* tv);
 
 /*
  * devclut.c

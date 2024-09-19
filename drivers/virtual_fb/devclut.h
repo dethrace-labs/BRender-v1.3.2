@@ -4,9 +4,13 @@
 #ifndef _DEVCLUT_H_
 #define _DEVCLUT_H_
 
+#include "drv.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef void BR_CALLBACK br_device_virtualfb_palette_changed_cbfn(br_uint_32* palette_entries);
 
 /*
  * Private state of device CLUT
@@ -27,11 +31,11 @@ typedef struct br_device_clut {
      */
     br_device* device;
 
-} br_device_clut;
+    br_uint_32 entries[256];
 
-#define VGA_PAL_READ 0x3c7
-#define VGA_PAL_WRITE 0x3c8
-#define VGA_PAL_DATA 0x3c9
+    br_device_virtualfb_palette_changed_cbfn* palette_changed_cbfn;
+
+} br_device_clut;
 
 #ifdef __cplusplus
 };

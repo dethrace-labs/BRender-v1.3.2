@@ -16,7 +16,6 @@ BR_RCS_ID("$Id: driver.c 1.1 1997/12/10 16:45:39 jon Exp $");
 br_device* BR_EXPORT BrDrv1VirtualFBBegin(char* arguments) {
     int i, type_count;
     br_device* device;
-    br_token_value args_tv[256], *tp;
 
     /*
      * Set up device
