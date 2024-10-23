@@ -295,7 +295,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     pm = BrResAllocate(self->device, sizeof(br_device_pixelmap), BR_MEMORY_OBJECT);
     pm->dispatch = &devicePixelmapDispatch;
     BrSprintfN(tmp, sizeof(tmp) - 1, "OpenGL:%s:%dx%d", typestring, mt.width, mt.height);
-    self->pm_identifier = BrResStrDup(self, tmp);
+    pm->pm_identifier = BrResStrDup(self, tmp);
     pm->device = self->device;
     pm->output_facility = self->output_facility;
     pm->use_type = mt.use_type;
@@ -306,6 +306,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     pm->pm_type = mt.type;
     pm->pm_width = mt.width;
     pm->pm_height = mt.height;
+    pm->pm_row_bytes = gl_elem_bytes * mt.width;
     pm->pm_flags = BR_PMF_NO_ACCESS;
     pm->pm_origin_x = 0;
     pm->pm_origin_y = 0;
@@ -421,6 +422,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
         glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.depthbuffer->asBack.glFbo);
         glClear(GL_DEPTH_BUFFER_BIT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
         return BRE_OK;
     }
 
@@ -431,7 +434,12 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
         }
         glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
         glTexSubImage2D(GL_TEXTURE_2D, 0, rect->x, rect->y, rect->w, rect->h, GL_RGBA, GL_UNSIGNED_BYTE, px);
+        glBindTexture(GL_TEXTURE_2D, 0);
         BrScratchFree(px);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
+        glClear(GL_COLOR_BUFFER_BIT);
+
     } else {
         return BRE_UNSUPPORTED;
     }
@@ -448,23 +456,51 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopyTo)(br_device_pixel
     br_device_pixelmap* src, br_rectangle* sr) {
     /* Pixelmap->Device, addressable same-size copy. */
 
-    br_uint_16* buffer = BrScratchAllocate(sr->w * sr->h * 4);
-    int dest = 0;
-    br_uint_16* src_px = src->pm_pixels;
+    glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
 
-    UASSERT(src->pm_type == BR_PMT_RGB_565);
+    switch (src->pm_type) {
 
-    if (src->pm_type == BR_PMT_RGB_565) {
+    case BR_PMT_RGB_565: {
+        br_uint_16* buffer = BrScratchAllocate(sizeof(uint16_t) * sr->w * sr->h);
+        br_uint_16* buffer_ptr = buffer;
+        br_uint_16* src_px = src->pm_pixels;
         for (int y = sr->y; y < sr->h; y++) {
             for (int x = sr->x; x < sr->w; x++) {
                 br_uint_16 c = src_px[y * src->pm_row_bytes / 2 + x];
-                buffer[dest++] = c;
+                *buffer_ptr = c;
+                buffer_ptr++;
             }
         }
+        glTexSubImage2D(GL_TEXTURE_2D, 0, p->x, p->y, sr->w, sr->h, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
+        BrScratchFree(buffer);
+        break;
     }
-    glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, p->x, p->y, sr->w, sr->h, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
-    BrScratchFree(buffer);
+    case BR_PMT_INDEX_8: {
+        uint32_t* buffer = BrScratchAllocate(sizeof(uint32_t) * sr->w * sr->h);
+        uint32_t* buffer_ptr = buffer;
+        char* src_px = src->pm_pixels;
+        uint32_t* map;
+        if (src->pm_map) {
+            map = src->pm_map->pixels;
+        } else {
+            map = ObjectDevice(self)->clut->entries;
+        }
+        for (int y = 0; y < src->pm_height; y++) {
+            for (int x = 0; x < src->pm_width; x++) {
+                int index = src_px[y * src->pm_row_bytes + x];
+                *buffer_ptr = map[index];
+                buffer_ptr++;
+            }
+        }
+        glTexSubImage2D(GL_TEXTURE_2D, 0, p->x, p->y, sr->w, sr->h, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+        BrScratchFree(buffer);
+        break;
+    }
+    default:
+        UASSERT(0);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     return BRE_OK;
 }
@@ -486,6 +522,74 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopyFrom)(br_device_pix
 br_error BR_CMETHOD(br_device_pixelmap_gl, text)(br_device_pixelmap* self, br_point* point, br_font* font,
     const char* text, br_uint_32 colour) {
     return BRE_FAIL;
+}
+
+br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, allocateSub)(br_device_pixelmap* self, br_device_pixelmap** newpm, br_rectangle* rect) {
+    br_device_pixelmap* pm;
+    br_rectangle out;
+
+    /*
+     * Create the new structure and copy
+     */
+    pm = BrResAllocate(self->device, sizeof(*pm), BR_MEMORY_PIXELMAP);
+
+    /*
+     * Set all the fields to be the same as the parent pixelmap for now
+     */
+    *pm = *self;
+
+    /*
+     * Create sub-window (clipped against original)
+     */
+    if (PixelmapRectangleClip(&out, rect, (br_pixelmap*)self) == BR_CLIP_REJECT)
+        return BRE_FAIL;
+
+    pm->sub_pixelmap = BR_TRUE;
+
+    /*
+     * Pixel rows are not contiguous
+     */
+    if (out.w != self->pm_width)
+        pm->pm_flags &= ~BR_PMF_LINEAR;
+
+    pm->pm_base_x += out.x;
+    pm->pm_base_y += out.y;
+
+    pm->pm_width = out.w;
+    pm->pm_height = out.h;
+
+    pm->pm_origin_x = 0;
+    pm->pm_origin_y = 0;
+
+    *newpm = (br_device_pixelmap*)pm;
+
+    return BRE_OK;
+}
+
+br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* self, br_boolean block) {
+
+    UASSERT(self->pm_pixels == NULL);
+    self->pm_pixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
+
+    glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, self->pm_pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return BRE_OK;
+}
+
+br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directUnlock)(br_device_pixelmap* self) {
+    int e;
+    UASSERT(self->pm_pixels != NULL);
+
+    glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
+    e = glGetError();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->pm_width, self->pm_height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, self->pm_pixels);
+    e = glGetError();
+    BrMemFree(self->pm_pixels);
+    self->pm_pixels = NULL;
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return BRE_OK;
 }
 
 /*
@@ -514,7 +618,7 @@ static const struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
     ._validSource = BR_CMETHOD_REF(br_device_pixelmap_mem, validSource),
     ._resize = BR_CMETHOD_REF(br_device_pixelmap_gl, resize),
     ._match = BR_CMETHOD_REF(br_device_pixelmap_gl, match),
-    ._allocateSub = BR_CMETHOD_REF(br_device_pixelmap_fail, allocateSub),
+    ._allocateSub = BR_CMETHOD_REF(br_device_pixelmap_gl, allocateSub),
 
     ._copy = BR_CMETHOD_REF(br_device_pixelmap_gen, copy),
     ._copyTo = BR_CMETHOD_REF(br_device_pixelmap_gen, copyTo),
@@ -556,8 +660,8 @@ static const struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
 
     ._flush = BR_CMETHOD_REF(br_device_pixelmap_fail, flush),
     ._synchronise = BR_CMETHOD_REF(br_device_pixelmap_fail, synchronise),
-    ._directLock = BR_CMETHOD_REF(br_device_pixelmap_fail, directLock),
-    ._directUnlock = BR_CMETHOD_REF(br_device_pixelmap_fail, directUnlock),
+    ._directLock = BR_CMETHOD_REF(br_device_pixelmap_gl, directLock),
+    ._directUnlock = BR_CMETHOD_REF(br_device_pixelmap_gl, directUnlock),
     ._getControls = BR_CMETHOD_REF(br_device_pixelmap_fail, getControls),
     ._setControls = BR_CMETHOD_REF(br_device_pixelmap_fail, setControls)
 };

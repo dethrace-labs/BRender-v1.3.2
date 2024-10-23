@@ -16,9 +16,9 @@ typedef struct {
 
 typedef struct br_device_pixelmap_gl_quad {
     br_device_pixelmap_gl_tri tris[4];
-    GLuint                    defaultVao;
-    GLuint                    textVao;
-    GLuint                    buffers[2];
+    GLuint defaultVao;
+    GLuint textVao;
+    GLuint buffers[2];
 } br_device_pixelmap_gl_quad;
 
 #ifdef BR_DEVICE_PIXELMAP_PRIVATE
@@ -31,12 +31,12 @@ typedef struct br_device_pixelmap {
     /*
      * Dispatch table
      */
-    const struct br_device_pixelmap_dispatch *dispatch;
+    const struct br_device_pixelmap_dispatch* dispatch;
 
     /*
      * Standard handle identifier
      */
-    const char *pm_identifier;
+    const char* pm_identifier;
 
     /** Standard pixelmap members (not including identifier) **/
 
@@ -44,8 +44,8 @@ typedef struct br_device_pixelmap {
 
     /** End of br_pixelmap fields **/
 
-    struct br_device          *device;
-    struct br_output_facility *output_facility;
+    struct br_device* device;
+    struct br_output_facility* output_facility;
 
     /*
      * Type of buffer (when matched)
@@ -61,13 +61,15 @@ typedef struct br_device_pixelmap {
      * Pointer to renderer currently opened on this pixelmap (N.B. This is only set on the screen
      * pixelmap)
      */
-    struct br_renderer *renderer;
+    struct br_renderer* renderer;
 
     /*
      * Current screen pixelmap. Valid on ALL types. The screen points to itself.
      * NB: This is mainly used to retrieve the context-level OpenGL state.
      */
-    struct br_device_pixelmap *screen;
+    struct br_device_pixelmap* screen;
+
+    br_boolean sub_pixelmap;
 
     /* OpenGL crap */
     union {
@@ -75,7 +77,8 @@ typedef struct br_device_pixelmap {
             /*
              * System-specific OpenGL function pointers.
              */
-            br_device_gl_ext_procs ext_procs;
+            br_device_pixelmap_gl_getprocaddress_cbfn* get_proc_address;
+            br_device_pixelmap_gl_swapbuffers_cbfn* swap_buffers;
 
             /*
              * Device-wide VIDEO instance.
@@ -85,14 +88,14 @@ typedef struct br_device_pixelmap {
             /*
              * OpenGL context
              */
-            void *gl_context;
+            void* gl_context;
 
-            const char *gl_version;
-            const char *gl_vendor;
-            const char *gl_renderer;
+            const char* gl_version;
+            const char* gl_vendor;
+            const char* gl_renderer;
 
-            GLint  gl_num_extensions;
-            char **gl_extensions;
+            GLint gl_num_extensions;
+            char** gl_extensions;
 
             GLuint tex_white;
             GLuint tex_checkerboard;
@@ -104,19 +107,22 @@ typedef struct br_device_pixelmap {
             br_int_32 num_refs;
         } asFront;
         struct {
-            struct br_device_pixelmap *depthbuffer;
-            GLuint                     glFbo;
-            GLuint                     glTex;
-            GLfloat                    clearColour[4];
+            struct br_device_pixelmap* depthbuffer;
+            GLuint glFbo;
+            GLuint glTex;
+            GLfloat clearColour[4];
+
+            void* pixel_data;
 
             br_device_pixelmap_gl_quad quad;
         } asBack;
         struct {
-            struct br_device_pixelmap *backbuffer;
-            GLuint                     glDepth;
-            GLfloat                    clearValue;
+            struct br_device_pixelmap* backbuffer;
+            GLuint glDepth;
+            GLfloat clearValue;
         } asDepth;
     };
+    struct br_device_clut* clut;
 } br_device_pixelmap;
 
 #endif

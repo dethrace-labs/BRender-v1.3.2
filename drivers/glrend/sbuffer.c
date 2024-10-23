@@ -38,29 +38,29 @@ struct br_buffer_stored* BufferStoredGLAllocate(br_renderer* renderer, br_token 
         ident = "Colour-Map";
         break;
 
-    case BRT_INDEX_SHADE_O:
-        ident = "Shade-Table";
-        break;
+        // case BRT_INDEX_SHADE_O:
+        //     ident = "Shade-Table";
+        //     break;
 
-    case BRT_INDEX_BLEND_O:
-        ident = "Blend-Table";
-        break;
+        // case BRT_INDEX_BLEND_O:
+        //     ident = "Blend-Table";
+        //     break;
 
-    case BRT_SCREEN_DOOR_O:
-        ident = "Screendoor-Table";
-        break;
+        // case BRT_SCREEN_DOOR_O:
+        //     ident = "Screendoor-Table";
+        //     break;
 
-    case BRT_INDEX_LIGHT_O:
-        ident = "Lighting-Table";
-        break;
+        // case BRT_INDEX_LIGHT_O:
+        //     ident = "Lighting-Table";
+        //     break;
 
-    case BRT_BUMP_O:
-        ident = "Bump-Map";
-        break;
+        // case BRT_BUMP_O:
+        //     ident = "Bump-Map";
+        //     break;
 
-    case BRT_UNKNOWN:
-        ident = "Unknown";
-        break;
+        // case BRT_UNKNOWN:
+        //     ident = "Unknown";
+        //     break;
 
     default:
         return NULL;
@@ -137,6 +137,7 @@ static const char* gl_strerror(GLenum err) {
     return errbuf;
 }
 
+#include <stdio.h>
 static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     GLint internal_format;
     GLenum format, type, err;
@@ -173,7 +174,32 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     }
 
     glBindTexture(GL_TEXTURE_2D, self->gl_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+
+    printf("glTexImage2D %d for %s\n", self->gl_tex, pm->identifier);
+
+    if (pm->type == BR_PMT_INDEX_8) {
+        uint32_t* px = BrScratchAllocate(sizeof(uint32_t) * pm->width * pm->height);
+        uint32_t* px_ptr = px;
+        uint8_t* src_px = pm->pixels;
+        uint32_t* map;
+        if (pm->map) {
+            map = pm->map->pixels;
+        } else {
+            map = ObjectDevice(self)->clut->entries;
+        }
+
+        for (int y = 0; y < pm->height; y++) {
+            for (int x = 0; x < pm->width; x++) {
+                int index = src_px[y * pm->row_bytes + x];
+                *px_ptr = map[index];
+                px_ptr++;
+            }
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, px);
+        BrScratchFree(px);
+    } else {
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+    }
 
     if ((err = glGetError()) != 0) {
         BR_FATAL1("GLREND: glTexImage2D() failed with %s", gl_strerror(err));
@@ -182,8 +208,8 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     }
 
     glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

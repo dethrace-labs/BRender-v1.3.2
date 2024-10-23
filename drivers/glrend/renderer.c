@@ -31,8 +31,8 @@ br_renderer* RendererGLAllocate(br_device* device, br_renderer_facility* facilit
     if (dest == NULL || ObjectDevice(dest) != device)
         return NULL;
 
-    if (dest->use_type != BRT_OFFSCREEN)
-        return NULL;
+    // if (dest->use_type != BRT_OFFSCREEN)
+    //     return NULL;
 
     self = BrResAllocate(facility, sizeof(*self), BR_MEMORY_OBJECT);
     self->dispatch = &rendererDispatch;
@@ -94,6 +94,7 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
 
     glUseProgram(hVideo->brenderProgram.program);
     glBindFramebuffer(GL_FRAMEBUFFER, self->state.cache.fbo);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
 

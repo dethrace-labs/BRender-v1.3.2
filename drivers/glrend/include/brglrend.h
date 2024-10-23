@@ -15,19 +15,19 @@ extern br_token BRT_OPENGL_TEXTURE_U32;
 }
 #endif
 
-typedef void BR_CALLBACK br_device_pixelmap_gl_swapbuffers_cbfn(br_pixelmap *pm, void *user);
+typedef void BR_CALLBACK br_device_pixelmap_gl_swapbuffers_cbfn(br_pixelmap* pm);
 
-typedef void *BR_CALLBACK br_device_pixelmap_gl_getprocaddress_cbfn(const char *name);
+typedef void* BR_CALLBACK br_device_pixelmap_gl_getprocaddress_cbfn(const char* name);
 
-typedef void BR_CALLBACK br_device_pixelmap_gl_free_cbfn(br_pixelmap *pm, void *user);
+typedef void BR_CALLBACK br_device_pixelmap_gl_free_cbfn(br_pixelmap* pm, void* user);
 
-typedef struct br_device_gl_procs {
-    br_device_pixelmap_gl_getprocaddress_cbfn      *get_proc_address;
-    br_device_pixelmap_gl_swapbuffers_cbfn         *swap_buffers;
-    br_device_pixelmap_gl_free_cbfn                *free;
-    void                                           *user;
+// typedef struct br_device_gl_procs {
+//     br_device_pixelmap_gl_getprocaddress_cbfn      *get_proc_address;
+//     br_device_pixelmap_gl_swapbuffers_cbfn         *swap_buffers;
+//     br_device_pixelmap_gl_free_cbfn                *free;
+//     void                                           *user;
 
-} br_device_gl_ext_procs;
+// } br_device_gl_ext_procs;
 
 /*
  * Function prototypes

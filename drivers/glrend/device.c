@@ -27,6 +27,13 @@ static const char deviceProduct[] = DEVICE_PRODUCT;
 
 static struct br_tv_template_entry deviceTemplateEntries[] = {
     { BRT(IDENTIFIER_CSTR), F(identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
+    {
+        BRT(CLUT_O),
+        0,
+        F(clut),
+        BRTV_QUERY | BRTV_ALL,
+        BRTV_CONV_COPY,
+    },
     { BRT(VERSION_U32), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT, DEVICE_VERSION },
     { BRT(BRENDER_VERSION_U32), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT, __BRENDER__ },
     { BRT(DDI_VERSION_U32), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT, __BRENDER_DDI__ },
@@ -57,7 +64,8 @@ static const br_token insignificantMatchTokens[] = {
     BRT_WINDOW_MONITOR_I32,
     BRT_MSAA_SAMPLES_I32,
     BRT_WINDOW_HANDLE_H,
-    BRT_OPENGL_EXT_PROCS_P,
+    BRT_OPENGL_GET_PROC_ADDRESS_CALLBACK_P,
+    BRT_OPENGL_SWAP_CALLBACK_P,
     BRT_OPENGL_VERTEX_SHADER_STR,
     BRT_OPENGL_FRAGMENT_SHADER_STR,
     BR_NULL_TOKEN,
@@ -99,6 +107,11 @@ br_device* DeviceGLAllocate(const char* identifier, const char* arguments) {
         BrResFreeNoCallback(self);
         return NULL;
     }
+
+    /*
+     * Build CLUT object
+     */
+    self->clut = DeviceClutGLAllocate(self, "Pseudo-CLUT");
 
     return self;
 }

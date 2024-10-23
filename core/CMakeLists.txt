@@ -15,7 +15,7 @@ target_include_directories(brender-inc INTERFACE
 add_library(brender-inc-ddi INTERFACE)
 target_link_libraries(brender-inc-ddi INTERFACE brender-inc)
 
-set(BRENDER_TARGETS inc host std fw  fmt math pixelmap v1db)
+set(BRENDER_TARGETS inc host std fw  fmt math pixelmap v1db nulldev)
 set(BRENDER_OBJECTS)
 
 foreach (target ${BRENDER_TARGETS})

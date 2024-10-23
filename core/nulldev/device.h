@@ -10,45 +10,32 @@ typedef struct br_device {
     /*
      * Dispatch table
      */
-    const struct br_device_dispatch* dispatch;
+    const struct br_device_dispatch *dispatch;
 
     /*
      * Standard object identifier
      */
-    const char* identifier;
+    const char *identifier;
 
     /*
      * Pointer to owning device
      */
-    struct br_device* device;
+    struct br_device *device;
 
     /*
      * List of objects associated with this device
      */
-    void* object_list;
+    void *object_list;
 
     /*
      * Anchor for all device's resources
      */
-    void* res;
+    void *res;
 
     /*
      * Driver-wide template store
      */
     struct device_templates templates;
-
-    /*
-     * Device-wide output facility.
-     */
-    struct br_output_facility* output_facility;
-
-    /*
-     * Device-wide renderer facility.
-     */
-    struct br_renderer_facility* renderer_facility;
-
-    /* Device clut */
-    struct br_device_clut* clut;
 
 } br_device;
 

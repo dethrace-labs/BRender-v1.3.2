@@ -31,7 +31,7 @@ br_renderer_facility* RendererFacilityGLInit(br_device* device) {
     self->object_list = BrObjectListAllocate(self);
 
     /* Create geometry objects */
-    if (GeometryV1BucketsGLAllocate(self, "V1Buckets") == NULL || GeometryPrimitivesNullAllocate(self, "Primitives") == NULL || GeometryLightingNullAllocate(self, "Lighting") == NULL || GeometryV1ModelGLAllocate(self, "V1Model") == NULL) {
+    if (/*GeometryV1BucketsGLAllocate(self, "V1Buckets") == NULL || */ GeometryPrimitivesNullAllocate(self, "Primitives") == NULL || GeometryLightingNullAllocate(self, "Lighting") == NULL || GeometryV1ModelGLAllocate(self, "V1Model") == NULL) {
         BR_ERROR("GLREND: Error creating geometry objects.");
         BrResFree(self);
         return NULL;

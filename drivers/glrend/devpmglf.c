@@ -10,25 +10,25 @@
  */
 static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch;
 
-static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_size, void* block, struct br_tv_template_entry* tep) {
-    const br_device_pixelmap* self = block;
+// static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_size, void* block, struct br_tv_template_entry* tep) {
+//     const br_device_pixelmap* self = block;
 
-    switch (tep->token) {
-    case BRT_OPENGL_EXT_PROCS_P:
-        pvalue->p = (void*)&self->asFront.ext_procs;
-        break;
-    default:
-        return BRE_UNKNOWN;
-    }
+//     switch (tep->token) {
+//     case BRT_OPENGL_EXT_PROCS_P:
+//         pvalue->p = (void*)&self->asFront.ext_procs;
+//         break;
+//     default:
+//         return BRE_UNKNOWN;
+//     }
 
-    return BRE_OK;
-}
+//     return BRE_OK;
+// }
 
-static const br_tv_custom custom = {
-    .query = custom_query,
-    .set = NULL,
-    .extra_size = NULL,
-};
+// static const br_tv_custom custom = {
+//     .query = custom_query,
+//     .set = NULL,
+//     .extra_size = NULL,
+// };
 
 /*
  * Device pixelmap info. template
@@ -43,13 +43,22 @@ static struct br_tv_template_entry devicePixelmapFrontTemplateEntries[] = {
     { BRT(FACILITY_O), F(output_facility), BRTV_QUERY, BRTV_CONV_COPY, 0 },
     { BRT(IDENTIFIER_CSTR), F(pm_identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(MSAA_SAMPLES_I32), F(msaa_samples), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
-    { BRT(OPENGL_EXT_PROCS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
+    // { BRT(OPENGL_EXT_PROCS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
+    { BRT(OPENGL_GET_PROC_ADDRESS_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
+    { BRT(OPENGL_SWAP_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
     { BRT(OPENGL_VERSION_CSTR), FF(gl_version), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(OPENGL_VENDOR_CSTR), FF(gl_vendor), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(OPENGL_RENDERER_CSTR), FF(gl_renderer), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
 
     { DEV(OPENGL_NUM_EXTENSIONS_I32), FF(gl_num_extensions), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { DEV(OPENGL_EXTENSIONS_PL), FF(gl_extensions), BRTV_QUERY | BRTV_ALL, BRTV_CONV_LIST, 0 },
+    {
+        BRT_CLUT_O,
+        0,
+        F(clut),
+        BRTV_QUERY | BRTV_ALL,
+        BRTV_CONV_COPY,
+    }
 };
 #undef FF
 #undef F
@@ -60,7 +69,8 @@ struct pixelmapNewTokens {
     br_int_32 pixel_bits;
     br_uint_8 pixel_type;
     int msaa_samples;
-    br_device_gl_ext_procs* ext_procs;
+    br_device_pixelmap_gl_getprocaddress_cbfn* get_proc_address;
+    br_device_pixelmap_gl_swapbuffers_cbfn* swap_buffers;
     const char* vertex_shader;
     const char* fragment_shader;
 };
@@ -72,8 +82,8 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
     { BRT(PIXEL_BITS_I32), F(pixel_bits), BRTV_SET, BRTV_CONV_COPY },
     { BRT(PIXEL_TYPE_U8), F(pixel_type), BRTV_SET, BRTV_CONV_COPY },
     { BRT(MSAA_SAMPLES_I32), F(msaa_samples), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(OPENGL_EXT_PROCS_P), F(ext_procs), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(OPENGL_VERTEX_SHADER_STR), F(vertex_shader), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(OPENGL_GET_PROC_ADDRESS_CALLBACK_P), F(get_proc_address), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(OPENGL_SWAP_CALLBACK_P), F(swap_buffers), BRTV_SET, BRTV_CONV_COPY },
     { BRT(OPENGL_FRAGMENT_SHADER_STR), F(fragment_shader), BRTV_SET, BRTV_CONV_COPY }
 };
 #undef F
@@ -88,7 +98,8 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         .pixel_bits = -1,
         .pixel_type = BR_PMT_MAX,
         .msaa_samples = 0,
-        .ext_procs = NULL,
+        .get_proc_address = NULL,
+        .swap_buffers = NULL,
         .vertex_shader = NULL,
         .fragment_shader = NULL
     };
@@ -117,6 +128,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     self->use_type = BRT_NONE;
     self->msaa_samples = pt.msaa_samples;
     self->screen = self;
+    self->clut = dev->clut;
 
     self->pm_type = pt.pixel_type;
     self->pm_width = pt.width;
@@ -126,7 +138,8 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     /*
      * Make a copy, so they can't switch things out from under us.
      */
-    self->asFront.ext_procs = *pt.ext_procs;
+    self->asFront.get_proc_address = *pt.get_proc_address;
+    self->asFront.swap_buffers = *pt.swap_buffers;
 
     // if((self->asFront.gl_context = DevicePixelmapGLExtCreateContext(self)) == NULL) {
     //     BrResFreeNoCallback(self);
@@ -167,26 +180,26 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     }
     self->asFront.gl_extensions[self->asFront.gl_num_extensions] = NULL;
 
-    /*
-     * Try to figure out the actual format we got.
-     * This isn't a big deal if we don't know what it is - we can only be written to by a doubleBuffer().
-     */
+    // /*
+    //  * Try to figure out the actual format we got.
+    //  * This isn't a big deal if we don't know what it is - we can only be written to by a doubleBuffer().
+    //  */
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, &red_bits);
-    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, &grn_bits);
-    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, &blu_bits);
-    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE, &alpha_bits);
+    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, &red_bits);
+    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, &grn_bits);
+    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, &blu_bits);
+    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE, &alpha_bits);
 
-    if (red_bits == 5 && grn_bits == 6 && blu_bits == 5) {
-        self->pm_type = BR_PMT_RGB_565;
-    } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 0) {
-        self->pm_type = BR_PMT_RGBX_888;
-    } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 8) {
-        self->pm_type = BR_PMT_RGBA_8888;
-    } else {
-        BrLogPrintf("GLREND: OpenGL gave us an unknown screen format (R%dG%dB%dA%d), soldiering on...\n", red_bits,
-            grn_bits, blu_bits, alpha_bits);
-    }
+    // if (red_bits == 5 && grn_bits == 6 && blu_bits == 5) {
+    //     self->pm_type = BR_PMT_RGB_565;
+    // } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 0) {
+    //     self->pm_type = BR_PMT_RGBX_888;
+    // } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 8) {
+    //     self->pm_type = BR_PMT_RGBA_8888;
+    // } else {
+    //     BrLogPrintf("GLREND: OpenGL gave us an unknown screen format (R%dG%dB%dA%d), soldiering on...\n", red_bits,
+    //         grn_bits, blu_bits, alpha_bits);
+    // }
 
     if (VIDEO_Open(&self->asFront.video, pt.vertex_shader, pt.fragment_shader) == NULL) {
         /*
@@ -199,19 +212,19 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     self->asFront.tex_white = DeviceGLBuildWhiteTexture();
     self->asFront.tex_checkerboard = DeviceGLBuildCheckerboardTexture();
 
-    /*
-     * We can't use BRender's fonts directly, so build a POT texture with
-     * glyph from left-to-right. All fonts have 256 possible characters.
-     */
+    // /*
+    //  * We can't use BRender's fonts directly, so build a POT texture with
+    //  * glyph from left-to-right. All fonts have 256 possible characters.
+    //  */
 
-    BrLogPrintf("GLREND: Building fixed 3x5 font atlas.\n");
-    (void)FontGLBuildAtlas(&self->asFront.font_fixed3x5, BrFontFixed3x5, 128, 64);
+    // BrLogPrintf("GLREND: Building fixed 3x5 font atlas.\n");
+    // (void)FontGLBuildAtlas(&self->asFront.font_fixed3x5, BrFontFixed3x5, 128, 64);
 
-    BrLogPrintf("GLREND: Building proportional 4x6 font atlas.\n");
-    (void)FontGLBuildAtlas(&self->asFront.font_prop4x6, BrFontProp4x6, 128, 64);
+    // BrLogPrintf("GLREND: Building proportional 4x6 font atlas.\n");
+    // (void)FontGLBuildAtlas(&self->asFront.font_prop4x6, BrFontProp4x6, 128, 64);
 
-    BrLogPrintf("GLREND: Building proportional 7x9 font atlas.\n");
-    (void)FontGLBuildAtlas(&self->asFront.font_prop7x9, BrFontProp7x9, 256, 64);
+    // BrLogPrintf("GLREND: Building proportional 7x9 font atlas.\n");
+    // (void)FontGLBuildAtlas(&self->asFront.font_prop7x9, BrFontProp7x9, 256, 64);
 
     self->asFront.num_refs = 0;
 
@@ -335,7 +348,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     /*
      * Finally, swap the buffers.
      */
-    // DevicePixelmapGLExtSwapBuffers(self);
+    DevicePixelmapGLExtSwapBuffers(self);
 
     /*
      * Drain any GL errors (again).

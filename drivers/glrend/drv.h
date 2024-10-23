@@ -24,14 +24,25 @@ extern "C" {
 #define BR_GEOMETRY_STORED_PRIVATE
 #define BR_RENDERER_STATE_STORED_PRIVATE
 #define BR_RENDERER_PRIVATE
+#define BR_DEVICE_CLUT_PRIVATE
 
-#include "brddi.h"
-#include "brglrend.h"
-#include "formats.h"
-#include "pm.h"
+// #include "brddi.h"
+// #include "brglrend.h"
+// #include "font.h"
+// #include "formats.h"
+// #include "pm.h"
+// #include "state.h"
+// #include "video.h"
+/* clang-format off */
+
+ #include "brddi.h"
+ #include "brglrend.h"
+
+ #include "formats.h"
+ #include "pm.h"
 #include "font.h"
 #include "video.h"
-#include "state.h"
+ #include "state.h"
 
 #include "template.h"
 #include "device.h"
@@ -44,7 +55,8 @@ extern "C" {
 #include "gstored.h"
 #include "gv1model.h"
 #include "gv1buckt.h"
-
+#include "devclut.h"
+/* clang-format on */
 /*
  * Macros that expand to the first two arguments of a template entry
  * Builtin or device token

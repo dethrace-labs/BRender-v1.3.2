@@ -409,7 +409,9 @@ static br_boolean want_defer(const state_hidden* hidden) {
     return hidden->order_table != NULL && hidden->heap != NULL;
 }
 
-static br_error V1Model_RenderStored(struct br_geometry_stored* self, br_renderer* renderer, br_boolean on_screen) {
+#include <stdio.h>
+#include <string.h>
+static br_error V1Model_RenderStored(struct br_geometry_stored* self, br_renderer* renderer, br_boolean on_screen, br_renderer_state_stored* default_state) {
     state_stack* state;
     br_primitive* prim;
     br_vector3 pos;
@@ -434,6 +436,7 @@ static br_error V1Model_RenderStored(struct br_geometry_stored* self, br_rendere
          *  so always set this here.
          */
         groupinfo->stored = stored;
+        groupinfo->default_state = default_state;
 
         if (defer) {
             br_order_table* ot = state->hidden.order_table;
@@ -469,12 +472,12 @@ static br_error V1Model_RenderStored(struct br_geometry_stored* self, br_rendere
     return BRE_OK;
 }
 
-static br_error BR_CMETHOD(br_geometry_stored_gl, render)(br_geometry_stored* self, br_renderer* renderer) {
-    return V1Model_RenderStored(self, renderer, BR_FALSE);
+static br_error BR_CMETHOD(br_geometry_stored_gl, render)(br_geometry_stored* self, br_renderer* renderer, struct br_renderer_state_stored* default_state) {
+    return V1Model_RenderStored(self, renderer, BR_FALSE, default_state);
 }
 
-static br_error BR_CMETHOD(br_geometry_stored_gl, renderOnScreen)(br_geometry_stored* self, br_renderer* renderer) {
-    return V1Model_RenderStored(self, renderer, BR_TRUE);
+static br_error BR_CMETHOD(br_geometry_stored_gl, renderOnScreen)(br_geometry_stored* self, br_renderer* renderer, struct br_renderer_state_stored* default_state) {
+    return V1Model_RenderStored(self, renderer, BR_TRUE, default_state);
 }
 
 static const struct br_geometry_stored_dispatch geometryStoredDispatch = {

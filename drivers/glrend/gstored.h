@@ -34,17 +34,22 @@ typedef struct gl_groupinfo {
     /*
      * Offset for glDrawElements()
      */
-    void *offset;
+    void* offset;
 
     /*
      * The group itself
      */
-    struct v11group *group;
+    struct v11group* group;
 
     /*
      * Stored renderer state for the group
      */
-    br_renderer_state_stored *stored;
+    br_renderer_state_stored* stored;
+
+    /*
+     * Stored default renderer state for the group
+     */
+    br_renderer_state_stored* default_state;
 } gl_groupinfo;
 
 #ifdef BR_GEOMETRY_STORED_PRIVATE
@@ -56,29 +61,29 @@ typedef struct br_geometry_stored {
     /*
      * Dispatch table
      */
-    const struct br_geometry_stored_dispatch *dispatch;
+    const struct br_geometry_stored_dispatch* dispatch;
 
     /*
      * Standard object identifier
      */
-    const char *identifier;
+    const char* identifier;
 
     /*
      * Pointer to owning device
      */
-    struct br_device *device;
+    struct br_device* device;
 
-    struct br_geometry_v1_model *gv1model;
+    struct br_geometry_v1_model* gv1model;
 
-    br_boolean       shared;
-    struct v11model *model;
+    br_boolean shared;
+    struct v11model* model;
 
     GLuint gl_vao;
     GLuint gl_vbo_posn;
     GLuint gl_vbo;
     GLuint gl_ibo;
 
-    gl_groupinfo *groups;
+    gl_groupinfo* groups;
 } br_geometry_stored;
 
 #endif

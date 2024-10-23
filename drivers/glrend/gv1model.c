@@ -85,11 +85,13 @@ static br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl, storedAvail)(struct br_
     return BRE_FAIL;
 }
 
+#include <stdio.h>
 static br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl,
     storedNew)(struct br_geometry_v1_model* self, struct br_renderer* renderer,
     struct br_geometry_stored** psg, struct v11model_f* model, br_token type,
     br_token_value* tv) {
     ASSERT(type == BRT_TRIANGLE);
+
     if ((*psg = GeometryStoredGLAllocate(self, "MODEL", renderer, (struct v11model*)model)) == NULL)
         return BRE_FAIL;
 
@@ -102,9 +104,13 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl, render)(struct br_geometry_v1_
     static br_boolean warned_imm = BR_FALSE;
 
     if (warned_imm != BR_TRUE) {
-        BR_FATAL0("GLREND: Immediate-mode rendering is not supported.");
+        // BR_FATAL0("GLREND: Immediate-mode rendering is not supported.");
         warned_imm = BR_TRUE;
     }
+
+    // self->
+
+    //     return V1Model_RenderStored(self, renderer, BR_FALSE);
 
     return BRE_FAIL;
 }

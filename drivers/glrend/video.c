@@ -162,6 +162,12 @@ br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat
         *type = GL_UNSIGNED_SHORT_5_6_5;
         *elemBytes = 2;
         break;
+    case BR_PMT_INDEX_8:
+        *internalFormat = GL_RGBA;
+        *format = GL_RGBA;
+        *type = GL_UNSIGNED_BYTE;
+        *elemBytes = 4;
+        break;
     case BR_PMT_RGB_888:
         *internalFormat = GL_RGB;
 #if BR_ENDIAN_LITTLE
@@ -176,7 +182,7 @@ br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat
         *internalFormat = GL_RGB;
         *format = GL_BGRA;
         *type = GL_UNSIGNED_INT_8_8_8_8_REV;
-        *elemBytes = 3;
+        *elemBytes = 4;
         break;
     case BR_PMT_RGBA_8888:
         *internalFormat = GL_RGBA;
