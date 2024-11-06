@@ -88,6 +88,64 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
 };
 #undef F
 
+static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
+    float vertices[] = {
+        // positions          // colors           // texture coords
+        1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, // top right
+        1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,  // bottom right
+        -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // bottom left
+        -1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f // top left
+    };
+    unsigned int indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    };
+
+    GLuint vbo;
+    glGenVertexArrays(1, &self->asFront.screen_buffer_vao);
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &self->asFront.screen_buffer_ebo);
+
+    glBindVertexArray(self->asFront.screen_buffer_vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->asFront.screen_buffer_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // texture coord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+}
+
+void GLRenderer_FullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
+
+    glViewport(0, 0, 640, 480);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_DEPTH_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    glBindTexture(GL_TEXTURE_2D, src->asBack.glTex);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_R8UI, render_width, render_height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, screen_buffer);
+
+    glBindVertexArray(self->asFront.screen_buffer_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->asFront.screen_buffer_ebo);
+    glUseProgram(self->asFront.video.defaultProgram.program);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+}
+
 br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {
     br_device_pixelmap* self;
     br_int_32 count;
@@ -228,6 +286,8 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
 
     self->asFront.num_refs = 0;
 
+    SetupFullScreenRectGeometry(self);
+
     ObjectContainerAddFront(self->output_facility, (br_object*)self);
     return self;
 
@@ -325,14 +385,16 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     /*
      * Blit.
      */
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, src->asBack.glFbo);
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, src->asBack.glFbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-    glBlitFramebuffer(0, 0, src->pm_width, src->pm_height, 0, 0, self->pm_width, self->pm_height, GL_COLOR_BUFFER_BIT,
-        GL_NEAREST);
+    // glBlitFramebuffer(0, 0, src->pm_width, src->pm_height, 0, 0, self->pm_width, self->pm_height, GL_COLOR_BUFFER_BIT,
+    // GL_NEAREST);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    // glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    GLRenderer_FullScreenQuad(self, src);
 
     /*
      * Call our pre-swap hook

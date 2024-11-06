@@ -153,14 +153,23 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
     if (states & MASK_STATE_SURFACE) {
         glActiveTexture(GL_TEXTURE0);
 
+        br_uint_32 colour = state->surface.colour;
+        if ((int)state->surface.colour == 3947324) {
+            int a = 0;
+        }
+
         if (state->surface.colour_source == BRT_SURFACE) {
             br_uint_32 colour = state->surface.colour;
+            if (colour == 3947324) {
+                int a = 0;
+            }
             float r = BR_RED(colour) / 255.0f;
             float g = BR_GRN(colour) / 255.0f;
             float b = BR_BLU(colour) / 255.0f;
+            //
             BrVector4Set(&model->surface_colour, r, g, b, state->surface.opacity);
         } else {
-            BrVector4Set(&model->surface_colour, 1.0f, 1.0f, 1.0f, state->surface.opacity);
+            BrVector4Set(&model->surface_colour, 0.0f, 1.0f, 1.0f, state->surface.opacity);
         }
 
         model->ka = state->surface.ka;
@@ -189,7 +198,6 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
     }
 
     if (states & MASK_STATE_PRIMITIVE) {
-        model->disable_colour_key = !(state->prim.flags & PRIMF_COLOUR_KEY);
 
         if (state->prim.flags & PRIMF_COLOUR_WRITE)
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -197,18 +205,23 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
         if (state->prim.colour_map) {
-            if (BufferStoredGLGetTexture(state->prim.colour_map) == 24) {
-                int a = 0;
-            }
+            model->disable_colour_key = !(state->prim.flags & PRIMF_COLOUR_KEY);
+
             glBindTexture(GL_TEXTURE_2D, BufferStoredGLGetTexture(state->prim.colour_map));
             glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
+            model->disable_texture = 0;
 
             // if(state->prim.colour_map->source->flags & BR_PMF_KEYED_TRANSPARENCY)
             //{
             //	//BrDebugBreak();
             // }
         } else {
+
+            // todo?
+            model->disable_colour_key = 0;
             glBindTexture(GL_TEXTURE_2D, tex_default);
+            model->disable_texture = 1;
+            // BrVector4Set(&model->surface_colour, 0, 1, 0, 1);
             // glBindTexture(GL_TEXTURE_2D, 27);
             glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
         }
@@ -262,6 +275,11 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
         } else {
             glDisable(GL_BLEND);
         }
+
+        model->fog_enabled = state->prim.fog_enabled;
+        BrVector4Set(&model->fog_colour, BR_RED(state->prim.fog_colour) / 255.0f, BR_GRN(state->prim.fog_colour) / 255.0f, BR_BLU(state->prim.fog_colour) / 255.0f, 1.0f);
+        model->fog_min = state->prim.fog_min;
+        model->fog_max = state->prim.fog_max;
     }
 
     apply_depth_properties(state, states);
@@ -310,9 +328,6 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
 
     unlit = BR_TRUE;
     if (stored) {
-        if (strcmp(stored->identifier, "WHEEL_STATE") == 0) {
-            int a = 0;
-        }
         apply_stored_properties(hVideo, &stored->state, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL,
             &unlit, &model, screen->asFront.tex_white);
     } else {
@@ -323,7 +338,13 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
         } else {
             default_tex = renderer->pixelmap->asFront.tex_white;
         }
-        apply_stored_properties(hVideo, renderer->state.current, ~0u, &unlit, &model, default_tex);
+        if (groupinfo->default_state->state.prim.index_base == 227 && groupinfo->default_state->state.prim.index_range == 1 && groupinfo->default_state->state.prim.colour_map == NULL) {
+            int a = 0;
+        }
+        renderer->state.current->surface = groupinfo->default_state->state.surface;
+        renderer->state.current->prim = groupinfo->default_state->state.prim;
+        renderer->state.current->cull = groupinfo->default_state->state.cull;
+        apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL, &unlit, &model, default_tex);
     }
 
     model.unlit = (br_uint_32)unlit;

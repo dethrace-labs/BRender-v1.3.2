@@ -104,6 +104,8 @@ typedef struct br_device_pixelmap {
             br_font_gl font_prop4x6;
             br_font_gl font_prop7x9;
 
+            GLuint screen_buffer_vao, screen_buffer_ebo;
+
             br_int_32 num_refs;
         } asFront;
         struct {

@@ -9,30 +9,30 @@ extern "C" {
 #endif
 
 typedef struct _VIDEO {
-    GLint   maxUniformBlockSize;
-    GLint   maxUniformBufferBindings;
-    GLint   maxVertexUniformBlocks;
-    GLint   maxFragmentUniformBlocks;
-    GLint   maxSamples;
+    GLint maxUniformBlockSize;
+    GLint maxUniformBufferBindings;
+    GLint maxVertexUniformBlocks;
+    GLint maxFragmentUniformBlocks;
+    GLint maxSamples;
     GLfloat maxAnisotropy;
 
     struct {
         GLuint program;
-        GLint  aPosition;     /* Position, vec3 */
-        GLint  aColour;       /* Colour, vec3 */
-        GLint  aUV;           /* UV, vec2 */
-        GLint  uSampler;      /* Sampler, sampler2D */
-        GLint  uMVP;          /* Model-View-Projection Matrix, mat4 */
-        GLint  uVerticalFlip; /* Boolean (actually a float). Should the image be vertically flipped. */
+        GLint aPosition;     /* Position, vec3 */
+        GLint aColour;       /* Colour, vec3 */
+        GLint aUV;           /* UV, vec2 */
+        GLint uSampler;      /* Sampler, sampler2D */
+        GLint uMVP;          /* Model-View-Projection Matrix, mat4 */
+        GLint uVerticalFlip; /* Boolean (actually a float). Should the image be vertically flipped. */
     } defaultProgram;
 
     struct {
         GLuint program;
-        GLint  aPosition; /* Position, vec3 */
-        GLint  aUV;       /* UV, vec2 */
-        GLint  uSampler;  /* Sampler, sampler2D */
-        GLint  uMVP;      /* Model-View-Projection Matrix, mat4 */
-        GLint  uColour;   /* Text colour, vec3 */
+        GLint aPosition; /* Position, vec3 */
+        GLint aUV;       /* UV, vec2 */
+        GLint uSampler;  /* Sampler, sampler2D */
+        GLint uMVP;      /* Model-View-Projection Matrix, mat4 */
+        GLint uColour;   /* Text colour, vec3 */
     } textProgram;
 
     struct {
@@ -87,8 +87,8 @@ typedef struct shader_data_scene {
     alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
     alignas(4) uint32_t num_lights;
 } shader_data_scene;
-BR_STATIC_ASSERT(sizeof(((shader_data_scene *)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,
-                 "std::array<shader_data_light> fucked up");
+BR_STATIC_ASSERT(sizeof(((shader_data_scene*)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,
+    "std::array<shader_data_light> fucked up");
 
 typedef struct shader_data_model {
     alignas(16) br_matrix4 model_view;
@@ -107,6 +107,12 @@ typedef struct shader_data_model {
     alignas(4) uint32_t unlit;
     alignas(4) uint32_t uv_source;
     alignas(4) uint32_t disable_colour_key;
+    alignas(4) uint32_t disable_texture;
+    alignas(4) uint32_t fog_enabled;
+    alignas(16) br_vector4 fog_colour;
+    alignas(4) float fog_min;
+    alignas(4) float fog_max;
+
 } shader_data_model;
 #pragma pack(pop)
 

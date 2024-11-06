@@ -4,7 +4,7 @@
 #define SPECULARPOW_CUTOFF              0.6172
 #define BR_SCALAR_EPSILON               1.192092896e-7f
 
-#define DEBUG_DISABLE_LIGHTS            0
+#define DEBUG_DISABLE_LIGHTS            1
 #define DEBUG_DISABLE_LIGHT_AMBIENT     0
 #define DEBUG_DISABLE_LIGHT_DIRECTIONAL 0
 #define DEBUG_DISABLE_LIGHT_POINT       0
@@ -49,6 +49,11 @@ layout(std140) uniform br_model_state
     uint unlit; /* Is this surface unlit? */
     int uv_source;
     bool disable_colour_key;
+    bool disable_texture;
+    bool fog_enabled;
+    vec4 fog_colour;
+    float fog_min;
+    float fog_max;
 };
 
 in vec3 aPosition;
@@ -283,7 +288,7 @@ void main()
     position = model_view * pos;
     normal = vec4(normalize(mat3(normal_matrix) * aNormal), 0);
     uv = aUV;
-    colour = aColour + fragmain();
+    colour = aColour; // + fragmain();
 
     rawPosition = aPosition;
     rawNormal   = aNormal;

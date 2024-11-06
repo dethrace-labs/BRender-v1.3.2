@@ -46,6 +46,11 @@ layout(std140) uniform br_model_state
     uint unlit; /* Is this surface unlit? */
     int uv_source;
     bool disable_colour_key;
+    bool disable_texture;
+    bool fog_enabled;
+    vec4 fog_colour;
+    float fog_min;
+    float fog_max;
 };
 
 in vec4 position;
@@ -140,12 +145,22 @@ vec2 SurfaceMap(in vec3 position, in vec3 normal, in vec2 uv)
     return (map_transform * vec4(uv, 1.0, 0.0)).xy;
 }
 
-void main()
-{
+float getFogFactor(float d) {
+    if (!fog_enabled) {
+        return 0;
+    }
+    return 1 - (fog_max - d) / (fog_max - fog_min);
+}
 
+void main() {
+    vec4 texColour;
     vec2 mappedUV = SurfaceMap(rawPosition, rawNormal, uv);
 
-    vec4 texColour = texture(main_texture, mappedUV);
+    if (disable_texture) {
+        texColour = surface_colour;
+    } else {
+        texColour = texture(main_texture, mappedUV);
+    }
 
     if(!disable_colour_key && texColour.rgb == vec3(0.0, 0.0, 0.0))
         discard;
@@ -173,7 +188,12 @@ void main()
     /* The actual surface colour. */
     mainColour = vec4(fragColour, surfaceColour.a);
 
-    mainColour = texColour;
+   mainColour = texColour;
+
+    // handle fog
+    float d = distance(eye_view, position);
+    float alpha = getFogFactor(d);
+    mainColour = mix(texColour, fog_colour, alpha);
 
     return;
 }
