@@ -218,7 +218,8 @@ typedef struct {
     alignas(16) shader_data_scene scene;
 
     struct {
-        br_matrix4 p;
+        br_matrix4 p_br; // BRender original projection
+        br_matrix4 p;    // OpenGL projection
         br_matrix4 mv;
         br_matrix4 mvp;
         br_matrix4 normal;

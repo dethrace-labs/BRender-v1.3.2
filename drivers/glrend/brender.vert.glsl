@@ -1,6 +1,7 @@
 #version 150
 
 #define MAX_LIGHTS                      48 /* Must match up with BRender */
+#define MAX_CLIP_PLANES                 6
 #define SPECULARPOW_CUTOFF              0.6172
 #define BR_SCALAR_EPSILON               1.192092896e-7f
 
@@ -28,12 +29,16 @@ layout(std140) uniform br_scene_state
     vec4 eye_view; /* Eye position in view-space */
     br_light lights[MAX_LIGHTS];
     uint num_lights;
+
+    vec4 clip_planes[MAX_CLIP_PLANES];
+    uint num_clip_planes;
 };
 
 layout(std140) uniform br_model_state
 {
     mat4 model_view;
     mat4 projection;
+    mat4 projection_brender;
     mat4 mvp;
     mat4 normal_matrix;
     mat4 environment;
@@ -68,6 +73,8 @@ out vec4 colour;
 
 out vec3 rawPosition;
 out vec3 rawNormal;
+
+out vec3 v_frag_pos;
 
 bool directLightExists;
 
@@ -283,6 +290,7 @@ vec4 PSXify_pos(in vec4 vertex, in vec2 resolution)
 
 void main()
 {
+    v_frag_pos = vec3((projection_brender * model_view) * vec4(aPosition, 1.0));
     vec4 pos = vec4(aPosition, 1.0);
 
     position = model_view * pos;
@@ -293,14 +301,20 @@ void main()
     rawPosition = aPosition;
     rawNormal   = aNormal;
 
-    if (!directLightExists && num_lights > 0u && unlit == 0u)
+    if (!directLightExists && num_lights > 0u && unlit == 0u) {
         colour += vec4(clear_colour.rgb, 0.0);
+    }
 
 #if ENABLE_PSX_SIMULATION
     pos = PSXify_pos(mvp * pos, vec2(200.0, 150.0));
 #else
-    pos = mvp * pos;
+    pos = projection * model_view * pos;
 #endif
+
+
+
+
+
 
     gl_Position = pos;
 }

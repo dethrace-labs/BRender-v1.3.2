@@ -1,6 +1,9 @@
 #include "brassert.h"
+
 #include "drv.h"
+
 #include "shortcut.h"
+
 #include "vecifns.h"
 
 /*
@@ -50,6 +53,18 @@ static void ProcessSceneLights(state_cache* cache, const state_light* lights) {
     }
 }
 
+static void ProcessClipPlanes(state_cache* cache, const state_clip* clips) {
+    cache->scene.num_clip_planes = 0;
+    for (uint32_t i = 0; i < MAX_STATE_CLIP_PLANES; i++) {
+        const state_clip* clip = &clips[i];
+        if (clip->type == BRT_NONE) {
+            continue;
+        }
+        BrVector4Copy(&cache->scene.clip_planes[cache->scene.num_clip_planes], &clip->plane);
+        cache->scene.num_clip_planes++;
+    }
+}
+
 /*
 ** Update the per-model matrices.
 **
@@ -66,7 +81,11 @@ static void UpdateMatrices(state_cache* cache, state_matrix* matrix) {
     /*
      * Projection Matrix
      */
+    BrMatrix4Copy(&cache->model.p_br, &matrix->view_to_screen);
+    // cache->model.p_br.m[2][0] = 0;
+    // cache->model.p_br.m[2][1] = 0;
     BrMatrix4Copy(&cache->model.p, &matrix->view_to_screen);
+    // Hack: jeff
     cache->model.p.m[2][0] = 0;
     cache->model.p.m[2][1] = 0;
     VIDEOI_D3DtoGLProjection(&cache->model.p);
@@ -165,6 +184,7 @@ void StateGLUpdateScene(state_cache* cache, state_stack* state) {
     BrVector4Set(&cache->scene.eye_view, 0.0f, 0.0f, 1.0f, 0.0f);
 
     ProcessSceneLights(cache, state->light);
+    ProcessClipPlanes(cache, state->clip);
 }
 
 static void ResetCacheLight(shader_data_light* alp) {
@@ -186,6 +206,7 @@ static void ResetCacheLight(shader_data_light* alp) {
 }
 
 void StateGLReset(state_cache* cache) {
+    BrMatrix4Identity(&cache->model.p_br);
     BrMatrix4Identity(&cache->model.p);
     BrMatrix4Identity(&cache->model.mv);
     BrMatrix4Identity(&cache->model.mvp);

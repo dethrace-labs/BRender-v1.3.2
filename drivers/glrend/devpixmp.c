@@ -421,24 +421,25 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
     if (self->use_type == BRT_DEPTH) {
         glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.depthbuffer->asBack.glFbo);
         glClear(GL_DEPTH_BUFFER_BIT);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
         return BRE_OK;
     }
 
     if (self->use_type == BRT_OFFSCREEN) {
-        unsigned int* px = BrScratchAllocate(sizeof(br_colour) * rect->w * rect->h);
-        for (int i = 0; i < rect->w * rect->h; i++) {
-            px[i] = colour;
-        }
-        glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, rect->x, rect->y, rect->w, rect->h, GL_RGBA, GL_UNSIGNED_BYTE, px);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        BrScratchFree(px);
+        // unsigned int* px = BrScratchAllocate(sizeof(br_colour) * rect->w * rect->h);
+        // for (int i = 0; i < rect->w * rect->h; i++) {
+        //     px[i] = colour;
+        // }
+        // glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
+        // glTexSubImage2D(GL_TEXTURE_2D, 0, rect->x, rect->y, rect->w, rect->h, GL_RGBA, GL_UNSIGNED_BYTE, px);
+        // glBindTexture(GL_TEXTURE_2D, 0);
+        // BrScratchFree(px);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
+        // glClear(GL_COLOR_BUFFER_BIT);
+
+        if (self->pm_pixels != NULL) {
+            BrMemSet(self->pm_pixels, colour, self->pm_row_bytes * self->pm_height);
+        }
 
     } else {
         return BRE_UNSUPPORTED;

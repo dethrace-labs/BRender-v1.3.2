@@ -1,6 +1,7 @@
 #version 150
 
 #define MAX_LIGHTS                   48 /* Must match up with BRender */
+#define MAX_CLIP_PLANES              6
 
 #define ENABLE_GAMMA_CORRECTION      0
 #define ENABLE_SIMULATE_8BIT_COLOUR  0
@@ -25,12 +26,16 @@ layout(std140) uniform br_scene_state
     vec4 eye_view; /* Eye position in view-space */
     br_light lights[MAX_LIGHTS];
     uint num_lights;
+
+    vec4 clip_planes[MAX_CLIP_PLANES];
+    uint num_clip_planes;
 };
 
 layout(std140) uniform br_model_state
 {
     mat4 model_view;
     mat4 projection;
+    mat4 projection_brender;
     mat4 mvp;
     mat4 normal_matrix;
     mat4 environment;
@@ -60,6 +65,8 @@ in vec4 colour;
 
 in vec3 rawPosition;
 in vec3 rawNormal;
+
+in vec3 v_frag_pos;
 
 out vec4 mainColour;
 
@@ -152,8 +159,21 @@ float getFogFactor(float d) {
     return 1 - (fog_max - d) / (fog_max - fog_min);
 }
 
+void processClipPlanes() {
+    for(uint i = 0u; i < num_clip_planes; i++) {
+        // calculate signed plane-vertex distance
+        float d = dot(clip_planes[i], projection_brender * model_view * vec4(rawPosition.xyz, 1));
+        if (d < 0) {
+            discard;
+        }
+    }
+}
+
 void main() {
     vec4 texColour;
+
+    processClipPlanes();
+
     vec2 mappedUV = SurfaceMap(rawPosition, rawNormal, uv);
 
     if (disable_texture) {
@@ -189,11 +209,14 @@ void main() {
     mainColour = vec4(fragColour, surfaceColour.a);
 
    mainColour = texColour;
+   if (unlit == 0u) {
+   mainColour *= vec4(ka, ka, ka, 1);
+   }
 
     // handle fog
     float d = distance(eye_view, position);
     float alpha = getFogFactor(d);
-    mainColour = mix(texColour, fog_colour, alpha);
+    mainColour = mix(mainColour, fog_colour, alpha);
 
     return;
 }

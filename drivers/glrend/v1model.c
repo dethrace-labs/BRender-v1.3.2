@@ -314,6 +314,7 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
     }
 #endif
 
+    model.projection_brender = cache->model.p_br;
     model.projection = cache->model.p;
     model.model_view = cache->model.mv;
     model.mvp = cache->model.mvp;
