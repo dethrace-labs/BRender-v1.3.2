@@ -31,7 +31,7 @@ static const GLchar g_DefaultFragmentShader
       "\n"
       "void main()\n"
       "{\n"
-      "	mainColour = texture(uSampler, uv) * vec4(colour.rgb, 1.0);\n"
+      "	mainColour = texture(uSampler, vec2(uv.x, abs(uVerticalFlip - uv.y))) * vec4(colour.rgb, 1.0);\n"
       "}\n";
 //  \n
 

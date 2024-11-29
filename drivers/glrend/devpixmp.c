@@ -570,6 +570,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, allocateSub)(br_device_pixelmap*
 br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* self, br_boolean block) {
 
     UASSERT(self->pm_pixels == NULL);
+    UASSERT(self->use_type == BRT_OFFSCREEN);
 
     self->pm_pixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
     br_uint_8* buffer = BrScratchAllocate(self->pm_row_bytes * self->pm_height);
@@ -595,11 +596,24 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directUnlock)(br_device_pixelmap* self) {
     int e;
     UASSERT(self->pm_pixels != NULL);
+    UASSERT(self->use_type == BRT_OFFSCREEN);
+
+    br_uint_8* buffer = BrScratchAllocate(self->pm_row_bytes * self->pm_height);
+    // invert pixels to make (0,0) point to top-left
+    int row = self->pm_height - 1;
+    br_uint_8* src_ptr = self->pm_pixels;                                     // top of buffer
+    br_uint_8* dst_ptr = buffer + self->pm_row_bytes * (self->pm_height - 1); // bottom of buffer
+    for (int y = 0; y < self->pm_height; y++) {
+        BrMemCpy(dst_ptr, src_ptr, self->pm_row_bytes);
+        src_ptr += self->pm_row_bytes;
+        dst_ptr -= self->pm_row_bytes;
+    }
 
     glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
     e = glGetError();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->pm_width, self->pm_height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, self->pm_pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->pm_width, self->pm_height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
     e = glGetError();
+    BrScratchFree(buffer);
     BrMemFree(self->pm_pixels);
     self->pm_pixels = NULL;
     glBindTexture(GL_TEXTURE_2D, 0);

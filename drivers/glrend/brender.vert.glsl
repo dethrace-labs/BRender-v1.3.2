@@ -59,6 +59,7 @@ layout(std140) uniform br_model_state
     vec4 fog_colour;
     float fog_min;
     float fog_max;
+    float alpha;
 };
 
 in vec3 aPosition;

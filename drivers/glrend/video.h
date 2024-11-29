@@ -117,6 +117,7 @@ typedef struct shader_data_model {
     alignas(16) br_vector4 fog_colour;
     alignas(4) float fog_min;
     alignas(4) float fog_max;
+    alignas(4) float alpha;
 
 } shader_data_model;
 #pragma pack(pop)

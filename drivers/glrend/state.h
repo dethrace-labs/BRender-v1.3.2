@@ -161,6 +161,7 @@ typedef struct state_primitive {
     br_token depth_test;
 
     br_token blend_mode;
+    float alpha_val;
 
     /*
      * Type of perspective correct rendering

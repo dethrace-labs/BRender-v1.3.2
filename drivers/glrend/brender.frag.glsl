@@ -56,6 +56,7 @@ layout(std140) uniform br_model_state
     vec4 fog_colour;
     float fog_min;
     float fog_max;
+    float alpha;
 };
 
 in vec4 position;
@@ -180,13 +181,14 @@ void main() {
         texColour = surface_colour;
     } else {
         texColour = texture(main_texture, mappedUV);
+        if(!disable_colour_key && texColour.rgb == vec3(0.0, 0.0, 0.0)) {
+            discard;
+        }
     }
-
-    if(!disable_colour_key && texColour.rgb == vec3(0.0, 0.0, 0.0))
-        discard;
 
     vec4 surfaceColour = surface_colour * texColour;
     vec3 fragColour = vec3(colour.rgb * texColour.rgb);
+    fragColour = texColour.rgb;
 
     /* Perform gamma correction */
 #if ENABLE_GAMMA_CORRECTION
@@ -206,11 +208,10 @@ void main() {
 #endif
 
     /* The actual surface colour. */
-    mainColour = vec4(fragColour, surfaceColour.a);
+    mainColour = vec4(fragColour, alpha);
 
-   mainColour = texColour;
    if (unlit == 0u) {
-   mainColour *= vec4(ka, ka, ka, 1);
+        mainColour *= vec4(ka, ka, ka, 1);
    }
 
     // handle fog

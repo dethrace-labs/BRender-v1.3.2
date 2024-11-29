@@ -43,6 +43,8 @@ static br_tv_template_entry template_entries[] = {
     { BRT(FOG_RGB), F(prim.fog_colour), Q | S | A, BRTV_CONV_COPY, 0, 0 },
     { BRT(FOG_MIN_F), F(prim.fog_min), Q | S | A, BRTV_CONV_COPY, 0, 0 },
     { BRT(FOG_MAX_F), F(prim.fog_max), Q | S | A, BRTV_CONV_COPY, 0, 0 },
+    { BRT(OPACITY_X), F(prim.alpha_val), Q | A | S, BRTV_CONV_FIXED_FLOAT },
+    { BRT(OPACITY_F), F(prim.alpha_val), Q | A | S, BRTV_CONV_COPY },
 };
 
 static const state_primitive default_state = {
@@ -63,6 +65,7 @@ static const state_primitive default_state = {
     .bump = NULL,
     .filter = BRT_NONE,
     .mip_filter = BRT_NONE,
+    .alpha_val = 1,
 };
 
 void StateGLInitPrimitive(state_all* state) {

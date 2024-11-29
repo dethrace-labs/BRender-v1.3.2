@@ -135,7 +135,6 @@ void GLRenderer_FullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glBindTexture(GL_TEXTURE_2D, src->asBack.glTex);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_R8UI, render_width, render_height, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, screen_buffer);
 
     glBindVertexArray(self->asFront.screen_buffer_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->asFront.screen_buffer_ebo);
@@ -313,7 +312,8 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
 
     VIDEO_Close(&self->asFront.video);
 
-    ObjectContainerRemove(self->output_facility, (br_object*)self);
+    // TODO: uncomment
+    // ObjectContainerRemove(self->output_facility, (br_object*)self);
 
     DevicePixelmapGLExtFree(self);
 
