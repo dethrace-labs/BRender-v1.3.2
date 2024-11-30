@@ -22,7 +22,7 @@ typedef struct gl_vertex_f {
     /*
      * Colour
      */
-    br_colour c;
+    br_vector4_f c;
 } gl_vertex_f;
 
 typedef struct gl_groupinfo {

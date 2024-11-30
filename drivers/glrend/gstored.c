@@ -50,7 +50,8 @@ static GLuint create_vao(HVIDEO hVideo, GLuint vbo_posn, GLuint vbo, GLuint ibo)
     }
 
     if (hVideo->brenderProgram.attributes.aColour >= 0) {
-        glVertexAttribPointer(hVideo->brenderProgram.attributes.aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE,
+        glEnableVertexAttribArray(hVideo->brenderProgram.attributes.aColour);
+        glVertexAttribPointer(hVideo->brenderProgram.attributes.aColour, 4, GL_FLOAT, GL_FALSE,
             sizeof(gl_vertex_f), (void*)offsetof(gl_vertex_f, c));
     }
 
@@ -88,7 +89,10 @@ static GLuint build_vbo(const struct v11model* model, size_t total_vertices) {
         for (br_uint_16 v = 0; v < gp->nvertices; ++v, ++nextVtx) {
             nextVtx->map = *(br_vector2_f*)(gp->map + v);
             nextVtx->n = *(br_vector3_f*)(gp->normal + v);
-            nextVtx->c = gp->vertex_colours[v];
+            nextVtx->c.v[0] = BR_RED(gp->vertex_colours[v]) / 255.0f;
+            nextVtx->c.v[1] = BR_GRN(gp->vertex_colours[v]) / 255.0f;
+            nextVtx->c.v[2] = BR_BLU(gp->vertex_colours[v]) / 255.0f;
+            nextVtx->c.v[3] = BR_ALPHA(gp->vertex_colours[v]) / 255.0f;
         }
     }
 

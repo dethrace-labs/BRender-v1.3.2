@@ -24,6 +24,7 @@ static br_tv_template_entry template_entries[] = {
     { BRT(SPECULAR_POWER_F), F(surface.power), Q | S | AF, BRTV_CONV_FLOAT_SCALAR, 0, TM_PART },
 
     { BRT(LIGHTING_B), F(surface.lighting), Q | S | A, BRTV_CONV_COPY, 0, TM_PART | TM_INVALID_CC },
+    { BRT(PRELIGHTING_B), F(surface.prelighting), Q | S | A, BRTV_CONV_COPY, 0, TM_PART | TM_INVALID_CC },
     { BRT(FORCE_FRONT_B), F(surface.force_front), Q | S | A, BRTV_CONV_COPY, 0, TM_PART | TM_INVALID_CC },
     { BRT(FORCE_BACK_B), F(surface.force_back), Q | S | A, BRTV_CONV_COPY, 0, TM_PART | TM_INVALID_CC },
     { BRT(DEPTH_BIAS_X), F(surface.depth_bias), Q | S | A, BRTV_CONV_FIXED_SCALAR, 0, TM_PART | TM_INVALID_CC },

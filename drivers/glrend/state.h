@@ -75,6 +75,7 @@ typedef struct state_surface {
     br_scalar power;
 
     br_boolean lighting;
+    br_boolean prelighting;
     br_boolean force_front;
     br_boolean force_back;
     br_scalar depth_bias;
@@ -129,6 +130,7 @@ enum {
     PRIMF_BLEND_BIT,
     PRIMF_MODULATE_BIT,
     PRIMF_COLOUR_KEY_BIT,
+    PRIMF_SMOOTH_BIT,
 };
 
 enum {
@@ -137,6 +139,7 @@ enum {
     PRIMF_BLEND = (1 << PRIMF_BLEND_BIT),
     PRIMF_MODULATE = (1 << PRIMF_MODULATE_BIT),
     PRIMF_COLOUR_KEY = (1 << PRIMF_COLOUR_KEY_BIT),
+    PRIMF_SMOOTH = (1 << PRIMF_SMOOTH_BIT),
 };
 
 struct br_buffer_stored;

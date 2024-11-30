@@ -48,7 +48,7 @@ layout(std140) uniform br_model_state
     float ks; /* Specular mod (doesn't seem to be used by Croc) */
     float kd; /* Diffuse mod */
     float power;
-    uint unlit; /* Is this surface unlit? */
+    uint lighting; /* Is this surface lit? */
     int uv_source;
     bool disable_colour_key;
     bool disable_texture;
@@ -57,6 +57,7 @@ layout(std140) uniform br_model_state
     float fog_min;
     float fog_max;
     float alpha;
+    uint prelit;
 };
 
 in vec4 position;
@@ -171,24 +172,27 @@ void processClipPlanes() {
 }
 
 void main() {
-    vec4 texColour;
+    vec4 textureColour;
 
     processClipPlanes();
 
     vec2 mappedUV = SurfaceMap(rawPosition, rawNormal, uv);
 
     if (disable_texture) {
-        texColour = surface_colour;
+        textureColour = surface_colour;
     } else {
-        texColour = texture(main_texture, mappedUV);
-        if(!disable_colour_key && texColour.rgb == vec3(0.0, 0.0, 0.0)) {
+        textureColour = texture(main_texture, mappedUV);
+        if(!disable_colour_key && textureColour.rgb == vec3(0)) {
             discard;
         }
     }
 
-    vec4 surfaceColour = surface_colour * texColour;
-    vec3 fragColour = vec3(colour.rgb * texColour.rgb);
-    fragColour = texColour.rgb;
+    vec3 fragColour;
+    if (lighting == 1u) {
+        fragColour = colour.rgb * textureColour.rgb;
+    } else {
+        fragColour = textureColour.rgb;
+    }
 
     /* Perform gamma correction */
 #if ENABLE_GAMMA_CORRECTION
@@ -210,14 +214,11 @@ void main() {
     /* The actual surface colour. */
     mainColour = vec4(fragColour, alpha);
 
-   if (unlit == 0u) {
+   if (lighting == 1u && prelit == 0u) {
         mainColour *= vec4(ka, ka, ka, 1);
    }
 
-    // handle fog
+    // distance fog
     float d = distance(eye_view, position);
-    float alpha = getFogFactor(d);
-    mainColour = mix(mainColour, fog_colour, alpha);
-
-    return;
+    mainColour = mix(mainColour, fog_colour, getFogFactor(d));
 }

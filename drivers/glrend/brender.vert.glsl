@@ -51,7 +51,7 @@ layout(std140) uniform br_model_state
     float ks; /* Specular mod (doesn't seem to be used by Croc) */
     float kd; /* Diffuse mod */
     float power;
-    uint unlit; /* Is this surface unlit? */
+    uint lighting; /* Is this surface lit? */
     int uv_source;
     bool disable_colour_key;
     bool disable_texture;
@@ -60,6 +60,7 @@ layout(std140) uniform br_model_state
     float fog_min;
     float fog_max;
     float alpha;
+    uint prelit;
 };
 
 in vec3 aPosition;
@@ -224,7 +225,7 @@ vec4 fragmain()
     return surface_colour;
 #endif
 
-    if (num_lights == 0u || unlit != 0u) {
+    if (num_lights == 0u || lighting == 0u) {
         return surface_colour;
     }
 
@@ -297,12 +298,19 @@ void main()
     position = model_view * pos;
     normal = vec4(normalize(mat3(normal_matrix) * aNormal), 0);
     uv = aUV;
-    colour = aColour; // + fragmain();
+
+    if (lighting == 1u) {
+        if (prelit == 1u) {
+            colour = vec4(aColour.rgb, 1);
+        } else {
+            colour = fragmain();
+        }
+    }
 
     rawPosition = aPosition;
     rawNormal   = aNormal;
 
-    if (!directLightExists && num_lights > 0u && unlit == 0u) {
+    if (!directLightExists && num_lights > 0u && lighting == 1u) {
         colour += vec4(clear_colour.rgb, 0.0);
     }
 

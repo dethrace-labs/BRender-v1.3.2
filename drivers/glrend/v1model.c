@@ -107,8 +107,7 @@ static void apply_depth_properties(state_stack* state, uint32_t states) {
     }
 }
 
-static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t states, br_boolean* unlit,
-    shader_data_model* model, GLuint tex_default) {
+static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default) {
     br_boolean blending_on;
 
     /* Only use the states we want (if valid). */
@@ -149,7 +148,6 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
         }
     }
 
-    *unlit = BR_FALSE;
     if (states & MASK_STATE_SURFACE) {
         glActiveTexture(GL_TEXTURE0);
 
@@ -194,7 +192,8 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
 
         BrMatrix4Copy23(&model->map_transform, &state->surface.map_transform);
 
-        *unlit = !state->surface.lighting;
+        model->prelit = state->surface.prelighting;
+        model->lighting = state->surface.lighting;
     }
 
     if (states & MASK_STATE_PRIMITIVE) {
@@ -254,20 +253,6 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
         if (GLAD_GL_EXT_texture_filter_anisotropic)
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 
-        // if(state->prim.colour_map)
-        //{
-        //	if(state->prim.colour_map->source)
-        //	{
-        //		if(state->prim.colour_map->source->identifier)
-        //		{
-        //			if(!stricmp("sprkwt02", state->prim.colour_map->source->identifier))
-        //			{
-        //				int x = 0;
-        //			}
-        //		}
-        //	}
-        // }
-
         blending_on = (state->prim.flags & PRIMF_BLEND) || (state->prim.colour_map != NULL && state->prim.colour_map->blended);
         if (blending_on) {
             glEnable(GL_BLEND);
@@ -325,13 +310,9 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
 
     glBindVertexArray(self->gl_vao);
 
-    /* NB: Flag is never set */
-    // int model_lit = self->model->flags & V11MODF_LIT;
-
-    unlit = BR_TRUE;
     if (stored) {
         apply_stored_properties(hVideo, &stored->state, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL,
-            &unlit, &model, screen->asFront.tex_white);
+            &model, screen->asFront.tex_white);
     } else {
         /* If there's no stored state, apply all states from global. */
         GLuint default_tex;
@@ -340,16 +321,13 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
         } else {
             default_tex = renderer->pixelmap->asFront.tex_white;
         }
-        if (groupinfo->default_state->state.prim.index_base == 227 && groupinfo->default_state->state.prim.index_range == 1 && groupinfo->default_state->state.prim.colour_map == NULL) {
-            int a = 0;
-        }
+
         renderer->state.current->surface = groupinfo->default_state->state.surface;
         renderer->state.current->prim = groupinfo->default_state->state.prim;
         renderer->state.current->cull = groupinfo->default_state->state.cull;
-        apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL, &unlit, &model, default_tex);
+        apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL, &model, default_tex);
     }
 
-    model.unlit = (br_uint_32)unlit;
     BrVector4Set(&model.clear_colour, renderer->pixelmap->asBack.clearColour[0], renderer->pixelmap->asBack.clearColour[1],
         renderer->pixelmap->asBack.clearColour[2], renderer->pixelmap->asBack.clearColour[3]);
 

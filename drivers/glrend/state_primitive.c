@@ -15,6 +15,7 @@ static br_tv_template_entry template_entries[] = {
     { BRT(BLEND_B), F(prim.flags), Q | S | A, BRTV_CONV_BIT, PRIMF_BLEND, 1 },
     { BRT(MODULATE_B), F(prim.flags), Q | S | A, BRTV_CONV_BIT, PRIMF_MODULATE, 1 },
     { BRT(COLOUR_KEY_B), F(prim.flags), Q | S | A, BRTV_CONV_BIT, PRIMF_COLOUR_KEY, 1 },
+    { BRT(SMOOTH_B), F(prim.flags), Q | S | A, BRTV_CONV_BIT, PRIMF_SMOOTH, 1 },
 
     { BRT(COLOUR_T), F(prim.colour_type), Q | S | A, BRTV_CONV_COPY, 0, 1 },
 
@@ -45,6 +46,7 @@ static br_tv_template_entry template_entries[] = {
     { BRT(FOG_MAX_F), F(prim.fog_max), Q | S | A, BRTV_CONV_COPY, 0, 0 },
     { BRT(OPACITY_X), F(prim.alpha_val), Q | A | S, BRTV_CONV_FIXED_FLOAT },
     { BRT(OPACITY_F), F(prim.alpha_val), Q | A | S, BRTV_CONV_COPY },
+
 };
 
 static const state_primitive default_state = {

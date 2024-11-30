@@ -109,7 +109,7 @@ typedef struct shader_data_model {
     alignas(4) float ks;
     alignas(4) float kd;
     alignas(4) float power;
-    alignas(4) uint32_t unlit;
+    alignas(4) uint32_t lighting;
     alignas(4) uint32_t uv_source;
     alignas(4) uint32_t disable_colour_key;
     alignas(4) uint32_t disable_texture;
@@ -118,6 +118,7 @@ typedef struct shader_data_model {
     alignas(4) float fog_min;
     alignas(4) float fog_max;
     alignas(4) float alpha;
+    alignas(4) uint32_t prelit;
 
 } shader_data_model;
 #pragma pack(pop)
