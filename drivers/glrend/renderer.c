@@ -94,11 +94,17 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
 
     glUseProgram(hVideo->brenderProgram.program);
     glBindFramebuffer(GL_FRAMEBUFFER, self->state.cache.fbo);
-    // glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
 
-    glViewport(0, 0, colour_target->pm_width, colour_target->pm_height);
+    // OpenGL upside downness
+    br_uint_16 base_y;
+    if (colour_target->sub_pixelmap) {
+        base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
+    } else {
+        base_y = colour_target->pm_height - colour_target->pm_base_y;
+    }
+    glViewport(colour_target->pm_base_x, base_y, colour_target->pm_width, colour_target->pm_height);
 
     /* Bind the model UBO here, it's faster than doing it for each model group */
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingModel, hVideo->brenderProgram.uboModel);

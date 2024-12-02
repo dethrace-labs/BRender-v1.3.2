@@ -312,6 +312,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     pm->pm_origin_y = 0;
     pm->pm_base_x = 0;
     pm->pm_base_y = 0;
+    pm->sub_pixelmap = 0;
 
     if (mt.use_type == BRT_OFFSCREEN) {
         pm->asBack.depthbuffer = NULL;
@@ -546,6 +547,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, allocateSub)(br_device_pixelmap*
         return BRE_FAIL;
 
     pm->sub_pixelmap = BR_TRUE;
+    pm->parent_height = self->pm_height;
 
     /*
      * Pixel rows are not contiguous

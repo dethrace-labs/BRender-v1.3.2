@@ -175,8 +175,6 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
 
     glBindTexture(GL_TEXTURE_2D, self->gl_tex);
 
-    printf("glTexImage2D %d for %s\n", self->gl_tex, pm->identifier);
-
     if (pm->type == BR_PMT_INDEX_8) {
         uint32_t* px = BrScratchAllocate(sizeof(uint32_t) * pm->width * pm->height);
         uint32_t* px_ptr = px;

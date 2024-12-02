@@ -69,6 +69,7 @@ typedef struct br_device_pixelmap {
      */
     struct br_device_pixelmap* screen;
 
+    br_uint_16 parent_height;
     br_boolean sub_pixelmap;
 
     /* OpenGL crap */

@@ -129,7 +129,7 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
 
 void GLRenderer_FullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
 
-    glViewport(0, 0, 640, 480);
+    glViewport(0, 0, self->pm_width, self->pm_height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

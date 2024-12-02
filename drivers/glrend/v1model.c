@@ -311,7 +311,8 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
     glBindVertexArray(self->gl_vao);
 
     if (stored) {
-        apply_stored_properties(hVideo, &stored->state, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL,
+        // jeff: disable culling to match behavior of existing hardware drivers
+        apply_stored_properties(hVideo, &stored->state, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE /*| MASK_STATE_CULL */,
             &model, screen->asFront.tex_white);
     } else {
         /* If there's no stored state, apply all states from global. */
@@ -325,7 +326,8 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
         renderer->state.current->surface = groupinfo->default_state->state.surface;
         renderer->state.current->prim = groupinfo->default_state->state.prim;
         renderer->state.current->cull = groupinfo->default_state->state.cull;
-        apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE | MASK_STATE_CULL, &model, default_tex);
+        // Jeff: disable culling to match behavior of existing hardware drivers
+        apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE /*| MASK_STATE_CULL */, &model, default_tex);
     }
 
     BrVector4Set(&model.clear_colour, renderer->pixelmap->asBack.clearColour[0], renderer->pixelmap->asBack.clearColour[1],
