@@ -98,11 +98,13 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
 
     // OpenGL upside downness
-    br_uint_16 base_y;
-    if (colour_target->sub_pixelmap) {
-        base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
-    } else {
-        base_y = colour_target->pm_height - colour_target->pm_base_y;
+    br_uint_16 base_y = 0;
+    if (colour_target->pm_base_y != 0) {
+        if (colour_target->sub_pixelmap) {
+            base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
+        } else {
+            base_y = colour_target->pm_height - colour_target->pm_base_y;
+        }
     }
     glViewport(colour_target->pm_base_x, base_y, colour_target->pm_width, colour_target->pm_height);
 
