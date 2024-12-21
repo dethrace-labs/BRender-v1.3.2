@@ -189,7 +189,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         for (int y = 0; y < pm->height; y++) {
             for (int x = 0; x < pm->width; x++) {
                 int index = src_px[y * pm->row_bytes + x];
-                *px_ptr = map[index];
+                *px_ptr = (0xff << 24 | BR_BLU(map[index]) << 16 | BR_GRN(map[index]) << 8 | BR_RED(map[index]));
                 px_ptr++;
             }
         }

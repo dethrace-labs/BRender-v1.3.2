@@ -151,16 +151,8 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
     if (states & MASK_STATE_SURFACE) {
         glActiveTexture(GL_TEXTURE0);
 
-        br_uint_32 colour = state->surface.colour;
-        if ((int)state->surface.colour == 3947324) {
-            int a = 0;
-        }
-
         if (state->surface.colour_source == BRT_SURFACE) {
             br_uint_32 colour = state->surface.colour;
-            if (colour == 3947324) {
-                int a = 0;
-            }
             float r = BR_RED(colour) / 255.0f;
             float g = BR_GRN(colour) / 255.0f;
             float b = BR_BLU(colour) / 255.0f;

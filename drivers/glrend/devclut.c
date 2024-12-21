@@ -86,7 +86,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySet)(br_device_clut* sel
     if (index < 0 || index >= CLUT_SIZE)
         return BRE_OVERFLOW;
 
-    self->entries[index] = (0xff << 24 | BR_BLU(entry) << 16 | BR_GRN(entry) << 8 | BR_RED(entry));
+    self->entries[index] = entry;
 
     return BRE_OK;
 }
@@ -110,7 +110,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySetMany)(br_device_clut*
         return BRE_OVERFLOW;
 
     for (i = 0; i < count; i++) {
-        self->entries[index + i] = (0xff << 24 | BR_BLU(entries[i]) << 16 | BR_GRN(entries[i]) << 8 | BR_RED(entries[i]));
+        self->entries[index + i] = entries[i];
     }
 
     return BRE_OK;
