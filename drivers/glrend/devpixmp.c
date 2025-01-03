@@ -402,6 +402,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopy)(br_device_pixelma
 br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelmap* self, br_rectangle* rect, br_uint_32 colour) {
     GLuint fbo;
     GLbitfield mask;
+    br_uint_8* px8;
+    br_uint_16* px16;
     float a = (float)((colour & 0xFF000000) >> 24) / 255.0f;
     float r = (float)((colour & 0x00FF0000) >> 16) / 255.0f;
     float g = (float)((colour & 0x0000FF00) >> 8) / 255.0f;
@@ -439,7 +441,32 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
         // glClear(GL_COLOR_BUFFER_BIT);
 
         if (self->pm_pixels != NULL) {
-            BrMemSet(self->pm_pixels, colour, self->pm_row_bytes * self->pm_height);
+            switch (self->pm_type) {
+            case BR_PMT_INDEX_8:
+                px8 = self->pm_pixels;
+                for (int y = rect->y; y < rect->y + rect->h; y++) {
+                    for (int x = rect->x; x < rect->x + rect->w; x++) {
+                        px8[y * self->pm_width + x] = BR_ALPHA(colour);
+                    }
+                }
+                break;
+
+            case BR_PMT_RGB_565:
+                px16 = self->pm_pixels;
+                for (int y = rect->y; y < rect->y + rect->h; y++) {
+                    for (int x = rect->x; x < rect->x + rect->w; x++) {
+                        px16[y * self->pm_width + x] = colour;
+                    }
+                }
+                break;
+
+            default:
+                return BRE_UNSUPPORTED;
+            }
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
 
     } else {
