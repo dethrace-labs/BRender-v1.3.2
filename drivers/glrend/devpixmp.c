@@ -698,8 +698,8 @@ static const struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
     ._rectangleStretchCopyTo = BR_CMETHOD_REF(br_device_pixelmap_gl, rectangleStretchCopyTo),
     ._rectangleStretchCopyFrom = BR_CMETHOD_REF(br_device_pixelmap_fail, rectangleStretchCopyFrom),
     ._rectangleFill = BR_CMETHOD_REF(br_device_pixelmap_gl, rectangleFill),
-    ._pixelSet = BR_CMETHOD_REF(br_device_pixelmap_fail, pixelSet),
-    ._line = BR_CMETHOD_REF(br_device_pixelmap_fail, line),
+    ._pixelSet = BR_CMETHOD_REF(br_device_pixelmap_mem, pixelSet),
+    ._line = BR_CMETHOD_REF(br_device_pixelmap_mem, line),
     ._copyBits = BR_CMETHOD_REF(br_device_pixelmap_fail, copyBits),
 
     ._text = BR_CMETHOD_REF(br_device_pixelmap_gl, text),
