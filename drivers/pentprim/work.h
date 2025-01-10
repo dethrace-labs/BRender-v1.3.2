@@ -30,12 +30,42 @@ struct scan_edge {
  * Scan convertion details for one parameter
  */
 struct scan_parameter {
-	br_fixed_ls	currentpix;	/* Parameter (16.16) value at pixel				*/
-	br_fixed_ls	current;	/* Parameter (16.16) value at start of scanline	*/
-	br_fixed_ls	d_carry;	/* Increment per scanline if carry from bit 15	*/
-	br_fixed_ls	d_nocarry;	/*   ""              ""      no carry   ""    	*/
-	br_fixed_ls	grad_x;		/* Gradient of parameter along X axis			*/
-	br_fixed_ls	grad_y;		/* Gradient of parameter along Y axis			*/
+    union {
+        struct {
+#if BR_ENDIAN_BIG
+            br_fixed_ls current;    /* Parameter (16.16) value at start of scanline	*/
+            br_fixed_ls currentpix; /* Parameter (16.16) value at pixel				*/
+#else
+            br_fixed_ls currentpix; /* Parameter (16.16) value at pixel				*/
+            br_fixed_ls current;    /* Parameter (16.16) value at start of scanline	*/
+#endif
+        };
+        double currentpix_double;
+    };
+    union {
+        struct {
+#if BR_ENDIAN_BIG
+            br_fixed_ls d_nocarry; /*   ""              ""      no carry   ""    	*/
+            br_fixed_ls d_carry;   /* Increment per scanline if carry from bit 15	*/
+#else
+            br_fixed_ls d_carry;   /* Increment per scanline if carry from bit 15	*/
+            br_fixed_ls d_nocarry; /*   ""              ""      no carry   ""    	*/
+#endif
+        };
+        double d_carry_double;
+    };
+    union {
+        struct {
+#if BR_ENDIAN_BIG
+            br_fixed_ls grad_y; /* Gradient of parameter along Y axis			*/
+            br_fixed_ls grad_x; /* Gradient of parameter along X axis			*/
+#else
+            br_fixed_ls grad_x; /* Gradient of parameter along X axis			*/
+            br_fixed_ls grad_y; /* Gradient of parameter along Y axis			*/
+#endif
+        };
+        double grad_x_double;
+    };
 };
 
 /*

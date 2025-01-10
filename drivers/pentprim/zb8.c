@@ -219,9 +219,9 @@ void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, ...) {
     // faddp st(2),st					;	ca			da
     FADDP_ST(2, 0);
     // fstp qword ptr workspace.scanAddress
-    FSTP64(&workspace.scanAddress);
+    FSTP64(&workspace.scanAddress_double);
     // fstp qword ptr workspace.depthAddress
-    FSTP64(&workspace.depthAddress);
+    FSTP64(&workspace.depthAddress_double);
     // mov eax,workspace.xm
     eax.v = workspace.xm;
     // shl eax,16

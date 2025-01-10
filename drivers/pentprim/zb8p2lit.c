@@ -337,9 +337,9 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int 
 	workspace.xm_f = eax.v;
 
 // 	fstp qword ptr workspace.scanAddress
-	FSTP64(&workspace.scanAddress);
+	FSTP64(&workspace.scanAddress_double);
 // 	fstp qword ptr workspace.depthAddress
-	FSTP64(&workspace.depthAddress);
+	FSTP64(&workspace.depthAddress_double);
 
 // 	mov workspace.d_xm_f,ebx
 	workspace.d_xm_f = ebx.v;
