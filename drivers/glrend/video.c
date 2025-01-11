@@ -4,6 +4,7 @@
 #include "brassert.h"
 #include "drv.h"
 
+
 GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size) {
     GLuint s;
     GLint _size, status;

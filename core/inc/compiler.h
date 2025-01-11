@@ -9,19 +9,19 @@
 #ifndef _COMPILER_H_
 #define _COMPILER_H_
 
-#include <stddef.h>
 #include <stdint.h>
+#include <stddef.h>
 
 /*
  * Fixed bitsize integers
  */
-typedef int64_t br_int_64;
+typedef int64_t  br_int_64;
 typedef uint64_t br_uint_64;
-typedef int32_t br_int_32;
+typedef int32_t  br_int_32;
 typedef uint32_t br_uint_32;
-typedef int16_t br_int_16;
+typedef int16_t  br_int_16;
 typedef uint16_t br_uint_16;
-typedef int8_t br_int_8;
+typedef int8_t  br_int_8;
 typedef uint8_t br_uint_8;
 
 /*
@@ -29,7 +29,7 @@ typedef uint8_t br_uint_8;
  */
 typedef size_t br_size_t;
 
-typedef intptr_t br_intptr_t;
+typedef intptr_t  br_intptr_t;
 typedef uintptr_t br_uintptr_t;
 
 /*
@@ -37,17 +37,15 @@ typedef uintptr_t br_uintptr_t;
  */
 typedef int br_boolean;
 
-#define BR_TRUE 1
-#define BR_FALSE 0
+#define BR_TRUE		1
+#define BR_FALSE	0
 
-#define BR_BOOLEAN(a) ((a) != 0)
+#define BR_BOOLEAN(a)	((a) != 0)
 
 /*
  * 32 bit floating point
  */
 typedef float br_float;
-
-#define BR_STATIC_ASSERT(cond, msg) _Static_assert((cond), msg)
 
 /**
  ** Compiler dependant type specifiers
@@ -62,7 +60,7 @@ typedef float br_float;
  * versions <= 10.0  have cdecl wrong (trashes ebx)
  */
 #if __WATCOMC__ <= 1000
-#pragma aux __cdecl "_*" parm caller[] modify[eax ecx edx];
+#pragma aux __cdecl "_*" parm caller [] modify [eax ecx edx] ;
 #endif
 
 #if defined(__TARGET_MSC__)
@@ -77,25 +75,25 @@ typedef float br_float;
 /*
  * Public entry point into library
  */
-#define BR_PUBLIC __cdecl
-#define BR_PUBLIC_VA __cdecl /* varargs version */
+#define BR_PUBLIC		__cdecl
+#define BR_PUBLIC_VA	__cdecl /* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
-#define BR_EXPORT __cdecl
-#define BR_EXPORT_VA __cdecl /* varargs version */
+#define BR_EXPORT		__cdecl
+#define BR_EXPORT_VA 	__cdecl /* varargs version */
 
 /*
  * A driver object method
  */
-#define BR_METHOD __cdecl
-#define BR_METHOD_VA __cdecl /* varargs version */
+#define BR_METHOD		__cdecl
+#define BR_METHOD_VA	__cdecl	/* varargs version */
 
 /*
  * A user defined callback function
  */
-#define BR_CALLBACK __cdecl
+#define BR_CALLBACK		__cdecl
 
 #ifdef __cplusplus
 #define BR_ASM_DATA
@@ -109,15 +107,19 @@ typedef float br_float;
 
 #define BR_SUFFIX_HOST "-WTC"
 
-#define BR_HAS_FAR 1
+#define BR_HAS_FAR	1
 /*
  * Stop unreferenced variables producing a warning
  * Things like "rcsid" and unused fucntion arguments
  */
-#pragma off(unreferenced);
+#pragma off (unreferenced);
 
-#define BR_ENDIAN_BIG 0
-#define BR_ENDIAN_LITTLE 1
+#ifndef BR_ENDIAN_BIG
+#define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
+#define BR_ENDIAN_LITTLE	1
+#endif
 
 #ifndef __H2INC__
 #pragma pack(4);
@@ -126,7 +128,7 @@ typedef float br_float;
 /*
  * Microsoft Visual C++
  */
-#elif defined(_MSC_VER)
+#elif defined (_MSC_VER)
 
 /*
  * Function qualifiers
@@ -134,25 +136,25 @@ typedef float br_float;
 /*
  * Public entry point into library
  */
-#define BR_PUBLIC __cdecl
-#define BR_PUBLIC_VA __cdecl /* varargs version */
+#define BR_PUBLIC		__cdecl
+#define BR_PUBLIC_VA	__cdecl /* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
-#define BR_EXPORT __cdecl
-#define BR_EXPORT_VA __cdecl /* varargs version */
+#define BR_EXPORT		__cdecl
+#define BR_EXPORT_VA 	__cdecl /* varargs version */
 
 /*
  * A driver object method
  */
-#define BR_METHOD __cdecl
-#define BR_METHOD_VA __cdecl /* varargs version */
+#define BR_METHOD		__cdecl
+#define BR_METHOD_VA	__cdecl	/* varargs version */
 
 /*
  * A user defined callback function
  */
-#define BR_CALLBACK __cdecl
+#define BR_CALLBACK		__cdecl
 
 #define BR_ASM_DATA
 #define BR_ASM_CALL __cdecl
@@ -160,13 +162,17 @@ typedef float br_float;
 
 #define BR_SUFFIX_HOST "-VISUALC"
 
-#define BR_HAS_FAR 0
+#define BR_HAS_FAR	0
 
-#define BR_ENDIAN_BIG 0
-#define BR_ENDIAN_LITTLE 1
+#ifndef BR_ENDIAN_BIG
+#define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
+#define BR_ENDIAN_LITTLE	1
+#endif
 
 #ifndef __H2INC__
-#pragma warning(disable : 4103)
+#pragma warning(disable:4103)
 // jeff: removed explicit packing - causes problems in other translation units where this is not applied
 // #pragma pack(4)
 #endif
@@ -174,7 +180,7 @@ typedef float br_float;
 /*
  * Borland BC 4
  */
-#elif defined(__BORLANDC__)
+#elif defined (__BORLANDC__)
 
 /*
  * Function qualifiers
@@ -182,25 +188,25 @@ typedef float br_float;
 /*
  * Public entry point into library
  */
-#define BR_PUBLIC __cdecl
-#define BR_PUBLIC_VA __cdecl /* varargs version */
+#define BR_PUBLIC		__cdecl
+#define BR_PUBLIC_VA	__cdecl /* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
-#define BR_EXPORT __cdecl
-#define BR_EXPORT_VA __cdecl /* varargs version */
+#define BR_EXPORT		__cdecl
+#define BR_EXPORT_VA 	__cdecl /* varargs version */
 
 /*
  * A driver object method
  */
-#define BR_METHOD __cdecl
-#define BR_METHOD_VA __cdecl /* varargs version */
+#define BR_METHOD		__cdecl
+#define BR_METHOD_VA	__cdecl	/* varargs version */
 
 /*
  * A user defined callback function
  */
-#define BR_CALLBACK __cdecl
+#define BR_CALLBACK		__cdecl
 
 #define BR_ASM_DATA __cdecl
 #define BR_ASM_CALL __cdecl
@@ -208,10 +214,14 @@ typedef float br_float;
 
 #define BR_SUFFIX_HOST "-BORLAND"
 
-#define BR_HAS_FAR 0
+#define BR_HAS_FAR	0
 
-#define BR_ENDIAN_BIG 0
-#define BR_ENDIAN_LITTLE 1
+#ifndef BR_ENDIAN_BIG
+#define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
+#define BR_ENDIAN_LITTLE	1
+#endif
 
 #ifndef __H2INC__
 #pragma option -a4
@@ -221,7 +231,7 @@ typedef float br_float;
 /*
  * GNU C
  */
-#elif defined(__GNUC__)
+#elif defined (__GNUC__)
 
 /*
  * Function qualifiers
@@ -230,19 +240,19 @@ typedef float br_float;
  * Public entry point into library
  */
 #define BR_PUBLIC
-#define BR_PUBLIC_VA /* varargs version */
+#define BR_PUBLIC_VA	/* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
 #define BR_EXPORT
-#define BR_EXPORT_VA /* varargs version */
+#define BR_EXPORT_VA 	/* varargs version */
 
 /*
  * A driver object method
  */
 #define BR_METHOD
-#define BR_METHOD_VA /* varargs version */
+#define BR_METHOD_VA	/* varargs version */
 
 /*
  * A user defined callback function
@@ -255,15 +265,19 @@ typedef float br_float;
 
 #define BR_SUFFIX_HOST "-GCC"
 
-#define BR_HAS_FAR 0
+#define BR_HAS_FAR	0
 
-#define BR_ENDIAN_BIG 0
-#define BR_ENDIAN_LITTLE 1
+#ifndef BR_ENDIAN_BIG
+#define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
+#define BR_ENDIAN_LITTLE	1
+#endif
 
 /*
  * IBM CSet++
  */
-#elif defined(__IBMC__)
+#elif defined (__IBMC__)
 
 /*
  * Function qualifiers
@@ -271,25 +285,25 @@ typedef float br_float;
 /*
  * Public entry point into library
  */
-#define BR_PUBLIC _System
-#define BR_PUBLIC_VA _System /* varargs version */
+#define BR_PUBLIC		_System
+#define BR_PUBLIC_VA	_System /* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
-#define BR_EXPORT _System
-#define BR_EXPORT_VA _System /* varargs version */
+#define BR_EXPORT		_System
+#define BR_EXPORT_VA 	_System /* varargs version */
 
 /*
  * A driver object method
  */
-#define BR_METHOD _System
-#define BR_METHOD_VA _System /* varargs version */
+#define BR_METHOD		_System
+#define BR_METHOD_VA	_System	/* varargs version */
 
 /*
  * A user defined callback function
  */
-#define BR_CALLBACK _System
+#define BR_CALLBACK		_System
 
 #define BR_ASM_DATA
 #define BR_ASM_CALL _System
@@ -297,15 +311,19 @@ typedef float br_float;
 
 #define BR_SUFFIX_HOST "-CSET"
 
-#define BR_HAS_FAR 0
+#define BR_HAS_FAR	0
 
-#define BR_ENDIAN_BIG 0
-#define BR_ENDIAN_LITTLE 1
+#ifndef BR_ENDIAN_BIG
+#define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
+#define BR_ENDIAN_LITTLE	1
+#endif
 
 /*
  * Intel reference compiler
  */
-#elif defined(___PROTON__)
+#elif defined (___PROTON__)
 
 /*
  * Function qualifiers
@@ -316,25 +334,25 @@ typedef float br_float;
 /*
  * Public entry point into library
  */
-#define BR_PUBLIC __cdecl
-#define BR_PUBLIC_VA __cdecl /* varargs version */
+#define BR_PUBLIC		__cdecl
+#define BR_PUBLIC_VA	__cdecl /* varargs version */
 
 /*
  * Entry point exported to drivers via modules
  */
-#define BR_EXPORT __cdecl
-#define BR_EXPORT_VA __cdecl /* varargs version */
+#define BR_EXPORT		__cdecl
+#define BR_EXPORT_VA 	__cdecl /* varargs version */
 
 /*
  * A driver object method
  */
-#define BR_METHOD __cdecl
-#define BR_METHOD_VA __cdecl /* varargs version */
+#define BR_METHOD		__cdecl
+#define BR_METHOD_VA	__cdecl	/* varargs version */
 
 /*
  * A user defined callback function
  */
-#define BR_CALLBACK __cdecl
+#define BR_CALLBACK		__cdecl
 
 #define BR_ASM_DATA __cdecl
 #define BR_ASM_CALL __cdecl
@@ -342,14 +360,19 @@ typedef float br_float;
 
 #define BR_SUFFIX_HOST "-PROTON"
 
-#define BR_HAS_FAR 0
+#define BR_HAS_FAR	0
 
-#define BR_ENDIAN_BIG 0
-#define BR_ENDIAN_LITTLE 1
+#ifndef BR_ENDIAN_BIG
+#define BR_ENDIAN_BIG		0
+#endif
+#ifndef BR_ENDIAN_LITTLE
+#define BR_ENDIAN_LITTLE	1
+#endif
 
 #endif
 
-#if defined(__H2INC__)
+
+#if defined (__H2INC__)
 /*
  * Avoid some tokens that masm chokes on
  */
@@ -403,8 +426,10 @@ typedef float br_float;
 #define fs _fs
 #define gs _gs
 
-#define low _low
+#define low  _low
 #define high _high
+
+
 
 /*
  * Supress compiler specific declarators
@@ -424,18 +449,18 @@ typedef float br_float;
 /*
  * Declare methods in C
  */
-#define BR_CMETHOD_DECL(t, m) BR_METHOD _M_##t##_##m
-#define BR_CMETHOD_VA_DECL(t, m) BR_METHOD _M_##t##_##m
-#define BR_CMETHOD_PTR_DECL(t, m) (BR_METHOD * _##m)
-#define BR_CMETHOD_VA_PTR_DECL(t, m) (BR_METHOD * _##m)
+#define BR_CMETHOD_DECL(t,m)     	BR_METHOD _M_##t##_##m
+#define BR_CMETHOD_VA_DECL(t,m)    	BR_METHOD _M_##t##_##m
+#define BR_CMETHOD_PTR_DECL(t,m) 	(BR_METHOD * _##m)
+#define BR_CMETHOD_VA_PTR_DECL(t,m) (BR_METHOD * _##m)
 
 /*
  * Reference methods in C
  */
 
-#define BR_CMETHOD(t, m) (_M_##t##_##m)
-#define BR_CMETHOD_REF(t, m) ((void*)_M_##t##_##m)
-#define BR_CMETHOD_CALL(t, m, o) (((t*)(o))->dispatch->_##m)
+#define BR_CMETHOD(t,m)					(_M_##t##_##m)
+#define BR_CMETHOD_REF(t,m) 		((void *)_M_##t##_##m)
+#define BR_CMETHOD_CALL(t,m,o) 		(((t *)(o))->dispatch->_##m)
 
 /*
  * Backwards compatability
@@ -448,21 +473,20 @@ typedef float br_float;
 #endif
 
 #if DEBUG
-#define BR_SUFFIX_DEBUG "-DEBUG"
+#	define BR_SUFFIX_DEBUG "-DEBUG"
 #else
-#define BR_SUFFIX_DEBUG ""
+#	define BR_SUFFIX_DEBUG ""
 #endif
 
 /*
  * Macros for producing banners & copyright messages
  */
-#define BR_BANNER(title, year, revision)                                              \
-    do {                                                                              \
-        static const char _revision[] = revision;                                     \
-        fprintf(stderr, title);                                                       \
-        fwrite(_revision + 10, 1, sizeof(_revision) - 12, stderr);                    \
-        fprintf(stderr, "Copyright (C) " year " by Argonaut Technologies Limited\n"); \
-    } while (0);
+#define BR_BANNER(title,year,revision)do {\
+	static const char _revision[] = revision;\
+	fprintf(stderr,title);\
+	fwrite(_revision+10,1,sizeof(_revision)-12,stderr);\
+	fprintf(stderr,"Copyright (C) " year " by Argonaut Technologies Limited\n");\
+} while(0);
 
 #if !defined(ADD_RCS_ID)
 #define ADD_RCS_ID 0
@@ -470,7 +494,7 @@ typedef float br_float;
 
 #if ADD_RCS_ID
 #define BR_RCS_ID(str) \
-    static const char rscid[] = str;
+static const char rscid[] = str;
 #else
 #define BR_RCS_ID(str)
 #endif
@@ -478,13 +502,13 @@ typedef float br_float;
 /*
  * Useful macro for sizing an array
  */
-#define BR_ASIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define BR_ASIZE(a) (sizeof(a)/sizeof((a)[0]))
 
 /*
  * Make sure NULL is defined
  */
 #ifndef NULL
-#define NULL 0
+#define NULL	0
 #endif
 
 #endif

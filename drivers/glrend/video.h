@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+
+#define BR_STATIC_ASSERT(cond, msg) _Static_assert((cond), msg)
+
 typedef struct _VIDEO {
     GLint maxUniformBlockSize;
     GLint maxUniformBufferBindings;
