@@ -15,11 +15,8 @@ jobs:
     strategy:
       matrix:
         platform:
-          - { name: 'Linux',    arch: 'x64',        os: ubuntu-latest, werror: true }
           - { name: 'Linux',    arch: 'arm64',      os: ubuntu-latest, werror: true, cmake-toolchain-file: 'cmake/toolchains/linux-aarch64.cmake', apt-packages: 'gcc-aarch64-linux-gnu g++-aarch64-linux-gnu', cross: true }
-          - { name: 'MacOS',    arch: 'arm64-x64',  os: macos-latest,  werror: true, cmake-args: '-DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"' }
-          - { name: 'Windows',  arch: 'Win32',      os: windows-latest }
-          - { name: 'Windows',  arch: 'x64',        os: windows-latest }
+
 
     defaults:
       run:
@@ -34,10 +31,12 @@ jobs:
         if: runner.os == 'Windows'
         with:
           arch: ${{ matrix.platform.arch }}
+
       - name: Install Linux dependencies
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update
+          sudo dpkg --add-architecture arm64
           sudo apt-get install -y libgl-dev:arm64 ${{ matrix.platform.apt-packages }}
       - name: 'Configure (CMake)'
         id: configure
