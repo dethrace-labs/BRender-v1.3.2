@@ -32,8 +32,6 @@ jobs:
         if: runner.os == 'Windows'
         with:
           arch: ${{ matrix.platform.arch }}
-      - name: Install arm64 deps
-        if: ${{ runner.os == 'Linux' }}
       - name: Install Linux dependencies
         if: ${{ runner.os == 'Linux' }}
         run: |
