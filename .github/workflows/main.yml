@@ -35,8 +35,8 @@ jobs:
       - name: Install Linux dependencies
         if: ${{ runner.os == 'Linux' }}
         run: |
-          sudo apt-get update
           sudo dpkg --add-architecture arm64
+          sudo apt-get update
           sudo apt-get install -y libgl-dev:arm64 ${{ matrix.platform.apt-packages }}
       - name: 'Configure (CMake)'
         id: configure
