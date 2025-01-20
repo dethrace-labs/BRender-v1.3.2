@@ -33,6 +33,8 @@ typedef struct br_device_clut {
      */
     br_device* device;
 
+    br_uint_32 revision;
+
 } br_device_clut;
 
 #ifdef __cplusplus

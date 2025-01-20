@@ -54,6 +54,11 @@ typedef struct br_buffer_stored {
      *  be done until everything's ported to C.
      */
     struct br_tv_template *templates;
+
+    br_boolean paletted_source_dirty;
+    br_uint_8 palette_revision;
+    struct br_device_clut *palette_pointer;
+
 } br_buffer_stored;
 
 #endif

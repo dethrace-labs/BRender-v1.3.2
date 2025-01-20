@@ -87,6 +87,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySet)(br_device_clut* sel
         return BRE_OVERFLOW;
 
     self->entries[index] = entry;
+    self->revision++;
 
     return BRE_OK;
 }
@@ -112,6 +113,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySetMany)(br_device_clut*
     for (i = 0; i < count; i++) {
         self->entries[index + i] = entries[i];
     }
+    self->revision++;
 
     return BRE_OK;
 }

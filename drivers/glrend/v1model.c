@@ -107,15 +107,28 @@ static void apply_depth_properties(state_stack* state, uint32_t states) {
     }
 }
 
+// take a pixelmap and palette and convert 8 bit to 32 bit just in time
+static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
+    uint32_t* buffer = BrScratchAllocate(sizeof(uint32_t) * src->width * src->height);
+    uint32_t* buffer_ptr = buffer;
+    br_uint_8* src_px = src->pixels;
+
+    for (int y = 0; y < src->height; y++) {
+        for (int x = 0; x < src->width; x++) {
+            int index = src_px[y * src->row_bytes + x];
+            *buffer_ptr = (0xff << 24 | BR_BLU(palette[index]) << 16 | BR_GRN(palette[index]) << 8 | BR_RED(palette[index]));
+            buffer_ptr++;
+        }
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->width, src->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    BrScratchFree(buffer);
+}
+
 static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default) {
     br_boolean blending_on;
 
     /* Only use the states we want (if valid). */
     states = state->valid & states;
-
-    if (state->prim.colour_map && state->prim.colour_map->source->identifier && strcmp(state->prim.colour_map->source->identifier, "BGLWEEL.PIX") == 0) {
-        int a = 0;
-    }
 
     if (states & MASK_STATE_CULL) {
         /*
@@ -199,13 +212,16 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
             model->disable_colour_key = !(state->prim.flags & PRIMF_COLOUR_KEY);
 
             glBindTexture(GL_TEXTURE_2D, BufferStoredGLGetTexture(state->prim.colour_map));
+
+            if (state->prim.colour_map->paletted_source_dirty == BR_TRUE || state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
+                update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
+                state->prim.colour_map->paletted_source_dirty = BR_FALSE;
+                state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
+            }
+
             glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
             model->disable_texture = 0;
 
-            // if(state->prim.colour_map->source->flags & BR_PMF_KEYED_TRANSPARENCY)
-            //{
-            //	//BrDebugBreak();
-            // }
         } else {
 
             // todo?

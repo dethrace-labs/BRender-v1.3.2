@@ -174,27 +174,11 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     }
 
     glBindTexture(GL_TEXTURE_2D, self->gl_tex);
-
+    self->paletted_source_dirty = BR_FALSE;
     if (pm->type == BR_PMT_INDEX_8) {
-        uint32_t* px = BrScratchAllocate(sizeof(uint32_t) * pm->width * pm->height);
-        uint32_t* px_ptr = px;
-        uint8_t* src_px = pm->pixels;
-        uint32_t* map;
-        if (pm->map) {
-            map = pm->map->pixels;
-        } else {
-            map = ObjectDevice(self)->clut->entries;
-        }
-
-        for (int y = 0; y < pm->height; y++) {
-            for (int x = 0; x < pm->width; x++) {
-                int index = src_px[y * pm->row_bytes + x];
-                *px_ptr = (0xff << 24 | BR_BLU(map[index]) << 16 | BR_GRN(map[index]) << 8 | BR_RED(map[index]));
-                px_ptr++;
-            }
-        }
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, px);
-        BrScratchFree(px);
+        // if paletted, then wait until we are displaying the texture to convert it to 32 bit
+        self->paletted_source_dirty = BR_TRUE;
+        self->palette_pointer = ObjectDevice(self)->clut;
     } else {
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
     }
