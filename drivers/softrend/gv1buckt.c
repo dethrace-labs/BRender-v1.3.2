@@ -139,7 +139,7 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_buckets_soft, render)
 			/*
 			 * Render the primitive
 			 */
-			rend.block->render(rend.block,p->v[0],p->v[1],p->v[2]);
+			rend.block->render(rend.block,p->v[0],p->v[1],p->v[2], NULL, NULL, NULL, NULL);
 		}
 	}
 

@@ -142,17 +142,7 @@ lineDrawn:
     }
 }
 
-void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, ...) {
-    brp_vertex *v0;
-    brp_vertex *v1;
-    brp_vertex *v2;
-    va_list     va;
-    va_start(va, block);
-    v0 = va_arg(va, brp_vertex *);
-    v1 = va_arg(va, brp_vertex *);
-    v2 = va_arg(va, brp_vertex *);
-    va_end(va);
-
+void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
     workspace.v0 = v0;
     workspace.v1 = v1;
     workspace.v2 = v2;
@@ -262,7 +252,7 @@ void BR_ASM_CALL TriangleRender_Z_I8_D16(brp_block *block, ...) {
     }
 }
 
-void BR_ASM_CALL TriangleRender_Z_I8_D16_ShadeTable(brp_block *block, ...) {
+void BR_ASM_CALL TriangleRender_Z_I8_D16_ShadeTable(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
     // Not implemented
     BrAbort();
 }
