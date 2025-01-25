@@ -21,13 +21,14 @@ typedef void* BR_CALLBACK br_device_pixelmap_gl_getprocaddress_cbfn(const char* 
 
 typedef void BR_CALLBACK br_device_pixelmap_gl_free_cbfn(br_pixelmap* pm, void* user);
 
-// typedef struct br_device_gl_procs {
-//     br_device_pixelmap_gl_getprocaddress_cbfn      *get_proc_address;
-//     br_device_pixelmap_gl_swapbuffers_cbfn         *swap_buffers;
-//     br_device_pixelmap_gl_free_cbfn                *free;
-//     void                                           *user;
+typedef void BR_CALLBACK br_device_pixelmap_gl_getviewport_cbfn(int *x, int *y, int *width, int *height);
 
-// } br_device_gl_ext_procs;
+typedef struct br_device_gl_callback_procs {
+    br_device_pixelmap_gl_getprocaddress_cbfn      *get_proc_address;
+    br_device_pixelmap_gl_getviewport_cbfn         *get_viewport;
+    br_device_pixelmap_gl_swapbuffers_cbfn         *swap_buffers;
+    br_device_pixelmap_gl_free_cbfn                *free;
+} br_device_gl_callback_procs;
 
 /*
  * Function prototypes

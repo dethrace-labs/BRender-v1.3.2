@@ -99,7 +99,7 @@ br_geometry_stored* GeometryStoredGLAllocate(br_geometry_v1_model* gv1model, con
 /*
  * onscreen.c
  */
-br_token GLOnScreenCheck(const br_matrix4* model_to_screen, const br_bounds3_f* bounds);
+br_token GLOnScreenCheck(br_renderer *self, const br_matrix4* model_to_screen, const br_bounds3_f* bounds);
 
 /*
  * sstate.c
@@ -175,23 +175,14 @@ br_uint_8 DeviceGLTypeOrBits(br_uint_8 pixel_type, br_int_32 pixel_bits);
 /*
  * Wrappers for br_device_gl_procs.
  */
-void* DevicePixelmapGLExtCreateContext(br_device_pixelmap* self);
 
-void DevicePixelmapGLExtDeleteContext(br_device_pixelmap* self, void* ctx);
+br_device_pixelmap_gl_getprocaddress_cbfn* DevicePixelmapGLGetGetProcAddress(br_device_pixelmap* self);
 
-br_error DevicePixelmapGLExtMakeCurrent(br_device_pixelmap* self, void* ctx);
+void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, int *width, int *height);
 
-void DevicePixelmapGLExtSwapBuffers(br_device_pixelmap* self);
+void DevicePixelmapGLSwapBuffers(br_device_pixelmap* self);
 
-br_device_pixelmap_gl_getprocaddress_cbfn* DevicePixelmapGLExtGetGetProcAddress(br_device_pixelmap* self);
-
-br_error DevicePixelmapGLExtResize(br_device_pixelmap* self, br_int_32 w, br_int_32 h);
-
-void DevicePixelmapGLExtPreSwap(br_device_pixelmap* self, GLuint fbo);
-
-void DevicePixelmapGLExtFree(br_device_pixelmap* self);
-
-br_error DevicePixelmapGLExtHandleWindowEvent(br_device_pixelmap* self, void* arg);
+void DevicePixelmapGLFree(br_device_pixelmap* self);
 
 /*
  * Hijack nulldev's no-op implementations.

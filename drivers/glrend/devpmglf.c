@@ -43,9 +43,7 @@ static struct br_tv_template_entry devicePixelmapFrontTemplateEntries[] = {
     { BRT(FACILITY_O), F(output_facility), BRTV_QUERY, BRTV_CONV_COPY, 0 },
     { BRT(IDENTIFIER_CSTR), F(pm_identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(MSAA_SAMPLES_I32), F(msaa_samples), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
-    // { BRT(OPENGL_EXT_PROCS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
-    { BRT(OPENGL_GET_PROC_ADDRESS_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
-    { BRT(OPENGL_SWAP_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
+    { BRT(OPENGL_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
     { BRT(OPENGL_VERSION_CSTR), FF(gl_version), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(OPENGL_VENDOR_CSTR), FF(gl_vendor), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(OPENGL_RENDERER_CSTR), FF(gl_renderer), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
@@ -69,8 +67,7 @@ struct pixelmapNewTokens {
     br_int_32 pixel_bits;
     br_uint_8 pixel_type;
     int msaa_samples;
-    br_device_pixelmap_gl_getprocaddress_cbfn* get_proc_address;
-    br_device_pixelmap_gl_swapbuffers_cbfn* swap_buffers;
+    br_device_gl_callback_procs* callbacks;
     const char* vertex_shader;
     const char* fragment_shader;
 };
@@ -82,8 +79,7 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
     { BRT(PIXEL_BITS_I32), F(pixel_bits), BRTV_SET, BRTV_CONV_COPY },
     { BRT(PIXEL_TYPE_U8), F(pixel_type), BRTV_SET, BRTV_CONV_COPY },
     { BRT(MSAA_SAMPLES_I32), F(msaa_samples), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(OPENGL_GET_PROC_ADDRESS_CALLBACK_P), F(get_proc_address), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(OPENGL_SWAP_CALLBACK_P), F(swap_buffers), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(OPENGL_CALLBACKS_P), F(callbacks), BRTV_SET, BRTV_CONV_COPY },
     { BRT(OPENGL_FRAGMENT_SHADER_STR), F(fragment_shader), BRTV_SET, BRTV_CONV_COPY }
 };
 #undef F
@@ -127,9 +123,11 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
     glBindVertexArray(0);
 }
 
-void GLRenderer_FullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
+void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
+    int x, y, width, height;
 
-    glViewport(0, 0, self->pm_width, self->pm_height);
+    DevicePixelmapGLGetViewport(self, &x, &y, &width, &height);
+    glViewport(x, y, width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -155,8 +153,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         .pixel_bits = -1,
         .pixel_type = BR_PMT_MAX,
         .msaa_samples = 0,
-        .get_proc_address = NULL,
-        .swap_buffers = NULL,
+        .callbacks = NULL,
         .vertex_shader = NULL,
         .fragment_shader = NULL
     };
@@ -169,8 +166,8 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
 
     BrTokenValueSetMany(&pt, &count, NULL, tv, dev->templates.pixelmapNewTemplate);
 
-    // if(pt.ext_procs == NULL || pt.width <= 0 || pt.height <= 0)
-    //     return NULL;
+    if(pt.callbacks == NULL || pt.width <= 0 || pt.height <= 0)
+        return NULL;
 
     if ((pt.pixel_type = DeviceGLTypeOrBits(pt.pixel_type, pt.pixel_bits)) == BR_PMT_MAX)
         return NULL;
@@ -195,18 +192,9 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     /*
      * Make a copy, so they can't switch things out from under us.
      */
-    self->asFront.get_proc_address = *pt.get_proc_address;
-    self->asFront.swap_buffers = *pt.swap_buffers;
+    self->asFront.callbacks = *pt.callbacks;
 
-    // if((self->asFront.gl_context = DevicePixelmapGLExtCreateContext(self)) == NULL) {
-    //     BrResFreeNoCallback(self);
-    //     return NULL;
-    // }
-
-    // if(DevicePixelmapGLExtMakeCurrent(self, self->asFront.gl_context) != BRE_OK)
-    //     goto cleanup_context;
-
-    if (gladLoadGLLoader(DevicePixelmapGLExtGetGetProcAddress(self)) == 0) {
+    if (gladLoadGLLoader(DevicePixelmapGLGetGetProcAddress(self)) == 0) {
         BR_ERROR("GLREND: Unable to load OpenGL functions.");
         goto cleanup_context;
     }
@@ -291,7 +279,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     return self;
 
 cleanup_context:
-    DevicePixelmapGLExtFree(self);
+    DevicePixelmapGLFree(self);
     BrResFreeNoCallback(self);
 
     return NULL;
@@ -300,7 +288,7 @@ cleanup_context:
 static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
     br_device_pixelmap* self = (br_device_pixelmap*)_self;
 
-    BrLogPrintf("GLREND: Freeing %s\n", self->pm_identifier);
+    //BrLogPrintf("GLREND: Freeing %s\n", self->pm_identifier);
 
     UASSERT(self->asFront.num_refs == 0);
 
@@ -315,7 +303,7 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
     // TODO: uncomment
     // ObjectContainerRemove(self->output_facility, (br_object*)self);
 
-    DevicePixelmapGLExtFree(self);
+    DevicePixelmapGLFree(self);
 
     BrResFreeNoCallback(self);
 }
@@ -382,48 +370,15 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     if (self->use_type != BRT_NONE || src->use_type != BRT_OFFSCREEN)
         return BRE_UNSUPPORTED;
 
-    /*
-     * Blit.
-     */
-    // glBindFramebuffer(GL_READ_FRAMEBUFFER, src->asBack.glFbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-    // glBlitFramebuffer(0, 0, src->pm_width, src->pm_height, 0, 0, self->pm_width, self->pm_height, GL_COLOR_BUFFER_BIT,
-    // GL_NEAREST);
+    RenderFullScreenQuad(self, src);
 
-    // glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-    GLRenderer_FullScreenQuad(self, src);
-
-    /*
-     * Call our pre-swap hook
-     */
-    // DevicePixelmapGLExtPreSwap(self, src->asBack.glFbo);
-
-    /*
-     * Drain any GL errors.
-     */
-    while (glGetError() != GL_NO_ERROR)
-        ;
-
-    /*
-     * Finally, swap the buffers.
-     */
-    DevicePixelmapGLExtSwapBuffers(self);
-
-    /*
-     * Drain any GL errors (again).
-     */
-    while (glGetError() != GL_NO_ERROR)
-        ;
+    DevicePixelmapGLSwapBuffers(self);
 
     return BRE_OK;
 }
 
-br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, handleWindowEvent)(br_device_pixelmap* self, void* arg) {
-    return BRE_OK; // DevicePixelmapGLExtHandleWindowEvent(self, arg);
-}
 
 /*
  * Default dispatch table for device pixelmap

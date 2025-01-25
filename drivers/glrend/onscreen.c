@@ -44,10 +44,11 @@
              ((eqn.v[Y] > 0) ? (bounds->max.v[Y]) : (bounds->min.v[Y])), eqn.v[Z],           \
              ((eqn.v[Z] > 0) ? (bounds->max.v[Z]) : (bounds->min.v[Z]))) < eqn.v[W])
 
-br_token GLOnScreenCheck(const br_matrix4 *model_to_screen, const br_bounds3_f *bounds)
+br_token GLOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, const br_bounds3_f *bounds)
 {
     int        accept = 1;
     br_vector4 eqn;
+    int c;
 
     /*
      * Left	  - screen space plane eqn. = ( 1, 0, 0, 1)
@@ -114,6 +115,23 @@ br_token GLOnScreenCheck(const br_matrix4 *model_to_screen, const br_bounds3_f *
 
     if(accept && TEST_NOT_IN)
         accept = 0;
+
+    for(c = 0; c < MAX_STATE_CLIP_PLANES; c++) {
+
+			if(self->state.current->clip[c].type != BRT_PLANE)
+				continue;
+
+			BrMatrix4TApply(&eqn,
+					 &self->state.current->clip[c].plane,
+					 model_to_screen);
+			eqn.v[W] = -eqn.v[W];
+
+			if(TEST_OUT)
+				return BRT_REJECT;
+
+			if(accept && TEST_NOT_IN)
+				accept = 0;
+		}
 
     return accept ? BRT_ACCEPT : BRT_PARTIAL;
 }

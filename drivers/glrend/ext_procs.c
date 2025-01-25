@@ -1,16 +1,21 @@
 #include "drv.h"
 #include <brassert.h>
 
-void DevicePixelmapGLExtSwapBuffers(br_device_pixelmap* self) {
+br_device_pixelmap_gl_getprocaddress_cbfn* DevicePixelmapGLGetGetProcAddress(br_device_pixelmap* self) {
     UASSERT(self->use_type == BRT_NONE);
-    self->asFront.swap_buffers((br_pixelmap*)self);
+    return self->asFront.callbacks.get_proc_address;
 }
 
-br_device_pixelmap_gl_getprocaddress_cbfn* DevicePixelmapGLExtGetGetProcAddress(br_device_pixelmap* self) {
+void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, int *width, int *height) {
     UASSERT(self->use_type == BRT_NONE);
-    return self->asFront.get_proc_address;
+    self->asFront.callbacks.get_viewport(x, y, width, height);
 }
 
-void DevicePixelmapGLExtFree(br_device_pixelmap* self) {
+void DevicePixelmapGLSwapBuffers(br_device_pixelmap* self) {
+    UASSERT(self->use_type == BRT_NONE);
+    self->asFront.callbacks.swap_buffers((br_pixelmap*)self);
+}
+
+void DevicePixelmapGLFree(br_device_pixelmap* self) {
     UASSERT(self->use_type == BRT_NONE);
 }

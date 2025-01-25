@@ -213,13 +213,19 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
 
             glBindTexture(GL_TEXTURE_2D, BufferStoredGLGetTexture(state->prim.colour_map));
 
-            if (state->prim.colour_map->paletted_source_dirty == BR_TRUE || state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
+            // has the 8 bit color source changed?
+            if (state->prim.colour_map->paletted_source_dirty == BR_TRUE) {
                 update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
                 state->prim.colour_map->paletted_source_dirty = BR_FALSE;
                 state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
             }
+            // or has the palette changed?
+            else if (state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
+                update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
+                state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
+            }
 
-            glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
+            // glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
             model->disable_texture = 0;
 
         } else {
@@ -230,7 +236,7 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
             model->disable_texture = 1;
             // BrVector4Set(&model->surface_colour, 0, 1, 0, 1);
             // glBindTexture(GL_TEXTURE_2D, 27);
-            glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
+            // glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
         }
 
         GLenum minFilter, magFilter;

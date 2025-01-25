@@ -78,8 +78,7 @@ typedef struct br_device_pixelmap {
             /*
              * System-specific OpenGL function pointers.
              */
-            br_device_pixelmap_gl_getprocaddress_cbfn* get_proc_address;
-            br_device_pixelmap_gl_swapbuffers_cbfn* swap_buffers;
+            br_device_gl_callback_procs callbacks;
 
             /*
              * Device-wide VIDEO instance.

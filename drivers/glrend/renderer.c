@@ -110,6 +110,7 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
 
     /* Bind the model UBO here, it's faster than doing it for each model group */
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingModel, hVideo->brenderProgram.uboModel);
+    glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
 
     if (self->pixelmap->msaa_samples)
         glEnable(GL_MULTISAMPLE);
@@ -494,7 +495,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_gl, boundsTest)(br_renderer* self, b
     // FIXME: Should probably cache this.
     br_matrix4 m2s;
     BrMatrix4Mul34(&m2s, &self->state.current->matrix.model_to_view, &self->state.current->matrix.view_to_screen);
-    *r = GLOnScreenCheck(&m2s, bounds);
+    *r = GLOnScreenCheck(self, &m2s, bounds);
     return BRE_OK;
 }
 
@@ -529,6 +530,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_gl, stateQueryPerformance)(br_render
 }
 
 static br_error BR_CMETHOD_DECL(br_renderer_gl, frameBegin)(br_renderer* self) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     return BRE_OK;
 }
 

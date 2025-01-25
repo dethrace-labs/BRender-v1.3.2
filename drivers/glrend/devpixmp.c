@@ -140,7 +140,7 @@ void BR_CMETHOD_DECL(br_device_pixelmap_gl, free)(br_object* _self) {
         return;
     }
 
-    BrLogPrintf("GLREND: Freeing %s", self->pm_identifier);
+    //BrLogPrintf("GLREND: Freeing %s", self->pm_identifier);
 
     delete_gl_resources(self);
 
@@ -432,18 +432,6 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
     }
 
     if (self->use_type == BRT_OFFSCREEN) {
-        // unsigned int* px = BrScratchAllocate(sizeof(br_colour) * rect->w * rect->h);
-        // for (int i = 0; i < rect->w * rect->h; i++) {
-        //     px[i] = colour;
-        // }
-        // glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-        // glTexSubImage2D(GL_TEXTURE_2D, 0, rect->x, rect->y, rect->w, rect->h, GL_RGBA, GL_UNSIGNED_BYTE, px);
-        // glBindTexture(GL_TEXTURE_2D, 0);
-        // BrScratchFree(px);
-
-        // glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
-        // glClear(GL_COLOR_BUFFER_BIT);
-
         if (self->pm_pixels != NULL) {
             switch (self->pm_type) {
             case BR_PMT_INDEX_8:

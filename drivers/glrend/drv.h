@@ -26,14 +26,6 @@ extern "C" {
 #define BR_RENDERER_PRIVATE
 #define BR_DEVICE_CLUT_PRIVATE
 
-// #include "brddi.h"
-// #include "brglrend.h"
-// #include "font.h"
-// #include "formats.h"
-// #include "pm.h"
-// #include "state.h"
-// #include "video.h"
-/* clang-format off */
 
  #include "brddi.h"
  #include "brglrend.h"

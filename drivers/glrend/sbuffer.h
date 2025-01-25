@@ -56,7 +56,7 @@ typedef struct br_buffer_stored {
     struct br_tv_template *templates;
 
     br_boolean paletted_source_dirty;
-    br_uint_8 palette_revision;
+    br_uint_32 palette_revision;
     struct br_device_clut *palette_pointer;
 
 } br_buffer_stored;
