@@ -125,8 +125,8 @@ static br_error BR_CMETHOD_DECL(br_device_clut_virtualfb, entrySetMany)(br_devic
         self->entries[index + i] = entries[i];
     }
 
-    if (self->palette_changed_cbfn) {
-        self->palette_changed_cbfn(self->entries);
+    if (self->callbacks && self->callbacks->palette_changed) {
+        self->callbacks->palette_changed(self->entries);
     }
 
     return BRE_OK;

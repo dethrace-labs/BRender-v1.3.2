@@ -8,7 +8,6 @@
 extern "C" {
 #endif
 
-typedef void BR_CALLBACK br_device_pixelmap_virtualdb_doublebuffer_cbfn(br_pixelmap* pm);
 
 /*
  * Private state of device pixelmap
@@ -43,7 +42,7 @@ typedef struct br_device_pixelmap {
     br_boolean restore_mode;
     br_uint_16 original_mode;
 
-    br_device_pixelmap_virtualdb_doublebuffer_cbfn* doublebuffer_cbfn;
+    br_device_virtualfb_callback_procs* callbacks;
 
 } br_device_pixelmap;
 

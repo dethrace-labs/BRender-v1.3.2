@@ -153,5 +153,15 @@ set_target_properties(glrend PROPERTIES
         FOLDER "BRender/Drivers"
         )
 
+if(BRENDER_ASAN_ENABLED)
+	set(CMAKE_C_FLAGS
+		"${CMAKE_C_FLAGS}  -fsanitize=undefined -fsanitize=address"
+	)
+	target_compile_options(glrend PUBLIC -fsanitize=address)
+	target_link_options(glrend
+			BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,undefined
+	)
+endif()
+
 add_library(BRender::Drivers::GLRend::Headers ALIAS glrend-headers)
 add_library(BRender::Drivers::GLRend ALIAS glrend)

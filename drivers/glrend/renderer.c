@@ -530,7 +530,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_gl, stateQueryPerformance)(br_render
 }
 
 static br_error BR_CMETHOD_DECL(br_renderer_gl, frameBegin)(br_renderer* self) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     return BRE_OK;
 }
 

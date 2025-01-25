@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-typedef void BR_CALLBACK br_device_virtualfb_palette_changed_cbfn(br_uint_32* palette_entries);
+
 
 /*
  * Private state of device CLUT
@@ -33,7 +33,7 @@ typedef struct br_device_clut {
 
     br_uint_32 entries[256];
 
-    br_device_virtualfb_palette_changed_cbfn* palette_changed_cbfn;
+    br_device_virtualfb_callback_procs* callbacks;
 
 } br_device_clut;
 

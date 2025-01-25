@@ -51,8 +51,7 @@ static const struct br_tv_template_entry deviceTemplateEntries[] = {
  */
 // clang-format off
 static const br_token insignificantMatchTokens[] = {
-    BRT_VIRTUALFB_DOUBLEBUFFER_CALLBACK_P,
-	BRT_VIRTUALFB_PALETTE_CHANGED_CALLBACK_P,
+    BRT_VIRTUALFB_CALLBACKS_P,
     BR_NULL_TOKEN,
 };
 

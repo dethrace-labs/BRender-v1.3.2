@@ -1,4 +1,4 @@
-#version 150
+#version 140
 
 #define MAX_LIGHTS                      48 /* Must match up with BRender */
 #define MAX_CLIP_PLANES                 6

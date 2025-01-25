@@ -105,8 +105,7 @@ static struct br_tv_template_entry outputFacilityTemplateEntries[] = {
         BRTV_CONV_COPY,
     },
     // Passed to pixelmapNew
-    { BRT(VIRTUALFB_DOUBLEBUFFER_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
-    { BRT(VIRTUALFB_PALETTE_CHANGED_CALLBACK_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
+    { BRT(VIRTUALFB_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT }
 };
 #undef F
 

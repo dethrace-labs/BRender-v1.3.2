@@ -87,16 +87,14 @@ struct pixelmapNewTokens {
     br_int_32 width;
     br_int_32 height;
 
-    br_device_pixelmap_virtualdb_doublebuffer_cbfn* doublebuffer_cbfn;
-    void* palette_changed_cbfn;
+    br_device_virtualfb_callback_procs* callbacks;
 };
 
 #define F(f) offsetof(struct pixelmapNewTokens, f)
 static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
     { BRT(WIDTH_I32), F(width), BRTV_SET, BRTV_CONV_COPY },
     { BRT(HEIGHT_I32), F(height), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(VIRTUALFB_DOUBLEBUFFER_CALLBACK_P), F(doublebuffer_cbfn), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(VIRTUALFB_PALETTE_CHANGED_CALLBACK_P), F(palette_changed_cbfn), BRTV_SET, BRTV_CONV_COPY }
+    { BRT(VIRTUALFB_CALLBACKS_P), F(callbacks), BRTV_SET, BRTV_CONV_COPY }
 };
 #undef F
 
@@ -113,8 +111,7 @@ br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_fa
     struct pixelmapNewTokens pt = {
         .width = -1,
         .height = -1,
-        .doublebuffer_cbfn = NULL,
-        .palette_changed_cbfn = NULL,
+        .callbacks = NULL,
     };
 
     if (dev->active)
@@ -148,13 +145,13 @@ br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_fa
     self->pm_width = pt.width;
     self->pm_row_bytes = pt.width;
     self->pm_height = pt.height;
-    self->doublebuffer_cbfn = pt.doublebuffer_cbfn;
+    self->callbacks = pt.callbacks;
 
     self->pm_pixels = BrResAllocate(self, self->pm_row_bytes * self->pm_height, BR_MEMORY_PIXELS);
 
     self->output_facility = facility;
     self->clut = DeviceVirtualFBClut(dev);
-    self->clut->palette_changed_cbfn = pt.palette_changed_cbfn;
+    self->clut->callbacks = pt.callbacks;
 
     ObjectContainerAddFront(facility, (br_object*)self);
 
@@ -200,8 +197,8 @@ static struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_virtualfb, quer
 static br_error BR_CMETHOD_DECL(br_device_pixelmap_virtualfb, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
     br_error result;
 
-    if (self->doublebuffer_cbfn) {
-        self->doublebuffer_cbfn(src);
+    if (self->callbacks && self->callbacks->swap_buffers) {
+        self->callbacks->swap_buffers(src);
     }
 
     return BRE_OK;

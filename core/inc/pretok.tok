@@ -884,8 +884,7 @@ OPENGL_PROFILE_CORE               	none
 OPENGL                              boolean
 
 # Virtual framebuffer specific tokens
-VIRTUALFB_DOUBLEBUFFER_CALLBACK		pointer
-VIRTUALFB_PALETTE_CHANGED_CALLBACK		pointer
+VIRTUALFB_CALLBACKS					pointer
 
 # Tokens for system configuration
 
