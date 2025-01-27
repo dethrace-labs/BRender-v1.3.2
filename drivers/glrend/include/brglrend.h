@@ -15,21 +15,6 @@ extern br_token BRT_OPENGL_TEXTURE_U32;
 }
 #endif
 
-typedef void BR_CALLBACK br_device_pixelmap_gl_swapbuffers_cbfn(br_pixelmap* pm);
-
-typedef void* BR_CALLBACK br_device_pixelmap_gl_getprocaddress_cbfn(const char* name);
-
-typedef void BR_CALLBACK br_device_pixelmap_gl_free_cbfn(br_pixelmap* pm, void* user);
-
-typedef void BR_CALLBACK br_device_pixelmap_gl_getviewport_cbfn(int *x, int *y, int *width, int *height);
-
-typedef struct br_device_gl_callback_procs {
-    br_device_pixelmap_gl_getprocaddress_cbfn      *get_proc_address;
-    br_device_pixelmap_gl_getviewport_cbfn         *get_viewport;
-    br_device_pixelmap_gl_swapbuffers_cbfn         *swap_buffers;
-    br_device_pixelmap_gl_free_cbfn                *free;
-} br_device_gl_callback_procs;
-
 /*
  * Function prototypes
  */
