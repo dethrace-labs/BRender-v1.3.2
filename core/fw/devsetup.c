@@ -7,7 +7,6 @@
  * XXX should condense all the BrXXXFind() functions into one,
  * since the logic is the same for each!
  */
-#include <stdio.h>
 #include <stdarg.h>
 
 #include "fw.h"
@@ -52,13 +51,11 @@ br_error BR_PUBLIC_ENTRY BrDevBeginVar(br_pixelmap **ppm, char *setup_string, ..
 		if (i == BR_ASIZE(tv))
 			BR_FAILURE("Too many token value pairs");
 
-		if ((n = va_arg(vl, int)) == BR_NULL_TOKEN)
+		if ((n = va_arg(vl, br_token)) == BR_NULL_TOKEN)
 			break;
 
-		*((int *)&tv[i].t) = n;
-
-		n = va_arg(vl, int);
-		*((int *)&tv[i].v.u32) = n;
+        tv[i].t = n;
+        tv[i].v = BrTokenValueVaArg(n, &vl);
 	}
 
 	tv[i].t = BR_NULL_TOKEN;

@@ -68,7 +68,13 @@ typedef struct br_primitive {
 	 */
 	void *v[3];
 
-} br_primitive;	
+    /*
+     * Cached calculated depth of the primitive.
+     * Some devices may use this for sorting within the bucket.
+     */
+    br_scalar depth;
+
+} br_primitive;
 
 /*
  * The order table structure
@@ -120,7 +126,7 @@ typedef struct br_order_table {
 	 * Visit counter
 	 */
 	br_uint_16 visits;
-    
+
 } br_order_table;
 
 /*
@@ -142,4 +148,3 @@ typedef struct{
 }ot_vertex;
 
 #endif
-

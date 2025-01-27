@@ -108,6 +108,9 @@ br_error BR_RESIDENT_ENTRY BrStringToTokenValue(br_token_value *buffer, br_size_
 br_boolean BR_RESIDENT_ENTRY BrTokenValueCompare(br_token_value *tv1, br_token_value *tv2);
 br_boolean BR_RESIDENT_ENTRY BrTokenValueComparePartial(br_token_value *tv1, br_token_value *tv2, br_token *insignificant);
 
+// Added from Croc-DE
+br_value BR_RESIDENT_ENTRY BrTokenValueVaArg(br_token token, va_list* ap);
+
 
 /*
  * diag.c

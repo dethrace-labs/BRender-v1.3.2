@@ -34,7 +34,7 @@ void BR_RESIDENT_ENTRY _BrAssert(char *condition, char *file, unsigned line);
 #if PARANOID
 #define UASSERT(e)	((void)((e) || (_BrUAssert(#e,__FILE__,__LINE__),1)))
 #define UASSERT_MESSAGE(m,e)      ((void)((e) || (_BrUAssert(m " : " #e,__FILE__,__LINE__),1)))
-void BR_RESIDENT_ENTRY _BrUAssert(char *condition, char *file, unsigned line);
+void /*BR_RESIDENT_ENTRY*/ _BrUAssert(char *condition, char *file, unsigned line);
 #define UVERIFY(f) ASSERT(f)
 
 #else

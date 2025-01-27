@@ -368,6 +368,8 @@ class br_renderer : public br_object_container {
 		virtual br_error BR_METHOD frameEnd(void);
 		virtual br_error BR_METHOD focusLossBegin(void);
 		virtual br_error BR_METHOD focusLossEnd(void);
+        virtual void BR_METHOD sceneBegin(void);
+        virtual void BR_METHOD sceneEnd(void);
 };
 
 // Stored renderer state
@@ -386,8 +388,8 @@ class br_geometry : public br_object {
 
 class br_geometry_stored : public br_geometry {
 	public:
-		virtual br_error BR_METHOD render(class br_renderer *r);
-		virtual br_error BR_METHOD renderOnScreen(class br_renderer *r);
+		virtual br_error BR_METHOD render(class br_renderer *r, class br_renderer_state_stored* default_state);
+		virtual br_error BR_METHOD renderOnScreen(class br_renderer *r, class br_renderer_state_stored* default_state);
 }
 
 // Predefined geometry formats

@@ -1,7 +1,7 @@
 # Starting set of tokens - duplication is OK
 #
 
-## Token types 
+## Token types
 ##
 # Name							Extention	br_value member
 $none
@@ -866,7 +866,10 @@ LPDIRECTDRAWSURFACE             pointer
 
 MSAA_SAMPLES						int_32
 
-OPENGL_EXT_PROCS				pointer
+# OpenGL specific tokens
+#OPENGL_GET_PROC_ADDRESS_CALLBACK	pointer
+#OPENGL_SWAP_CALLBACK				pointer
+OPENGL_CALLBACKS					pointer
 OPENGL_VERTEX_SHADER				string
 OPENGL_FRAGMENT_SHADER				string
 OPENGL_VERSION                      constant_string
@@ -876,10 +879,12 @@ OPENGL_RENDERER                     constant_string
 OPENGL_VERSION_MAJOR                uint_8
 OPENGL_VERSION_MINOR                uint_8
 OPENGL_PROFILE                      token
-  OPENGL_PROFILE_COMPATIBILITY      none
-  OPENGL_PROFILE_CORE               none
-
+OPENGL_PROFILE_COMPATIBILITY      	none
+OPENGL_PROFILE_CORE               	none
 OPENGL                              boolean
+
+# Virtual framebuffer specific tokens
+VIRTUALFB_CALLBACKS					pointer
 
 # Tokens for system configuration
 

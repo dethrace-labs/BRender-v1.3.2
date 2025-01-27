@@ -293,6 +293,9 @@ void BR_PUBLIC_ENTRY BrMatrix4Mul34(br_matrix4 *A, br_matrix34 *B, br_matrix4 *C
 void BR_PUBLIC_ENTRY BrMatrix4Copy34(br_matrix4 *A, br_matrix34 *B);
 void BR_PUBLIC_ENTRY BrMatrix34Copy4(br_matrix34 *A, br_matrix4 *B);
 
+void BR_PUBLIC_ENTRY BrMatrix4Copy23(br_matrix4* A, br_matrix23* B);
+void BR_PUBLIC_ENTRY BrMatrix4Transpose(br_matrix4* A);
+
 
 /**
  ** 2D Vectors
@@ -346,6 +349,9 @@ void BR_PUBLIC_ENTRY BrVector2Normalise(br_vector2 *v1,br_vector2 *v2);
  **/
 br_scalar BR_PUBLIC_ENTRY BrVector4Dot(br_vector4 *v1, br_vector4 *v2);
 void BR_PUBLIC_ENTRY BrVector4Copy(br_vector4 *v1, br_vector4 *v2);
+
+void BR_PUBLIC_ENTRY BrVector4Scale(br_vector4* v1, br_vector4* v2, br_scalar s);
+void BR_PUBLIC_ENTRY BrVector4Normalise(br_vector4* v1, br_vector4* v2);
 
 /*
  * Euler Angles

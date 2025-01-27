@@ -17,19 +17,19 @@ extern "C" {
 /*
  * matrix34.c
  */
-void BrMatrix34TApplyFV(br_vector3 *A, br_fvector3 *B, br_matrix34 *C);
+void BrMatrix34TApplyFV(br_vector3* A, br_fvector3* B, br_matrix34* C);
 
 /*
  * matrix4.c
  */
-void BR_PUBLIC_ENTRY BrMatrix4ShearZ(br_matrix4 *mat, br_scalar sx, br_scalar sy);
+void BR_PUBLIC_ENTRY BrMatrix4ShearZ(br_matrix4* mat, br_scalar sx, br_scalar sy);
 
 /*
  * transform.c
  */
 extern br_uint_8 _CombineTransforms[BR_TRANSFORM_MAX][BR_TRANSFORM_MAX];
 
-#define BrTransformCombineTypes(a,b) (_CombineTransforms[(a)][(b)])
+#define BrTransformCombineTypes(a, b) (_CombineTransforms[(a)][(b)])
 #define BrTransformTypeIsLP(a) ((a) != BR_TRANSFORM_MATRIX34)
 #define BrTransformTypeIsMatrix34(a) ((a) <= BR_TRANSFORM_MATRIX34_LP)
 

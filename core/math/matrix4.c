@@ -108,7 +108,7 @@ br_scalar BR_PUBLIC_ENTRY BrMatrix4Inverse(br_matrix4 *A, br_matrix4 *B)
 
     /*
 	 * Calculate the 4x4 determinant
-     *  if the determinant is zero, 
+     *  if the determinant is zero,
      *  then the inverse matrix is not unique.
      */
 
@@ -143,7 +143,7 @@ static br_scalar Determinant3(
 
 /*
  * return determinant(mat)
- * 
+ *
  */
 br_scalar BR_PUBLIC_ENTRY BrMatrix4Determinant(br_matrix4 *mat)
 {
@@ -151,16 +151,16 @@ br_scalar BR_PUBLIC_ENTRY BrMatrix4Determinant(br_matrix4 *mat)
 
     UASSERT_MESSAGE("Source matrix is NULL", mat != NULL);
 
-	a1 = M(0,0); b1 = M(0,1); 
+	a1 = M(0,0); b1 = M(0,1);
 	c1 = M(0,2); d1 = M(0,3);
 
-	a2 = M(1,0); b2 = M(1,1); 
+	a2 = M(1,0); b2 = M(1,1);
 	c2 = M(1,2); d2 = M(1,3);
 
-	a3 = M(2,0); b3 = M(2,1); 
+	a3 = M(2,0); b3 = M(2,1);
 	c3 = M(2,2); d3 = M(2,3);
 
-	a4 = M(3,0); b4 = M(3,1); 
+	a4 = M(3,0); b4 = M(3,1);
 	c4 = M(3,2); d4 = M(3,3);
 
     return BR_MAC4(a1, Determinant3( b2, b3, b4, c2, c3, c4, d2, d3, d4),
@@ -169,7 +169,7 @@ br_scalar BR_PUBLIC_ENTRY BrMatrix4Determinant(br_matrix4 *mat)
 				  -d1, Determinant3( a2, a3, a4, b2, b3, b4, c2, c3, c4));
 }
 
-/* 
+/*
  * A = adjoint(B)
  */
 
@@ -181,16 +181,16 @@ void BR_PUBLIC_ENTRY BrMatrix4Adjoint(br_matrix4 *A, br_matrix4 *B)
     UASSERT_MESSAGE("Destination matrix is NULL", A != NULL);
     UASSERT_MESSAGE("Source matrix is NULL", B != NULL);
 
-	a1 = B(0,0); b1 = B(0,1); 
+	a1 = B(0,0); b1 = B(0,1);
 	c1 = B(0,2); d1 = B(0,3);
 
-	a2 = B(1,0); b2 = B(1,1); 
+	a2 = B(1,0); b2 = B(1,1);
 	c2 = B(1,2); d2 = B(1,3);
 
 	a3 = B(2,0); b3 = B(2,1);
 	c3 = B(2,2); d3 = B(2,3);
 
-	a4 = B(3,0); b4 = B(3,1); 
+	a4 = B(3,0); b4 = B(3,1);
 	c4 = B(3,2); d4 = B(3,3);
 
 
@@ -200,17 +200,17 @@ void BR_PUBLIC_ENTRY BrMatrix4Adjoint(br_matrix4 *A, br_matrix4 *B)
     A(1,0) = -Determinant3( a2, a3, a4, c2, c3, c4, d2, d3, d4);
     A(2,0) =  Determinant3( a2, a3, a4, b2, b3, b4, d2, d3, d4);
     A(3,0) = -Determinant3( a2, a3, a4, b2, b3, b4, c2, c3, c4);
-        
+
     A(0,1) = -Determinant3( b1, b3, b4, c1, c3, c4, d1, d3, d4);
     A(1,1) =  Determinant3( a1, a3, a4, c1, c3, c4, d1, d3, d4);
     A(2,1) = -Determinant3( a1, a3, a4, b1, b3, b4, d1, d3, d4);
     A(3,1) =  Determinant3( a1, a3, a4, b1, b3, b4, c1, c3, c4);
-        
+
     A(0,2) =  Determinant3( b1, b2, b4, c1, c2, c4, d1, d2, d4);
     A(1,2) = -Determinant3( a1, a2, a4, c1, c2, c4, d1, d2, d4);
     A(2,2) =  Determinant3( a1, a2, a4, b1, b2, b4, d1, d2, d4);
     A(3,2) = -Determinant3( a1, a2, a4, b1, b2, b4, c1, c2, c4);
-        
+
     A(0,3) = -Determinant3( b1, b2, b3, c1, c2, c3, d1, d2, d3);
     A(1,3) =  Determinant3( a1, a2, a3, c1, c2, c3, d1, d2, d3);
     A(2,3) = -Determinant3( a1, a2, a3, b1, b2, b3, d1, d2, d3);
@@ -221,7 +221,7 @@ void BR_PUBLIC_ENTRY BrMatrix4Adjoint(br_matrix4 *A, br_matrix4 *B)
  * Generate a perspective tranform
  *
  */
-void BR_PUBLIC_ENTRY BrMatrix4Perspective(br_matrix4 *mat, 
+void BR_PUBLIC_ENTRY BrMatrix4Perspective(br_matrix4 *mat,
 		br_angle field_of_view,
 		br_scalar aspect,
 		br_scalar hither,
@@ -253,7 +253,7 @@ void BR_PUBLIC_ENTRY BrMatrix4Apply(br_vector4 *A, br_vector4 *B, br_matrix4 *C)
         UASSERT_MESSAGE("Source vector is NULL", B != NULL);
         UASSERT_MESSAGE("Transformation matrix is NULL", C != NULL);
         UASSERT_MESSAGE("Source may not be destination.", A != B);
-        
+
 	A->v[0] = BR_MAC4(B->v[0],C(0,0), B->v[1],C(1,0), B->v[2],C(2,0), B->v[3],C(3,0));
 	A->v[1] = BR_MAC4(B->v[0],C(0,1), B->v[1],C(1,1), B->v[2],C(2,1), B->v[3],C(3,1));
 	A->v[2] = BR_MAC4(B->v[0],C(0,2), B->v[1],C(1,2), B->v[2],C(2,2), B->v[3],C(3,2));
@@ -401,15 +401,15 @@ void BR_PUBLIC_ENTRY BrMatrix4Pre34(br_matrix4 *A, br_matrix34 *B)
 
 
 /*
- *                 Ú                ¿
- *                 ³  1   0   0   0 ³
- *                 ³                ³
- *                 ³  0   1   0   0 ³
- * ShearZ(sx,sy) = ³                ³
- *                 ³  sx  sy  1   0 ³
- *                 ³                ³
- *                 ³  0   0   0   1 ³
- *                 À                Ù
+ *                 Ãš                Â¿
+ *                 Â³  1   0   0   0 Â³
+ *                 Â³                Â³
+ *                 Â³  0   1   0   0 Â³
+ * ShearZ(sx,sy) = Â³                Â³
+ *                 Â³  sx  sy  1   0 Â³
+ *                 Â³                Â³
+ *                 Â³  0   0   0   1 Â³
+ *                 Ã€                Ã™
  */
 void BR_PUBLIC_ENTRY BrMatrix4ShearZ(br_matrix4 *mat, br_scalar sx, br_scalar sy)
 {
@@ -421,3 +421,45 @@ void BR_PUBLIC_ENTRY BrMatrix4ShearZ(br_matrix4 *mat, br_scalar sx, br_scalar sy
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0; M(3,3) = S1;
 }
 
+void BR_PUBLIC_ENTRY BrMatrix4Orthographic(br_matrix4* mat, br_scalar left, br_scalar right, br_scalar bottom,
+    br_scalar top, br_scalar hither, br_scalar yon) {
+    UASSERT_MESSAGE("Subject matrix is NULL", mat != NULL);
+
+    M(0, 0) = BR_DIV(2, BR_SUB(right, left));
+    M(1, 1) = BR_DIV(2, BR_SUB(top, bottom));
+    M(2, 2) = BR_DIV(2, BR_SUB(yon, hither));
+    M(3, 0) = BR_CONST_MUL(BR_DIV(BR_ADD(right, left), BR_SUB(right, left)), BR_SCALAR(-1));
+    M(3, 1) = BR_CONST_MUL(BR_DIV(BR_ADD(top, bottom), BR_SUB(top, bottom)), BR_SCALAR(-1));
+    M(3, 2) = BR_CONST_MUL(BR_DIV(BR_ADD(yon, hither), BR_SUB(yon, hither)), BR_SCALAR(-1));
+
+    // clang-format off
+    M(0, 1) = S0; M(0, 2) = S0; M(0, 3) = S0;
+    M(1, 0) = S0; M(1, 2) = S0; M(1, 3) = S0;
+    M(2, 0) = S0; M(2, 1) = S0; M(2, 3) = S0;
+                                M(3, 3) = S1;
+    // clang-format on
+}
+
+void BR_PUBLIC_ENTRY BrMatrix4Copy23(br_matrix4* A, br_matrix23* B) {
+    UASSERT_MESSAGE("Destination matrix is NULL", A != NULL);
+    UASSERT_MESSAGE("Source matrix is NULL", B != NULL);
+
+    // clang-format off
+    A(0, 0) = B(0, 0); A(0, 1) = B(0, 1); A(0, 2) = S0; A(0, 3) = S0;
+    A(1, 0) = B(1, 0); A(1, 1) = B(1, 1); A(1, 2) = S0; A(1, 3) = S0;
+    A(2, 0) = B(2, 0); A(2, 1) = B(2, 1); A(2, 2) = S1; A(2, 3) = S0;
+    A(3, 0) = S0;      A(3, 1) = S0;      A(3, 2) = S0; A(3, 3) = S1;
+    // clang-format on
+}
+
+void BR_PUBLIC_ENTRY BrMatrix4Transpose(br_matrix4* A) {
+    br_scalar tmp;
+
+    for (int i = 0; i < 4; ++i) {
+        for (int j = i; j < 4; ++j) {
+            tmp = A->m[i][j];
+            A->m[i][j] = A->m[j][i];
+            A->m[j][i] = tmp;
+        }
+    }
+}

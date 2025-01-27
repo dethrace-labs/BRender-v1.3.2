@@ -898,7 +898,7 @@ br_uint_16 BR_RESIDENT_ENTRY BrPixelmapChannels(br_pixelmap *pm)
 
 	return DevicePixelmapChannels(pm);
 }
-#include <stdio.h>
+
 void BR_PUBLIC_ENTRY BrPixelmapPaletteSet(br_pixelmap *pm, br_pixelmap *pal)
 {
 	UASSERT(pal);

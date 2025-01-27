@@ -717,6 +717,11 @@ void BR_PUBLIC_ENTRY BrDbSceneRenderBegin(br_actor *world,
 	BrSetupClipPlanes(world, &tfm, v1db.ttype, &vtos);
 	BrSetupEnvironment(world, &tfm, v1db.ttype);
 	BrSetupHorizons(world, &tfm, v1db.ttype);
+
+    // Added by dethrace
+    if (v1db.renderer->dispatch->_sceneBegin) {
+        RendererSceneBegin(v1db.renderer);
+    }
 }
 
 /*
@@ -907,6 +912,11 @@ void BR_PUBLIC_ENTRY BrZbSceneRenderEnd(void)
 	 * Tell the renderer to flush
 	 */
 	RendererFlush(v1db.renderer, BR_FALSE);
+
+    // Added by dethrace
+    if (v1db.renderer->dispatch->_sceneEnd) {
+        RendererSceneEnd(v1db.renderer);
+    }
 
 	v1db.rendering = RENDERING_NONE;
 	v1db.render_root = NULL;
