@@ -153,22 +153,16 @@ void BR_ASM_CALL RenderConvert1(struct brp_block *block,
 			if(m & 1)
                                 outv[0].comp_i[c] = v0->comp_i[c];
 
-	block->chain->render(block->chain, outv);
+	block->chain->render(block->chain, outv, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
-void BR_ASM_CALL RenderConvert2(struct brp_block *block, ...)
+void BR_ASM_CALL RenderConvert2(struct brp_block *block,
+	brp_vertex *v0,
+    brp_vertex *v1)
 {
 	int c;
 	br_uint_32 m;
 	brp_vertex outv[2];
-
-    va_list va;
-	brp_vertex *v0;
-    brp_vertex *v1;
-    va_start(va, block);
-    v0          = va_arg(va, brp_vertex *);
-    v1          = va_arg(va, brp_vertex *);
-	va_end(va);
 
 #if BASED_FIXED
 	br_boolean has_q = (rend.block->constant_components | rend.block->vertex_components) & CM_Q;
@@ -240,24 +234,17 @@ void BR_ASM_CALL RenderConvert2(struct brp_block *block, ...)
                                 outv[1].comp_i[c] = v1->comp_i[c];
 			}
 
-	block->chain->render(block->chain, outv+0, outv+1);
+	block->chain->render(block->chain, outv+0, outv+1, NULL, NULL, NULL, NULL, NULL);
 }
 
-void BR_ASM_CALL RenderConvert3(struct brp_block *block, ...)
+void BR_ASM_CALL RenderConvert3(struct brp_block *block,
+    brp_vertex *v0,
+    brp_vertex *v1,
+    brp_vertex *v2)
 {
 	int c;
 	br_uint_32 m;
 	brp_vertex outv[3];
-
-	va_list va;
-	brp_vertex *v0;
-    brp_vertex *v1;
-	brp_vertex *v2;
-    va_start(va, block);
-    v0          = va_arg(va, brp_vertex *);
-    v1          = va_arg(va, brp_vertex *);
-	v2          = va_arg(va, brp_vertex *);
-	va_end(va);
 
 #if BASED_FIXED
 	br_boolean has_q = (rend.block->constant_components | rend.block->vertex_components) & CM_Q;
@@ -336,7 +323,7 @@ void BR_ASM_CALL RenderConvert3(struct brp_block *block, ...)
                                 outv[2].comp_i[c] = v2->comp_i[c];
 			}
 
-	block->chain->render(block->chain, outv+0, outv+1, outv+2);
+	block->chain->render(block->chain, outv+0, outv+1, outv+2, NULL, NULL, NULL, NULL);
 }
 
 void BR_ASM_CALL RenderConvert4(struct brp_block *block,
@@ -430,5 +417,5 @@ void BR_ASM_CALL RenderConvert4(struct brp_block *block,
                                 outv[3].comp_i[c] = v3->comp_i[c];
 			}
 
-	block->chain->render(block->chain, outv+0, outv+1, outv+2, outv+3);
+	block->chain->render(block->chain, outv+0, outv+1, outv+2, outv+3, NULL, NULL, NULL);
 }

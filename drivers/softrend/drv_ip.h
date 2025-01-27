@@ -224,8 +224,10 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_model_soft, renderOnScreen)
  */
 void BR_ASM_CALL RenderConvert1(struct brp_block *block,
 	brp_vertex *v0);
-void BR_ASM_CALL RenderConvert2(struct brp_block *block, ...);
-void BR_ASM_CALL RenderConvert3(struct brp_block *block, ...);
+void BR_ASM_CALL RenderConvert2(struct brp_block *block,
+	brp_vertex *v0, brp_vertex *v1);
+void BR_ASM_CALL RenderConvert3(struct brp_block *block,
+	brp_vertex *v0, brp_vertex *v1,brp_vertex *v2);
 void BR_ASM_CALL RenderConvert4(struct brp_block *block,
 	brp_vertex *v0, brp_vertex *v1,brp_vertex *v2,brp_vertex *v3);
 
@@ -309,7 +311,14 @@ void SURFACE_CALL SurfaceMapGeometryMapScaleTranslate(br_renderer *self, br_vect
 void SURFACE_CALL SurfaceMapGeometryMapCopy(br_renderer *self, br_vector3 *p, br_vector2 *map, br_vector3 *n, br_colour colour, br_scalar *comp);
 void SURFACE_CALL SurfaceMapGeometryMapShift(br_renderer *self, br_vector3 *p, br_vector2 *map, br_vector3 *n, br_colour colour, br_scalar *comp);
 
-void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleMapQuad(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
 
 /*
  * alpha.c
@@ -325,26 +334,112 @@ void SURFACE_CALL SurfaceLinearDepth(br_renderer *self, br_vector3 *p, br_vector
 /*
  * faceops.c
  */
-void BR_ASM_CALL OpTriangleClip(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleClipConstantSurf(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleConstantSurf(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleTwoSidedConstantSurf(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleClip(struct brp_block *block,
+	brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
+void BR_ASM_CALL OpTriangleClipConstantSurf(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
+void BR_ASM_CALL OpTriangleConstantSurf(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
+void BR_ASM_CALL OpTriangleTwoSidedConstantSurf(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
 
-void BR_ASM_CALL OpTriangleMappingWrapFix(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleMappingWrapFix(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
 
-void BR_ASM_CALL OpTriangleRelightTwoSided(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleRelightTwoSided(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
 
-void BR_ASM_CALL OpTriangleToLines(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleReplicateConstant(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleReplicateConstantI(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleReplicateConstantRGB(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleToPoints(struct brp_block *block, ...);
-void BR_ASM_CALL OpTriangleToPoints_OS(struct brp_block *block, ...);
-void BR_ASM_CALL OpLineClip(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleToLines(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges);
+void BR_ASM_CALL OpTriangleReplicateConstant(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges);
+void BR_ASM_CALL OpTriangleReplicateConstantI(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges);
+void BR_ASM_CALL OpTriangleReplicateConstantRGB(struct brp_block *block, 
+	    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges);
+void BR_ASM_CALL OpTriangleToPoints(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices);
+void BR_ASM_CALL OpTriangleToPoints_OS(struct brp_block *block, 
+        brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices);
+void BR_ASM_CALL OpLineClip(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1);
 
-void BR_ASM_CALL OpTriangleSubdivide(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleSubdivide(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
 
-void BR_ASM_CALL OpTriangleSubdivideOnScreen(struct brp_block *block, ...);
+void BR_ASM_CALL OpTriangleSubdivideOnScreen(struct brp_block *block, 
+    brp_vertex* v0,
+    brp_vertex* v1,
+    brp_vertex* v2,
+    br_uint_16* fp_vertices,
+    br_uint_16* fp_edges,
+    br_vector4* fp_eqn,
+    struct temp_face* tfp);
 
 void SubdivideSetThreshold(br_int_32 subdivide_tolerance);
 
