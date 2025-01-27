@@ -82,12 +82,8 @@ static void UpdateMatrices(state_cache* cache, state_matrix* matrix) {
      * Projection Matrix
      */
     BrMatrix4Copy(&cache->model.p_br, &matrix->view_to_screen);
-    // cache->model.p_br.m[2][0] = 0;
-    // cache->model.p_br.m[2][1] = 0;
     BrMatrix4Copy(&cache->model.p, &matrix->view_to_screen);
-    // Hack: jeff
-    cache->model.p.m[2][0] = 0;
-    cache->model.p.m[2][1] = 0;
+
     VIDEOI_D3DtoGLProjection(&cache->model.p);
 
     /*

@@ -476,7 +476,6 @@ static void GEOMETRY_CALL V1Face_Render(struct br_geometry *self, struct br_rend
 }
 #endif
 
-#include <stdio.h>
 #ifndef V1Face_OS_Render
 void GEOMETRY_CALL V1Face_OS_Render(struct br_geometry *self, struct br_renderer *renderer)
 {

@@ -85,7 +85,6 @@ static br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl, storedAvail)(struct br_
     return BRE_FAIL;
 }
 
-#include <stdio.h>
 static br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl,
     storedNew)(struct br_geometry_v1_model* self, struct br_renderer* renderer,
     struct br_geometry_stored** psg, struct v11model_f* model, br_token type,

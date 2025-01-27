@@ -447,7 +447,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
                 px16 = self->pm_pixels;
                 for (int y = rect->y; y < rect->y + rect->h; y++) {
                     for (int x = rect->x; x < rect->x + rect->w; x++) {
-                        px16[y * self->pm_width + x] = colour;
+                        px16[y * self->pm_width + x] = colour & 0xffff;
                     }
                 }
                 break;
@@ -457,6 +457,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
             }
         } else {
             glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
+            glClearColor(colour & 0xff, colour & 0xff, colour & 0xff, 0xff);
             glClear(GL_COLOR_BUFFER_BIT);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }

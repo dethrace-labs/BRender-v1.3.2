@@ -413,8 +413,6 @@ static br_boolean want_defer(const state_hidden* hidden) {
     return hidden->order_table != NULL && hidden->heap != NULL;
 }
 
-#include <stdio.h>
-#include <string.h>
 static br_error V1Model_RenderStored(struct br_geometry_stored* self, br_renderer* renderer, br_boolean on_screen, br_renderer_state_stored* default_state) {
     state_stack* state;
     br_primitive* prim;
