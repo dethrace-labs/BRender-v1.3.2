@@ -80,6 +80,9 @@ set(INC_FILES
         v1db_p.h
         vecfns.h
         ${CMAKE_CURRENT_BINARY_DIR}/pretok.h
+
+        # added by dethrace
+        device_p.h
         )
 
 add_library(inc OBJECT

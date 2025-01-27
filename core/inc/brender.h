@@ -20,11 +20,11 @@
 
 #ifndef _COMPILER_H_
 #include "compiler.h"
-#endif		   
+#endif
 
 #ifndef _BRLIMITS_H_
 #include "brlimits.h"
-#endif		   
+#endif
 
 /**
  ** Framework
@@ -54,15 +54,15 @@
  **/
 #ifndef _FIXED_H_
 #include "fixed.h"
-#endif		   
+#endif
 
 #ifndef _SCALAR_H_
 #include "scalar.h"
-#endif		   
+#endif
 
 #ifndef _COLOUR_H_
 #include "colour.h"
-#endif		   
+#endif
 
 #ifndef _MATRIX_H_
 #include "matrix.h"
@@ -127,7 +127,7 @@
 #endif
 
 
-#include "brlists.h" 
+#include "brlists.h"
 
 	/*
 	 * Function prototypes
@@ -177,6 +177,7 @@
 
 #include "assoca_p.h"
 
+#include "device_p.h"
+
 
 #endif
-

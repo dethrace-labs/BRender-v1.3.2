@@ -16,14 +16,6 @@
 #include "brddi.h"
 #endif
 
-typedef void br_device_virtualfb_swapbuffers_cbfn(br_pixelmap* pm);
-typedef void br_device_virtualfb_palette_changed_cbfn(br_uint_32* palette_entries);
-
-typedef struct br_device_virtualfb_callback_procs {
-    br_device_virtualfb_palette_changed_cbfn      *palette_changed;
-    br_device_virtualfb_swapbuffers_cbfn          *swap_buffers;
-} br_device_virtualfb_callback_procs;
-
 #ifndef _TEMPLATE_H_
 #include "template.h"
 #endif
