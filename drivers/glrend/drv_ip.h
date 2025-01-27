@@ -176,7 +176,7 @@ br_uint_8 DeviceGLTypeOrBits(br_uint_8 pixel_type, br_int_32 pixel_bits);
  * Wrappers for br_device_gl_procs.
  */
 
-br_device_pixelmap_gl_getprocaddress_cbfn* DevicePixelmapGLGetGetProcAddress(br_device_pixelmap* self);
+br_device_gl_getprocaddress_cbfn* DevicePixelmapGLGetGetProcAddress(br_device_pixelmap* self);
 
 void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, int *width, int *height);
 
