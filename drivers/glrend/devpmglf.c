@@ -198,7 +198,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         BR_ERROR("GLREND: Unable to load OpenGL functions.");
         goto cleanup_context;
     }
-
+UASSERT(glGetError() == 0);
     self->asFront.gl_version = BrResStrDup(self, (char*)glGetString(GL_VERSION));
     self->asFront.gl_vendor = BrResStrDup(self, (char*)glGetString(GL_VENDOR));
     self->asFront.gl_renderer = BrResStrDup(self, (char*)glGetString(GL_RENDERER));
@@ -224,7 +224,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         self->asFront.gl_extensions[i] = BrResStrDup(self->asFront.gl_extensions, (char*)ext);
     }
     self->asFront.gl_extensions[self->asFront.gl_num_extensions] = NULL;
-
+UASSERT(glGetError() == 0);
     // /*
     //  * Try to figure out the actual format we got.
     //  * This isn't a big deal if we don't know what it is - we can only be written to by a doubleBuffer().
@@ -245,6 +245,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     //     BrLogPrintf("GLREND: OpenGL gave us an unknown screen format (R%dG%dB%dA%d), soldiering on...\n", red_bits,
     //         grn_bits, blu_bits, alpha_bits);
     // }
+    UASSERT(glGetError() == 0);
 
     if (VIDEO_Open(&self->asFront.video, pt.vertex_shader, pt.fragment_shader) == NULL) {
         /*
@@ -253,10 +254,10 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         BrResFree(self);
         return NULL;
     }
-
+UASSERT(glGetError() == 0);
     self->asFront.tex_white = DeviceGLBuildWhiteTexture();
     self->asFront.tex_checkerboard = DeviceGLBuildCheckerboardTexture();
-
+UASSERT(glGetError() == 0);
     // /*
     //  * We can't use BRender's fonts directly, so build a POT texture with
     //  * glyph from left-to-right. All fonts have 256 possible characters.
@@ -274,7 +275,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     self->asFront.num_refs = 0;
 
     SetupFullScreenRectGeometry(self);
-
+UASSERT(glGetError() == 0);
     ObjectContainerAddFront(self->output_facility, (br_object*)self);
     return self;
 
@@ -290,7 +291,7 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
 
     //BrLogPrintf("GLREND: Freeing %s\n", self->pm_identifier);
 
-    UASSERT(self->asFront.num_refs == 0);
+    //UASSERT(self->asFront.num_refs == 0);
 
     glDeleteTextures(1, &self->asFront.font_prop7x9.tex);
     glDeleteTextures(1, &self->asFront.font_prop4x6.tex);

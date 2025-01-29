@@ -165,6 +165,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         return BRE_FAIL;
     }
 
+    UASSERT(glGetError() == 0);
     if (self->gl_tex == 0) {
         glGenTextures(1, &self->gl_tex);
         if ((err = glGetError()) != 0) {

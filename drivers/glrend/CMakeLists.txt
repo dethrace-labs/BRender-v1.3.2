@@ -34,7 +34,7 @@ set(VIDEO_FILES
         checkboard64.c
         shader_brender.c
         shader_default.c
-        shader_text.c
+        # shader_text.c
         video.c
         video.h
         )

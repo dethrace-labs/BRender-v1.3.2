@@ -107,22 +107,22 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, &hVideo->maxFragmentUniformBlocks);
     glGetIntegerv(GL_MAX_SAMPLES, &hVideo->maxSamples);
 
+    UASSERT(glGetError() == 0);
+
     if (GLAD_GL_EXT_texture_filter_anisotropic)
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &hVideo->maxAnisotropy);
-
+UASSERT(glGetError() == 0);
     if (!VIDEOI_CompileDefaultShader(hVideo))
         return NULL;
 
-    if (!VIDEOI_CompileTextShader(hVideo)) {
+    UASSERT(glGetError() == 0);
+
+    if (!VIDEOI_CompileBRenderShader(hVideo, vertShader, fragShader)) {
         glDeleteProgram(hVideo->defaultProgram.program);
         return NULL;
     }
 
-    if (!VIDEOI_CompileBRenderShader(hVideo, vertShader, fragShader)) {
-        glDeleteProgram(hVideo->textProgram.program);
-        glDeleteProgram(hVideo->defaultProgram.program);
-        return NULL;
-    }
+     UASSERT(glGetError() == 0);
 
     return hVideo;
 }
@@ -144,7 +144,6 @@ void VIDEO_Close(HVIDEO hVideo) {
         glDeleteBuffers(0, &hVideo->brenderProgram.uboModel);
 
     glDeleteProgram(hVideo->defaultProgram.program);
-    glDeleteProgram(hVideo->textProgram.program);
 }
 
 br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat, GLenum* format, GLenum* type,

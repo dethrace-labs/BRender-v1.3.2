@@ -31,15 +31,6 @@ typedef struct _VIDEO {
 
     struct {
         GLuint program;
-        GLint aPosition; /* Position, vec3 */
-        GLint aUV;       /* UV, vec2 */
-        GLint uSampler;  /* Sampler, sampler2D */
-        GLint uMVP;      /* Model-View-Projection Matrix, mat4 */
-        GLint uColour;   /* Text colour, vec3 */
-    } textProgram;
-
-    struct {
-        GLuint program;
 
         struct {
             GLint aPosition; /* Vectex Position, vec3 */

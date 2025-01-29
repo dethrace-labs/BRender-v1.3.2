@@ -25,8 +25,6 @@ GLuint VIDEOI_CreateAndCompileProgram(GLuint vert, GLuint frag);
 
 br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo);
 
-br_boolean VIDEOI_CompileTextShader(HVIDEO hVideo);
-
 br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, const char* fragPath);
 
 GLuint VIDEO_BrPixelmapToGLTexture(br_pixelmap* pm);

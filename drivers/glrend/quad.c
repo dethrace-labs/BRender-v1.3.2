@@ -76,32 +76,28 @@ void DeviceGLInitQuad(br_device_pixelmap_gl_quad *self, HVIDEO hVideo)
                               (GLvoid *)(sizeof(GLfloat) * 6));
     }
 
-    { /* Text Quad VAO */
-        glGenVertexArrays(1, &self->textVao);
-        glBindVertexArray(self->textVao);
+    // { /* Text Quad VAO */
+    //     glGenVertexArrays(1, &self->textVao);
+    //     glBindVertexArray(self->textVao);
 
-        glBindBuffer(GL_ARRAY_BUFFER, self->buffers[0]);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->buffers[1]);
+    //     glBindBuffer(GL_ARRAY_BUFFER, self->buffers[0]);
+    //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->buffers[1]);
 
-        /* Positions */
-        glEnableVertexAttribArray(hVideo->textProgram.aPosition);
-        glVertexAttribPointer(hVideo->textProgram.aPosition, 3, GL_FLOAT, GL_FALSE, s_QuadStride, NULL);
+    //     /* Positions */
+    //     glEnableVertexAttribArray(hVideo->textProgram.aPosition);
+    //     glVertexAttribPointer(hVideo->textProgram.aPosition, 3, GL_FLOAT, GL_FALSE, s_QuadStride, NULL);
 
-        /* UVs */
-        glEnableVertexAttribArray(hVideo->textProgram.aUV);
-        glVertexAttribPointer(hVideo->textProgram.aUV, 2, GL_FLOAT, GL_FALSE, s_QuadStride, (GLvoid *)(sizeof(GLfloat) * 6));
-    }
+    //     /* UVs */
+    //     glEnableVertexAttribArray(hVideo->textProgram.aUV);
+    //     glVertexAttribPointer(hVideo->textProgram.aUV, 2, GL_FLOAT, GL_FALSE, s_QuadStride, (GLvoid *)(sizeof(GLfloat) * 6));
+    // }
 
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    /*
-     * Some of the above can fail if the user changes the shader.
-     * Drain all the errors to prevent them falling through to future checks.
-     */
-    while(glGetError() != GL_NO_ERROR)
-        ;
+    // UASSERT(glGetError() == 0);
+
 }
 
 void DeviceGLFiniQuad(br_device_pixelmap_gl_quad *self)

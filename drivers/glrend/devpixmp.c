@@ -58,7 +58,7 @@ static struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
  */
 static br_error recreate_renderbuffers(br_device_pixelmap* self) {
     GLenum binding_point = self->msaa_samples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
-
+UASSERT(glGetError() == 0);
     UASSERT(self->use_type == BRT_OFFSCREEN || self->use_type == BRT_DEPTH);
 
     if (self->use_type == BRT_OFFSCREEN) {
@@ -70,6 +70,7 @@ static br_error recreate_renderbuffers(br_device_pixelmap* self) {
         glDeleteTextures(1, &self->asBack.glTex);
 
         /* Create */
+        UASSERT(glGetError() == 0);
         glGenTextures(1, &self->asBack.glTex);
         glBindTexture(binding_point, self->asBack.glTex);
         glTexParameteri(binding_point, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -142,13 +143,13 @@ void BR_CMETHOD_DECL(br_device_pixelmap_gl, free)(br_object* _self) {
 
     //BrLogPrintf("GLREND: Freeing %s", self->pm_identifier);
 
-    delete_gl_resources(self);
+    // delete_gl_resources(self);
 
-    ObjectContainerRemove(self->output_facility, (br_object*)self);
+    // ObjectContainerRemove(self->output_facility, (br_object*)self);
 
-    --self->screen->asFront.num_refs;
+    // --self->screen->asFront.num_refs;
 
-    BrResFreeNoCallback(self);
+    // BrResFreeNoCallback(self);
 }
 
 const char* BR_CMETHOD_DECL(br_device_pixelmap_gl, identifier)(br_object* self) {
@@ -317,7 +318,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     pm->pm_base_x = 0;
     pm->pm_base_y = 0;
     pm->sub_pixelmap = 0;
-
+UASSERT(glGetError() == 0);
     if (mt.use_type == BRT_OFFSCREEN) {
         pm->asBack.depthbuffer = NULL;
         glGenFramebuffers(1, &pm->asBack.glFbo);
@@ -632,9 +633,9 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directUnlock)(br_device_pixelmap
     }
 
     glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-    e = glGetError();
+    UASSERT(glGetError() == 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->pm_width, self->pm_height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
-    e = glGetError();
+    UASSERT(glGetError() == 0);
     BrScratchFree(buffer);
     BrMemFree(self->pm_pixels);
     self->pm_pixels = NULL;
