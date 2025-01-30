@@ -17,7 +17,7 @@
 
 BR_RCS_ID("$Id: diag.c 1.1 1997/12/10 16:41:06 jon Exp $")
 
-static char _diag_scratch[128];
+static char _diag_scratch[2048];
 
 void BR_RESIDENT_ENTRY BrFailure(char *s,...)
 {
