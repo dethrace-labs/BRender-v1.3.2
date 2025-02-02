@@ -4,17 +4,80 @@
 #include "brassert.h"
 #include "drv.h"
 
+#include <stdio.h>
+#include <string.h>
+
+int glContextIsOpenGLES() {
+    const char* version = (const char*)glGetString(GL_VERSION);
+    if (version == NULL) {
+        BR_FATAL("Failed to retrieve OpenGL version");
+        return 0;
+    }
+    if (strstr(version, "OpenGL ES") || strstr(version, "GLES")) {
+        return 1;
+    }
+
+    return 0;
+}
+char* preprocessShader(char* shader, size_t size) {
+    int i;
+    char *processed;
+    int line_i;
+    char line[2048];
+    int is_context_opengles;
+    int filter_state;  // 0 - none, 1, opengles, 2 only opengl core
+
+    line_i = 0;
+    filter_state = 0;
+    is_context_opengles = glContextIsOpenGLES();
+    processed = BrScratchAllocate(size);
+    BrMemSet(processed, 0, sizeof(processed));
+
+    for (i = 0; i < size; i++) {
+        line[line_i] = shader[i];
+        line_i++;
+        if (shader[i] == '\n') {
+            // we've captured a whole line
+            if (strcmp(line, "##ifdef GL_ES\n") == 0) {
+                filter_state = 1;
+            } else if (strcmp(line, "##ifdef GL_CORE\n") == 0) {
+                filter_state = 2;
+            } else if (strcmp(line, "##endif\n") == 0) {
+                filter_state = 0;
+            } else {
+                if (filter_state == 1 && is_context_opengles) {
+                    strcat(processed, line);
+                } else if (filter_state == 2 && !is_context_opengles) {
+                    strcat(processed, line);
+                } else if (filter_state == 0) {
+                    strcat(processed, line);
+                }
+            }
+            BrMemSet(line, 0, sizeof(line));
+            line_i = 0;
+        }
+    }
+    return processed;
+    printf("processed:\n%s\n",  processed);
+}
 
 GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size) {
     GLuint s;
     GLint _size, status;
+    char *processed_shader;
 
     ASSERT(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 
+    // processed_shader was alloc'd from scratch
+    processed_shader = preprocessShader(shader, size);
+    printf("proc:\n%s\n", processed_shader);
+
     s = glCreateShader(type);
     _size = (GLint)size;
-    glShaderSource(s, 1, &shader, &_size);
+    glShaderSource(s, 1, &processed_shader, &_size);
     glCompileShader(s);
+
+    BrScratchFree(processed_shader);
 
     status = GL_FALSE;
     glGetShaderiv(s, GL_COMPILE_STATUS, &status);

@@ -1,4 +1,12 @@
+##ifdef GL_ES
+#version 300 es
+precision mediump float;
+precision mediump int;
+precision lowp usampler2D;
+##endif
+##ifdef GL_CORE
 #version 140
+##endif
 
 #define MAX_LIGHTS                      48 /* Must match up with BRender */
 #define MAX_CLIP_PLANES                 6
