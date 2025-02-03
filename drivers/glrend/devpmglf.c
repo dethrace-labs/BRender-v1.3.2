@@ -293,9 +293,6 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
 
     //UASSERT(self->asFront.num_refs == 0);
 
-    glDeleteTextures(1, &self->asFront.font_prop7x9.tex);
-    glDeleteTextures(1, &self->asFront.font_prop4x6.tex);
-    glDeleteTextures(1, &self->asFront.font_fixed3x5.tex);
     glDeleteTextures(1, &self->asFront.tex_checkerboard);
     glDeleteTextures(1, &self->asFront.tex_white);
 

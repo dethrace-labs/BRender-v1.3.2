@@ -100,10 +100,6 @@ typedef struct br_device_pixelmap {
             GLuint tex_white;
             GLuint tex_checkerboard;
 
-            br_font_gl font_fixed3x5;
-            br_font_gl font_prop4x6;
-            br_font_gl font_prop7x9;
-
             GLuint screen_buffer_vao, screen_buffer_ebo;
 
             br_int_32 num_refs;

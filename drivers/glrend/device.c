@@ -2,6 +2,7 @@
  * Device methods
  */
 #include "drv.h"
+#include "brassert.h"
 
 #define DEVICE_TITLE "OpenGL v3.2"
 #define DEVICE_VERSION BR_VERSION(1, 0, 0)
@@ -101,11 +102,13 @@ br_device* DeviceGLAllocate(const char* identifier, const char* arguments) {
         BrResFreeNoCallback(self);
         return NULL;
     }
+    UASSERT(glGetError() == 0);
 
     if ((self->output_facility = OutputFacilityGLInit(self, self->renderer_facility)) == NULL) {
         BrResFreeNoCallback(self);
         return NULL;
     }
+    UASSERT(glGetError() == 0);
 
     /*
      * Build CLUT object

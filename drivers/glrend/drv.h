@@ -32,7 +32,6 @@ extern "C" {
 
  #include "formats.h"
  #include "pm.h"
-#include "font.h"
 #include "video.h"
  #include "state.h"
 

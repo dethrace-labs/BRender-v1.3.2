@@ -98,9 +98,6 @@ set(GLREND_FILES
         devclut.c
         devclut.h
 
-        font.c
-        font.h
-
         template.h
 
         quad.c
