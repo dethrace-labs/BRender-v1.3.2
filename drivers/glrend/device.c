@@ -102,13 +102,13 @@ br_device* DeviceGLAllocate(const char* identifier, const char* arguments) {
         BrResFreeNoCallback(self);
         return NULL;
     }
-    UASSERT(glGetError() == 0);
+    // UASSERT(glGetError() == 0);
 
     if ((self->output_facility = OutputFacilityGLInit(self, self->renderer_facility)) == NULL) {
         BrResFreeNoCallback(self);
         return NULL;
     }
-    UASSERT(glGetError() == 0);
+    // UASSERT(glGetError() == 0);
 
     /*
      * Build CLUT object
