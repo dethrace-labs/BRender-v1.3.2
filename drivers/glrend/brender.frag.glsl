@@ -173,7 +173,7 @@ void processClipPlanes() {
     for(uint i = 0u; i < num_clip_planes; i++) {
         // calculate signed plane-vertex distance
         float d = dot(clip_planes[i], projection_brender * model_view * vec4(rawPosition.xyz, 1));
-        if (d < 0) {
+        if (d < 0.0) {
             discard;
         }
     }

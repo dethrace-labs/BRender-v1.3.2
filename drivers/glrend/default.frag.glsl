@@ -8,8 +8,6 @@ precision lowp usampler2D;
 #version 140
 ##endif
 
-#extension GL_ARB_explicit_attrib_location : require
-
 in vec3 colour;
 in vec2 uv;
 

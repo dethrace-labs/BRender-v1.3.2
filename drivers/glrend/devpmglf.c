@@ -207,10 +207,10 @@ UASSERT(glGetError() == 0);
     BrLogPrintf("GLREND: OpenGL Vendor   = %s\n", self->asFront.gl_vendor);
     BrLogPrintf("GLREND: OpenGL Renderer = %s\n", self->asFront.gl_renderer);
 
-    if (GLVersion.major < 3 || (GLVersion.major == 3 && GLVersion.minor < 2)) {
-        BR_FATAL2("GLREND: Got OpenGL %d.%d context, expected 3.2", GLVersion.major, GLVersion.minor);
-        goto cleanup_context;
-    }
+    // if (GLVersion.major < 3 || (GLVersion.major == 3 && GLVersion.minor < 2)) {
+    //     BR_FATAL2("GLREND: Got OpenGL %d.%d context, expected 3.2", GLVersion.major, GLVersion.minor);
+    //     goto cleanup_context;
+    // }
 
     /*
      * Get a copy of the extension list.

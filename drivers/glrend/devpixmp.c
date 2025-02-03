@@ -234,6 +234,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     };
     char tmp[80];
 
+    UASSERT(glGetError() == 0);
+
     hVideo = &self->screen->asFront.video;
 
     if (self->device->templates.pixelmapMatchTemplate == NULL) {

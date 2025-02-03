@@ -8,7 +8,6 @@ precision lowp usampler2D;
 #version 140
 ##endif
 
-#extension GL_ARB_explicit_attrib_location:require
 
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aColour;
