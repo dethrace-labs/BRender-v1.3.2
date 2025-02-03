@@ -200,6 +200,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     self->source_flags = pm->flags;
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 

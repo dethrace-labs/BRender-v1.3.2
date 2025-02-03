@@ -152,24 +152,9 @@ void DeviceGLPatchQuad(br_device_pixelmap_gl_quad *self, const br_pixelmap *dst,
     actually_patch_quad(self, dx0, dy0, dx1, dy1, sx0, sy0, sx1, sy1);
 }
 
-void DeviceGLPatchQuadFont(br_device_pixelmap_gl_quad *self, const br_pixelmap *dst, const br_rectangle *dr,
-                           const br_font_gl *font, br_uint_8 glyph)
-{
-    float dx0, dy0, dx1, dy1;
-    VIDEOI_BrRectToUVs(dst, dr, &dx0, &dy0, &dx1, &dy1);
-
-    actually_patch_quad(self, dx0, dy0, dx1, dy1, font->glyph[glyph].x0, font->glyph[glyph].y0, font->glyph[glyph].x1,
-                        font->glyph[glyph].y1);
-}
 
 void DeviceGLDrawQuad(br_device_pixelmap_gl_quad *self)
 {
     glBindVertexArray(self->defaultVao);
-    glDrawElements(GL_TRIANGLES, (GLsizei)BR_ASIZE(s_QuadIndices), GL_UNSIGNED_INT, NULL);
-}
-
-void DeviceGLDrawQuadText(br_device_pixelmap_gl_quad *self)
-{
-    glBindVertexArray(self->textVao);
     glDrawElements(GL_TRIANGLES, (GLsizei)BR_ASIZE(s_QuadIndices), GL_UNSIGNED_INT, NULL);
 }

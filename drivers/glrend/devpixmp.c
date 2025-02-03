@@ -82,16 +82,18 @@ UASSERT(glGetError() == 0);
         }
 
         glBindTexture(binding_point, 0);
+        UASSERT(glGetError() == 0);
 
         /* Attach */
         glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, binding_point, self->asBack.glTex, 0);
         glDrawBuffers(1, draw_buffers);
+        UASSERT(glGetError() == 0);
     } else if (self->use_type == BRT_DEPTH) {
         UASSERT(self->asDepth.backbuffer->asBack.glFbo != 0);
 
         /* Delete */
-        glGenTextures(1, &self->asDepth.glDepth);
+        glDeleteTextures(1, &self->asDepth.glDepth);
 
         /* Create */
         glGenTextures(1, &self->asDepth.glDepth);
@@ -104,12 +106,14 @@ UASSERT(glGetError() == 0);
             glTexImage2D(binding_point, 0, GL_DEPTH_COMPONENT, self->pm_width, self->pm_height, 0, GL_DEPTH_COMPONENT,
                 GL_UNSIGNED_BYTE, NULL);
         }
+        UASSERT(glGetError() == 0);
 
         glBindTexture(binding_point, 0);
 
         /* Attach */
         glBindFramebuffer(GL_FRAMEBUFFER, self->asDepth.backbuffer->asBack.glFbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, binding_point, self->asDepth.glDepth, 0);
+        UASSERT(glGetError() == 0);
     }
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -117,6 +121,7 @@ UASSERT(glGetError() == 0);
         return BRE_FAIL;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 
