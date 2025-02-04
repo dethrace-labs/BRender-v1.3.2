@@ -121,6 +121,7 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
+    UASSERT(glGetError() == 0);
 }
 
 void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
@@ -141,6 +142,7 @@ void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
+    UASSERT(glGetError() == 0);
 }
 
 br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {
@@ -198,7 +200,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         BR_ERROR("GLREND: Unable to load OpenGL functions.");
         goto cleanup_context;
     }
-UASSERT(glGetError() == 0);
+
     self->asFront.gl_version = BrResStrDup(self, (char*)glGetString(GL_VERSION));
     self->asFront.gl_vendor = BrResStrDup(self, (char*)glGetString(GL_VENDOR));
     self->asFront.gl_renderer = BrResStrDup(self, (char*)glGetString(GL_RENDERER));
@@ -224,28 +226,8 @@ UASSERT(glGetError() == 0);
         self->asFront.gl_extensions[i] = BrResStrDup(self->asFront.gl_extensions, (char*)ext);
     }
     self->asFront.gl_extensions[self->asFront.gl_num_extensions] = NULL;
-UASSERT(glGetError() == 0);
-    // /*
-    //  * Try to figure out the actual format we got.
-    //  * This isn't a big deal if we don't know what it is - we can only be written to by a doubleBuffer().
-    //  */
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, &red_bits);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, &grn_bits);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, &blu_bits);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE, &alpha_bits);
 
-    // if (red_bits == 5 && grn_bits == 6 && blu_bits == 5) {
-    //     self->pm_type = BR_PMT_RGB_565;
-    // } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 0) {
-    //     self->pm_type = BR_PMT_RGBX_888;
-    // } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 8) {
-    //     self->pm_type = BR_PMT_RGBA_8888;
-    // } else {
-    //     BrLogPrintf("GLREND: OpenGL gave us an unknown screen format (R%dG%dB%dA%d), soldiering on...\n", red_bits,
-    //         grn_bits, blu_bits, alpha_bits);
-    // }
-    UASSERT(glGetError() == 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
     if (VIDEO_Open(&self->asFront.video, pt.vertex_shader, pt.fragment_shader) == NULL) {
         /*
@@ -254,29 +236,15 @@ UASSERT(glGetError() == 0);
         BrResFree(self);
         return NULL;
     }
-UASSERT(glGetError() == 0);
     self->asFront.tex_white = DeviceGLBuildWhiteTexture();
     self->asFront.tex_checkerboard = DeviceGLBuildCheckerboardTexture();
-UASSERT(glGetError() == 0);
-    // /*
-    //  * We can't use BRender's fonts directly, so build a POT texture with
-    //  * glyph from left-to-right. All fonts have 256 possible characters.
-    //  */
-
-    // BrLogPrintf("GLREND: Building fixed 3x5 font atlas.\n");
-    // (void)FontGLBuildAtlas(&self->asFront.font_fixed3x5, BrFontFixed3x5, 128, 64);
-
-    // BrLogPrintf("GLREND: Building proportional 4x6 font atlas.\n");
-    // (void)FontGLBuildAtlas(&self->asFront.font_prop4x6, BrFontProp4x6, 128, 64);
-
-    // BrLogPrintf("GLREND: Building proportional 7x9 font atlas.\n");
-    // (void)FontGLBuildAtlas(&self->asFront.font_prop7x9, BrFontProp7x9, 256, 64);
 
     self->asFront.num_refs = 0;
 
     SetupFullScreenRectGeometry(self);
-UASSERT(glGetError() == 0);
+
     ObjectContainerAddFront(self->output_facility, (br_object*)self);
+    UASSERT(glGetError() == 0);
     return self;
 
 cleanup_context:
@@ -343,13 +311,6 @@ struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_glf, templateQuery)(br
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, resize)(br_device_pixelmap* self, br_int_32 width, br_int_32 height) {
     br_error err;
 
-    // if((err = DevicePixelmapGLExtResize(self, width, height)) != BRE_OK)
-    //     return err;
-
-    /*
-     * Resizing, assumed to have been done externally
-     * via whatever window we're representing.
-     */
     self->pm_width = width;
     self->pm_height = height;
     return BRE_OK;
@@ -371,8 +332,9 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
     RenderFullScreenQuad(self, src);
-
     DevicePixelmapGLSwapBuffers(self);
+
+    UASSERT(glGetError() == 0);
 
     return BRE_OK;
 }
