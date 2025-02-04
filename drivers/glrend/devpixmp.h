@@ -112,6 +112,8 @@ typedef struct br_device_pixelmap {
 
             void* pixel_data;
 
+            GLuint pbo;
+
             br_device_pixelmap_gl_quad quad;
         } asBack;
         struct {

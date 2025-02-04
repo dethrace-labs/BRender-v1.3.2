@@ -325,7 +325,6 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     pm->pm_base_x = 0;
     pm->pm_base_y = 0;
     pm->sub_pixelmap = 0;
-UASSERT(glGetError() == 0);
     if (mt.use_type == BRT_OFFSCREEN) {
         pm->asBack.depthbuffer = NULL;
         glGenFramebuffers(1, &pm->asBack.glFbo);
@@ -351,6 +350,7 @@ UASSERT(glGetError() == 0);
 
     *newpm = pm;
     ObjectContainerAddFront(self->output_facility, (br_object*)pm);
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 
@@ -402,6 +402,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleStretchCopy)(br_device_
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 
@@ -474,6 +475,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
         return BRE_UNSUPPORTED;
     }
 
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 
@@ -531,6 +533,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopyTo)(br_device_pixel
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    UASSERT(glGetError() == 0);
 
     return BRE_OK;
 }
@@ -605,9 +608,9 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* 
     self->pm_pixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
     br_uint_8* buffer = BrScratchAllocate(self->pm_row_bytes * self->pm_height);
 
-    glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
+    glReadPixels(0, 0, self->pm_width, self->pm_height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // invert pixels to make (0,0) point to top-left
     int row = self->pm_height - 1;
@@ -619,6 +622,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* 
         dst_ptr -= self->pm_row_bytes;
     }
     BrScratchFree(buffer);
+    UASSERT(glGetError() == 0);
 
     return BRE_OK;
 }
@@ -640,13 +644,12 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directUnlock)(br_device_pixelmap
     }
 
     glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-    UASSERT(glGetError() == 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self->pm_width, self->pm_height, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
-    UASSERT(glGetError() == 0);
     BrScratchFree(buffer);
     BrMemFree(self->pm_pixels);
     self->pm_pixels = NULL;
     glBindTexture(GL_TEXTURE_2D, 0);
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 

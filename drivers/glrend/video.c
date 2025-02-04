@@ -19,13 +19,18 @@ int glContextIsOpenGLES() {
 
     return 0;
 }
+
+// Quick n dirty shader pre-processor
+// Wrap opengles only lines with ##ifdef GL_ES ... ##endif
+// Wrap opengl core only lines with ##ifdef GL_CORE ... ##endif
+// Note the double "##" to avoid collision with the standard glsl preprocessor
 char* preprocessShader(char* shader, size_t size) {
     int i;
     char *processed;
     int line_i;
     char line[2048];
     int is_context_opengles;
-    int filter_state;  // 0 - none, 1, opengles, 2 only opengl core
+    int filter_state;  // 0 - none, 1, only opengles, 2 only opengl core
 
     line_i = 0;
     filter_state = 0;
@@ -58,7 +63,6 @@ char* preprocessShader(char* shader, size_t size) {
         }
     }
     return processed;
-    printf("processed:\n%s\n",  processed);
 }
 
 GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size) {
@@ -70,7 +74,6 @@ GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t siz
 
     // processed_shader was alloc'd from scratch
     processed_shader = preprocessShader(shader, size);
-    printf("proc:\n%s\n", processed_shader);
 
     s = glCreateShader(type);
     _size = (GLint)size;
@@ -97,6 +100,7 @@ GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t siz
         return 0;
     }
 
+    UASSERT(glGetError() == 0);
     return s;
 }
 
@@ -155,6 +159,7 @@ GLuint VIDEOI_CreateAndCompileProgram(GLuint vert, GLuint frag) {
         program = 0;
     }
 
+    UASSERT(glGetError() == 0);
     return program;
 }
 
@@ -170,23 +175,20 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, &hVideo->maxFragmentUniformBlocks);
     glGetIntegerv(GL_MAX_SAMPLES, &hVideo->maxSamples);
 
-    UASSERT(glGetError() == 0);
-
-    if (GLAD_GL_EXT_texture_filter_anisotropic)
+    if (GLAD_GL_EXT_texture_filter_anisotropic) {
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &hVideo->maxAnisotropy);
-UASSERT(glGetError() == 0);
-    if (!VIDEOI_CompileDefaultShader(hVideo))
-        return NULL;
+    }
 
-    UASSERT(glGetError() == 0);
+    if (!VIDEOI_CompileDefaultShader(hVideo)) {
+        return NULL;
+    }
 
     if (!VIDEOI_CompileBRenderShader(hVideo, vertShader, fragShader)) {
         glDeleteProgram(hVideo->defaultProgram.program);
         return NULL;
     }
 
-     UASSERT(glGetError() == 0);
-
+    UASSERT(glGetError() == 0);
     return hVideo;
 }
 
@@ -325,6 +327,7 @@ br_error VIDEOI_BrPixelmapToExistingTexture(GLuint tex, br_pixelmap* pm) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 

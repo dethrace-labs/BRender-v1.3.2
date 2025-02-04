@@ -1,5 +1,6 @@
 #include "drv.h"
 
+#include "brassert.h"
 #include "brender.frag.glsl.h"
 #include "brender.vert.glsl.h"
 
@@ -23,7 +24,7 @@ static void VIDEOI_GetShaderVariables(HVIDEO hVideo) {
     hVideo->brenderProgram.attributes.aNormal = glGetAttribLocation(hVideo->brenderProgram.program, "aNormal");
     hVideo->brenderProgram.attributes.aColour = glGetAttribLocation(hVideo->brenderProgram.program, "aColour");
     hVideo->brenderProgram.uniforms.main_texture = glGetUniformLocation(hVideo->brenderProgram.program, "main_texture");
-    // glBindFragDataLocation(hVideo->textProgram.program, 0, "mainColour");
+    UASSERT(glGetError() == 0);
 }
 
 br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, const char* fragPath) {
@@ -98,6 +99,6 @@ br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, cons
         VIDEOI_GetShaderVariables(hVideo);
     }
 
-
+    UASSERT(glGetError() == 0);
     return hVideo->brenderProgram.program != 0;
 }
