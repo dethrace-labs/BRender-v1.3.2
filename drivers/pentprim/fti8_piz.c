@@ -250,18 +250,7 @@ no_pixels:
 
 
 
-void BR_ASM_CALL TriangleRender_ZI_I8_D16(brp_block *block, ...) {
-
-    brp_vertex *v0;
-    brp_vertex *v1;
-    brp_vertex *v2;
-
-    va_list     va;
-    va_start(va, block);
-    v0 = va_arg(va, brp_vertex *);
-    v1 = va_arg(va, brp_vertex *);
-    v2 = va_arg(va, brp_vertex *);
-	va_end(va);
+void BR_ASM_CALL TriangleRender_ZI_I8_D16(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
 
     // ; Get pointers to vertex structures
 	// ;

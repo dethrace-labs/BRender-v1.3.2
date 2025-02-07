@@ -24,7 +24,7 @@ void BR_ASM_CALL RenderForceFront1(struct brp_block *block,
 
 	v[0].comp[C_SZ] = BR_SCALAR(0.0);
 
-	block->chain->render(block->chain, v+0);
+	block->chain->render(block->chain, v+0, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 void BR_ASM_CALL RenderForceFront2(struct brp_block *block,
@@ -38,7 +38,7 @@ void BR_ASM_CALL RenderForceFront2(struct brp_block *block,
 	v[0].comp[C_SZ] = BR_SCALAR(0.0);
 	v[1].comp[C_SZ] = BR_SCALAR(0.0);
 
-	block->chain->render(block->chain, v+0, v+1);
+	block->chain->render(block->chain, v+0, v+1, NULL, NULL, NULL, NULL, NULL);
 }
 
 void BR_ASM_CALL RenderForceFront3(struct brp_block *block,
@@ -54,7 +54,7 @@ void BR_ASM_CALL RenderForceFront3(struct brp_block *block,
 	v[1].comp[C_SZ] = BR_SCALAR(0.0);
 	v[2].comp[C_SZ] = BR_SCALAR(0.0);
 
-	block->chain->render(block->chain, v+0, v+1, v+2);
+	block->chain->render(block->chain, v+0, v+1, v+2, NULL, NULL, NULL, NULL);
 }
 
 void BR_ASM_CALL RenderForceFront4(struct brp_block *block,
@@ -72,6 +72,6 @@ void BR_ASM_CALL RenderForceFront4(struct brp_block *block,
 	v[2].comp[C_SZ] = BR_SCALAR(0.0);
 	v[3].comp[C_SZ] = BR_SCALAR(0.0);
 
-	block->chain->render(block->chain, v+0, v+1, v+2, v+3);
+	block->chain->render(block->chain, v+0, v+1, v+2, v+3, NULL, NULL, NULL);
 }
 

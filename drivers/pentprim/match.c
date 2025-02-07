@@ -779,7 +779,7 @@ void BR_ASM_CALL RenderAutoloadThunk(brp_block *block, brp_vertex *v0, brp_verte
 	/*
 	 * Hand over to new rendering function
 	 */
-	render_fn(block,v0,v1,v2);
+	render_fn(block,v0,v1,v2,NULL,NULL,NULL,NULL);
 }
 
 /*
@@ -840,7 +840,7 @@ void BR_ASM_CALL GenericAutoloadThunk(brp_block *block, brp_vertex *v0, brp_vert
 	/*
 	 * Hand over to setp function
 	 */
-	pb->p.render(block,v0,v1,v2);
+	pb->p.render(block,v0,v1,v2,NULL,NULL,NULL,NULL);
 }
 
 br_error BR_CMETHOD_DECL(br_primitive_state_soft, rangesQueryF)(
