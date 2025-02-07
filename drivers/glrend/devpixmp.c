@@ -103,8 +103,8 @@ UASSERT(glGetError() == 0);
             glTexImage2DMultisample(binding_point, self->msaa_samples, GL_DEPTH_COMPONENT, self->pm_width,
                 self->pm_height, GL_TRUE);
         } else {
-            glTexImage2D(binding_point, 0, GL_DEPTH_COMPONENT, self->pm_width, self->pm_height, 0, GL_DEPTH_COMPONENT,
-                GL_UNSIGNED_BYTE, NULL);
+            glTexImage2D(binding_point, 0, GL_DEPTH_COMPONENT16, self->pm_width, self->pm_height, 0, GL_DEPTH_COMPONENT,
+                GL_UNSIGNED_SHORT, NULL);
         }
         UASSERT(glGetError() == 0);
 
@@ -607,9 +607,21 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* 
 
     self->pm_pixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
     br_uint_8* buffer = BrScratchAllocate(self->pm_row_bytes * self->pm_height);
-
+    UASSERT(glGetError() == 0);
     glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, self->asBack.glFbo);
+
+    UASSERT(glGetError() == 0);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (self->asBack.glFbo != 0) {
     glReadPixels(0, 0, self->pm_width, self->pm_height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
+    }
+    int e = glGetError();
+    if (e != 0) {
+    printf("err: %d, %d, %d\n", e, self->asBack.glFbo, status == GL_FRAMEBUFFER_COMPLETE);
+    }
+    UASSERT(glGetError() == 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // invert pixels to make (0,0) point to top-left
@@ -623,6 +635,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* 
     }
     BrScratchFree(buffer);
     UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 
     return BRE_OK;
 }

@@ -103,6 +103,8 @@ set(GLREND_FILES
         quad.c
         util.c
 
+        glassert.c
+
         glad.c
         )
 

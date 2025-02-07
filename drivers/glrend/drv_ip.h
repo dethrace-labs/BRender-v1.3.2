@@ -188,6 +188,10 @@ br_geometry_primitives* GeometryPrimitivesNullAllocate(br_renderer_facility* typ
  */
 struct br_device_clut* DeviceClutGLAllocate(br_device* dev, char* identifier);
 
+
+
+#define GL_CHECK_ERROR() GL_WarnIfError(__FILE__,__LINE__);
+
 #ifdef __cplusplus
 };
 #endif

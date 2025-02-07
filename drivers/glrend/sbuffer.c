@@ -144,6 +144,11 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     GLsizeiptr elem_bytes;
     br_error r;
 
+    //UASSERT(glGetError() == 0);
+    if (glGetError() != 0) {
+        int a = 0;
+    }
+
     /*
      * The pixelmap is a plain BRender memory pixelmap. Make sure that the pixels can be accessed
      */
@@ -180,8 +185,10 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         // if paletted, then wait until we are displaying the texture to convert it to 32 bit
         self->paletted_source_dirty = BR_TRUE;
         self->palette_pointer = ObjectDevice(self)->clut;
-    } else {
+    } else if (pm->type == BR_PMT_RGB_565) {
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+    } else {
+        return BRE_FAIL;
     }
 
     if ((err = glGetError()) != 0) {
@@ -190,7 +197,8 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         return BRE_FAIL;
     }
 
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
+    UASSERT(glGetError() == 0);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

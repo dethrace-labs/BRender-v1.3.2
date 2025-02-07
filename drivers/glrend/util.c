@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "brassert.h"
 
 GLuint DeviceGLBuildWhiteTexture(void)
 {
@@ -54,6 +55,7 @@ br_error DevicePixelmapGLBindFramebuffer(GLenum target, br_device_pixelmap *pm)
     }
 
     glBindFramebuffer(target, fbo);
+    UASSERT(glGetError() == 0);
     return BRE_OK;
 }
 

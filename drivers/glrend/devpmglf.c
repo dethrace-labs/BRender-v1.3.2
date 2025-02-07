@@ -131,8 +131,6 @@ void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
     glViewport(x, y, width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
     glBindTexture(GL_TEXTURE_2D, src->asBack.glTex);
 
     glBindVertexArray(self->asFront.screen_buffer_vao);

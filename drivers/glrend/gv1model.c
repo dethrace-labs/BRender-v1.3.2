@@ -103,7 +103,7 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl, render)(struct br_geometry_v1_
     static br_boolean warned_imm = BR_FALSE;
 
     if (warned_imm != BR_TRUE) {
-        // BR_FATAL0("GLREND: Immediate-mode rendering is not supported.");
+        BR_FATAL0("GLREND: Immediate-mode rendering is not supported.");
         warned_imm = BR_TRUE;
     }
 

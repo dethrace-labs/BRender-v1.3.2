@@ -2,6 +2,7 @@
  * Renderer methods
  */
 #include "drv.h"
+#include "brassert.h"
 
 /*
  * Default dispatch table for renderer (defined at end of file)
@@ -112,22 +113,27 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     if (self->pixelmap->msaa_samples)
         glEnable(GL_MULTISAMPLE);
 
+    UASSERT(glGetError() == 0);
     self->has_begun = 1;
 }
 
 void BR_CMETHOD_DECL(br_renderer_gl, sceneEnd)(br_renderer* self) {
+    UASSERT(glGetError() == 0);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    glDisable(GL_MULTISAMPLE);
+    //glDisable(GL_MULTISAMPLE);
+    UASSERT(glGetError() == 0);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindVertexArray(0);
+    UASSERT(glGetError() == 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
     self->has_begun = 0;
+    UASSERT(glGetError() == 0);
 }
 
 static void BR_CMETHOD_DECL(br_renderer_gl, free)(br_object* _self) {
