@@ -144,11 +144,6 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     GLsizeiptr elem_bytes;
     br_error r;
 
-    //UASSERT(glGetError() == 0);
-    if (glGetError() != 0) {
-        int a = 0;
-    }
-
     /*
      * The pixelmap is a plain BRender memory pixelmap. Make sure that the pixels can be accessed
      */
@@ -170,7 +165,6 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         return BRE_FAIL;
     }
 
-    UASSERT(glGetError() == 0);
     if (self->gl_tex == 0) {
         glGenTextures(1, &self->gl_tex);
         if ((err = glGetError()) != 0) {
@@ -197,8 +191,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         return BRE_FAIL;
     }
 
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    UASSERT(glGetError() == 0);
+    glGenerateMipmap(GL_TEXTURE_2D);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -208,7 +201,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     self->source_flags = pm->flags;
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return BRE_OK;
 }
 

@@ -41,7 +41,7 @@ static void apply_blend_mode(state_stack* self) {
         glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
         break;
     }
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 static void apply_depth_properties(state_stack* state, uint32_t states) {
@@ -106,7 +106,7 @@ static void apply_depth_properties(state_stack* state, uint32_t states) {
         }
         glDepthFunc(depthFunc);
     }
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 // take a pixelmap and palette and convert 8 bit to 32 bit just in time
@@ -124,7 +124,7 @@ static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
     }
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->width, src->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
     BrScratchFree(buffer);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default) {
@@ -286,7 +286,7 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
     }
 
     apply_depth_properties(state, states);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const gl_groupinfo* groupinfo) {
@@ -358,5 +358,5 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
     renderer->stats.triangles_rendered_count += groupinfo->group->nfaces;
     renderer->stats.triangles_drawn_count += groupinfo->group->nfaces;
     renderer->stats.vertices_rendered_count += groupinfo->group->nfaces * 3;
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }

@@ -121,7 +121,7 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
@@ -132,15 +132,24 @@ void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_2D, src->asBack.glTex);
-
     glBindVertexArray(self->asFront.screen_buffer_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->asFront.screen_buffer_ebo);
     glUseProgram(self->asFront.video.defaultProgram.program);
+    glUniform1f(self->asFront.video.defaultProgram.uFlipVertically, 1.0f);
+    glUniform1i(self->asFront.video.defaultProgram.uDiscardBlackPixels, 0);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    if (src->asBack.overlayTexture != 0) {
+        glBindTexture(GL_TEXTURE_2D, src->asBack.overlayTexture);
+        glUniform1f(self->asFront.video.defaultProgram.uFlipVertically, 0.0f);
+        glUniform1i(self->asFront.video.defaultProgram.uDiscardBlackPixels, 1);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
+
     glBindVertexArray(0);
 
     glEnable(GL_DEPTH_TEST);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {
@@ -242,7 +251,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     SetupFullScreenRectGeometry(self);
 
     ObjectContainerAddFront(self->output_facility, (br_object*)self);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return self;
 
 cleanup_context:
@@ -315,6 +324,10 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, resize)(br_device_pixelmap* sel
 }
 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
+    int i;
+    uint16_t col;
+    uint16_t *pixels;
+
     /*
      * Ignore self-blit.
      */
@@ -332,7 +345,18 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     RenderFullScreenQuad(self, src);
     DevicePixelmapGLSwapBuffers(self);
 
-    UASSERT(glGetError() == 0);
+    // we know src is a backbuffer. Clear it to 255,0,255, then ignore any pixel
+    // with that color in the shader
+    if (src->asBack.overlay_pixels != NULL) {
+        col = BR_COLOUR_565(31, 0, 31);
+        i = src->pm_width * src->pm_height;
+        pixels = src->asBack.overlay_pixels;
+        for (int i = 0; i < src->pm_height * src->pm_width; i++) {
+            pixels[i] = col;
+        }
+    }
+
+    GL_CHECK_ERROR();
 
     return BRE_OK;
 }

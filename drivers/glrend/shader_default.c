@@ -5,10 +5,10 @@
 
 
 br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo) {
-    GLuint vert = VIDEOI_CreateAndCompileShader(GL_VERTEX_SHADER, DEFAULT_VERT_GLSL, sizeof(DEFAULT_VERT_GLSL));
+    GLuint vert = VIDEOI_CreateAndCompileShader("default.vert", GL_VERTEX_SHADER, DEFAULT_VERT_GLSL, sizeof(DEFAULT_VERT_GLSL));
     if (!vert)
         return BR_FALSE;
-    GLuint frag = VIDEOI_CreateAndCompileShader(GL_FRAGMENT_SHADER, DEFAULT_FRAG_GLSL, sizeof(DEFAULT_FRAG_GLSL));
+    GLuint frag = VIDEOI_CreateAndCompileShader("default.frag", GL_FRAGMENT_SHADER, DEFAULT_FRAG_GLSL, sizeof(DEFAULT_FRAG_GLSL));
     if (!frag) {
         glDeleteShader(vert);
         return BR_FALSE;
@@ -23,9 +23,11 @@ br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo) {
 
         hVideo->defaultProgram.uSampler = glGetUniformLocation(hVideo->defaultProgram.program, "uSampler");
         hVideo->defaultProgram.uMVP = glGetUniformLocation(hVideo->defaultProgram.program, "uMVP");
+        hVideo->defaultProgram.uFlipVertically = glGetUniformLocation(hVideo->defaultProgram.program, "uFlipVertically");
+        hVideo->defaultProgram.uDiscardBlackPixels = glGetUniformLocation(hVideo->defaultProgram.program, "uDiscardBlackPixels");
         glUseProgram(hVideo->defaultProgram.program);
     }
 
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return hVideo->defaultProgram.program != 0;
 }

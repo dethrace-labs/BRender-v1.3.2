@@ -24,7 +24,7 @@ static void VIDEOI_GetShaderVariables(HVIDEO hVideo) {
     hVideo->brenderProgram.attributes.aNormal = glGetAttribLocation(hVideo->brenderProgram.program, "aNormal");
     hVideo->brenderProgram.attributes.aColour = glGetAttribLocation(hVideo->brenderProgram.program, "aColour");
     hVideo->brenderProgram.uniforms.main_texture = glGetUniformLocation(hVideo->brenderProgram.program, "main_texture");
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
 }
 
 br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, const char* fragPath) {
@@ -62,11 +62,11 @@ br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, cons
         return BR_FALSE;
     }
 
-    vert = VIDEOI_LoadAndCompileShader(GL_VERTEX_SHADER, vertPath, BRENDER_VERT_GLSL, sizeof(BRENDER_VERT_GLSL));
+    vert = VIDEOI_CreateAndCompileShader("brender.vert", GL_VERTEX_SHADER, BRENDER_VERT_GLSL, sizeof(BRENDER_VERT_GLSL));
     if (!vert)
         return BR_FALSE;
 
-    frag = VIDEOI_LoadAndCompileShader(GL_FRAGMENT_SHADER, fragPath, BRENDER_FRAG_GLSL, sizeof(BRENDER_FRAG_GLSL));
+    frag = VIDEOI_CreateAndCompileShader("brender.frag", GL_FRAGMENT_SHADER, BRENDER_FRAG_GLSL, sizeof(BRENDER_FRAG_GLSL));
     if (!frag) {
         glDeleteShader(vert);
         return BR_FALSE;
@@ -99,6 +99,6 @@ br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, cons
         VIDEOI_GetShaderVariables(hVideo);
     }
 
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return hVideo->brenderProgram.program != 0;
 }

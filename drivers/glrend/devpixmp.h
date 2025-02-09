@@ -110,9 +110,11 @@ typedef struct br_device_pixelmap {
             GLuint glTex;
             GLfloat clearColour[4];
 
-            void* pixel_data;
-
-            GLuint pbo;
+            // This is to emulate the ability to lock the backbuffer and write to it as if it
+            // is in main memory
+            // Instead we create a separate writable texture and overlay it on top when double buffering
+            void *overlay_pixels;
+            GLuint overlayTexture;
 
             br_device_pixelmap_gl_quad quad;
         } asBack;

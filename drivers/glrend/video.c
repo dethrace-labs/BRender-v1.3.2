@@ -65,7 +65,7 @@ char* preprocessShader(char* shader, size_t size) {
     return processed;
 }
 
-GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size) {
+GLuint VIDEOI_CreateAndCompileShader(const char *name, GLenum type, const char* shader, size_t size) {
     GLuint s;
     GLint _size, status;
     char *processed_shader;
@@ -95,12 +95,12 @@ GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t siz
         glGetShaderInfoLog(s, maxLength, &maxLength, errorBuffer);
         errorBuffer[maxLength - 1] = '\0';
 
-        BR_FATAL1("VIDEO: Error compiling shader:\n%s", errorBuffer);
+        BR_FATAL2("VIDEO: Error compiling shader %s:\n%s", name, errorBuffer);
         glDeleteShader(s);
         return 0;
     }
 
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return s;
 }
 
@@ -117,7 +117,7 @@ GLuint VIDEOI_LoadAndCompileShader(GLenum type, const char* path, const char* de
     source = (GLchar*)default_data;
     size = default_size;
 
-    shader = VIDEOI_CreateAndCompileShader(type, source, size);
+    shader = VIDEOI_CreateAndCompileShader(path, type, source, size);
 
     if (source != default_data)
         BrResFree(source);
@@ -159,7 +159,7 @@ GLuint VIDEOI_CreateAndCompileProgram(GLuint vert, GLuint frag) {
         program = 0;
     }
 
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return program;
 }
 
@@ -188,7 +188,7 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
         return NULL;
     }
 
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return hVideo;
 }
 
@@ -327,7 +327,7 @@ br_error VIDEOI_BrPixelmapToExistingTexture(GLuint tex, br_pixelmap* pm) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return BRE_OK;
 }
 

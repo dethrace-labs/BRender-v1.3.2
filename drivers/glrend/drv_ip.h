@@ -17,7 +17,7 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
 
 void VIDEO_Close(HVIDEO hVideo);
 
-GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size);
+GLuint VIDEOI_CreateAndCompileShader(const char* name, GLenum type, const char* shader, size_t size);
 
 GLuint VIDEOI_LoadAndCompileShader(GLenum type, const char* path, const char* default_data, size_t default_size);
 
@@ -190,7 +190,7 @@ struct br_device_clut* DeviceClutGLAllocate(br_device* dev, char* identifier);
 
 
 
-#define GL_CHECK_ERROR() GL_WarnIfError(__FILE__,__LINE__);
+#define GL_CHECK_ERROR() GL_AssertOrWarnIfError(__FILE__,__LINE__);
 
 #ifdef __cplusplus
 };

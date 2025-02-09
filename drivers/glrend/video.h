@@ -26,6 +26,8 @@ typedef struct _VIDEO {
         GLint aUV;           /* UV, vec2 */
         GLint uSampler;      /* Sampler, sampler2D */
         GLint uMVP;          /* Model-View-Projection Matrix, mat4 */
+        GLint uFlipVertically;
+        GLint uDiscardBlackPixels;
     } defaultProgram;
 
     struct {

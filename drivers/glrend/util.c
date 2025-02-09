@@ -55,7 +55,7 @@ br_error DevicePixelmapGLBindFramebuffer(GLenum target, br_device_pixelmap *pm)
     }
 
     glBindFramebuffer(target, fbo);
-    UASSERT(glGetError() == 0);
+    GL_CHECK_ERROR();
     return BRE_OK;
 }
 

@@ -6,6 +6,7 @@ precision lowp usampler2D;
 ##endif
 ##ifdef GL_CORE
 #version 140
+#extension GL_ARB_explicit_attrib_location:require
 ##endif
 
 #define MAX_LIGHTS                   48 /* Must match up with BRender */

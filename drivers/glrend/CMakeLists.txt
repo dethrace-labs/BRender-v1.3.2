@@ -104,6 +104,7 @@ set(GLREND_FILES
         util.c
 
         glassert.c
+        glassert.h
 
         glad.c
         )
