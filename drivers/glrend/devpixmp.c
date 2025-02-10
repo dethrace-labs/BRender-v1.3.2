@@ -590,7 +590,6 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, allocateSub)(br_device_pixelmap*
     return BRE_OK;
 }
 
-#include <stdio.h>
 br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self) {
     int err;
     GLint gl_internal_format;
