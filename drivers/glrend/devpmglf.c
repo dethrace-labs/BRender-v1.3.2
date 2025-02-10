@@ -208,10 +208,10 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     BrLogPrintf("GLREND: OpenGL Vendor   = %s\n", self->asFront.gl_vendor);
     BrLogPrintf("GLREND: OpenGL Renderer = %s\n", self->asFront.gl_renderer);
 
-    // if (GLVersion.major < 3 || (GLVersion.major == 3 && GLVersion.minor < 2)) {
-    //     BR_FATAL2("GLREND: Got OpenGL %d.%d context, expected 3.2", GLVersion.major, GLVersion.minor);
-    //     goto cleanup_context;
-    // }
+    if (GLVersion.major < 3 || (GLVersion.major == 3 && GLVersion.minor < 1)) {
+        BR_FATAL2("GLREND: Got OpenGL %d.%d context, expected 3.1", GLVersion.major, GLVersion.minor);
+        goto cleanup_context;
+    }
 
     /*
      * Get a copy of the extension list.
@@ -316,9 +316,6 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, resize)(br_device_pixelmap* sel
 }
 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
-    int i;
-    uint16_t col;
-    uint16_t *pixels;
 
     /*
      * Ignore self-blit.

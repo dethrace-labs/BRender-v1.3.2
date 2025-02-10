@@ -115,11 +115,8 @@ typedef struct br_device_pixelmap {
             // Instead we create a separate writable texture and overlay it on top when double buffering
             void *lockedPixels;
             GLuint overlayTexture;
-            br_uint_32 lastLockedModelCount;
             int possiblyDirty;
             int locked;
-            // br_device_pixelmap_gl_quad quad;
-
 
         } asBack;
         struct {
