@@ -478,6 +478,11 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopyTo)(br_device_pixel
     br_device_pixelmap* src, br_rectangle* sr) {
     /* Pixelmap->Device, addressable same-size copy. */
 
+    p->x = -self->pm_origin_x;
+    p->y = -self->pm_origin_y;
+    sr->x = -src->pm_origin_x;
+    sr->y = -src->pm_origin_y;
+
     glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
 
     switch (src->pm_type) {
@@ -523,6 +528,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopyTo)(br_device_pixel
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+
     GL_CHECK_ERROR();
 
     return BRE_OK;
@@ -607,6 +613,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self)
     glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, self->asBack.lockedPixels);
 
+    glViewport(0, 0, self->pm_width, self->pm_height);
+
     // render locked pixels to framebuffer texture, ignoring purple pixels
     RenderFullScreenTextureToFrameBuffer(self->screen, self->asBack.overlayTexture, self->asBack.glFbo, 0, 1);
 
@@ -638,7 +646,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* 
     self->pm_pixels = self->asBack.lockedPixels;
 
     self->asBack.locked = 1;
-    self->asBack.possiblyDirty = 0;
+    self->asBack.possiblyDirty = 1;
 
     GL_CHECK_ERROR();
 

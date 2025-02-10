@@ -125,10 +125,7 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
 }
 
 void RenderFullScreenTextureToFrameBuffer(br_device_pixelmap* self, GLuint textureId, GLuint fb, int flipVertically, int discardPurplePixels) {
-    int x, y, width, height;
 
-    DevicePixelmapGLGetViewport(self, &x, &y, &width, &height);
-    glViewport(x, y, width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, fb);
     glDisable(GL_DEPTH_TEST);
     glBindTexture(GL_TEXTURE_2D, textureId);
@@ -316,6 +313,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, resize)(br_device_pixelmap* sel
 }
 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
+    int x, y, width, height;
 
     /*
      * Ignore self-blit.
@@ -334,6 +332,9 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     BrPixelmapFlush(src);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    DevicePixelmapGLGetViewport(self, &x, &y, &width, &height);
+    glViewport(x, y, width, height);
 
     // render back buffer to screen framebuffer
     RenderFullScreenTextureToFrameBuffer(self, src->asBack.glTex, 0, 1.0f, 0);
