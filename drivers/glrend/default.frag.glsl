@@ -14,16 +14,14 @@ in vec2 uv;
 
 uniform sampler2D uSampler;
 uniform float uFlipVertically;
-uniform int uDiscardBlackPixels;
+uniform int uDiscardPurplePixels;
 
 layout (location = 0) out vec4 mainColour;
 
 void main()
 {
-    float flip = 1.0f;
     mainColour = texture(uSampler, vec2(uv.x, abs(uFlipVertically - uv.y)));
-    if (uDiscardBlackPixels == 1 && mainColour.rgb == vec3(1.0, 0.0, 1.0)) {
-        mainColour.rgb = vec3(1.0, 0.0, 0.0);
+    if (uDiscardPurplePixels == 1 && mainColour.rgb == vec3(1.0, 0.0, 1.0)) {
         discard;
     }
 }

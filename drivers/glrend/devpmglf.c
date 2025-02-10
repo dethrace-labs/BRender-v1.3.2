@@ -124,30 +124,22 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
     GL_CHECK_ERROR();
 }
 
-void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
+void RenderFullScreenTextureToFrameBuffer(br_device_pixelmap* self, GLuint textureId, GLuint fb, int flipVertically, int discardPurplePixels) {
     int x, y, width, height;
 
     DevicePixelmapGLGetViewport(self, &x, &y, &width, &height);
     glViewport(x, y, width, height);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
     glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_2D, src->asBack.glTex);
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glBindVertexArray(self->asFront.screen_buffer_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->asFront.screen_buffer_ebo);
     glUseProgram(self->asFront.video.defaultProgram.program);
-    glUniform1f(self->asFront.video.defaultProgram.uFlipVertically, 1.0f);
-    glUniform1i(self->asFront.video.defaultProgram.uDiscardBlackPixels, 0);
+    glUniform1f(self->asFront.video.defaultProgram.uFlipVertically, (float)flipVertically);
+    glUniform1i(self->asFront.video.defaultProgram.uDiscardPurplePixels, discardPurplePixels);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-    if (src->asBack.overlayTexture != 0) {
-        glBindTexture(GL_TEXTURE_2D, src->asBack.overlayTexture);
-        glUniform1f(self->asFront.video.defaultProgram.uFlipVertically, 0.0f);
-        glUniform1i(self->asFront.video.defaultProgram.uDiscardBlackPixels, 1);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
-
     glBindVertexArray(0);
-
     glEnable(GL_DEPTH_TEST);
     GL_CHECK_ERROR();
 }
@@ -337,24 +329,18 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     if (ObjectDevice(src) != self->device)
         return BRE_UNSUPPORTED;
 
-    if (self->use_type != BRT_NONE || src->use_type != BRT_OFFSCREEN)
+    if (self->use_type != BRT_NONE || src->use_type != BRT_OFFSCREEN) {
         return BRE_UNSUPPORTED;
+    }
+
+    // ensure all dirty pixel writes have been flushed
+    BrPixelmapFlush(src);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-    RenderFullScreenQuad(self, src);
+    // render back buffer to screen framebuffer
+    RenderFullScreenTextureToFrameBuffer(self, src->asBack.glTex, 0, 1.0f, 0);
     DevicePixelmapGLSwapBuffers(self);
-
-    // we know src is a backbuffer. Clear it to 255,0,255, then ignore any pixel
-    // with that color in the shader
-    if (src->asBack.overlay_pixels != NULL) {
-        col = BR_COLOUR_565(31, 0, 31);
-        i = src->pm_width * src->pm_height;
-        pixels = src->asBack.overlay_pixels;
-        for (int i = 0; i < src->pm_height * src->pm_width; i++) {
-            pixels[i] = col;
-        }
-    }
 
     GL_CHECK_ERROR();
 

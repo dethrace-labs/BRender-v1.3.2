@@ -49,7 +49,12 @@ typedef struct br_renderer {
         br_uint_32 triangles_drawn_count;
         br_uint_32 triangles_rendered_count;
         br_uint_32 vertices_rendered_count;
-    } stats;
+    } scene_stats;
+
+    struct {
+        br_uint_32 model_count;
+    } frame_stats;
+
 } br_renderer;
 
 #endif

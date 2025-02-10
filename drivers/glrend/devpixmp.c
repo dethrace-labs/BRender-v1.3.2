@@ -59,12 +59,12 @@ static struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
 static br_error recreate_renderbuffers(br_device_pixelmap* self) {
     GLenum binding_point = self->msaa_samples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
 
-    UASSERT(self->use_type == BRT_OFFSCREEN || self->use_type == BRT_DEPTH);
+    ASSERT(self->use_type == BRT_OFFSCREEN || self->use_type == BRT_DEPTH);
 
     if (self->use_type == BRT_OFFSCREEN) {
         const GLenum draw_buffers[1] = { GL_COLOR_ATTACHMENT0 };
 
-        UASSERT(self->asBack.glFbo != 0);
+        ASSERT(self->asBack.glFbo != 0);
 
         /* Delete */
         glDeleteTextures(1, &self->asBack.glTex);
@@ -88,7 +88,7 @@ static br_error recreate_renderbuffers(br_device_pixelmap* self) {
         glDrawBuffers(1, draw_buffers);
 
     } else if (self->use_type == BRT_DEPTH) {
-        UASSERT(self->asDepth.backbuffer->asBack.glFbo != 0);
+        ASSERT(self->asDepth.backbuffer->asBack.glFbo != 0);
 
         /* Delete */
         glDeleteTextures(1, &self->asDepth.glDepth);
@@ -129,9 +129,6 @@ static void delete_gl_resources(br_device_pixelmap* self) {
     } else if (self->use_type == BRT_OFFSCREEN) {
         glDeleteFramebuffers(1, &self->asBack.glFbo);
         glDeleteTextures(1, &self->asBack.glTex);
-
-        /* Cleanup the quad */
-        DeviceGLFiniQuad(&self->asBack.quad);
     }
 }
 
@@ -322,9 +319,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
     if (mt.use_type == BRT_OFFSCREEN) {
         pm->asBack.depthbuffer = NULL;
         glGenFramebuffers(1, &pm->asBack.glFbo);
-        DeviceGLInitQuad(&pm->asBack.quad, hVideo);
     } else {
-        UASSERT(mt.use_type == BRT_DEPTH);
+        ASSERT(mt.use_type == BRT_DEPTH);
         self->asBack.depthbuffer = pm;
         pm->asDepth.backbuffer = self;
     }
@@ -523,7 +519,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleCopyTo)(br_device_pixel
         break;
     }
     default:
-        UASSERT(0);
+        ASSERT(0);
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -594,44 +590,57 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, allocateSub)(br_device_pixelmap*
     return BRE_OK;
 }
 
+#include <stdio.h>
+br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self) {
+    int err;
+    GLint gl_internal_format;
+    GLenum gl_format, gl_type;
+    GLsizeiptr gl_elem_bytes;
+
+    if (!self->asBack.possiblyDirty) {
+        return BRE_OK;
+    }
+
+    err = VIDEOI_BrPixelmapGetTypeDetails(self->pm_type, &gl_internal_format, &gl_format, &gl_type, &gl_elem_bytes, NULL);
+    if (err != BRE_OK)
+        return err;
+
+    glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, self->asBack.lockedPixels);
+
+    // render locked pixels to framebuffer texture, ignoring purple pixels
+    RenderFullScreenTextureToFrameBuffer(self->screen, self->asBack.overlayTexture, self->asBack.glFbo, 0, 1);
+
+    // reset pixels back to gamedev purple
+    br_uint_16 col = BR_COLOUR_565(31, 0, 31);
+    int i = self->pm_width * self->pm_height;
+    br_uint_16* pixels = self->asBack.lockedPixels;
+    for (int i = 0; i < self->pm_height * self->pm_width; i++) {
+        pixels[i] = col;
+    }
+    self->asBack.possiblyDirty = 0;
+
+    GL_CHECK_ERROR();
+    return BRE_OK;
+}
+
 br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* self, br_boolean block) {
 
-    UASSERT(self->pm_pixels == NULL);
-    UASSERT(self->use_type == BRT_OFFSCREEN);
+    ASSERT(self->pm_pixels == NULL);
+    ASSERT(self->use_type == BRT_OFFSCREEN);
 
-    // OVERLAY IMPLEMENTATION
-    // if (self->asBack.overlayTexture == 0) {
-    //     glGenTextures(1, &self->asBack.overlayTexture);
-    //     glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
-    //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //     self->asBack.overlay_pixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
-    // }
-
-    // self->pm_pixels = self->asBack.overlay_pixels;
-
-    self->pm_pixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
-    br_uint_8* buffer = BrScratchAllocate(self->pm_row_bytes * self->pm_height);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.glFbo);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, self->asBack.glFbo);
-
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (self->asBack.glFbo != 0) {
-        glReadPixels(0, 0, self->pm_width, self->pm_height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
+    if (self->asBack.overlayTexture == 0) {
+        glGenTextures(1, &self->asBack.overlayTexture);
+        glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        self->asBack.lockedPixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    self->pm_pixels = self->asBack.lockedPixels;
 
-    // invert pixels to make (0,0) point to top-left
-    int row = self->pm_height - 1;
-    br_uint_8* src_ptr = buffer;                                                                     // top of buffer
-    br_uint_8* dst_ptr = ((br_uint_8*)self->pm_pixels) + self->pm_row_bytes * (self->pm_height - 1); // bottom of buffer
-    for (int y = 0; y < self->pm_height; y++) {
-        BrMemCpy(dst_ptr, src_ptr, self->pm_row_bytes);
-        src_ptr += self->pm_row_bytes;
-        dst_ptr -= self->pm_row_bytes;
-    }
-    BrScratchFree(buffer);
+    self->asBack.locked = 1;
+    self->asBack.possiblyDirty = 0;
+
     GL_CHECK_ERROR();
 
     return BRE_OK;
@@ -643,35 +652,13 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directUnlock)(br_device_pixelmap
     GLenum gl_format, gl_type;
     GLsizeiptr gl_elem_bytes;
 
-    UASSERT(self->pm_pixels != NULL);
-    UASSERT(self->use_type == BRT_OFFSCREEN);
+    ASSERT(self->pm_pixels != NULL);
+    ASSERT(self->use_type == BRT_OFFSCREEN);
 
-    err = VIDEOI_BrPixelmapGetTypeDetails(self->pm_type, &gl_internal_format, &gl_format, &gl_type, &gl_elem_bytes, NULL);
-    if (err != BRE_OK)
-        return err;
-
-    // OVERLAY IMPLEMENTATION
-    // glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
-    // glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, self->pm_pixels);
-    //
-
-    br_uint_8* buffer = BrScratchAllocate(self->pm_row_bytes * self->pm_height);
-    // invert pixels to make (0,0) point to top-left
-    int row = self->pm_height - 1;
-    br_uint_8* src_ptr = self->pm_pixels;                                     // top of buffer
-    br_uint_8* dst_ptr = buffer + self->pm_row_bytes * (self->pm_height - 1); // bottom of buffer
-    for (int y = 0; y < self->pm_height; y++) {
-        BrMemCpy(dst_ptr, src_ptr, self->pm_row_bytes);
-        src_ptr += self->pm_row_bytes;
-        dst_ptr -= self->pm_row_bytes;
-    }
-    glBindTexture(GL_TEXTURE_2D, self->asBack.glTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, buffer);
-
-    BrScratchFree(buffer);
-    BrMemFree(self->pm_pixels);
     self->pm_pixels = NULL;
-    glBindTexture(GL_TEXTURE_2D, 0);
+    self->asBack.possiblyDirty = 1;
+    self->asBack.locked = 0;
+
     GL_CHECK_ERROR();
     return BRE_OK;
 }
@@ -742,7 +729,7 @@ static const struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
     ._pixelAddressSet = BR_CMETHOD_REF(br_device_pixelmap_fail, pixelAddressSet),
     ._originSet = BR_CMETHOD_REF(br_device_pixelmap_mem, originSet),
 
-    ._flush = BR_CMETHOD_REF(br_device_pixelmap_fail, flush),
+    ._flush = BR_CMETHOD_REF(br_device_pixelmap_gl, flush),
     ._synchronise = BR_CMETHOD_REF(br_device_pixelmap_fail, synchronise),
     ._directLock = BR_CMETHOD_REF(br_device_pixelmap_gl, directLock),
     ._directUnlock = BR_CMETHOD_REF(br_device_pixelmap_gl, directUnlock),

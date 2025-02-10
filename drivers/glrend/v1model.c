@@ -354,9 +354,9 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
     glBufferData(GL_UNIFORM_BUFFER, sizeof(model), &model, GL_STATIC_DRAW);
     glDrawElements(GL_TRIANGLES, groupinfo->count, GL_UNSIGNED_SHORT, groupinfo->offset);
 
-    renderer->stats.face_group_count++;
-    renderer->stats.triangles_rendered_count += groupinfo->group->nfaces;
-    renderer->stats.triangles_drawn_count += groupinfo->group->nfaces;
-    renderer->stats.vertices_rendered_count += groupinfo->group->nfaces * 3;
+    renderer->scene_stats.face_group_count++;
+    renderer->scene_stats.triangles_rendered_count += groupinfo->group->nfaces;
+    renderer->scene_stats.triangles_drawn_count += groupinfo->group->nfaces;
+    renderer->scene_stats.vertices_rendered_count += groupinfo->group->nfaces * 3;
     GL_CHECK_ERROR();
 }

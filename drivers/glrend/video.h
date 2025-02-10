@@ -27,7 +27,7 @@ typedef struct _VIDEO {
         GLint uSampler;      /* Sampler, sampler2D */
         GLint uMVP;          /* Model-View-Projection Matrix, mat4 */
         GLint uFlipVertically;
-        GLint uDiscardBlackPixels;
+        GLint uDiscardPurplePixels;
     } defaultProgram;
 
     struct {

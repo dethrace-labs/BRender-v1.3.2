@@ -57,6 +57,9 @@ br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapClone(br_pixelmap *src);
 br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapDirectLock(br_pixelmap *src, br_boolean block);
 br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapDirectUnlock(br_pixelmap *src);
 
+// dethrace added
+br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapFlush(br_pixelmap *src);
+
 /*
  * Pixelmap operations
  */
@@ -176,7 +179,7 @@ void BR_PUBLIC_ENTRY BrQuantMapColours(int base,br_uint_8 *colours,
 	br_uint_8 *mapped_colours, int size);
 
 /*
- * Produce a pixelmap containing mip levels from a pixelmap. 
+ * Produce a pixelmap containing mip levels from a pixelmap.
  */
 
 br_pixelmap * BR_PUBLIC_ENTRY BrPixelmapMakeMipMap(br_pixelmap *source,
@@ -193,4 +196,3 @@ br_error BR_PUBLIC_ENTRY BrPixelmapSetControls(br_pixelmap *pm, br_display_contr
 };
 #endif
 #endif
-

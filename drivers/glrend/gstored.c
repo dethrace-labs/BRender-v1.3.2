@@ -471,6 +471,7 @@ static br_error V1Model_RenderStored(struct br_geometry_stored* self, br_rendere
             StoredGLRenderGroup(self, renderer, groupinfo);
         }
     }
+    renderer->frame_stats.model_count++;
     return BRE_OK;
 }
 

@@ -24,7 +24,7 @@ br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo) {
         hVideo->defaultProgram.uSampler = glGetUniformLocation(hVideo->defaultProgram.program, "uSampler");
         hVideo->defaultProgram.uMVP = glGetUniformLocation(hVideo->defaultProgram.program, "uMVP");
         hVideo->defaultProgram.uFlipVertically = glGetUniformLocation(hVideo->defaultProgram.program, "uFlipVertically");
-        hVideo->defaultProgram.uDiscardBlackPixels = glGetUniformLocation(hVideo->defaultProgram.program, "uDiscardBlackPixels");
+        hVideo->defaultProgram.uDiscardPurplePixels = glGetUniformLocation(hVideo->defaultProgram.program, "uDiscardPurplePixels");
         glUseProgram(hVideo->defaultProgram.program);
     }
 
