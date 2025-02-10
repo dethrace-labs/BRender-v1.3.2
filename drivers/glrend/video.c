@@ -4,17 +4,83 @@
 #include "brassert.h"
 #include "drv.h"
 
+#include <stdio.h>
+#include <string.h>
 
-GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size) {
+int glContextIsOpenGLES() {
+    const char* version = (const char*)glGetString(GL_VERSION);
+    if (version == NULL) {
+        BR_FATAL("Failed to retrieve OpenGL version");
+        return 0;
+    }
+    if (strstr(version, "OpenGL ES") || strstr(version, "GLES")) {
+        return 1;
+    }
+
+    return 0;
+}
+
+// Quick n dirty shader pre-processor
+// Wrap opengles only lines with ##ifdef GL_ES ... ##endif
+// Wrap opengl core only lines with ##ifdef GL_CORE ... ##endif
+// Note the double "##" to avoid collision with the standard glsl preprocessor
+char* preprocessShader(char* shader, size_t size) {
+    int i;
+    char *processed;
+    int line_i;
+    char line[2048];
+    int is_context_opengles;
+    int filter_state;  // 0 - none, 1, only opengles, 2 only opengl core
+
+    line_i = 0;
+    filter_state = 0;
+    is_context_opengles = glContextIsOpenGLES();
+    processed = BrScratchAllocate(size);
+    BrMemSet(processed, 0, sizeof(processed));
+
+    for (i = 0; i < size; i++) {
+        line[line_i] = shader[i];
+        line_i++;
+        if (shader[i] == '\n') {
+            // we've captured a whole line
+            if (strcmp(line, "##ifdef GL_ES\n") == 0) {
+                filter_state = 1;
+            } else if (strcmp(line, "##ifdef GL_CORE\n") == 0) {
+                filter_state = 2;
+            } else if (strcmp(line, "##endif\n") == 0) {
+                filter_state = 0;
+            } else {
+                if (filter_state == 1 && is_context_opengles) {
+                    strcat(processed, line);
+                } else if (filter_state == 2 && !is_context_opengles) {
+                    strcat(processed, line);
+                } else if (filter_state == 0) {
+                    strcat(processed, line);
+                }
+            }
+            BrMemSet(line, 0, sizeof(line));
+            line_i = 0;
+        }
+    }
+    return processed;
+}
+
+GLuint VIDEOI_CreateAndCompileShader(const char *name, GLenum type, const char* shader, size_t size) {
     GLuint s;
     GLint _size, status;
+    char *processed_shader;
 
     ASSERT(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER);
 
+    // processed_shader was alloc'd from scratch
+    processed_shader = preprocessShader(shader, size);
+
     s = glCreateShader(type);
     _size = (GLint)size;
-    glShaderSource(s, 1, &shader, &_size);
+    glShaderSource(s, 1, &processed_shader, &_size);
     glCompileShader(s);
+
+    BrScratchFree(processed_shader);
 
     status = GL_FALSE;
     glGetShaderiv(s, GL_COMPILE_STATUS, &status);
@@ -29,11 +95,12 @@ GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t siz
         glGetShaderInfoLog(s, maxLength, &maxLength, errorBuffer);
         errorBuffer[maxLength - 1] = '\0';
 
-        BR_FATAL1("VIDEO: Error compiling shader:\n%s", errorBuffer);
+        BR_FATAL2("VIDEO: Error compiling shader %s:\n%s", name, errorBuffer);
         glDeleteShader(s);
         return 0;
     }
 
+    GL_CHECK_ERROR();
     return s;
 }
 
@@ -50,7 +117,7 @@ GLuint VIDEOI_LoadAndCompileShader(GLenum type, const char* path, const char* de
     source = (GLchar*)default_data;
     size = default_size;
 
-    shader = VIDEOI_CreateAndCompileShader(type, source, size);
+    shader = VIDEOI_CreateAndCompileShader(path, type, source, size);
 
     if (source != default_data)
         BrResFree(source);
@@ -92,6 +159,7 @@ GLuint VIDEOI_CreateAndCompileProgram(GLuint vert, GLuint frag) {
         program = 0;
     }
 
+    GL_CHECK_ERROR();
     return program;
 }
 
@@ -107,23 +175,20 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_BLOCKS, &hVideo->maxFragmentUniformBlocks);
     glGetIntegerv(GL_MAX_SAMPLES, &hVideo->maxSamples);
 
-    if (GLAD_GL_EXT_texture_filter_anisotropic)
+    if (GLAD_GL_EXT_texture_filter_anisotropic) {
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &hVideo->maxAnisotropy);
+    }
 
-    if (!VIDEOI_CompileDefaultShader(hVideo))
-        return NULL;
-
-    if (!VIDEOI_CompileTextShader(hVideo)) {
-        glDeleteProgram(hVideo->defaultProgram.program);
+    if (!VIDEOI_CompileDefaultShader(hVideo)) {
         return NULL;
     }
 
     if (!VIDEOI_CompileBRenderShader(hVideo, vertShader, fragShader)) {
-        glDeleteProgram(hVideo->textProgram.program);
         glDeleteProgram(hVideo->defaultProgram.program);
         return NULL;
     }
 
+    GL_CHECK_ERROR();
     return hVideo;
 }
 
@@ -144,7 +209,6 @@ void VIDEO_Close(HVIDEO hVideo) {
         glDeleteBuffers(0, &hVideo->brenderProgram.uboModel);
 
     glDeleteProgram(hVideo->defaultProgram.program);
-    glDeleteProgram(hVideo->textProgram.program);
 }
 
 br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat, GLenum* format, GLenum* type,
@@ -225,7 +289,7 @@ br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat
         *elemBytes = 1;
         break;
     case BR_PMT_DEPTH_16:
-        *internalFormat = GL_DEPTH_COMPONENT;
+        *internalFormat = GL_DEPTH_COMPONENT16;
         *format = GL_DEPTH_COMPONENT;
         *type = GL_UNSIGNED_SHORT;
         *elemBytes = 2;
@@ -263,6 +327,7 @@ br_error VIDEOI_BrPixelmapToExistingTexture(GLuint tex, br_pixelmap* pm) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    GL_CHECK_ERROR();
     return BRE_OK;
 }
 

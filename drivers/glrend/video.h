@@ -26,17 +26,9 @@ typedef struct _VIDEO {
         GLint aUV;           /* UV, vec2 */
         GLint uSampler;      /* Sampler, sampler2D */
         GLint uMVP;          /* Model-View-Projection Matrix, mat4 */
-        GLint uVerticalFlip; /* Boolean (actually a float). Should the image be vertically flipped. */
+        GLint uFlipVertically;
+        GLint uDiscardPurplePixels;
     } defaultProgram;
-
-    struct {
-        GLuint program;
-        GLint aPosition; /* Position, vec3 */
-        GLint aUV;       /* UV, vec2 */
-        GLint uSampler;  /* Sampler, sampler2D */
-        GLint uMVP;      /* Model-View-Projection Matrix, mat4 */
-        GLint uColour;   /* Text colour, vec3 */
-    } textProgram;
 
     struct {
         GLuint program;

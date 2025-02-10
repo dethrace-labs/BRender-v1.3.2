@@ -179,8 +179,10 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         // if paletted, then wait until we are displaying the texture to convert it to 32 bit
         self->paletted_source_dirty = BR_TRUE;
         self->palette_pointer = ObjectDevice(self)->clut;
-    } else {
+    } else if (pm->type == BR_PMT_RGB_565) {
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+    } else {
+        return BRE_FAIL;
     }
 
     if ((err = glGetError()) != 0) {
@@ -199,6 +201,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     self->source_flags = pm->flags;
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CHECK_ERROR();
     return BRE_OK;
 }
 

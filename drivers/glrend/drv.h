@@ -32,7 +32,6 @@ extern "C" {
 
  #include "formats.h"
  #include "pm.h"
-#include "font.h"
 #include "video.h"
  #include "state.h"
 
@@ -48,6 +47,7 @@ extern "C" {
 #include "gv1model.h"
 #include "gv1buckt.h"
 #include "devclut.h"
+#include "glassert.h"
 /* clang-format on */
 /*
  * Macros that expand to the first two arguments of a template entry

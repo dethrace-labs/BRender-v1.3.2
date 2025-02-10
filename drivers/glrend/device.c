@@ -2,6 +2,7 @@
  * Device methods
  */
 #include "drv.h"
+#include "brassert.h"
 
 #define DEVICE_TITLE "OpenGL v3.2"
 #define DEVICE_VERSION BR_VERSION(1, 0, 0)

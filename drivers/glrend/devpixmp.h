@@ -100,10 +100,6 @@ typedef struct br_device_pixelmap {
             GLuint tex_white;
             GLuint tex_checkerboard;
 
-            br_font_gl font_fixed3x5;
-            br_font_gl font_prop4x6;
-            br_font_gl font_prop7x9;
-
             GLuint screen_buffer_vao, screen_buffer_ebo;
 
             br_int_32 num_refs;
@@ -114,9 +110,14 @@ typedef struct br_device_pixelmap {
             GLuint glTex;
             GLfloat clearColour[4];
 
-            void* pixel_data;
+            // This is to emulate the ability to lock the backbuffer and write to it as if it
+            // is in main memory
+            // Instead we create a separate writable texture and overlay it on top when double buffering
+            void *lockedPixels;
+            GLuint overlayTexture;
+            int possiblyDirty;
+            int locked;
 
-            br_device_pixelmap_gl_quad quad;
         } asBack;
         struct {
             struct br_device_pixelmap* backbuffer;
@@ -126,6 +127,8 @@ typedef struct br_device_pixelmap {
     };
     struct br_device_clut* clut;
 } br_device_pixelmap;
+
+void RenderFullScreenTextureToFrameBuffer(br_device_pixelmap* self, GLuint textureId, GLuint fb, int flipVertically, int discardPurplePixels);
 
 #endif
 

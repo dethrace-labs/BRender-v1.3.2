@@ -2,6 +2,7 @@
  * Renderer methods
  */
 #include "drv.h"
+#include "brassert.h"
 
 /*
  * Default dispatch table for renderer (defined at end of file)
@@ -12,10 +13,10 @@ static const struct br_renderer_dispatch rendererDispatch;
 
 static struct br_tv_template_entry rendererTemplateEntries[] = {
     { BRT(IDENTIFIER_CSTR), F(identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
-    { BRT(FACE_GROUP_COUNT_U32), F(stats.face_group_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
-    { BRT(TRIANGLES_DRAWN_COUNT_U32), F(stats.triangles_drawn_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
-    { BRT(TRIANGLES_RENDERED_COUNT_U32), F(stats.triangles_rendered_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
-    { BRT(VERTICES_RENDERED_COUNT_U32), F(stats.vertices_rendered_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
+    { BRT(FACE_GROUP_COUNT_U32), F(scene_stats.face_group_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
+    { BRT(TRIANGLES_DRAWN_COUNT_U32), F(scene_stats.triangles_drawn_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
+    { BRT(TRIANGLES_RENDERED_COUNT_U32), F(scene_stats.triangles_rendered_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
+    { BRT(VERTICES_RENDERED_COUNT_U32), F(scene_stats.vertices_rendered_count), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
 };
 #undef F
 
@@ -31,6 +32,7 @@ br_renderer* RendererGLAllocate(br_device* device, br_renderer_facility* facilit
     if (dest == NULL || ObjectDevice(dest) != device)
         return NULL;
 
+    // jeff
     // if (dest->use_type != BRT_OFFSCREEN)
     //     return NULL;
 
@@ -53,6 +55,7 @@ br_renderer* RendererGLAllocate(br_device* device, br_renderer_facility* facilit
     RendererStateDefault(self, (br_uint_32)BR_STATE_ALL);
 
     self->has_begun = 0;
+    dest->renderer = self;
     return (br_renderer*)self;
 }
 
@@ -60,15 +63,12 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     HVIDEO hVideo = &self->pixelmap->screen->asFront.video;
     br_device_pixelmap *colour_target = NULL, *depth_target = NULL;
 
-    self->stats.face_group_count = 0;
-    self->stats.triangles_drawn_count = 0;
-    self->stats.triangles_rendered_count = 0;
-    self->stats.vertices_rendered_count = 0;
+    self->scene_stats.face_group_count = 0;
+    self->scene_stats.triangles_drawn_count = 0;
+    self->scene_stats.triangles_rendered_count = 0;
+    self->scene_stats.vertices_rendered_count = 0;
 
     /* First draw call, so do all the per-scene crap */
-    while (glGetError() != GL_NO_ERROR)
-        ;
-
     if (self->state.current->valid & BR_STATE_OUTPUT) {
         colour_target = self->state.current->output.colour;
         depth_target = self->state.current->output.depth;
@@ -115,6 +115,7 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     if (self->pixelmap->msaa_samples)
         glEnable(GL_MULTISAMPLE);
 
+    GL_CHECK_ERROR();
     self->has_begun = 1;
 }
 
@@ -131,6 +132,7 @@ void BR_CMETHOD_DECL(br_renderer_gl, sceneEnd)(br_renderer* self) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(0);
     self->has_begun = 0;
+    GL_CHECK_ERROR();
 }
 
 static void BR_CMETHOD_DECL(br_renderer_gl, free)(br_object* _self) {
@@ -531,6 +533,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_gl, stateQueryPerformance)(br_render
 
 static br_error BR_CMETHOD_DECL(br_renderer_gl, frameBegin)(br_renderer* self) {
     glClear(GL_COLOR_BUFFER_BIT);
+    self->frame_stats.model_count = 0;
     return BRE_OK;
 }
 

@@ -121,26 +121,27 @@ static void SetupFullScreenRectGeometry(br_device_pixelmap* self) {
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
+    GL_CHECK_ERROR();
 }
 
-void RenderFullScreenQuad(br_device_pixelmap* self, br_device_pixelmap* src) {
+void RenderFullScreenTextureToFrameBuffer(br_device_pixelmap* self, GLuint textureId, GLuint fb, int flipVertically, int discardPurplePixels) {
     int x, y, width, height;
 
     DevicePixelmapGLGetViewport(self, &x, &y, &width, &height);
     glViewport(x, y, width, height);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
     glDisable(GL_DEPTH_TEST);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glBindTexture(GL_TEXTURE_2D, src->asBack.glTex);
-
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glBindVertexArray(self->asFront.screen_buffer_vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->asFront.screen_buffer_ebo);
     glUseProgram(self->asFront.video.defaultProgram.program);
+    glUniform1f(self->asFront.video.defaultProgram.uFlipVertically, (float)flipVertically);
+    glUniform1i(self->asFront.video.defaultProgram.uDiscardPurplePixels, discardPurplePixels);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
 
+    glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
+    GL_CHECK_ERROR();
 }
 
 br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {
@@ -207,8 +208,8 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     BrLogPrintf("GLREND: OpenGL Vendor   = %s\n", self->asFront.gl_vendor);
     BrLogPrintf("GLREND: OpenGL Renderer = %s\n", self->asFront.gl_renderer);
 
-    if (GLVersion.major < 3 || (GLVersion.major == 3 && GLVersion.minor < 2)) {
-        BR_FATAL2("GLREND: Got OpenGL %d.%d context, expected 3.2", GLVersion.major, GLVersion.minor);
+    if (GLVersion.major < 3 || (GLVersion.major == 3 && GLVersion.minor < 1)) {
+        BR_FATAL2("GLREND: Got OpenGL %d.%d context, expected 3.1", GLVersion.major, GLVersion.minor);
         goto cleanup_context;
     }
 
@@ -225,26 +226,7 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
     }
     self->asFront.gl_extensions[self->asFront.gl_num_extensions] = NULL;
 
-    // /*
-    //  * Try to figure out the actual format we got.
-    //  * This isn't a big deal if we don't know what it is - we can only be written to by a doubleBuffer().
-    //  */
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, &red_bits);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, &grn_bits);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, &blu_bits);
-    // glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE, &alpha_bits);
-
-    // if (red_bits == 5 && grn_bits == 6 && blu_bits == 5) {
-    //     self->pm_type = BR_PMT_RGB_565;
-    // } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 0) {
-    //     self->pm_type = BR_PMT_RGBX_888;
-    // } else if (red_bits == 8 && grn_bits == 8 && blu_bits == 8 && alpha_bits == 8) {
-    //     self->pm_type = BR_PMT_RGBA_8888;
-    // } else {
-    //     BrLogPrintf("GLREND: OpenGL gave us an unknown screen format (R%dG%dB%dA%d), soldiering on...\n", red_bits,
-    //         grn_bits, blu_bits, alpha_bits);
-    // }
 
     if (VIDEO_Open(&self->asFront.video, pt.vertex_shader, pt.fragment_shader) == NULL) {
         /*
@@ -253,29 +235,15 @@ br_device_pixelmap* DevicePixelmapGLAllocateFront(br_device* dev, br_output_faci
         BrResFree(self);
         return NULL;
     }
-
     self->asFront.tex_white = DeviceGLBuildWhiteTexture();
     self->asFront.tex_checkerboard = DeviceGLBuildCheckerboardTexture();
-
-    // /*
-    //  * We can't use BRender's fonts directly, so build a POT texture with
-    //  * glyph from left-to-right. All fonts have 256 possible characters.
-    //  */
-
-    // BrLogPrintf("GLREND: Building fixed 3x5 font atlas.\n");
-    // (void)FontGLBuildAtlas(&self->asFront.font_fixed3x5, BrFontFixed3x5, 128, 64);
-
-    // BrLogPrintf("GLREND: Building proportional 4x6 font atlas.\n");
-    // (void)FontGLBuildAtlas(&self->asFront.font_prop4x6, BrFontProp4x6, 128, 64);
-
-    // BrLogPrintf("GLREND: Building proportional 7x9 font atlas.\n");
-    // (void)FontGLBuildAtlas(&self->asFront.font_prop7x9, BrFontProp7x9, 256, 64);
 
     self->asFront.num_refs = 0;
 
     SetupFullScreenRectGeometry(self);
 
     ObjectContainerAddFront(self->output_facility, (br_object*)self);
+    GL_CHECK_ERROR();
     return self;
 
 cleanup_context:
@@ -290,11 +258,8 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
 
     //BrLogPrintf("GLREND: Freeing %s\n", self->pm_identifier);
 
-    UASSERT(self->asFront.num_refs == 0);
+    //UASSERT(self->asFront.num_refs == 0);
 
-    glDeleteTextures(1, &self->asFront.font_prop7x9.tex);
-    glDeleteTextures(1, &self->asFront.font_prop4x6.tex);
-    glDeleteTextures(1, &self->asFront.font_fixed3x5.tex);
     glDeleteTextures(1, &self->asFront.tex_checkerboard);
     glDeleteTextures(1, &self->asFront.tex_white);
 
@@ -345,19 +310,13 @@ struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_glf, templateQuery)(br
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, resize)(br_device_pixelmap* self, br_int_32 width, br_int_32 height) {
     br_error err;
 
-    // if((err = DevicePixelmapGLExtResize(self, width, height)) != BRE_OK)
-    //     return err;
-
-    /*
-     * Resizing, assumed to have been done externally
-     * via whatever window we're representing.
-     */
     self->pm_width = width;
     self->pm_height = height;
     return BRE_OK;
 }
 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
+
     /*
      * Ignore self-blit.
      */
@@ -367,14 +326,20 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     if (ObjectDevice(src) != self->device)
         return BRE_UNSUPPORTED;
 
-    if (self->use_type != BRT_NONE || src->use_type != BRT_OFFSCREEN)
+    if (self->use_type != BRT_NONE || src->use_type != BRT_OFFSCREEN) {
         return BRE_UNSUPPORTED;
+    }
+
+    // ensure all dirty pixel writes have been flushed
+    BrPixelmapFlush(src);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-    RenderFullScreenQuad(self, src);
-
+    // render back buffer to screen framebuffer
+    RenderFullScreenTextureToFrameBuffer(self, src->asBack.glTex, 0, 1.0f, 0);
     DevicePixelmapGLSwapBuffers(self);
+
+    GL_CHECK_ERROR();
 
     return BRE_OK;
 }

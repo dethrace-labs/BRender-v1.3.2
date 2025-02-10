@@ -17,15 +17,13 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
 
 void VIDEO_Close(HVIDEO hVideo);
 
-GLuint VIDEOI_CreateAndCompileShader(GLenum type, const char* shader, size_t size);
+GLuint VIDEOI_CreateAndCompileShader(const char* name, GLenum type, const char* shader, size_t size);
 
 GLuint VIDEOI_LoadAndCompileShader(GLenum type, const char* path, const char* default_data, size_t default_size);
 
 GLuint VIDEOI_CreateAndCompileProgram(GLuint vert, GLuint frag);
 
 br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo);
-
-br_boolean VIDEOI_CompileTextShader(HVIDEO hVideo);
 
 br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, const char* fragPath);
 
@@ -138,10 +136,6 @@ void StateGLCopy(state_stack* dst, state_stack* src, uint32_t mask);
  */
 void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const gl_groupinfo* groupinfo);
 
-/*
- * font.c
- */
-br_error FontGLBuildAtlas(br_font_gl* gl_font, br_font* font, br_int_32 width, br_int_32 height);
 
 /*
  * quad.c
@@ -158,10 +152,7 @@ void DeviceGLFiniQuad(br_device_pixelmap_gl_quad* self);
  */
 void DeviceGLPatchQuad(br_device_pixelmap_gl_quad* self, const br_pixelmap* dst, const br_rectangle* dr,
     const br_pixelmap* src, const br_rectangle* sr);
-void DeviceGLPatchQuadFont(br_device_pixelmap_gl_quad* self, const br_pixelmap* dst, const br_rectangle* dr,
-    const br_font_gl* font, br_uint_8 glyph);
 void DeviceGLDrawQuad(br_device_pixelmap_gl_quad* self);
-void DeviceGLDrawQuadText(br_device_pixelmap_gl_quad* self);
 
 /*
  * util.c
@@ -196,6 +187,10 @@ br_geometry_primitives* GeometryPrimitivesNullAllocate(br_renderer_facility* typ
  * devclut.c
  */
 struct br_device_clut* DeviceClutGLAllocate(br_device* dev, char* identifier);
+
+
+
+#define GL_CHECK_ERROR() GL_AssertOrWarnIfError(__FILE__,__LINE__);
 
 #ifdef __cplusplus
 };

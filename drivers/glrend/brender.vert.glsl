@@ -1,4 +1,13 @@
+##ifdef GL_ES
+#version 300 es
+precision mediump float;
+precision mediump int;
+precision lowp usampler2D;
+##endif
+##ifdef GL_CORE
 #version 140
+#extension GL_ARB_explicit_attrib_location:require
+##endif
 
 #define MAX_LIGHTS                      48 /* Must match up with BRender */
 #define MAX_CLIP_PLANES                 6
@@ -82,7 +91,7 @@ bool directLightExists;
 
 #define SPECULAR_DOT()                    \
     {                                     \
-        float rd = dot(dirn_norm, n) * 2; \
+        float rd = dot(dirn_norm, n) * 2.0; \
         vec4 r = n - rd;                  \
         r = r - dirn_norm;                \
                                           \
@@ -229,7 +238,8 @@ vec4 fragmain()
         return surface_colour;
     }
 
-    vec4 normalDirection = normal;
+    vec4 normalDirection = vec4(0.0);
+    position = vec4(0.0);
 
     vec3 _colour = surface_colour.xyz;
 
@@ -245,7 +255,7 @@ vec4 fragmain()
             continue;
         }
 #endif
-        if (lights[i].position.w == 0) {
+        if (lights[i].position.w == 0.0) {
 #if !DEBUG_DISABLE_LIGHT_DIRECTIONAL
             directLightExists = true;
             directLightColour += lightingColourDirect(position, normalDirection, lights[i]);

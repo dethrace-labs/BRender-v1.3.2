@@ -1,4 +1,13 @@
+##ifdef GL_ES
+#version 300 es
+precision mediump float;
+precision mediump int;
+precision lowp usampler2D;
+##endif
+##ifdef GL_CORE
 #version 140
+#extension GL_ARB_explicit_attrib_location:require
+##endif
 
 #define MAX_LIGHTS                   48 /* Must match up with BRender */
 #define MAX_CLIP_PLANES              6
@@ -156,16 +165,16 @@ vec2 SurfaceMap(in vec3 position, in vec3 normal, in vec2 uv)
 
 float getFogFactor(float d) {
     if (!fog_enabled) {
-        return 0;
+        return 0.0;
     }
-    return 1 - (fog_max - d) / (fog_max - fog_min);
+    return 1.0 - (fog_max - d) / (fog_max - fog_min);
 }
 
 void processClipPlanes() {
     for(uint i = 0u; i < num_clip_planes; i++) {
         // calculate signed plane-vertex distance
         float d = dot(clip_planes[i], projection_brender * model_view * vec4(rawPosition.xyz, 1));
-        if (d < 0) {
+        if (d < 0.0) {
             discard;
         }
     }
