@@ -122,7 +122,7 @@ static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
             buffer_ptr++;
         }
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->width, src->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, src->width, src->height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
     BrScratchFree(buffer);
     GL_CHECK_ERROR();
 }

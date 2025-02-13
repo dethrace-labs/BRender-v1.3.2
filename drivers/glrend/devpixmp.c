@@ -611,7 +611,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self)
         return err;
 
     glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, self->asBack.lockedPixels);
+    // glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, self->asBack.lockedPixels);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self->pm_width, self->pm_height, gl_format, gl_type, self->asBack.lockedPixels);
 
     glViewport(0, 0, self->pm_width, self->pm_height);
 
@@ -632,14 +633,19 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self)
 }
 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, directLock)(br_device_pixelmap* self, br_boolean block) {
+    GLint gl_internal_format;
+    GLenum gl_format, gl_type;
+    GLsizeiptr gl_elem_bytes;
 
     ASSERT(self->pm_pixels == NULL);
     ASSERT(self->use_type == BRT_OFFSCREEN);
 
     if (self->asBack.overlayTexture == 0) {
+        VIDEOI_BrPixelmapGetTypeDetails(self->pm_type, &gl_internal_format, &gl_format, &gl_type, &gl_elem_bytes, NULL);
         glGenTextures(1, &self->asBack.overlayTexture);
         glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, NULL);
         self->asBack.lockedPixels = BrMemAllocate(self->pm_height * self->pm_row_bytes, BR_MEMORY_PIXELS);
     }
 

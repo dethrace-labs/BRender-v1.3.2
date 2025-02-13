@@ -167,11 +167,16 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
 
     if (self->gl_tex == 0) {
         glGenTextures(1, &self->gl_tex);
+        glBindTexture(GL_TEXTURE_2D, self->gl_tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+
         if ((err = glGetError()) != 0) {
             BR_ERROR1("GLREND: glGenTextures() failed with %s", gl_strerror(err));
             return BRE_FAIL;
         }
     }
+
+    //BR_WARNING("updateMemory");
 
     glBindTexture(GL_TEXTURE_2D, self->gl_tex);
     self->paletted_source_dirty = BR_FALSE;
@@ -180,7 +185,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         self->paletted_source_dirty = BR_TRUE;
         self->palette_pointer = ObjectDevice(self)->clut;
     } else if (pm->type == BR_PMT_RGB_565) {
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pm->width, pm->height, format, type, pm->pixels);
     } else {
         return BRE_FAIL;
     }
@@ -191,7 +196,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         return BRE_FAIL;
     }
 
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
