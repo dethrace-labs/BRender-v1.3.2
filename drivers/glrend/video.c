@@ -40,6 +40,7 @@ char* preprocessShader(char* shader, size_t size) {
 
     for (i = 0; i < size; i++) {
         line[line_i] = shader[i];
+        line[line_i+1] = '\0';
         line_i++;
         if (shader[i] == '\n') {
             // we've captured a whole line
@@ -58,7 +59,6 @@ char* preprocessShader(char* shader, size_t size) {
                     strcat(processed, line);
                 }
             }
-            BrMemSet(line, 0, sizeof(line));
             line_i = 0;
         }
     }
