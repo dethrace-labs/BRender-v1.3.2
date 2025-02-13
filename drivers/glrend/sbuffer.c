@@ -168,7 +168,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     if (self->gl_tex == 0) {
         glGenTextures(1, &self->gl_tex);
         glBindTexture(GL_TEXTURE_2D, self->gl_tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, pm->pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, NULL);
 
         if ((err = glGetError()) != 0) {
             BR_ERROR1("GLREND: glGenTextures() failed with %s", gl_strerror(err));
