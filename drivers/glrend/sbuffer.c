@@ -215,6 +215,10 @@ static br_error BR_CMETHOD_DECL(br_buffer_stored_gl, update)(struct br_buffer_st
     br_device* pm_device;
     (void)tv;
 
+    if (pm->pm_type != BR_PMT_INDEX_8 && pm->pm_type != BR_PMT_RGB_565) {
+        return BRE_FAIL;
+    }
+
     /*
      * Find out where the pixelmap comes from
      */

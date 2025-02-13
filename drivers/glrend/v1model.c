@@ -223,7 +223,7 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
                 state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
             }
             // or has the palette changed?
-            else if (state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
+            else if (state->prim.colour_map->palette_pointer != NULL && state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
                 update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
                 state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
             }
