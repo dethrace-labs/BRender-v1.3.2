@@ -93,7 +93,7 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     StateGLUpdateScene(&self->state.cache, self->state.current);
 
     glUseProgram(hVideo->brenderProgram.program);
-    glBindFramebuffer(GL_FRAMEBUFFER, self->state.cache.fbo);
+    //glBindFramebuffer(GL_FRAMEBUFFER, self->state.cache.fbo);
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
 
@@ -532,7 +532,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_gl, stateQueryPerformance)(br_render
 }
 
 static br_error BR_CMETHOD_DECL(br_renderer_gl, frameBegin)(br_renderer* self) {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     self->frame_stats.model_count = 0;
     return BRE_OK;
 }

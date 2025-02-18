@@ -331,13 +331,13 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelma
     // ensure all dirty pixel writes have been flushed
     BrPixelmapFlush(src);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
     DevicePixelmapGLGetViewport(self, &x, &y, &width, &height);
     glViewport(x, y, width, height);
 
     // render back buffer to screen framebuffer
-    RenderFullScreenTextureToFrameBuffer(self, src->asBack.glTex, 0, 1.0f, 0);
+    //RenderFullScreenTextureToFrameBuffer(self, src->asBack.glTex, 0, 1.0f, 0);
     DevicePixelmapGLSwapBuffers(self);
 
     GL_CHECK_ERROR();
