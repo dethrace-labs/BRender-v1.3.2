@@ -60,6 +60,9 @@ br_renderer* RendererGLAllocate(br_device* device, br_renderer_facility* facilit
 }
 
 static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
+    br_uint_16 base_y = 0;
+    int x, y;
+    float rx, ry;
     HVIDEO hVideo = &self->pixelmap->screen->asFront.video;
     br_device_pixelmap *colour_target = NULL, *depth_target = NULL;
 
@@ -93,12 +96,10 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     StateGLUpdateScene(&self->state.cache, self->state.current);
 
     glUseProgram(hVideo->brenderProgram.program);
-    //glBindFramebuffer(GL_FRAMEBUFFER, self->state.cache.fbo);
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
 
     // OpenGL upside downness
-    br_uint_16 base_y = 0;
     if (colour_target->pm_base_y != 0) {
         if (colour_target->sub_pixelmap) {
             base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
@@ -106,7 +107,9 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
             base_y = colour_target->pm_height - colour_target->pm_base_y;
         }
     }
-    glViewport(colour_target->pm_base_x, base_y, colour_target->pm_width, colour_target->pm_height);
+
+    DevicePixelmapGLGetViewport(colour_target->screen, &x, &y, &rx, &ry);
+    glViewport(colour_target->pm_base_x * rx + x, base_y *ry + y, colour_target->pm_width * rx, colour_target->pm_height * ry);
 
     /* Bind the model UBO here, it's faster than doing it for each model group */
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingModel, hVideo->brenderProgram.uboModel);
@@ -123,7 +126,6 @@ void BR_CMETHOD_DECL(br_renderer_gl, sceneEnd)(br_renderer* self) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    //glDisable(GL_MULTISAMPLE);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);

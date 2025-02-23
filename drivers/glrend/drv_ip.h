@@ -169,7 +169,7 @@ br_uint_8 DeviceGLTypeOrBits(br_uint_8 pixel_type, br_int_32 pixel_bits);
 
 br_device_gl_getprocaddress_cbfn* DevicePixelmapGLGetGetProcAddress(br_device_pixelmap* self);
 
-void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, int *width, int *height);
+void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, float *width_multiplier, float *height_multiplier);
 
 void DevicePixelmapGLSwapBuffers(br_device_pixelmap* self);
 

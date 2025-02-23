@@ -507,21 +507,21 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self)
         return err;
 
     glBindTexture(GL_TEXTURE_2D, self->asBack.overlayTexture);
-    // glTexImage2D(GL_TEXTURE_2D, 0, gl_internal_format, self->pm_width, self->pm_height, 0, gl_format, gl_type, self->asBack.lockedPixels);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, self->pm_width, self->pm_height, gl_format, gl_type, self->asBack.lockedPixels);
-
-    glViewport(0, 0, self->pm_width, self->pm_height);
 
     // render locked pixels to framebuffer texture, ignoring purple pixels
     RenderFullScreenTextureToFrameBuffer(self->screen, self->asBack.overlayTexture, 0, 0, 1);
 
     // reset pixels back to gamedev purple
-    br_uint_16 col = BR_COLOUR_565(31, 0, 31);
-    int i = self->pm_width * self->pm_height;
-    br_uint_16* pixels = self->asBack.lockedPixels;
-    for (int i = 0; i < self->pm_height * self->pm_width; i++) {
-        pixels[i] = col;
+
+    switch (self->pm_type) {
+    case BR_PMT_RGB_565:
+        _MemFill_A(self->asBack.lockedPixels, 0, self->pm_width * self->pm_height, 2, BR_COLOUR_565(31, 0, 31));
+        break;
+    default:
+        ASSERT(0);
     }
+
     self->asBack.possiblyDirty = 0;
 
     GL_CHECK_ERROR();
