@@ -13,7 +13,6 @@ target_include_directories(brender-inc-ddi INTERFACE
 set(DDI_FILES
         ddi/pm.h
         ddi/pm_ip.h
-        ddi/memloops.h
         )
 
 set(INC_FILES
