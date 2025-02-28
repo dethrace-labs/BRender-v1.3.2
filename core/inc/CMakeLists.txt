@@ -50,7 +50,6 @@ set(INC_FILES
         brfile.h
         brfont.h
         brlimits.h
-        brlog.h
         brmem.h
         brv1db.h
         brvector.h
