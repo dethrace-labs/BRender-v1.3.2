@@ -1,15 +1,15 @@
 #include "brender.h"
 
 #include "drv.h"
+#include "fixed.h"
 #include "work.h"
-#include <complex.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 static const bool TRANSP = 1;
 static const bool DITHER = 1;
 
-static inline unsigned rotr(unsigned x, unsigned n) {
+static inline uint32_t rotr(uint32_t x, uint32_t n) {
     return (x >> n % 32) | (x << (32 - n) % 32);
 }
 
@@ -22,16 +22,16 @@ static inline int32_t dither(int32_t a, int32_t b, int32_t frac) {
 }
 
 static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t mask, const uint8_t* dx) {
-    int u_numerator = work.pu.current;
-    int v_numerator = work.pv.current;
-    int du_numerator = work.pu.grad_x;
-    int dv_numerator = work.pv.grad_x;
-    int denominator = work.pq.current;
-    int d_denominator = work.pq.grad_x;
+    br_fixed_ls u_numerator = work.pu.current;
+    br_fixed_ls v_numerator = work.pv.current;
+    br_fixed_ls denominator = work.pq.current;
+    br_fixed_ls du_numerator = work.pu.grad_x;
+    br_fixed_ls dv_numerator = work.pv.grad_x;
+    br_fixed_ls d_denominator = work.pq.grad_x;
 
     int source = work.tsl.source;
     char* dest = work.tsl.start;
-    const char* const end = work.tsl.end; // EBP
+    const char* const end = work.tsl.end;
 
     // Lowest two bits
     br_uint_8 DBASE = (size_t)dest & 0x3;
@@ -40,6 +40,7 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
         return;
 
     bool RIGHT_TO_LEFT = dest > end;
+    bool LEFT_TO_RIGHT = !RIGHT_TO_LEFT;
 
     // Dithering?
     if (DITHER) {
@@ -47,7 +48,7 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
         v_numerator = dither(v_numerator, denominator, dx[DBASE]);
     }
 
-    while (dest != end) {
+    while ((RIGHT_TO_LEFT && dest >= end) || (LEFT_TO_RIGHT && dest <= end)) {
         source *= base_u; // pre
 
         if (u_numerator >= denominator) {
@@ -69,10 +70,9 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
              * 2) u_numerator is used as signed just in the section above
              *    and now as unsigned jump
              */
-
             unsigned CARRY_DETECTOR = (unsigned)u_numerator;
             do {
-                u_numerator = (int)CARRY_DETECTOR;
+                u_numerator = (br_fixed_ls)CARRY_DETECTOR;
                 source -= base_u;              // decu
                 du_numerator -= d_denominator; // du_numerator -= d_denominator
 
@@ -81,7 +81,7 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
             }
             // ... or bug in code?
             while (CARRY_DETECTOR < (unsigned)u_numerator);
-            u_numerator = (int)CARRY_DETECTOR;
+            u_numerator = (br_fixed_ls)CARRY_DETECTOR;
         }
 
         if (v_numerator < 0) {
@@ -97,7 +97,7 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
 
             unsigned CARRY_DETECTOR = (unsigned)v_numerator;
             do {
-                v_numerator = (int)CARRY_DETECTOR;
+                v_numerator = (br_fixed_ls)CARRY_DETECTOR;
                 source -= base_v;              // decv
                 dv_numerator -= d_denominator; // dv_numerator -= d_denominator
                 v_numerator += denominator;
@@ -107,7 +107,7 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
             }
             // ... or bug in code?
             while (CARRY_DETECTOR < (unsigned)v_numerator);
-            v_numerator = (int)CARRY_DETECTOR;
+            v_numerator = (br_fixed_ls)CARRY_DETECTOR;
         } else if (v_numerator >= denominator) { // compare v_numerator and denominator
             // Skip this if proper fraction
 
@@ -153,10 +153,9 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
 
         // End of calcs
 
-        if (RIGHT_TO_LEFT) {
-            if (dest <= end)
-                return;
-        } else if (dest >= end)
+        if (RIGHT_TO_LEFT && dest <= end)
+            return;
+        if (LEFT_TO_RIGHT && dest >= end)
             return;
 
         if (RIGHT_TO_LEFT) {
@@ -169,18 +168,16 @@ static inline void scan_line_pitpd_n(uint32_t base_u, uint32_t base_v, uint32_t 
         if (!TRANSP || (*texel != 0)) // Transparent?
             *dest = *texel;           // Store texel and z value
 
-        if (RIGHT_TO_LEFT) {
-            if (--dest <= end)
-                return;
-        } else if (++dest >= end)
-            return;
+        if (RIGHT_TO_LEFT)
+            --dest;
+        else
+            ++dest;
     }
     return;
 }
 
 static inline void scan_line_pitpd(uint32_t base_u, uint32_t base_v, uint32_t mask) {
-    int y = work.tsl.y;
-    y = y & 3;
+    int y = work.tsl.y & 3;
     const uint8_t dx_0[4] = { 13, 1, 4, 16 };
     const uint8_t dx_1[4] = { 8, 12, 9, 5 };
     const uint8_t dx_2[4] = { 10, 6, 7, 11 };
