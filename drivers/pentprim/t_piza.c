@@ -68,7 +68,7 @@ static inline char* scan_forward(const bool light, const bool bump, const uint8_
     int noffset = work.bump.base - work.texture.base;
 
     char* start = work.awsl.start;
-    const char* end = work.awsl.end; // _end?
+    const char* end = work.awsl.end;
 
     unsigned u_current = work.awsl.u_current;
     unsigned v_current = work.awsl.v_current;
@@ -191,7 +191,7 @@ static inline char* scan_backward(const bool light, const bool bump, const uint8
     int noffset = work.bump.base - work.texture.base;
 
     char* start = work.awsl.start;
-    const char* end = work.awsl.end; // _end?
+    const char* end = work.awsl.end;
 
     unsigned u_current = work.awsl.u_current;
     unsigned v_current = work.awsl.v_current;
@@ -208,7 +208,6 @@ static inline char* scan_backward(const bool light, const bool bump, const uint8
 
         if (light) {
             work.pi.currentpix -= work.pi.grad_x;
-            /// ???
         }
 
         // TODO: In MASM: Redo this with high and low halfwords of du swapped
@@ -320,7 +319,7 @@ static inline void triangle_render_z2(const bool light, const bool bump, const u
 
     for (; edge->count; --edge->count) {
         char* start = work.awsl.start;
-        char* end = work.awsl.end; // _end?
+        char* end = work.awsl.end;
 
         work.pz.currentpix = work.pz.current;
 
