@@ -524,6 +524,8 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, flush)(br_device_pixelmap* self)
 
     self->asBack.possiblyDirty = 0;
 
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     GL_CHECK_ERROR();
     return BRE_OK;
 }

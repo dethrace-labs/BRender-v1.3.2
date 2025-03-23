@@ -118,6 +118,8 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
     if (self->pixelmap->msaa_samples)
         glEnable(GL_MULTISAMPLE);
 
+
+
     GL_CHECK_ERROR();
     self->has_begun = 1;
 }
@@ -150,7 +152,7 @@ static void BR_CMETHOD_DECL(br_renderer_gl, free)(br_object* _self) {
 }
 
 static char* BR_CMETHOD_DECL(br_renderer_gl, identifier)(br_object* self) {
-    return ((br_renderer*)self)->identifier;
+    return (char*)((br_renderer*)self)->identifier;
 }
 
 static br_token BR_CMETHOD_DECL(br_renderer_gl, type)(br_object* self) {

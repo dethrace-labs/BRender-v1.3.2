@@ -170,6 +170,9 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         glBindTexture(GL_TEXTURE_2D, self->gl_tex);
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pm->width, pm->height, 0, format, type, NULL);
 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
         if ((err = glGetError()) != 0) {
             BR_ERROR1("GLREND: glGenTextures() failed with %s", gl_strerror(err));
             return BRE_FAIL;
@@ -196,11 +199,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
         return BRE_FAIL;
     }
 
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     self->source = pm;
     self->source_flags = pm->flags;

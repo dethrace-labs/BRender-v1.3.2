@@ -84,6 +84,8 @@ typedef struct shader_data_scene {
 
     alignas(16) br_vector4 clip_planes[BR_MAX_CLIP_PLANES];
     alignas(4) uint32_t num_clip_planes;
+    alignas(4) float hither_z;
+    alignas(4) float yon_z;
 
 } shader_data_scene;
 BR_STATIC_ASSERT(sizeof(((shader_data_scene*)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,
@@ -109,11 +111,12 @@ typedef struct shader_data_model {
     alignas(4) uint32_t disable_colour_key;
     alignas(4) uint32_t disable_texture;
     alignas(4) uint32_t fog_enabled;
-    alignas(16) br_vector4 fog_colour;
+    alignas(16) br_vector3 fog_colour;
     alignas(4) float fog_min;
     alignas(4) float fog_max;
     alignas(4) float alpha;
     alignas(4) uint32_t prelit;
+
 
 } shader_data_model;
 #pragma pack(pop)

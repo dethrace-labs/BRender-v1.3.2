@@ -20,6 +20,9 @@ precision lowp usampler2D;
 #define UV_SOURCE_ENV_L              1
 #define UV_SOURCE_ENV_I              2
 
+// 3dfx driver uses a fog table. This approximates the behavior :/
+#define FOGGING_EMULATE_3DFX_DENSITY_MULTIPLIER 80
+
 struct br_light
 {
     vec4 position;    /* (X, Y, Z, 1) */
@@ -38,6 +41,9 @@ layout(std140) uniform br_scene_state
 
     vec4 clip_planes[MAX_CLIP_PLANES];
     uint num_clip_planes;
+
+    float hither_z;
+    float yon_z;
 };
 
 layout(std140) uniform br_model_state
@@ -62,7 +68,7 @@ layout(std140) uniform br_model_state
     bool disable_colour_key;
     bool disable_texture;
     bool fog_enabled;
-    vec4 fog_colour;
+    vec3 fog_colour;
     float fog_min;
     float fog_max;
     float alpha;
@@ -79,7 +85,7 @@ in vec3 rawNormal;
 
 in vec3 v_frag_pos;
 
-out vec4 mainColour;
+out vec4 fragColour;
 
 uniform sampler2D main_texture;
 
@@ -163,12 +169,6 @@ vec2 SurfaceMap(in vec3 position, in vec3 normal, in vec2 uv)
     return (map_transform * vec4(uv, 1.0, 0.0)).xy;
 }
 
-float getFogFactor(float d) {
-    if (!fog_enabled) {
-        return 0.0;
-    }
-    return 1.0 - (fog_max - d) / (fog_max - fog_min);
-}
 
 void processClipPlanes() {
     for(uint i = 0u; i < num_clip_planes; i++) {
@@ -177,6 +177,23 @@ void processClipPlanes() {
         if (d < 0.0) {
             discard;
         }
+    }
+}
+
+void doDistanceFog() {
+    if (fog_enabled) {
+
+        // Compute exponential fog factor
+        float linear_depth = (hither_z * yon_z / (yon_z - gl_FragCoord.z * (yon_z - hither_z)));
+
+        if (linear_depth < fog_min) {
+            //return;
+        }
+
+        float linear_depth_normalized = linear_depth / yon_z;
+        float density = 1/fog_max * FOGGING_EMULATE_3DFX_DENSITY_MULTIPLIER;
+        float fogging_factor = 1.0 - exp(-density * linear_depth_normalized * linear_depth_normalized);
+        fragColour.rgb = mix(fragColour.rgb, fog_colour, clamp(fogging_factor, 0.0, 1.0));
     }
 }
 
@@ -191,21 +208,21 @@ void main() {
         textureColour = surface_colour;
     } else {
         textureColour = texture(main_texture, mappedUV);
+        // full black pixel is transparent
         if(!disable_colour_key && textureColour.rgb == vec3(0)) {
             discard;
         }
     }
 
-    vec3 fragColour;
     if (lighting == 1u) {
-        fragColour = colour.rgb * textureColour.rgb;
+        fragColour.rgb = colour.rgb * textureColour.rgb;
     } else {
-        fragColour = textureColour.rgb;
+        fragColour.rgb = textureColour.rgb;
     }
 
     /* Perform gamma correction */
 #if ENABLE_GAMMA_CORRECTION
-    fragColour = pow(fragColour, vec3(1.0 / 1.2));
+    fragColour.rgb = pow(fragColour.rgb, vec3(1.0 / 1.2));
     // fragColour = adjustContrast(fragColour, 0.1);
     // fragColour = adjustExposure(fragColour, 2.0);
 #endif
@@ -220,14 +237,13 @@ void main() {
     fragColour = vec3(r, g, b);
 #endif
 
-    /* The actual surface colour. */
-    mainColour = vec4(fragColour, alpha);
+    // Apply alpha transparency
+    fragColour.a = alpha;
 
-   if (lighting == 1u && prelit == 0u) {
-        mainColour *= vec4(ka, ka, ka, 1);
-   }
+    // Apply lighting
+    if (lighting == 1u && prelit == 0u) {
+        fragColour.rgb *= vec3(ka, ka, ka);
+    }
 
-    // distance fog
-    float d = distance(eye_view, position);
-    mainColour = mix(mainColour, fog_colour, getFogFactor(d));
+    doDistanceFog();
 }
