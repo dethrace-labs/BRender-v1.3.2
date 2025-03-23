@@ -6,9 +6,9 @@ br_device_gl_getprocaddress_cbfn* DevicePixelmapGLGetGetProcAddress(br_device_pi
     return self->asFront.callbacks.get_proc_address;
 }
 
-void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, int *width, int *height) {
+void DevicePixelmapGLGetViewport(br_device_pixelmap* self, int *x, int *y, float *width_multiplier, float *height_multiplier) {
     UASSERT(self->use_type == BRT_NONE);
-    self->asFront.callbacks.get_viewport(x, y, width, height);
+    self->asFront.callbacks.get_viewport(x, y, width_multiplier, height_multiplier);
 }
 
 void DevicePixelmapGLSwapBuffers(br_device_pixelmap* self) {

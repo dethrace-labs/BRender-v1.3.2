@@ -35,9 +35,6 @@ br_renderer_state_stored* RendererStateStoredGLAllocate(br_renderer* renderer, s
     self->renderer = renderer;
 
     StateGLCopy(&self->state, base_state, m);
-    if (self->state.prim.colour_map != NULL && (strcmp(self->state.prim.colour_map->source->identifier, "BGLWEEL.PIX") == 0)) {
-        self->identifier = "WHEEL_STATE";
-    }
     ObjectContainerAddFront(renderer, (br_object*)self);
     return self;
 }

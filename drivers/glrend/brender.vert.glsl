@@ -41,6 +41,9 @@ layout(std140) uniform br_scene_state
 
     vec4 clip_planes[MAX_CLIP_PLANES];
     uint num_clip_planes;
+
+    float hither_z;
+    float yon_z;
 };
 
 layout(std140) uniform br_model_state
@@ -65,7 +68,7 @@ layout(std140) uniform br_model_state
     bool disable_colour_key;
     bool disable_texture;
     bool fog_enabled;
-    vec4 fog_colour;
+    vec3 fog_colour;
     float fog_min;
     float fog_max;
     float alpha;

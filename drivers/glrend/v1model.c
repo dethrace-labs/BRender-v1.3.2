@@ -122,7 +122,8 @@ static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
             buffer_ptr++;
         }
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->width, src->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, src->width, src->height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+    glGenerateMipmap(GL_TEXTURE_2D);
     BrScratchFree(buffer);
     GL_CHECK_ERROR();
 }
@@ -223,7 +224,7 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
                 state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
             }
             // or has the palette changed?
-            else if (state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
+            else if (state->prim.colour_map->palette_pointer != NULL && state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
                 update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
                 state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
             }
@@ -280,11 +281,10 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
         }
 
         model->fog_enabled = state->prim.fog_enabled;
-        BrVector4Set(&model->fog_colour, BR_RED(state->prim.fog_colour) / 255.0f, BR_GRN(state->prim.fog_colour) / 255.0f, BR_BLU(state->prim.fog_colour) / 255.0f, 1.0f);
+        BrVector3Set(&model->fog_colour, BR_RED(state->prim.fog_colour) / 255.0f, BR_GRN(state->prim.fog_colour) / 255.0f, BR_BLU(state->prim.fog_colour) / 255.0f);
         model->fog_min = state->prim.fog_min;
         model->fog_max = state->prim.fog_max;
     }
-
     apply_depth_properties(state, states);
     GL_CHECK_ERROR();
 }
