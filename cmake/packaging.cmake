@@ -66,6 +66,14 @@ if (BRENDER_BUILD_DRIVERS)
         )
     endif()
 
+    if((TARGET softrend) OR (TARGET pentprim))
+        install(TARGETS x86emu
+            EXPORT BRenderTargets
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            FILE_SET include DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/brender
+        )
+    endif()
+
 endif ()
 
 install(EXPORT BRenderTargets
@@ -97,4 +105,4 @@ install(FILES
 
 # pkg-config
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/brender.pc.in ${CMAKE_CURRENT_BINARY_DIR}/brender-1.3.2.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brender-1.3.2.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/brender-1.3.2.pc DESTINATION lib/pkgconfig)
