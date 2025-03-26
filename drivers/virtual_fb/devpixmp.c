@@ -198,7 +198,7 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_virtualfb, doubleBuffer)(br_d
     br_error result;
 
     if (self->callbacks && self->callbacks->swap_buffers) {
-        self->callbacks->swap_buffers(src);
+        self->callbacks->swap_buffers((br_pixelmap *)src);
     }
 
     return BRE_OK;

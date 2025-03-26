@@ -11,6 +11,8 @@
 
 #include "brender.h"
 
+struct temp_face;
+
 /**
  ** Primitive Vertex
  **/
