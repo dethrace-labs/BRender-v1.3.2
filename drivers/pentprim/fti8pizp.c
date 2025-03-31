@@ -38,7 +38,7 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_POW2(brp_block *block, int pow2, int s
 void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, brp_vertex* v0, brp_vertex* v1, brp_vertex* v2);
 void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int skip_setup, brp_vertex* v0, brp_vertex* v1, brp_vertex* v2);
 
-typedef struct trapezium_render_size_params {
+typedef struct tSize_specific_params {
     int pre;
     int incu;
     int decu;
@@ -46,7 +46,7 @@ typedef struct trapezium_render_size_params {
     int decv;
     int post1;
     int post2;
-} trapezium_render_size_params;
+} tSize_specific_params;
 
 enum tScan_direction {
     eScan_direction_i,
@@ -54,11 +54,12 @@ enum tScan_direction {
     eScan_direction_b,
 };
 
-enum tTrapezium_render_size {
-    eTrapezium_render_size_64,
-    eTrapezium_render_size_256,
+enum tTrapezium_size {
+    eTrapezium_size_32x32,
+    eTrapezium_size_64x64,
+    eTrapezium_size_128x128,
+    eTrapezium_size_256x256,
 };
-
 
 // 	<>,\
 // 	<inc al>,<dec al>,<inc ah>,<dec ah>,\
@@ -68,14 +69,18 @@ enum tTrapezium_render_size {
 // 	<inc al>,<dec al>,<inc ah>,<dec ah>,\
 // 	<>,<>
 
-trapezium_render_size_params params[] = {
+tSize_specific_params size_specific_params[] = {
+    // 32x32
+    { .pre = 3, .incu = 8, .decu = 8, .incv = 1, .decv = 1, .post1 = 3, .post2 = 0x03ff },
     // 64x64
     { .pre = 2, .incu = 4, .decu = 4, .incv = 1, .decv = 1, .post1 = 2, .post2 = 0x0fff },
+    // 128x128
+    { .pre = 1, .incu = 2, .decu = 2, .incv = 1, .decv = 1, .post1 = 2, .post2 = 0x3fff },
     // 256x256
     { .pre = 0, .incu = 1, .decu = 1, .incv = 1, .decv = 1, .post1 = 0, .post2 = 0xffffffff },
 };
 
-static inline void ScanlineRender_ZPT_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
+static inline void ScanlineRender_ZPT_I8_D16(int dirn, tSize_specific_params *sized_params, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
     // ; Make temporary copies of parameters that change
 	// ;
 
@@ -236,7 +241,7 @@ nodraw:
 	// ;
 
     // pre
-    eax.v <<= params[size].pre;
+    eax.v <<= sized_params->pre;
     // mov		ecx,work.tsl._end
     ecx.ptr_v = work.tsl.end;
     // ; Update destinations and check for end of scan
@@ -308,7 +313,7 @@ nodraw:
         // ;
 deculoop:
         // decu
-        eax.l -= params[size].decu;
+        eax.l -= sized_params->decu;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ebx,edx
@@ -331,7 +336,7 @@ nodecu:
         // ;
 inculoop:
         // incu
-        eax.l += params[size].incu;
+        eax.l += sized_params->incu;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ebx,edx
@@ -365,12 +370,12 @@ stepuloop:
         // ifidni <udirn>,<i>
         // incu
         if (udirn == eScan_direction_i) {
-            eax.l += params[size].incu;
+            eax.l += sized_params->incu;
         }
         // else
 		// decu
         else {
-            eax.l -= params[size].decu;
+            eax.l -= sized_params->decu;
         }
         // endif
 
@@ -430,7 +435,7 @@ doneu:
         // ;
 decvloop:
         // decv
-        eax.h -= params[size].decv;
+        eax.h -= sized_params->decv;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ecx,edx
@@ -453,7 +458,7 @@ nodecv:
         // ;
 incvloop:
         // incv
-        eax.h += params[size].incv;
+        eax.h += sized_params->incv;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ecx,edx
@@ -490,9 +495,9 @@ stepvloop:
         //         decv
         // endif
         if (vdirn == eScan_direction_i) {
-            eax.h += params[size].incv;
+            eax.h += sized_params->incv;
         } else {
-            eax.h -= params[size].decv;
+            eax.h -= sized_params->decv;
         }
 
         // sub_&vdirn	edi,ebp
@@ -529,12 +534,12 @@ donev:
 	// ; Fix wrapping of source offset after modification
 	// ;
     // post1
-    eax.v >>= params[size].post1;
+    eax.v >>= sized_params->post1;
     // mov	work.tsl.v_numerator,ecx
     work.tsl.v_numerator = ecx.v;
 
     // post2
-    eax.v &= params[size].post2;
+    eax.v &= sized_params->post2;
     // mov		ebp,work.tsl.zdest
     ebp.ptr_v = work.tsl.zdest;
 
@@ -544,7 +549,7 @@ donev:
     goto next_pixel;
 }
 
-static inline void ScanlineRender_ZPTI_I8_D16(int size, int dirn, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
+static inline void ScanlineRender_ZPTI_I8_D16(int dirn, tSize_specific_params *sized_params, int udirn, int vdirn, tFog_enabled fogging, tBlend_enabled blend) {
     // mov		edx,work.pu.current
     edx.v = work.pu.current;
     // mov		esi,work.pu.grad_x
@@ -702,7 +707,7 @@ nodraw:
 	// ;
 
     // pre
-    eax.v <<= params[size].pre;
+    eax.v <<= sized_params->pre;
     // mov		ecx,work.tsl._end
     ecx.ptr_8 = (uint8_t*)work.tsl.end;
     // ; Update destinations and check for end of scan
@@ -782,7 +787,7 @@ nodraw:
         // ;
 deculoop:
         // decu
-        eax.l -= params[size].decu;
+        eax.l -= sized_params->decu;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ebx,edx
@@ -805,7 +810,7 @@ nodecu:
         // ;
 inculoop:
         // incu
-        eax.l += params[size].incu;
+        eax.l += sized_params->incu;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ebx,edx
@@ -839,12 +844,12 @@ stepuloop:
         // ifidni <udirn>,<i>
         // incu
         if (udirn == eScan_direction_i) {
-            eax.l += params[size].incu;
+            eax.l += sized_params->incu;
         }
         // else
 		// decu
         else {
-            eax.l -= params[size].decu;
+            eax.l -= sized_params->decu;
         }
         // endif
 
@@ -904,7 +909,7 @@ doneu:
         // ;
 decvloop:
         // decv
-        eax.h -= params[size].decv;
+        eax.h -= sized_params->decv;
         // add		edi,ebp
         edi.v += ebp.v;
         // add		ecx,edx
@@ -927,7 +932,7 @@ nodecv:
         // ;
 incvloop:
         // incv
-        eax.h += params[size].incv;
+        eax.h += sized_params->incv;
         // sub		edi,ebp
         edi.v -= ebp.v;
         // sub		ecx,edx
@@ -964,9 +969,9 @@ stepvloop:
         //         decv
         // endif
         if (vdirn == eScan_direction_i) {
-            eax.h += params[size].incv;
+            eax.h += sized_params->incv;
         } else {
-            eax.h -= params[size].decv;
+            eax.h -= sized_params->decv;
         }
 
         // sub_&vdirn	edi,ebp
@@ -1003,12 +1008,12 @@ donev:
 	// ; Fix wrapping of source offset after modification
 	// ;
     // post1
-    eax.v >>= params[size].post1;
+    eax.v >>= sized_params->post1;
     // mov	work.tsl.v_numerator,ecx
     work.tsl.v_numerator = ecx.v;
 
     // post2
-    eax.v &= params[size].post2;
+    eax.v &= sized_params->post2;
     // mov		ebp,work.tsl.zdest
     ebp.ptr_v = work.tsl.zdest;
 
@@ -1041,7 +1046,7 @@ donev:
 // 	<>,<>
 
 
-static inline void TrapeziumRender_ZPT_I8_D16(int dirn, int size_param, tFog_enabled fogging, tBlend_enabled blend) {
+static inline void TrapeziumRender_ZPT_I8_D16(int dirn, tSize_specific_params *sized_params, tFog_enabled fogging, tBlend_enabled blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
     ebx.v = work_top_count;
@@ -1096,7 +1101,7 @@ scan_loop:
     // mov		edx,work.pq.d_nocarry
     edx.v = work.pq.d_nocarry;
     // pre
-    eax.v <<= params[size_param].pre;
+    eax.v <<= sized_params->pre;
     // mov		ebp,work.pu.current
     ebp.v = work.pu.current;
     // mov		edi,work.pu.grad_x
@@ -1111,7 +1116,7 @@ scan_loop:
 
 uiloop:
     // incu							; work.tsl.source = incu(work.tsl.source)
-    eax.l += params[size_param].incu;
+    eax.l += sized_params->incu;
     // sub		edi,ecx					; work.pu.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pu.d_nocarry -= work.pq.d_nocarry
@@ -1134,7 +1139,7 @@ uidone:
     }
 udloop:
     // decu							; work.tsl.source = decu(work.tsl.source)
-    eax.l -= params[size_param].decu;
+    eax.l -= sized_params->decu;
     // add		edi,ecx					; work.pu.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
@@ -1167,7 +1172,7 @@ uddone:
     }
 viloop:
     // incv							; work.tsl.source = incv(work.tsl.source)
-    eax.h += params[size_param].incv;
+    eax.h += sized_params->incv;
     // sub		edi,ecx					; work.pv.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pv.d_nocarry -= work.pq.d_nocarry
@@ -1189,7 +1194,7 @@ vidone:
     }
 vdloop:
     // decv							; work.tsl.source = decv(work.tsl.source)
-    eax.h -= params[size_param].decv;
+    eax.h -= sized_params->decv;
     // add		edi,ecx					; work.pv.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
@@ -1206,11 +1211,11 @@ vddone:
     // ; Select scanline loop and jump to it
 	// ;
     // post1
-    eax.v >>= params[size_param].post1;
+    eax.v >>= sized_params->post1;
     // mov		work.pv.current,ebp
     work.pv.current = ebp.v;
     // post2
-    eax.v &= params[size_param].post2;
+    eax.v &= sized_params->post2;
     // mov		work.pv.grad_x,edi
     work.pv.grad_x = edi.v;
     // mov		work.pv.d_nocarry,esi
@@ -1230,21 +1235,21 @@ vddone:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fogging, blend);
+    ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_i, fogging, blend);
     goto ScanlineRender_ZPT_done;
 qi_ud:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fogging, blend);
+    ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_i, fogging, blend);
     goto ScanlineRender_ZPT_done;
 qd:
     // test	esi,esi
@@ -1254,39 +1259,39 @@ qd_ui:
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_i, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fogging, blend);
+    ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_b, eScan_direction_b, fogging, blend);
     goto ScanlineRender_ZPT_done;
 qd_ud:
     // cmp		esi,ebp
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
     if (dirn == DIR_F && esi.int_val > ebp.int_val || dirn == DIR_B && esi.int_val < ebp.int_val) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_b, eScan_direction_b, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_i, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fogging, blend);
+        ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_d, fogging, blend);
         goto ScanlineRender_ZPT_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPT_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fogging, blend);
+    ScanlineRender_ZPT_I8_D16(dirn, sized_params, eScan_direction_b, eScan_direction_b, fogging, blend);
 
     // ; Scanline loops return here when finished
 	// ;
@@ -1436,7 +1441,7 @@ carry:
     }
 }
 
-static inline void TrapeziumRender_ZPTI_I8_D16(int dirn, int size_param, tFog_enabled fog, tBlend_enabled blend) {
+static inline void TrapeziumRender_ZPTI_I8_D16(int dirn, tSize_specific_params *sized_params, tFog_enabled fog, tBlend_enabled blend) {
 
     // mov		ebx,work_top_count	; check for empty trapezium
     ebx.v = work_top_count;
@@ -1491,7 +1496,7 @@ scan_loop:
     // mov		edx,work.pq.d_nocarry
     edx.v = work.pq.d_nocarry;
     // pre
-    eax.v <<= params[size_param].pre;
+    eax.v <<= sized_params->pre;
     // mov		ebp,work.pu.current
     ebp.v = work.pu.current;
     // mov		edi,work.pu.grad_x
@@ -1506,7 +1511,7 @@ scan_loop:
 
 uiloop:
     // incu							; work.tsl.source = incu(work.tsl.source)
-    eax.l += params[size_param].incu;
+    eax.l += sized_params->incu;
     // sub		edi,ecx					; work.pu.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pu.d_nocarry -= work.pq.d_nocarry
@@ -1529,7 +1534,7 @@ uidone:
     }
 udloop:
     // decu							; work.tsl.source = decu(work.tsl.source)
-    eax.l -= params[size_param].decu;
+    eax.l -= sized_params->decu;
     // add		edi,ecx					; work.pu.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pu.d_nocarry += work.pq.d_nocarry
@@ -1562,7 +1567,7 @@ uddone:
     }
 viloop:
     // incv							; work.tsl.source = incv(work.tsl.source)
-    eax.h += params[size_param].incv;
+    eax.h += sized_params->incv;
     // sub		edi,ecx					; work.pv.grad_x -= work.pq.grad_x
     edi.v -= ecx.v;
     // sub		esi,edx					; work.pv.d_nocarry -= work.pq.d_nocarry
@@ -1584,7 +1589,7 @@ vidone:
     }
 vdloop:
     // decv							; work.tsl.source = decv(work.tsl.source)
-    eax.h -= params[size_param].decv;
+    eax.h -= sized_params->decv;
     // add		edi,ecx					; work.pv.grad_x += work.pq.grad_x
     edi.v += ecx.v;
     // add		esi,edx					; work.pv.d_nocarry += work.pq.d_nocarry
@@ -1601,11 +1606,11 @@ vddone:
     // ; Select scanline loop and jump to it
 	// ;
     // post1
-    eax.v >>= params[size_param].post1;
+    eax.v >>= sized_params->post1;
     // mov		work.pv.current,ebp
     work.pv.current = ebp.v;
     // post2
-    eax.v &= params[size_param].post2;
+    eax.v &= sized_params->post2;
     // mov		work.pv.grad_x,edi
     work.pv.grad_x = edi.v;
     // mov		work.pv.d_nocarry,esi
@@ -1625,21 +1630,21 @@ vddone:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fog, blend);
+    ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_i, fog, blend);
     goto ScanlineRender_ZPTI_done;
 qi_ud:
     // test	edi,edi
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= 0 || dirn == DIR_B && edi.int_val >= 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fog, blend);
+    ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_i, fog, blend);
     goto ScanlineRender_ZPTI_done;
 qd:
     // test	esi,esi
@@ -1649,39 +1654,39 @@ qd_ui:
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_i, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_i, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ui_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_i, eScan_direction_d, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_i, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fog, blend);
+    ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_b, eScan_direction_b, fog, blend);
     goto ScanlineRender_ZPTI_done;
 qd_ud:
     // cmp		esi,ebp
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
     if (dirn == DIR_F && esi.int_val > ebp.int_val || dirn == DIR_B && esi.int_val < ebp.int_val) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_b, eScan_direction_b, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // test	edi,edi
     // jg_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vi
     if (dirn == DIR_F && edi.int_val > 0 || dirn == DIR_B && edi.int_val < 0) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_i, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_i, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // cmp		edi,ebp
     // jle_&dirn	ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ud_vd
     if (dirn == DIR_F && edi.int_val <= ebp.int_val || dirn == DIR_B && edi.int_val >= ebp.int_val) {
-        ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_d, eScan_direction_d, fog, blend);
+        ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_d, eScan_direction_d, fog, blend);
         goto ScanlineRender_ZPTI_done;
     }
     // jmp		ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_ub_vb
-    ScanlineRender_ZPTI_I8_D16(size_param, dirn, eScan_direction_b, eScan_direction_b, fog, blend);
+    ScanlineRender_ZPTI_I8_D16(dirn, sized_params, eScan_direction_b, eScan_direction_b, fog, blend);
 
     // ; Scanline loops return here when finished
 	// ;
@@ -1846,19 +1851,300 @@ carry:
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_32x32];
+
+    TriangleSetup_ZPTI(v0, v1, v2);
+    // jc TriangleRasterise_ZTI_I8_D16_32
+    if (x86_state.cf) {
+        TriangleRender_ZTI_I8_D16_POW2(block, 5, 1, v0, v1, v2);
+        return;
+    }
+
+    // ; Calculate address of first scanline in colour and depth buffers
+	// ;
+    // mov		esi,work_main_y
+    esi.v = work_main_y;
+    // mov		eax,work.colour.base
+    eax.v = WORK_COLOUR_BASE;
+    // dec		esi
+    esi.v--;
+    // mov		ebx,work.colour.stride_b
+    ebx.v = work.colour.stride_b;
+    // mov		ecx,work.depth.base
+    ecx.v = WORK_DEPTH_BASE;
+    // mov		edx,work.depth.stride_b
+    edx.v = work.depth.stride_b;
+    // imul	ebx,esi
+    ebx.int_val *= esi.int_val;
+    // imul	edx,esi
+    edx.int_val *= esi.int_val;
+    // add		eax,ebx
+    eax.v += ebx.v;
+    // add		ecx,edx
+    ecx.v += edx.v;
+    // dec		eax
+    eax.v--;
+    // sub		ecx,2
+    ecx.v -= 2;
+    // mov		workspace.scanAddress,eax
+    workspace.scanAddress = eax.v;
+    // mov		workspace.depthAddress,ecx
+    workspace.depthAddress = ecx.v;
+
+    // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
+	// ; Copy some values into perspective texture mappng workspace
+	// ; Calculate offset of starting pixel in texture map
+	// ;
+    // mov		eax,work_main_i
+    eax.v = work_main_i;
+    // mov		ebx,work_main_d_i
+    ebx.v = work_main_d_i;
+    // ror		eax,16
+    ROR16(eax);
+    // cmp		ebx,80000000h
+    CMP(ebx.v, 0x80000000);
+    // adc		ebx,-1
+    ADC(ebx.v, -1);
+    // mov		ecx,work_pz_grad_x
+    ecx.v = work_pz_grad_x;
+    // ror		ebx,16
+    ROR16(ebx);
+    // cmp		ecx,80000000h
+    CMP(ecx.v, 0x80000000);
+    // adc		ecx,-1
+    ADC(ecx.v, -1);
+
+
+    // mov		edx,work_pi_grad_x
+    edx.v = work_pi_grad_x;
+	// 	ror		ecx,16
+    ROR16(ecx);
+	// 	cmp		edx,80000000h
+    CMP(edx.v, 0x80000000);
+	// 	adc		edx,-1
+    ADC(edx.v, -1);
+
+    // mov		work_main_i,eax
+    work_main_i = eax.v;
+
+
+    // mov		al,byte ptr work.awsl.u_current
+    eax.l = work.awsl.u_current;
+
+    // mov		work_main_d_i,ebx
+    work_main_d_i = ebx.v;
+
+    // mov		ah,byte ptr work.awsl.v_current
+    eax.h = work.awsl.v_current;
+
+    // mov		work.tsl.dz,ecx
+    work.tsl.dz = ecx.v;
+
+    // shl		al,2
+    eax.l <<= 3;
+    // mov		work.tsl._di,edx
+    work.tsl.di = edx.v;
+
+    // shr		eax,2
+    eax.v >>= 3;
+    // mov		ebx,work.pq.grad_x
+    ebx.v = work.pq.grad_x;
+    // and		eax,63*65
+    eax.v &= 31*33;
+    // mov		work.tsl.ddenominator,ebx
+    work.tsl.ddenominator = ebx.v;
+    // mov		work.tsl.source,eax
+    work.tsl.source = eax.v;
+    // mov		eax,work.tsl.direction
+    eax.v = work.tsl.direction;
+
+    // ; Check scan direction and use appropriate rasteriser
+	// ;
+    // test	eax,eax
+    // jnz		reversed
+    if (eax.v != 0) {
+        goto reversed;
+    }
+    // call    TrapeziumRender_ZPT_I8_D16_32_f
+    TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.v = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.v = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.v = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.v;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.v;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.v;
+    // call    TrapeziumRender_ZPT_I8_D16_32_f
+   TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
+    // ret
+    return;
+
+reversed:
+
+    // call    TrapeziumRender_ZPT_I8_D16_32_b
+   TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.v = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.v = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.v = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.v;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.v;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.v;
+    // call    TrapeziumRender_ZPT_I8_D16_32_b
+    TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
 }
+
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32_FLAT(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     // Not implemented
     BrAbort();
 }
 void BR_ASM_CALL TriangleRender_ZPT_I8_D16_32(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
-}
-void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_32x32];
+    TriangleSetup_ZPT(v0, v1, v2);
+    // jc TriangleRasterise_ZT_I8_D16_32
+    if (x86_state.cf) {
+        TriangleRender_ZT_I8_D16_POW2(block, 5, 1, v0, v1, v2);
+        return;
+    }
 
+    // ; Calculate address of first scanline in colour and depth buffers
+	// ;
+    // mov		esi,work_main_y
+    esi.v = work_main_y;
+    // mov		eax,work.colour.base
+    eax.v = WORK_COLOUR_BASE;
+    // dec		esi
+    esi.v--;
+    // mov		ebx,work.colour.stride_b
+    ebx.v = work.colour.stride_b;
+    // mov		ecx,work.depth.base
+    ecx.v = WORK_DEPTH_BASE;
+    // mov		edx,work.depth.stride_b
+    edx.v = work.depth.stride_b;
+    // imul	ebx,esi
+    ebx.int_val *= esi.int_val;
+    // imul	edx,esi
+    edx.int_val *= esi.int_val;
+    // add		eax,ebx
+    eax.v += ebx.v;
+    // add		ecx,edx
+    ecx.v += edx.v;
+    // dec		eax
+    eax.v--;
+    // sub		ecx,2
+    ecx.v -= 2;
+    // mov		workspace.scanAddress,eax
+    workspace.scanAddress = eax.v;
+    // mov		workspace.depthAddress,ecx
+    workspace.depthAddress = ecx.v;
+
+    // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
+	// ; Copy some values into perspective texture mappng workspace
+	// ; Calculate offset of starting pixel in texture map
+	// ;
+    // mov		eax,work_main_i
+    eax.v = work_main_i;
+    // mov		ebx,work_main_d_i
+    ebx.v = work_main_d_i;
+    // ror		eax,16
+    ROR16(eax);
+    // cmp		ebx,80000000h
+    CMP(ebx.v, 0x80000000);
+    // adc		ebx,-1
+    ADC(ebx.v, -1);
+    // mov		ecx,work_pz_grad_x
+    ecx.v = work_pz_grad_x;
+    // ror		ebx,16
+    ROR16(ebx);
+    // cmp		ecx,80000000h
+    CMP(ecx.v, 0x80000000);
+    // adc		ecx,-1
+    ADC(ecx.v, -1);
+    // mov		work_main_i,eax
+    work_main_i = eax.v;
+    // ror		ecx,16
+    ROR16(ecx);
+    // mov		al,byte ptr work.awsl.u_current
+    eax.l = work.awsl.u_current;
+    // mov		ah,byte ptr work.awsl.v_current
+    eax.h = work.awsl.v_current;
+    // mov		work_main_d_i,ebx
+    work_main_d_i = ebx.v;
+    // shl		al,3
+    eax.l <<= 3;
+    // mov		work.tsl.dz,ecx
+    work.tsl.dz = ecx.v;
+    // shr		eax,3
+    eax.v >>= 3;
+    // mov		ebx,work.pq.grad_x
+    ebx.v = work.pq.grad_x;
+    // and		eax,31*33
+    eax.v &= 31*33;
+    // mov		work.tsl.ddenominator,ebx
+    work.tsl.ddenominator = ebx.v;
+    // mov		work.tsl.source,eax
+    work.tsl.source = eax.v;
+    // mov		eax,work.tsl.direction
+    eax.v = work.tsl.direction;
+
+    // ; Check scan direction and use appropriate rasteriser
+	// ;
+    // test	eax,eax
+    // jnz		reversed
+    if (eax.v != 0) {
+        goto reversed;
+    }
+    // call    TrapeziumRender_ZPT_I8_D16_32_f
+    TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.v = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.v = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.v = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.v;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.v;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.v;
+    // call    TrapeziumRender_ZPT_I8_D16_32_f
+   TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_no);
+    // ret
+    return;
+
+reversed:
+
+    // call    TrapeziumRender_ZPT_I8_D16_32_b
+   TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.v = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.v = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.v = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.v;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.v;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.v;
+    // call    TrapeziumRender_ZPT_I8_D16_64_b
+    TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_no);
+}
+
+void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_64x64];
     TriangleSetup_ZPTI(v0, v1, v2);
     // jc TriangleRasterise_ZTI_I8_D16_64
     if (x86_state.cf) {
@@ -1972,7 +2258,7 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, brp_vertex *v0,
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
+    TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -1986,14 +2272,14 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64(brp_block *block, brp_vertex *v0,
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-   TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
+   TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
+   TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2007,7 +2293,7 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
+    TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64_FLAT(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
@@ -2016,7 +2302,7 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_64_FLAT(brp_block *block, brp_vertex
 }
 
 void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_64x64];
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZT_I8_D16_64
     if (x86_state.cf) {
@@ -2112,7 +2398,7 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, brp_vertex *v0, 
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
+    TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2126,14 +2412,14 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_64(brp_block *block, brp_vertex *v0, 
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_f
-   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_no);
+   TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
+   TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2147,13 +2433,161 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_no);
+    TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_no);
 
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_128(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-    // Not implemented
-    BrAbort();
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_128x128];
+    TriangleSetup_ZPTI(v0, v1, v2);
+    // jc TriangleRasterise_ZTI_I8_D16_64
+    if (x86_state.cf) {
+        TriangleRender_ZTI_I8_D16_POW2(block, 7, 1, v0, v1, v2);
+        return;
+    }
+
+    // ; Calculate address of first scanline in colour and depth buffers
+	// ;
+    // mov		esi,work_main_y
+    esi.v = work_main_y;
+    // mov		eax,work.colour.base
+    eax.v = WORK_COLOUR_BASE;
+    // dec		esi
+    esi.v--;
+    // mov		ebx,work.colour.stride_b
+    ebx.v = work.colour.stride_b;
+    // mov		ecx,work.depth.base
+    ecx.v = WORK_DEPTH_BASE;
+    // mov		edx,work.depth.stride_b
+    edx.v = work.depth.stride_b;
+    // imul	ebx,esi
+    ebx.int_val *= esi.int_val;
+    // imul	edx,esi
+    edx.int_val *= esi.int_val;
+    // add		eax,ebx
+    eax.v += ebx.v;
+    // add		ecx,edx
+    ecx.v += edx.v;
+    // dec		eax
+    eax.v--;
+    // sub		ecx,2
+    ecx.v -= 2;
+    // mov		workspace.scanAddress,eax
+    workspace.scanAddress = eax.v;
+    // mov		workspace.depthAddress,ecx
+    workspace.depthAddress = ecx.v;
+
+    // ; Swap integer and fractional parts of major edge starting value and delta and z gradient
+	// ; Copy some values into perspective texture mappng workspace
+	// ; Calculate offset of starting pixel in texture map
+	// ;
+    // mov		eax,work_main_i
+    eax.v = work_main_i;
+    // mov		ebx,work_main_d_i
+    ebx.v = work_main_d_i;
+    // ror		eax,16
+    ROR16(eax);
+    // cmp		ebx,80000000h
+    CMP(ebx.v, 0x80000000);
+    // adc		ebx,-1
+    ADC(ebx.v, -1);
+    // mov		ecx,work_pz_grad_x
+    ecx.v = work_pz_grad_x;
+    // ror		ebx,16
+    ROR16(ebx);
+    // cmp		ecx,80000000h
+    CMP(ecx.v, 0x80000000);
+    // adc		ecx,-1
+    ADC(ecx.v, -1);
+
+
+    // mov		edx,work_pi_grad_x
+    edx.v = work_pi_grad_x;
+	// 	ror		ecx,16
+    ROR16(ecx);
+	// 	cmp		edx,80000000h
+    CMP(edx.v, 0x80000000);
+	// 	adc		edx,-1
+    ADC(edx.v, -1);
+
+    // mov		work_main_i,eax
+    work_main_i = eax.v;
+
+
+    // mov		al,byte ptr work.awsl.u_current
+    eax.l = work.awsl.u_current;
+
+    // mov		work_main_d_i,ebx
+    work_main_d_i = ebx.v;
+
+    // mov		ah,byte ptr work.awsl.v_current
+    eax.h = work.awsl.v_current;
+
+    // mov		work.tsl.dz,ecx
+    work.tsl.dz = ecx.v;
+
+    // shl		al,2
+    eax.l <<= 1;
+    // mov		work.tsl._di,edx
+    work.tsl.di = edx.v;
+
+    // shr		eax,2
+    eax.v >>= 1;
+    // mov		ebx,work.pq.grad_x
+    ebx.v = work.pq.grad_x;
+    // and		eax,63*65
+    eax.v &= 127*129;
+    // mov		work.tsl.ddenominator,ebx
+    work.tsl.ddenominator = ebx.v;
+    // mov		work.tsl.source,eax
+    work.tsl.source = eax.v;
+    // mov		eax,work.tsl.direction
+    eax.v = work.tsl.direction;
+
+    // ; Check scan direction and use appropriate rasteriser
+	// ;
+    // test	eax,eax
+    // jnz		reversed
+    if (eax.v != 0) {
+        goto reversed;
+    }
+    // call    TrapeziumRender_ZPT_I8_D16_128_f
+    TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.v = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.v = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.v = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.v;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.v;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.v;
+    // call    TrapeziumRender_ZPT_I8_D16_128_f
+   TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
+    // ret
+    return;
+
+reversed:
+
+    // call    TrapeziumRender_ZPT_I8_D16_128_b
+   TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
+    // mov		eax,work_bot_i
+    eax.v = work_bot_i;
+    // mov		ebx,work_bot_d_i
+    ebx.v = work_bot_d_i;
+    // mov		ecx,work_bot_count
+    ecx.v = work_bot_count;
+    // mov		work_top_i,eax
+    work_top_i = eax.v;
+    // mov		work_top_d_i,ebx
+    work_top_d_i = ebx.v;
+    // mov		work_top_count,ecx
+    work_top_count = ecx.v;
+    // call    TrapeziumRender_ZPT_I8_D16_64_b
+    TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_128_FLAT(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
@@ -2167,7 +2601,7 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_128(brp_block *block, brp_vertex *v0,
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_256x256];
     TriangleSetup_ZPTI(v0, v1, v2);
     // jc TriangleRasterise_ZTI_I8_D16_256
     if (x86_state.cf) {
@@ -2267,7 +2701,7 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, brp_vertex *v0
         goto reversed;
     }
     // call    TrapeziumRender_ZPTI_I8_D16_256_f
-    TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2281,14 +2715,14 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256(brp_block *block, brp_vertex *v0
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTI_I8_D16_256_f
-   TrapeziumRender_ZPTI_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
+   TrapeziumRender_ZPTI_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPTI_I8_D16_64_b
-   TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
+   TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2302,7 +2736,7 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTI_I8_D16_64_b
-    TrapeziumRender_ZPTI_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    TrapeziumRender_ZPTI_I8_D16(DIR_B, params, eFog_no, eBlend_no);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256_FLAT(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
@@ -2311,6 +2745,7 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_256_FLAT(brp_block *block, brp_verte
 }
 
 void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_256x256];
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZT_I8_D16_256
     if (x86_state.cf) {
@@ -2402,7 +2837,7 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, brp_vertex *v0,
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_256_f
-    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2416,14 +2851,14 @@ void BR_ASM_CALL TriangleRender_ZPT_I8_D16_256(brp_block *block, brp_vertex *v0,
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_256_f
-   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_no);
+   TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_no);
     // ret
     return;
 
 reversed:
 
-    // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    // call    TrapeziumRender_ZPT_I8_D16_256_b
+   TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_no);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2436,8 +2871,8 @@ reversed:
     work_top_d_i = ebx.v;
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
-    // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_no);
+    // call    TrapeziumRender_ZPT_I8_D16_256_b
+    TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_no);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
@@ -2533,6 +2968,7 @@ void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_64_FLAT(brp_block *block, brp_verte
     BrAbort();
 }
 void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_64x64];
 #if ENABLE_PERSPECTIVE_CHEAT_FOR_BLEND==1
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZTB_I8_D16_64
@@ -2632,7 +3068,7 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, brp_vertex *v0,
         goto reversed;
     }
     // call    TrapeziumRender_ZPTB_I8_D16_64_f
-    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+    TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2646,14 +3082,14 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_64(brp_block *block, brp_vertex *v0,
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTB_I8_D16_64_f
-   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+   TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_yes);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPTB_I8_D16_64_b
-   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+   TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2667,7 +3103,7 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPTB_I8_D16_64_b
-    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_64, eFog_no, eBlend_yes);
+    TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_yes);
 
 }
 
@@ -2692,6 +3128,7 @@ void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_256_FLAT(brp_block *block, brp_vert
     BrAbort();
 }
 void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
+    tSize_specific_params *params = &size_specific_params[eTrapezium_size_256x256];
 #if ENABLE_PERSPECTIVE_CHEAT_FOR_BLEND==1
     TriangleSetup_ZPT(v0, v1, v2);
     // jc TriangleRasterise_ZTB_I8_D16_256
@@ -2787,7 +3224,7 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, brp_vertex *v0
         goto reversed;
     }
     // call    TrapeziumRender_ZPT_I8_D16_256_f
-    TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+    TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2801,14 +3238,14 @@ void BR_ASM_CALL TriangleRender_ZPTB_I8_D16_256(brp_block *block, brp_vertex *v0
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_256_f
-   TrapeziumRender_ZPT_I8_D16(DIR_F, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+   TrapeziumRender_ZPT_I8_D16(DIR_F, params, eFog_no, eBlend_yes);
     // ret
     return;
 
 reversed:
 
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-   TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+   TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_yes);
     // mov		eax,work_bot_i
     eax.v = work_bot_i;
     // mov		ebx,work_bot_d_i
@@ -2822,7 +3259,7 @@ reversed:
     // mov		work_top_count,ecx
     work_top_count = ecx.v;
     // call    TrapeziumRender_ZPT_I8_D16_64_b
-    TrapeziumRender_ZPT_I8_D16(DIR_B, eTrapezium_render_size_256, eFog_no, eBlend_yes);
+    TrapeziumRender_ZPT_I8_D16(DIR_B, params, eFog_no, eBlend_yes);
 }
 
 void BR_ASM_CALL TriangleRender_ZPTIB_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
