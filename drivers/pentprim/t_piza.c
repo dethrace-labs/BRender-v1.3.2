@@ -65,7 +65,7 @@ static inline void scan_inc(const bool carry, const bool light, const short sbpp
 }
 
 static inline char* scan_forward(const bool light, const bool bump, const uint8_t sbpp, const uint8_t dbpp) {
-    int noffset = work.bump.base - work.texture.base;
+    int noffset = (char*)work.bump.base - (char*)work.texture.base;
 
     char* start = work.awsl.start;
     const char* end = work.awsl.end;
@@ -188,7 +188,7 @@ static inline char* scan_forward(const bool light, const bool bump, const uint8_
 }
 
 static inline char* scan_backward(const bool light, const bool bump, const uint8_t sbpp, const uint8_t dbpp) {
-    int noffset = work.bump.base - work.texture.base;
+    int noffset = (char*)work.bump.base - (char*)work.texture.base;
 
     char* start = work.awsl.start;
     const char* end = work.awsl.end;
