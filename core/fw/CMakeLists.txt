@@ -8,14 +8,14 @@ set(SOFTREND_DDI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../drivers/softrend/ddi)
 
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender>
         )
 
 target_include_directories(brender-inc-ddi INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ddi>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<BUILD_INTERFACE:${SOFTREND_DDI_DIR}>
-        $<INSTALL_INTERFACE:ddi>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/ddi>
         )
 
 add_custom_command(

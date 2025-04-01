@@ -465,12 +465,12 @@ static void GEOMETRY_CALL V1Face_Render(struct br_geometry *self, struct br_rend
 			clipped->render(clipped,
 				rend.temp_vertices+(*fp_vertices)[0],
 				rend.temp_vertices+(*fp_vertices)[1],
-				rend.temp_vertices+(*fp_vertices)[2], fp_vertices, fp_edges, fp_eqn, tfp);
+				rend.temp_vertices+(*fp_vertices)[2], (br_uint_16 *)fp_vertices, (br_uint_16 *)fp_edges, fp_eqn, tfp);
 		} else {
 			unclipped->render(unclipped,
 				rend.temp_vertices+(*fp_vertices)[0],
 				rend.temp_vertices+(*fp_vertices)[1],
-				rend.temp_vertices+(*fp_vertices)[2], fp_vertices, fp_edges, fp_eqn, tfp);
+				rend.temp_vertices+(*fp_vertices)[2], (br_uint_16 *)fp_vertices, (br_uint_16 *)fp_edges, fp_eqn, tfp);
 		}
 	}
 }
@@ -501,7 +501,7 @@ void GEOMETRY_CALL V1Face_OS_Render(struct br_geometry *self, struct br_renderer
 				rend.temp_vertices+(*fp_vertices)[0],
 				rend.temp_vertices+(*fp_vertices)[1],
 				rend.temp_vertices+(*fp_vertices)[2],
-				fp_vertices, fp_edges, fp_eqn, tfp);
+				(br_uint_16 *)fp_vertices, (br_uint_16 *)fp_edges, fp_eqn, tfp);
 
 			//return;
 #endif
@@ -533,7 +533,7 @@ void GEOMETRY_CALL V1Face_OSV_Render(struct br_geometry *self, struct br_rendere
 			rend.temp_vertices+(*fp_vertices)[0],
 			rend.temp_vertices+(*fp_vertices)[1],
 			rend.temp_vertices+(*fp_vertices)[2],
-			fp_vertices, fp_edges, fp_eqn, tfp);
+			(br_uint_16 *)fp_vertices, (br_uint_16 *)fp_edges, fp_eqn, tfp);
 	}
 }
 #endif
