@@ -1099,12 +1099,12 @@ static void ARBITRARY_SETUP()
     REMOVE_INTEGER_PARTS_OF_PARAMETERS();
 
     // MULTIPLY_UP_PARAM_VALUES(u, width_p, fp_conv_d8r);
-    MULTIPLY_UP_PARAM_VALUES(workspace.s_u, workspace.d_u_x, workspace.d_u_y_0, workspace.d_u_y_1, &workspaceA.su_double,
-                             &workspaceA.dux_double, &workspaceA.duy1_double, &workspaceA.duy0_double, work.texture.width_p, fp_conv_d8r);
+    MULTIPLY_UP_PARAM_VALUES(workspace.s_u, workspace.d_u_x, workspace.d_u_y_0, workspace.d_u_y_1, (fp64_t *)&workspaceA.su_double,
+                             (fp64_t *)&workspaceA.dux_double, (fp64_t *)&workspaceA.duy1_double, (fp64_t *)&workspaceA.duy0_double, work.texture.width_p, fp_conv_d8r);
 
     // MULTIPLY_UP_PARAM_VALUES(v, height, fp_conv_d8r);
-    MULTIPLY_UP_PARAM_VALUES(workspace.s_v, workspace.d_v_x, workspace.d_v_y_0, workspace.d_v_y_1, &workspaceA.sv_double,
-                             &workspaceA.dvx_double, &workspaceA.dvy1_double, &workspaceA.dvy0_double, work.texture.height, fp_conv_d8r);
+    MULTIPLY_UP_PARAM_VALUES(workspace.s_v, workspace.d_v_x, workspace.d_v_y_0, workspace.d_v_y_1, (fp64_t *)&workspaceA.sv_double,
+                             (fp64_t *)&workspaceA.dvx_double, (fp64_t *)&workspaceA.dvy1_double, (fp64_t *)&workspaceA.dvy0_double, work.texture.height, fp_conv_d8r);
 
     SPLIT_INTO_INTEGER_AND_FRACTIONAL_PARTS();
     MULTIPLY_UP_V_BY_STRIDE(fp_conv_d);
@@ -1128,25 +1128,25 @@ void TriangleSetup_Z(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",(fp64_t *)&workspace.s_z_double,(fp64_t *)&workspace.d_z_x_double,fp_conv_d16,1);
 }
 
 void TriangleSetup_ZI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i_double,&workspace.d_i_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",(fp64_t *)&workspace.s_z_double,(fp64_t *)&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_I,"_i",(fp64_t *)&workspace.s_i_double,(fp64_t *)&workspace.d_i_x_double,fp_conv_d16, 0);
 }
 
 void TriangleSetup_ZTI(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u_double,&workspace.d_u_x_double,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v_double,&workspace.d_v_x_double,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_I,"_i",&workspace.s_i_double,&workspace.d_i_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",(fp64_t *)&workspace.s_z_double,(fp64_t *)&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_U,"_u",(fp64_t *)&workspace.s_u_double,(fp64_t *)&workspace.d_u_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_V,"_v",(fp64_t *)&workspace.s_v_double,(fp64_t *)&workspace.d_v_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_I,"_i",(fp64_t *)&workspace.s_i_double,(fp64_t *)&workspace.d_i_x_double,fp_conv_d16, 0);
 }
 
 void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
@@ -1154,9 +1154,9 @@ void TriangleSetup_ZT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     if(SETUP_FLOAT(v0, v1, v2) != FPSETUP_SUCCESS) {
         return;
     }
-    SETUP_FLOAT_PARAM(C_SZ,"_z",&workspace.s_z_double,&workspace.d_z_x_double,fp_conv_d16,1);
-    SETUP_FLOAT_PARAM(C_U,"_u",&workspace.s_u_double,&workspace.d_u_x_double,fp_conv_d16, 0);
-    SETUP_FLOAT_PARAM(C_V,"_v",&workspace.s_v_double,&workspace.d_v_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ,"_z",(fp64_t *)&workspace.s_z_double,(fp64_t *)&workspace.d_z_x_double,fp_conv_d16,1);
+    SETUP_FLOAT_PARAM(C_U,"_u",(fp64_t *)&workspace.s_u_double,(fp64_t *)&workspace.d_u_x_double,fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_V,"_v",(fp64_t *)&workspace.s_v_double,(fp64_t *)&workspace.d_v_x_double,fp_conv_d16, 0);
 }
 
 void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
@@ -1165,9 +1165,9 @@ void TriangleSetup_ZT_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
         return;
     }
 
-    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z_double, &workspace.d_z_x_double, fp_conv_d16, 1);
-    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u_double, &workspace.d_u_x_double, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v_double, &workspace.d_v_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_SZ, "_z", (fp64_t *)&workspace.s_z_double, (fp64_t *)&workspace.d_z_x_double, fp_conv_d16, 1);
+    SETUP_FLOAT_PARAM(C_U, "_u", (fp64_t *)&workspace.s_u_double, (fp64_t *)&workspace.d_u_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_V, "_v", (fp64_t *)&workspace.s_v_double, (fp64_t *)&workspace.d_v_x_double, fp_conv_d24, 0);
     ARBITRARY_SETUP();
 }
 
@@ -1177,9 +1177,9 @@ void TriangleSetup_ZTI_ARBITRARY(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
         return;
     }
 
-    SETUP_FLOAT_PARAM(C_SZ, "_z", &workspace.s_z_double, &workspace.d_z_x_double, fp_conv_d16, 1);
-    SETUP_FLOAT_PARAM(C_U, "_u", &workspace.s_u_double, &workspace.d_u_x_double, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_V, "_v", &workspace.s_v_double, &workspace.d_v_x_double, fp_conv_d24, 0);
-    SETUP_FLOAT_PARAM(C_I, "_i", &workspace.s_i_double, &workspace.d_i_x_double, fp_conv_d16, 0);
+    SETUP_FLOAT_PARAM(C_SZ, "_z", (fp64_t *)&workspace.s_z_double, (fp64_t *)&workspace.d_z_x_double, fp_conv_d16, 1);
+    SETUP_FLOAT_PARAM(C_U, "_u", (fp64_t *)&workspace.s_u_double, (fp64_t *)&workspace.d_u_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_V, "_v", (fp64_t *)&workspace.s_v_double, (fp64_t *)&workspace.d_v_x_double, fp_conv_d24, 0);
+    SETUP_FLOAT_PARAM(C_I, "_i", (fp64_t *)&workspace.s_i_double, (fp64_t *)&workspace.d_i_x_double, fp_conv_d16, 0);
     ARBITRARY_SETUP();
 }

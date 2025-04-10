@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/BRenderTargets.cmake")
+
+set(BRender_FOUND ON)
+set(BRender_LIBRARIES BRender::Core BRender::Full BRender::DDI)
+set(BRender_VERSION_STRING "@BRender_VERSION@")
+

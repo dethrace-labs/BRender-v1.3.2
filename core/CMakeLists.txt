@@ -5,7 +5,7 @@
 add_library(brender-inc INTERFACE)
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/brender>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender>
         )
 
 ##
