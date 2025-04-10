@@ -3,7 +3,6 @@ project(BRender VERSION 1.3.2)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-
 # Prefer glvnd
 cmake_policy(SET CMP0072 NEW)
 

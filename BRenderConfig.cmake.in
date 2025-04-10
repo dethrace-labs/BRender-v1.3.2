@@ -3,9 +3,6 @@
 include("${CMAKE_CURRENT_LIST_DIR}/BRenderTargets.cmake")
 
 set(BRender_FOUND ON)
-set(BRender_INCLUDE_DIR "@CMAKE_INSTALL_FULL_INCLUDEDIR@/brender")
-set(BRender_INCLUDE_DIRS "@CMAKE_INSTALL_FULL_INCLUDEDIR@;@CMAKE_INSTALL_FULL_INCLUDEDIR@/brender")
-set(BRender_LIBDIR "@CMAKE_INSTALL_FULL_LIBDIR@")
-set(BRender_LIBRARIES $<LINK_ONLY:BRender::Full> $<LINK_ONLY:BRender::DDI>)
+set(BRender_LIBRARIES BRender::Core BRender::Full BRender::DDI)
 set(BRender_VERSION_STRING "@BRender_VERSION@")
 
