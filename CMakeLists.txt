@@ -21,9 +21,9 @@ add_subdirectory(core)
 
 add_subdirectory(x86emu)
 
-if (BRENDER_BUILD_DRIVERS)
+if(BRENDER_BUILD_DRIVERS)
     add_subdirectory(drivers)
-endif ()
+endif()
 
 ##
 # Core BRender, no drivers, no DDI.
@@ -41,15 +41,15 @@ add_library(BRender::Full ALIAS brender-full)
 add_library(BRender::DDI ALIAS brender-ddi)
 
 
-# if (BRENDER_BUILD_TOOLS)
+# if(BRENDER_BUILD_TOOLS)
 #     add_subdirectory(tools)
-# endif ()
+# endif()
 
-if (BRENDER_BUILD_EXAMPLES)
+if(BRENDER_BUILD_EXAMPLES)
     add_subdirectory(examples)
-endif ()
+endif()
 
-if (NOT BRENDER_DISABLE_INSTALL)
+if(NOT BRENDER_DISABLE_INSTALL)
     include(cmake/packaging.cmake)
     include(CPack)
-endif ()
+endif()
