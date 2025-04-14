@@ -14,7 +14,7 @@ find_package(Perl REQUIRED)
 
 option(BRENDER_BUILD_DRIVERS "Build Drivers" ON)
 option(BRENDER_BUILD_EXAMPLES "Build Examples" OFF)
-option(BRENDER_DISABLE_INSTALL "Disable installation" OFF)
+option(BRENDER_INSTALL "Enable installation" "${BRender_IS_TOPLEVEL}")
 option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 
 add_subdirectory(core)
@@ -49,7 +49,7 @@ if(BRENDER_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-if(NOT BRENDER_DISABLE_INSTALL)
+if(BRENDER_INSTALL)
     include(cmake/packaging.cmake)
     include(CPack)
 endif()
