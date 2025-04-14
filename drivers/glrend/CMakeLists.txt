@@ -147,9 +147,9 @@ add_library(glrend
         )
 
 get_target_property(target_type glrend TYPE)
-if (target_type STREQUAL SHARED_LIBRARY)
+if(target_type STREQUAL SHARED_LIBRARY)
     target_compile_definitions(glrend PRIVATE -DDEFINE_BR_ENTRY_POINT)
-endif ()
+endif()
 
 target_include_directories(glrend PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

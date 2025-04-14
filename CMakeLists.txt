@@ -13,17 +13,17 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(Perl REQUIRED)
 
 option(BRENDER_BUILD_DRIVERS "Build Drivers" ON)
-option(BRENDER_BUILD_EXAMPLES "Build Examples" OFF)
-option(BRENDER_DISABLE_INSTALL "Disable installation" OFF)
+option(BRENDER_BUILD_EXAMPLES "Build Examples" "${BRender_IS_TOPLEVEL}")
+option(BRENDER_INSTALL "Enable installation" "${BRender_IS_TOPLEVEL}")
 option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 
 add_subdirectory(core)
 
 add_subdirectory(x86emu)
 
-if (BRENDER_BUILD_DRIVERS)
+if(BRENDER_BUILD_DRIVERS)
     add_subdirectory(drivers)
-endif ()
+endif()
 
 ##
 # Core BRender, no drivers, no DDI.
@@ -41,15 +41,15 @@ add_library(BRender::Full ALIAS brender-full)
 add_library(BRender::DDI ALIAS brender-ddi)
 
 
-# if (BRENDER_BUILD_TOOLS)
+# if(BRENDER_BUILD_TOOLS)
 #     add_subdirectory(tools)
-# endif ()
+# endif()
 
-if (BRENDER_BUILD_EXAMPLES)
+if(BRENDER_BUILD_EXAMPLES)
     add_subdirectory(examples)
-endif ()
+endif()
 
-if (NOT BRENDER_DISABLE_INSTALL)
+if(BRENDER_INSTALL)
     include(cmake/packaging.cmake)
     include(CPack)
-endif ()
+endif()
