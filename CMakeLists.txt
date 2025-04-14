@@ -3,6 +3,9 @@ project(BRender VERSION 1.3.2)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+
+include(TestBigEndian)
+
 # Prefer glvnd
 cmake_policy(SET CMP0072 NEW)
 
@@ -18,8 +21,9 @@ option(BRENDER_DISABLE_INSTALL "Disable installation" OFF)
 option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 
 add_subdirectory(core)
-
 add_subdirectory(x86emu)
+
+test_big_endian(IS_BIGENDIAN)
 
 if (BRENDER_BUILD_DRIVERS)
     add_subdirectory(drivers)
