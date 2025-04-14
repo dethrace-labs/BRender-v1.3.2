@@ -2,18 +2,17 @@ project(pixelmap)
 
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender>
         )
 
 target_include_directories(brender-inc-ddi INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ddi>
-        $<INSTALL_INTERFACE:ddi>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/ddi>
         )
 
 set(DDI_FILES
         ddi/pm.h
         ddi/pm_ip.h
-        ddi/memloops.h
         )
 
 set(INC_FILES

@@ -1,7 +1,5 @@
 project(glrend)
 
-find_package(OpenGL REQUIRED COMPONENTS OpenGL)
-
 # Embed shaders
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
@@ -127,7 +125,7 @@ target_sources(glrend-headers INTERFACE
 
 target_include_directories(glrend-headers INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/brender/glrend>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/glrend>
         )
 
 set_target_properties(glrend-headers PROPERTIES
@@ -155,7 +153,7 @@ endif ()
 
 target_include_directories(glrend PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(glrend PRIVATE OpenGL::GL BRender::DDI)
+target_link_libraries(glrend PRIVATE BRender::DDI)
 target_link_libraries(glrend PUBLIC glrend-headers)
 
 set_target_properties(glrend PROPERTIES

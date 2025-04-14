@@ -77,7 +77,7 @@ GLuint VIDEOI_CreateAndCompileShader(const char *name, GLenum type, const char* 
 
     s = glCreateShader(type);
     _size = (GLint)size;
-    glShaderSource(s, 1, &processed_shader, &_size);
+    glShaderSource(s, 1, (const GLchar * const *)&processed_shader, &_size);
     glCompileShader(s);
 
     BrScratchFree(processed_shader);

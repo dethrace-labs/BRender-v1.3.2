@@ -9,7 +9,7 @@ endif()
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-        $<INSTALL_INTERFACE:include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender>
         )
 
 target_compile_definitions(brender-inc INTERFACE
@@ -56,7 +56,6 @@ set(INC_FILES
         brfile.h
         brfont.h
         brlimits.h
-        brlog.h
         brmem.h
         brv1db.h
         brvector.h
