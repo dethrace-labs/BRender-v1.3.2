@@ -417,5 +417,5 @@ void BR_ASM_CALL RenderConvert4(struct brp_block *block,
                                 outv[3].comp_i[c] = v3->comp_i[c];
 			}
 
-	block->chain->render(block->chain, outv+0, outv+1, outv+2, outv+3, NULL, NULL, NULL);
+	block->chain->render(block->chain, outv+0, outv+1, outv+2, (br_uint_16 *)outv+3, NULL, NULL, NULL);
 }

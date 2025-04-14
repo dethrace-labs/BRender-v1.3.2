@@ -125,7 +125,7 @@ target_sources(glrend-headers INTERFACE
 
 target_include_directories(glrend-headers INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/brender/glrend>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/glrend>
         )
 
 set_target_properties(glrend-headers PROPERTIES

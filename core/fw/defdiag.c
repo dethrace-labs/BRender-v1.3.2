@@ -29,5 +29,14 @@ br_diaghandler BrNullDiagHandler = {
 
 /*
  * Global variable that can be overridden by linking something first
+ * GCC and Clang do not allow for this behavior
+ * To support this override with GCC and Clang the project has to be either
+ * compiled with -fcommon (which would be global, also I have not tested this)
+ * or the overrideable symbol has to be flagged as weak
  */
-br_diaghandler *_BrDefaultDiagHandler = &BrNullDiagHandler;
+#ifdef __GNUC__
+#define ATTRIBUTE_WEAK __attribute__((weak))
+#else
+#define ATTRIBUTE_WEAK
+#endif
+ATTRIBUTE_WEAK br_diaghandler *_BrDefaultDiagHandler = &BrNullDiagHandler;

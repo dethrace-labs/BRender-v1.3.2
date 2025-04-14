@@ -113,6 +113,10 @@ add_library(pentprim
 		pfpsetup.c
 		fpsetup.c
 
+		t_pia.c
+		t_piza.c
+		ti8_pip.c
+		t15_pip.c
 		ti8_pizp.c
 		t15_pizp.c
 		ti8_pi.c
