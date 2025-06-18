@@ -140,7 +140,7 @@ br_image *ImageLoad(char *name)
 	arena_align = nt_header.section_alignment;
 
 	arena_base = BrResAllocate(img, arena_size + (arena_align-1), BR_MEMORY_IMAGE_ARENA);
-	arena_base = (br_uint_8 *) (((uintptr_t)arena_base+arena_align-1) & (~(arena_align-1)));
+	arena_base = (br_uint_8 *) (((br_uintptr_t)arena_base+arena_align-1) & (~(arena_align-1)));
 
 	/*
 	 * Remember current offset into file
@@ -222,10 +222,10 @@ br_image *ImageLoad(char *name)
 		 * Relocate the tables of pointers
 		 */
 		for(n=0; n < img->n_functions; n++)
-			img->functions[n] = (void *)((uintptr_t)(img->functions[n]) + arena_base);
+			img->functions[n] = (void *)((br_uintptr_t)(img->functions[n]) + arena_base);
 
 		for(n=0; n < img->n_names; n++)
-			img->names[n] = (char *)((uintptr_t)(img->names[n]) + arena_base);
+			img->names[n] = (char *)((br_uintptr_t)(img->names[n]) + arena_base);
 	}
 
 	/*
@@ -308,7 +308,7 @@ br_image *ImageLoad(char *name)
 	/*
 	 * Base Relocation (only if the base needs to be moved)
 	 */
-	if(((uintptr_t)arena_base != nt_header.image_base) &&
+	if(((br_uintptr_t)arena_base != nt_header.image_base) &&
 		(nt_header.directories[DIRECTORY_BASERELOC].size != 0)) {
 
 		basereloc_header *header;
@@ -318,7 +318,7 @@ br_image *ImageLoad(char *name)
 		br_int_16 delta_h, delta_l;
 
 		offset = 0;
-		delta = (uintptr_t)arena_base - nt_header.image_base;
+		delta = (br_uintptr_t)arena_base - nt_header.image_base;
 		delta_h = (br_uint_16)(delta >> 16);
 		delta_l = (br_uint_16)(delta & 0xFFFF);
 

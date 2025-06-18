@@ -188,8 +188,10 @@ br_uint_32 _MemPixelGet(char *dest, br_uint_32 dest_qual, br_uint_32 bytes)
     }
 }
 
-void _MemFill_A(uint8_t *dest, br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp, br_uint_32 colour)
+void _MemFill_A(br_uint_8 *dest, br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp, br_uint_32 colour)
 {
+    br_uint_32 i;
+
     /* 32-bit */
     if(bpp == 4) {
         MemFill32((br_uint_32 *)dest, colour, pixels);
@@ -207,7 +209,7 @@ void _MemFill_A(uint8_t *dest, br_uint_32 dest_qual, br_uint_32 pixels, br_uint_
         if((cols[0] == cols[1]) && (cols[0] == cols[2])) {
             _MemFill_A(dest, dest_qual, pixels * 3, 1, colour);
         } else
-            for(br_uint_32 i = 0; i < pixels; ++i) {
+            for(i = 0; i < pixels; ++i) {
                 *dest++ = BR_BLU(colour);
                 *dest++ = BR_GRN(colour);
                 *dest++ = BR_RED(colour);
@@ -223,11 +225,12 @@ void _MemRectCopy_A(char *dest,
 	br_int_32 d_stride,br_int_32 s_stride,
 	br_uint_32 bpp)
 {
+    int i;
     // const br_uint_32 linediff = pwidth * bpp;
     // s_stride -= linediff;
     // d_stride -= linediff;
 
-    for (int i = 0; i < pheight; i++) {
+    for (i = 0; i < pheight; i++) {
         memcpy(dest + i * d_stride, src + i * s_stride, bpp * pwidth);
     }
 
@@ -248,10 +251,11 @@ void _MemRectFill_A(char *dest,
 	br_int_32 d_stride, br_uint_32 bpp, br_uint_32 colour) {
 
     const br_uint_32 linediff = pwidth * bpp;
+    br_uint_32 w;
     d_stride -= linediff;
 
     for(; pheight-- > 0; dest += d_stride) {
-        for(br_uint_32 w = 0; w < pwidth; ++w, dest += bpp)
+        for(w = 0; w < pwidth; ++w, dest += bpp)
             _MemPixelSet(dest, 0, bpp, colour);
     }
 }
@@ -276,7 +280,7 @@ br_uint_16 _GetSysQual(void) {
     return 0;
 }
 
-void BR_ASM_CALL _MemFillFPU_A(uint8_t *dest,
+void BR_ASM_CALL _MemFillFPU_A(char *dest,
 	br_uint_32 dest_qual, br_uint_32 pixels, br_uint_32 bpp,
 	br_uint_32 colour) {
 

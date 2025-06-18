@@ -31,6 +31,7 @@ void BR_PUBLIC_ENTRY BrDbModelRender(br_actor *actor,
 				  int use_custom)
 {
 	br_int_32 count;
+	br_value v;
 	br_token_value tv[] = {
 		{BRT_V1INSERT_FUNCTION_P,	0},
 		{BRT_V1INSERT_ARG1_P,	0},
@@ -81,7 +82,7 @@ void BR_PUBLIC_ENTRY BrDbModelRender(br_actor *actor,
 		ot->visits++;
 
 		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0,
-			BRT_V1ORDER_TABLE_P, (br_value){.p = ot});
+			BRT_V1ORDER_TABLE_P, v);
 
 		/*
 		 * See if a 'primitive insertion' function needs to be added
@@ -187,6 +188,7 @@ br_uint_32 BR_PUBLIC_ENTRY BrOnScreenCheck(br_bounds3 *bounds)
 static br_uint_16 prependActorTransform(br_actor *ap, br_uint_16 t)
 {
 	br_matrix34 mt;
+	br_value v;
     ASSERT_MESSAGE("Invalid prependActorTransform pointer", ap != NULL);
 
 #if 0
@@ -224,8 +226,9 @@ static br_uint_16 prependActorTransform(br_actor *ap, br_uint_16 t)
 	}
 	t = BrTransformCombineTypes(t, ap->t.type);
 
+	v.t = BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE;
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
-		BRT_MODEL_TO_VIEW_HINT_T, (br_value){.t = BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE});
+		BRT_MODEL_TO_VIEW_HINT_T, v);
 #endif
 
 	return t;
@@ -233,15 +236,18 @@ static br_uint_16 prependActorTransform(br_actor *ap, br_uint_16 t)
 
 static br_uint_16 prependMatrix(br_matrix34 *mat, br_uint_16 mat_t, br_uint_16 t)
 {
+	br_value v;
     ASSERT_MESSAGE("Invalid prependMatrix pointer", mat != NULL);
 
 	RendererModelMul(v1db.renderer, (void *)mat);
 
 	t = BrTransformCombineTypes(t, mat_t);
-
+	
+	
+	v.t = BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE; 
 	RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
 		BRT_MODEL_TO_VIEW_HINT_T,
-		(br_value){.t = BrTransformTypeIsLP(t)?BRT_LENGTH_PRESERVING:BRT_NONE});
+		v);
 
 	return t;
 }

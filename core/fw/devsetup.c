@@ -448,8 +448,8 @@ br_error BR_RESIDENT_ENTRY BrRendererFacilityListFind(br_renderer_facility **prf
 	char object_pattern[] = "*-Renderer-00000";
 	br_boolean scalar_is_valid = BR_FALSE;
 	br_token_value is_alternative[] = {
-		{ BRT_ALTERNATIVE_TO_DEFAULT_B, (br_value) { .t = BR_TRUE } },
-		{ BR_NULL_TOKEN , (br_value) { .p = NULL }}
+		{ BR_NULL_TOKEN , { NULL } },
+		{ BRT_ALTERNATIVE_TO_DEFAULT_B, { (void*)BR_TRUE } }
 	};
 	char *identifier;
 	br_size_t identifier_len;
@@ -719,8 +719,8 @@ br_error BR_RESIDENT_ENTRY BrPrimitiveLibraryListFind(br_primitive_library **ppl
 	char object_pattern[] = "*-Primitives-00000";
 	br_boolean scalar_is_valid = BR_FALSE;
 	br_token_value is_alternative[] = {
-		{ BRT_ALTERNATIVE_TO_DEFAULT_B, (br_value) { .t = BR_TRUE } },
-		{ BR_NULL_TOKEN , (br_value) { .p = NULL }}
+		{ BRT_ALTERNATIVE_TO_DEFAULT_B, { (void*) BR_TRUE } },
+		{ BR_NULL_TOKEN ,  {  NULL }}
 	};
 	char *identifier;
 	br_size_t identifier_len;

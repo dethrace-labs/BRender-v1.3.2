@@ -842,15 +842,6 @@ static br_int_8 widths[] = {
 };
 // clang-format on
 
-br_font _FontProp4x6 = {
-    .flags     = BR_FONTF_PROPORTIONAL,
-    .glyph_x   = 4,
-    .glyph_y   = 6,
-    .spacing_x = 5,
-    .spacing_y = 7,
-    .width     = widths,
-    .encoding  = encoding,
-    .glyphs    = (br_uint_8 *)&glyphs,
-};
+br_font _FontProp4x6;
 
 #pragma pack(pop)
