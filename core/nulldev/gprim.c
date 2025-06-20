@@ -110,28 +110,28 @@ static br_error BR_CMETHOD_DECL(br_geometry_primitives_null, storedAvail)(struct
  * Default dispatch table for renderer type
  */
 static const struct br_geometry_primitives_dispatch geometryPrimitivesDispatch = {
-    .__reserved0 = NULL,
-    .__reserved1 = NULL,
-    .__reserved2 = NULL,
-    .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_geometry_primitives_null, free),
-    ._identifier = BR_CMETHOD_REF(br_geometry_primitives_null, identifier),
-    ._type = BR_CMETHOD_REF(br_geometry_primitives_null, type),
-    ._isType = BR_CMETHOD_REF(br_geometry_primitives_null, isType),
-    ._device = BR_CMETHOD_REF(br_geometry_primitives_null, device),
-    ._space = BR_CMETHOD_REF(br_geometry_primitives_null, space),
+    NULL,                                                         // .__reserved0
+    NULL,                                                         // .__reserved1
+    NULL,                                                         // .__reserved2
+    NULL,                                                         // .__reserved3
+    BR_CMETHOD_REF(br_geometry_primitives_null, free),            // ._free
+    BR_CMETHOD_REF(br_geometry_primitives_null, identifier),      // ._identifier
+    BR_CMETHOD_REF(br_geometry_primitives_null, type),            // ._type
+    BR_CMETHOD_REF(br_geometry_primitives_null, isType),          // ._isType
+    BR_CMETHOD_REF(br_geometry_primitives_null, device),          // ._device
+    BR_CMETHOD_REF(br_geometry_primitives_null, space),           // ._space
 
-    ._templateQuery = BR_CMETHOD_REF(br_geometry_primitives_null, templateQuery),
-    ._query = BR_CMETHOD_REF(br_object, query),
-    ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
-    ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
-    ._queryManySize = BR_CMETHOD_REF(br_object, queryManySize),
-    ._queryAll = BR_CMETHOD_REF(br_object, queryAll),
-    ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
+    BR_CMETHOD_REF(br_geometry_primitives_null, templateQuery),   // ._templateQuery
+    BR_CMETHOD_REF(br_object, query),                             // ._query
+    BR_CMETHOD_REF(br_object, queryBuffer),                       // ._queryBuffer
+    BR_CMETHOD_REF(br_object, queryMany),                         // ._queryMany
+    BR_CMETHOD_REF(br_object, queryManySize),                     // ._queryManySize
+    BR_CMETHOD_REF(br_object, queryAll),                          // ._queryAll
+    BR_CMETHOD_REF(br_object, queryAllSize),                      // ._queryAllSize
 
-    ._renderF = BR_CMETHOD_REF(br_geometry_primitives_null, render),
-    ._renderOnScreenF = BR_CMETHOD_REF(br_geometry_primitives_null, renderOnScreen),
-    ._storedNewF = BR_CMETHOD_REF(br_geometry_primitives_null, storedNew),
+    BR_CMETHOD_REF(br_geometry_primitives_null, render),          // ._renderF
+    BR_CMETHOD_REF(br_geometry_primitives_null, renderOnScreen),  // ._renderOnScreenF
+    BR_CMETHOD_REF(br_geometry_primitives_null, storedNew),       // ._storedNewF
 
-    ._storedAvail = BR_CMETHOD_REF(br_geometry_primitives_null, storedAvail),
+    BR_CMETHOD_REF(br_geometry_primitives_null, storedAvail),     // ._storedAvail
 };
