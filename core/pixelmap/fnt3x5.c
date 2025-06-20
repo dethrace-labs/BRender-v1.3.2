@@ -563,14 +563,14 @@ static br_uint_16 encoding[] = {
 // clang-format on
 
 br_font _FontFixed3x5 = {
-    .flags     = 0,
-    .glyph_x   = 3,
-    .glyph_y   = 5,
-    .spacing_x = 4,
-    .spacing_y = 6,
-    .width     = NULL,
-    .encoding  = encoding,
-    .glyphs    = (br_uint_8 *)&glyphs,
+    /*.flags     =*/ 0,
+    /*.glyph_x   =*/ 3,
+    /*.glyph_y   =*/ 5,
+    /*.spacing_x =*/ 4,
+    /*.spacing_y =*/ 6,
+    /*.width     =*/ NULL,
+    /*.encoding  =*/ encoding,
+    /*.glyphs    =*/ (br_uint_8 *)&glyphs,
 };
 
 #pragma pack(pop)
