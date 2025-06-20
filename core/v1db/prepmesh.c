@@ -1188,12 +1188,13 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 	// if(v1db.renderer && v1db.format_model &&
 	// 	!(model->flags & BR_MODF_UPDATEABLE) &&
 	// 	(model->flags & BR_MODF_FACES_ONLY)) {
+	if (1) {
 
 		br_error r;
 		struct br_geometry_stored *sg;
 		br_boolean b;
 		br_token_value tv[] = {
-			{BRT_CAN_SHARE_B, { .b= BR_TRUE}},
+			{BRT_CAN_SHARE_B, { BR_TRUE}},
 			{0},
 		};
 
@@ -1226,7 +1227,7 @@ void BR_PUBLIC_ENTRY BrModelUpdate(br_model *model, br_uint_16 flags)
 				model->prepared = NULL;
 			}
 		}
-	// }
+	}
 }
 
 /*

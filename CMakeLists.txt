@@ -19,9 +19,8 @@ option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 
 add_subdirectory(core)
 
-add_subdirectory(x86emu)
-
 if (BRENDER_BUILD_DRIVERS)
+    add_subdirectory(x86emu)
     add_subdirectory(drivers)
 endif ()
 

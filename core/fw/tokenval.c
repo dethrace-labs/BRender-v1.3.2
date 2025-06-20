@@ -2140,92 +2140,134 @@ br_error BrTokenValueDup(br_token_value **dstp, br_token_value *src)
 
 // Added from CrocDE
 br_value BR_RESIDENT_ENTRY BrTokenValueVaArg(br_token token, va_list* ap) {
+	br_value v;
+
     switch (BrTokenType(token)) {
     case BR_NULL_TOKEN:
     case BRT_NONE:
     default:
         break;
     case BRT_POINTER:
-        return (br_value){ .p = va_arg(*ap, void*) };
+        v.p = va_arg(*ap, void*);
+        return v;
     case BRT_INTPTR:
-        return (br_value){ .pi = va_arg(*ap, intptr_t) };
+        v.pi = va_arg(*ap, br_intptr_t);
+        return v;
     case BRT_UINTPTR:
-        return (br_value){ .pu = va_arg(*ap, uintptr_t) };
+        v.pu = va_arg(*ap, br_uintptr_t);
+        return v;
     case BRT_BOOLEAN:
-        return (br_value){ .b = (br_boolean)va_arg(*ap, int) };
+        v.b = (br_boolean)va_arg(*ap, int);
+        return v;
     case BRT_TOKEN:
-        return (br_value){ .t = (br_token)va_arg(*ap, int) };
+        v.t = (br_token)va_arg(*ap, int);
+        return v;
     case BRT_INT_8:
-        return (br_value){ .i8 = (br_int_8)va_arg(*ap, int) };
+        v.i8 = (br_int_8)va_arg(*ap, int);
+        return v;
     case BRT_UINT_8:
-        return (br_value){ .u8 = (br_uint_8)va_arg(*ap, int) };
+        v.u8 = (br_uint_8)va_arg(*ap, int);
+        return v;
     case BRT_INT_16:
-        return (br_value){ .i16 = (br_int_16)va_arg(*ap, int) };
+        v.i16 = (br_int_16)va_arg(*ap, int);
+        return v;
     case BRT_UINT_16:
-        return (br_value){ .u16 = (br_uint_16)va_arg(*ap, int) };
+        v.u16 = (br_uint_16)va_arg(*ap, int);
+        return v;
     case BRT_INT_32:
-        return (br_value){ .i32 = (br_int_32)va_arg(*ap, int) };
+        v.i32 = (br_int_32)va_arg(*ap, int);
+        return v;
     case BRT_UINT_32:
-        return (br_value){ .u32 = va_arg(*ap, br_uint_32) };
+        v.u32 = va_arg(*ap, br_uint_32);
+        return v;
     case BRT_INT_64:
-        return (br_value){ .i64 = va_arg(*ap, br_int_64) };
+        v.i64 = va_arg(*ap, br_int_64);
+        return v;
     case BRT_UINT_64:
-        return (br_value){ .u64 = va_arg(*ap, br_uint_64) };
+        v.u64 = va_arg(*ap, br_uint_64);
+        return v;
     case BRT_FIXED:
-        return (br_value){ .x = va_arg(*ap, br_fixed_ls) };
+        v.x = va_arg(*ap, br_fixed_ls);
+        return v;
     case BRT_FLOAT:
-        return (br_value){ .f = (float)va_arg(*ap, double) };
-    /* NB: missing BRT_SCALAR */
+        v.f = (float)va_arg(*ap, double);
+        return v;
+    // NB: missing BRT_SCALAR
     case BRT_ANGLE:
-        return (br_value){ .a = (br_angle)va_arg(*ap, double) };
+        v.a = (br_angle)va_arg(*ap, double);
+        return v;
     case BRT_COLOUR_RGB:
-        return (br_value){ .rgb = va_arg(*ap, br_colour) };
+        v.rgb = va_arg(*ap, br_colour);
+        return v;
     case BRT_OBJECT:
-        return (br_value){ .o = va_arg(*ap, br_object*) };
+        v.o = va_arg(*ap, br_object*);
+        return v;
     case BRT_HANDLE:
-        return (br_value){ .h = va_arg(*ap, void*) };
+        v.h = va_arg(*ap, void*);
+        return v;
     case BRT_VECTOR2_INTEGER:
-        return (br_value){ .v2_i = va_arg(*ap, br_vector2_i*) };
+        v.v2_i = va_arg(*ap, br_vector2_i*);
+        return v;
     case BRT_VECTOR3_INTEGER:
-        return (br_value){ .v3_i = va_arg(*ap, br_vector3_i*) };
+        v.v3_i = va_arg(*ap, br_vector3_i*);
+        return v;
     case BRT_VECTOR4_INTEGER:
-        return (br_value){ .v4_i = va_arg(*ap, br_vector4_i*) };
+        v.v4_i = va_arg(*ap, br_vector4_i*);
+        return v;
     case BRT_VECTOR2_FIXED:
-        return (br_value){ .v2_x = va_arg(*ap, br_vector2_x*) };
+        v.v2_x = va_arg(*ap, br_vector2_x*);
+        return v;
     case BRT_VECTOR3_FIXED:
-        return (br_value){ .v3_x = va_arg(*ap, br_vector3_x*) };
+        v.v3_x = va_arg(*ap, br_vector3_x*);
+        return v;
     case BRT_VECTOR4_FIXED:
-        return (br_value){ .v4_x = va_arg(*ap, br_vector4_x*) };
+        v.v4_x = va_arg(*ap, br_vector4_x*);
+        return v;
     case BRT_VECTOR2_FLOAT:
-        return (br_value){ .v2_f = va_arg(*ap, br_vector2_f*) };
+        v.v2_f = va_arg(*ap, br_vector2_f*);
+        return v;
     case BRT_VECTOR3_FLOAT:
-        return (br_value){ .v3_f = va_arg(*ap, br_vector3_f*) };
+        v.v3_f = va_arg(*ap, br_vector3_f*);
+        return v;
     case BRT_VECTOR4_FLOAT:
-        return (br_value){ .v4_f = va_arg(*ap, br_vector4_f*) };
+        v.v4_f = va_arg(*ap, br_vector4_f*);
+        return v;
     case BRT_MATRIX23_FIXED:
-        return (br_value){ .m23_x = va_arg(*ap, br_matrix23_x*) };
+        v.m23_x = va_arg(*ap, br_matrix23_x*);
+        return v;
     case BRT_MATRIX34_FIXED:
-        return (br_value){ .m34_x = va_arg(*ap, br_matrix34_x*) };
+        v.m34_x = va_arg(*ap, br_matrix34_x*);
+        return v;
     case BRT_MATRIX4_FIXED:
-        return (br_value){ .m4_x = va_arg(*ap, br_matrix4_x*) };
+        v.m4_x = va_arg(*ap, br_matrix4_x*);
+        return v;
     case BRT_MATRIX23_FLOAT:
-        return (br_value){ .m23_f = va_arg(*ap, br_matrix23_f*) };
+        v.m23_f = va_arg(*ap, br_matrix23_f*);
+        return v;
     case BRT_MATRIX34_FLOAT:
-        return (br_value){ .m34_f = va_arg(*ap, br_matrix34_f*) };
+        v.m34_f = va_arg(*ap, br_matrix34_f*);
+        return v;
     case BRT_MATRIX4_FLOAT:
-        return (br_value){ .m4_f = va_arg(*ap, br_matrix4_f*) };
+        v.m4_f = va_arg(*ap, br_matrix4_f*);
+        return v;
     case BRT_STRING:
-        return (br_value){ .str = va_arg(*ap, char*) };
+        v.str = va_arg(*ap, char*);
+        return v;
     case BRT_CONSTANT_STRING:
-        return (br_value){ .cstr = va_arg(*ap, const char*) };
+        v.cstr = va_arg(*ap, const char*);
+        return v;
     case BRT_OBJECT_LIST:
-        return (br_value){ .ol = va_arg(*ap, struct br_object**) };
+        v.ol = va_arg(*ap, struct br_object**);
+        return v;
     case BRT_TOKEN_LIST:
-        return (br_value){ .tl = va_arg(*ap, br_token*) };
+        v.tl = va_arg(*ap, br_token*);
+        return v;
     case BRT_POINTER_LIST:
-        return (br_value){ .pl = va_arg(*ap, void*) };
+        v.pl = va_arg(*ap, void*);
+        return v;
     case BRT_TOKEN_VALUE_LIST:
-        return (br_value){ .tvl = va_arg(*ap, struct br_token_value*) };
+        v.tvl = va_arg(*ap, struct br_token_value*);
+        return v;
     }
 
     return (br_value){ 0 };
