@@ -454,9 +454,10 @@ void BR_PUBLIC_ENTRY BrMatrix4Copy23(br_matrix4* A, br_matrix23* B) {
 
 void BR_PUBLIC_ENTRY BrMatrix4Transpose(br_matrix4* A) {
     br_scalar tmp;
+    int i,j;
 
-    for (int i = 0; i < 4; ++i) {
-        for (int j = i; j < 4; ++j) {
+    for (i = 0; i < 4; ++i) {
+        for (j = i; j < 4; ++j) {
             tmp = A->m[i][j];
             A->m[i][j] = A->m[j][i];
             A->m[j][i] = tmp;
