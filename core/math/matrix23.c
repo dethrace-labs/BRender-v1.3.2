@@ -66,15 +66,6 @@ void BR_PUBLIC_ENTRY BrMatrix23Identity(br_matrix23 *mat)
 	M(2,0) = S0; M(2,1) = S0;
 }
 
-/*
- *	 Ú		¿
- *	 ³  cosé  siné  0 ³
- *	 ³		³
- *	 ³ -siné  cosé  0 ³
- * R(é) =  ³		³
- *	 ³   0     0    1 ³
- *	 À		Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix23Rotate(br_matrix23 *mat, br_angle rz)
 {
 	br_scalar s = BR_SIN(rz);
@@ -87,15 +78,6 @@ void BR_PUBLIC_ENTRY BrMatrix23Rotate(br_matrix23 *mat, br_angle rz)
 	M(2,0) = S0; M(2,1) = S0;
 }
 
-/*
- *	    Ú	     ¿
- *	    ³  1   0   0  ³
- *	    ³	     ³
- *	    ³  0   1   0  ³
- * T(dx,dy) = ³	     ³
- *	    ³  dx  dy  1  ³
- *	    À	     Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix23Translate(br_matrix23 *mat, br_scalar dx, br_scalar dy)
 {
 	UASSERT_MESSAGE("Destination matrix is NULL", mat != NULL);
@@ -105,15 +87,6 @@ void BR_PUBLIC_ENTRY BrMatrix23Translate(br_matrix23 *mat, br_scalar dx, br_scal
 	M(2,0) = dx; M(2,1) = dy; 
 }
 
-/*
- *	    Ú	     ¿
- *	    ³  sx  0    0 ³
- *	    ³	     ³
- *	    ³  0   sy   0 ³
- * S(sx,sy) = ³	     ³
- *	    ³  0   0    1 ³
- *	    À	     Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix23Scale(br_matrix23 *mat, br_scalar sx, br_scalar sy)
 {
 	UASSERT_MESSAGE("Destination matrix is NULL", mat != NULL);
@@ -123,15 +96,6 @@ void BR_PUBLIC_ENTRY BrMatrix23Scale(br_matrix23 *mat, br_scalar sx, br_scalar s
 	M(2,0) = S0; M(2,1) = S0;
 }
 
-/*
- *	      Ú	     ¿
- *	      ³  1   sy   0 ³
- *	      ³	     ³
- *	      ³  0   1    0 ³
- * ShearX(sy) = ³	     ³
- *	      ³  0   0    1 ³
- *	      À	     Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix23ShearX(br_matrix23 *mat, br_scalar sy)
 {
 	UASSERT_MESSAGE("Destination matrix is NULL", mat != NULL);
@@ -141,15 +105,6 @@ void BR_PUBLIC_ENTRY BrMatrix23ShearX(br_matrix23 *mat, br_scalar sy)
 	M(2,0) = S0; M(2,1) = S0;
 }
 
-/*
- *	      Ú	     ¿
- *	      ³  1   0    0 ³
- *	      ³	     ³
- *	      ³  sx  1    0 ³
- * ShearY(sx) = ³	     ³
- *	      ³  0   0    1 ³
- *	      À	     Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix23ShearY(br_matrix23 *mat, br_scalar sx)
 {
 	UASSERT_MESSAGE("Destination matrix is NULL", mat != NULL);

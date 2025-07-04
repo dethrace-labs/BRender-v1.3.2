@@ -1,4 +1,4 @@
-project(pentprim C)
+﻿project(pentprim C)
 
 set(INFOGEN ${CMAKE_CURRENT_SOURCE_DIR}/infogen.pl)
 

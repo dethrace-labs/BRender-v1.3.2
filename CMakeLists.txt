@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+﻿cmake_minimum_required(VERSION 3.23)
 project(BRender VERSION 1.3.2)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

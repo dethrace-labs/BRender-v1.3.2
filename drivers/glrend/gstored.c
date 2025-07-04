@@ -299,7 +299,7 @@ static br_uint_16 calculate_bucket(const br_order_table* ot, const state_stack* 
     /*
      * Case 1 - A single bucket.
      * Force back/front geometry to the back/front and pray
-     * for the best. ¯\_(ツ)_/¯
+     * for the best
      */
     if (ot->size == 1) {
         if (render_mode == RM_FORCE_BACK)

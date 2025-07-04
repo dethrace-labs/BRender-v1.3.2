@@ -81,17 +81,6 @@ void BR_PUBLIC_ENTRY BrMatrix34Identity(br_matrix34 *mat)
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0;
 }
 
-/*
- *	 Ú		  ¿
- *	 ³ 1    0    0    0 ³
- *	 ³		  ³
- *	 ³ 0  cosé  siné  0 ³
- * Rx(é) = ³		  ³
- *	 ³ 0 -siné  cosé  0 ³
- *	 ³		  ³
- *	 ³ 0    0    0    1 ³
- *	 À		  Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34RotateX(br_matrix34 *mat, br_angle rx)
 {
 	br_scalar s = BR_SIN(rx);
@@ -105,17 +94,6 @@ void BR_PUBLIC_ENTRY BrMatrix34RotateX(br_matrix34 *mat, br_angle rx)
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0;
 }
 
-/*
- *	 Ú		  ¿
- *	 ³ cosé  0 -siné  0 ³
- *	 ³		  ³
- *	 ³  0    1   0    0 ³
- * Ry(é) = ³		  ³
- *	 ³ siné  0  cosé  0 ³
- *	 ³		  ³
- *	 ³  0    0   0    1 ³
- *	 À		  Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34RotateY(br_matrix34 *mat, br_angle ry)
 {
 	br_scalar s = BR_SIN(ry);
@@ -129,17 +107,6 @@ void BR_PUBLIC_ENTRY BrMatrix34RotateY(br_matrix34 *mat, br_angle ry)
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0;
 }
 
-/*
- *	 Ú		   ¿
- *	 ³  cosé  siné  0  0 ³
- *	 ³		   ³
- *	 ³ -siné  cosé  0  0 ³
- * Ry(é) = ³		   ³
- *	 ³   0     0    1  0 ³
- *	 ³		   ³
- *	 ³   0     0    0  1 ³
- *	 À		   Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34RotateZ(br_matrix34 *mat, br_angle rz)
 {
 	br_scalar s = BR_SIN(rz);
@@ -184,17 +151,6 @@ void BR_PUBLIC_ENTRY BrMatrix34Rotate(br_matrix34 *mat, br_angle r, br_vector3 *
 	M(3,0) = M(3,1) = M(3,2) = S0;
 }
 
-/*
- *	       Ú		¿
- *	       ³  1   0   0   0 ³
- *	       ³		³
- *	       ³  0   1   0   0 ³
- * T(dx,dy,dz) = ³		³
- *	       ³  0   0   1   0 ³
- *	       ³		³
- *	       ³  dx  dy  dz  1 ³
- *	       À		Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34Translate(br_matrix34 *mat, br_scalar dx, br_scalar dy, br_scalar dz)
 {
 	UASSERT_MESSAGE("Matrix is NULL", mat != NULL);
@@ -205,17 +161,6 @@ void BR_PUBLIC_ENTRY BrMatrix34Translate(br_matrix34 *mat, br_scalar dx, br_scal
 	M(3,0) = dx; M(3,1) = dy; M(3,2) = dz;
 }
 
-/*
- *	       Ú		¿
- *	       ³  sx  0   0   0 ³
- *	       ³		³
- *	       ³  0   sy  0   0 ³
- * S(sx,sy,sz) = ³		³
- *	       ³  0   0   sz  0 ³
- *	       ³		³
- *	       ³  0   0   0   1 ³
- *	       À		Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34Scale(br_matrix34 *mat, br_scalar sx, br_scalar sy, br_scalar sz)
 {
 	UASSERT_MESSAGE("Matrix is NULL", mat != NULL);
@@ -226,17 +171,6 @@ void BR_PUBLIC_ENTRY BrMatrix34Scale(br_matrix34 *mat, br_scalar sx, br_scalar s
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0;
 }
 
-/*
- *		 Ú		¿
- *		 ³  1   sy  sz  0 ³
- *		 ³		³
- *		 ³  0   1   0   0 ³
- * ShearX(sy,sz) = ³		³
- *		 ³  0   0   1   0 ³
- *		 ³		³
- *		 ³  0   0   0   1 ³
- *		 À		Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34ShearX(br_matrix34 *mat, br_scalar sy, br_scalar sz)
 {
 	UASSERT_MESSAGE("Matrix is NULL", mat != NULL);
@@ -247,17 +181,6 @@ void BR_PUBLIC_ENTRY BrMatrix34ShearX(br_matrix34 *mat, br_scalar sy, br_scalar 
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0;
 }
 
-/*
- *		 Ú		¿
- *		 ³  1   0   0   0 ³
- *		 ³		³
- *		 ³  sx  1   sz  0 ³
- * ShearY(sx,sz) = ³		³
- *		 ³  0   0   1   0 ³
- *		 ³		³
- *		 ³  0   0   0   1 ³
- *		 À		Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34ShearY(br_matrix34 *mat, br_scalar sx, br_scalar sz)
 {
 	UASSERT_MESSAGE("Matrix is NULL", mat != NULL);
@@ -268,17 +191,6 @@ void BR_PUBLIC_ENTRY BrMatrix34ShearY(br_matrix34 *mat, br_scalar sx, br_scalar 
 	M(3,0) = S0; M(3,1) = S0; M(3,2) = S0;
 }
 
-/*
- *		 Ú		¿
- *		 ³  1   0   0   0 ³
- *		 ³		³
- *		 ³  0   1   0   0 ³
- * ShearZ(sx,sy) = ³		³
- *		 ³  sx  sy  1   0 ³
- *		 ³		³
- *		 ³  0   0   0   1 ³
- *		 À		Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix34ShearZ(br_matrix34 *mat, br_scalar sx, br_scalar sy)
 {
 	UASSERT_MESSAGE("Matrix is NULL", mat != NULL);

@@ -1,4 +1,4 @@
-# Standard palette
+﻿# Standard palette
 #
 # Range		Ambient		Diffuse		Specular	Cut
 #

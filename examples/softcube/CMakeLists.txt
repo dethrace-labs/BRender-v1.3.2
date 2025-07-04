@@ -1,4 +1,4 @@
-project(softcube)
+﻿project(softcube)
 
 find_package(SDL2 CONFIG)
 if(NOT SDL2_FOUND)

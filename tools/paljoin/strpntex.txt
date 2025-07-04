@@ -1,4 +1,4 @@
-; This example is for the merging of palette containing 128 strip colours in its
+﻿; This example is for the merging of palette containing 128 strip colours in its
 ; lower half with a pallete containing 128 texture colours in its upper half.
 ; Lines begining with ; or # will be treated as comments. Blank lines will be
 ; ignored. (Range is a count, starting at a Base value, rather than a maximum.)

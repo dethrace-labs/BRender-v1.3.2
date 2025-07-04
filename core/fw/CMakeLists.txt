@@ -1,4 +1,4 @@
-project(fw)
+﻿project(fw)
 
 ##
 # A bit hacky, but there's ONE file in softrend that needs to be in the DDI.

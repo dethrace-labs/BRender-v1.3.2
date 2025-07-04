@@ -399,18 +399,6 @@ void BR_PUBLIC_ENTRY BrMatrix4Pre34(br_matrix4 *A, br_matrix34 *B)
 	BrMatrix4Mul34(A,B,&C);
 }
 
-
-/*
- *                 Ú                ¿
- *                 ³  1   0   0   0 ³
- *                 ³                ³
- *                 ³  0   1   0   0 ³
- * ShearZ(sx,sy) = ³                ³
- *                 ³  sx  sy  1   0 ³
- *                 ³                ³
- *                 ³  0   0   0   1 ³
- *                 À                Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix4ShearZ(br_matrix4 *mat, br_scalar sx, br_scalar sy)
 {
         UASSERT_MESSAGE("Subject matrix is NULL", mat != NULL);
