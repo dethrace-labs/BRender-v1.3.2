@@ -1,0 +1,1132 @@
+/*
+ * Copyright (c) 1993-1995 Argonaut Technologies Limited. All rights reserved.
+ *
+ * Predefined tokens generated via tokgen.pl
+ */
+#if BR_TOKEN_ENUM
+
+typedef enum {
+	BRT_ABGR_1_5_5_5               =      421,
+	BRT_ABGR_4_4_4_4               =      437,
+	BRT_ABGR_8_8_8_8               =      433,
+	BRT_ACCEPT                     =      412,
+	BRT_AINDEX_4_4                 =      447,
+	BRT_AINDEX_8_8                 =      446,
+	BRT_ALL                        =      393,
+	BRT_ALPHA                      =       94,
+	BRT_ALTERNATIVE_TO_DEFAULT_B   =      150,
+	BRT_ALWAYS                     =      239,
+	BRT_AMBIENT                    =      319,
+	BRT_AMBIENT_F                  =      299,
+	BRT_AMBIENT_X                  =      298,
+	BRT_ANGLE                      =       17,
+	BRT_ANGLE_CULL_B               =      347,
+	BRT_ANGLE_INNER_A              =      339,
+	BRT_ANGLE_OUTER_A              =      338,
+	BRT_ARGB_1_5_5_5               =      420,
+	BRT_ARGB_4_4_4_4               =      436,
+	BRT_ARGB_8_8_8_8               =      432,
+	BRT_ATTENUATION_C_F            =      343,
+	BRT_ATTENUATION_C_X            =      342,
+	BRT_ATTENUATION_HINT_T         =      351,
+	BRT_ATTENUATION_L_F            =      341,
+	BRT_ATTENUATION_L_X            =      340,
+	BRT_ATTENUATION_Q_F            =      345,
+	BRT_ATTENUATION_Q_X            =      344,
+	BRT_ATTENUATION_TYPE_T         =      348,
+	BRT_A_4                        =      514,
+	BRT_A_8                        =      443,
+	BRT_BEST_QUALITY               =      192,
+	BRT_BEST_SPEED                 =      191,
+	BRT_BGRA_4_4_4_4               =      438,
+	BRT_BGRA_8_8_8_8               =      434,
+	BRT_BGRX_8_8_8_8               =      430,
+	BRT_BGR_2_3_2                  =      425,
+	BRT_BGR_5_6_5                  =      423,
+	BRT_BGR_8_8_8                  =      427,
+	BRT_BLENDED                    =      394,
+	BRT_BLENDER_PROGRAM_P          =      522,
+	BRT_BLEND_B                    =      183,
+	BRT_BLEND_CONSTANT             =      509,
+	BRT_BLEND_DIMMED               =      507,
+	BRT_BLEND_MODE_T               =      503,
+	BRT_BLEND_MODE_TL              =      504,
+	BRT_BLEND_PREMULTIPLIED        =      508,
+	BRT_BLEND_STANDARD             =      505,
+	BRT_BLEND_SUMMED               =      506,
+	BRT_BLUE                       =       92,
+	BRT_BOOLEAN                    =        2,
+	BRT_BOTTOM_TOP                 =       76,
+	BRT_BOUNDS                     =      174,
+	BRT_BOUNDS_B                   =      389,
+	BRT_BRENDER_DEVELOPER_B        =      492,
+	BRT_BRENDER_DEVICES_STR        =      491,
+	BRT_BRENDER_DRIVERS_STR        =      489,
+	BRT_BRENDER_PATH_STR           =      488,
+	BRT_BRENDER_USE_CMOV_B         =      494,
+	BRT_BRENDER_USE_MMX_B          =      493,
+	BRT_BRENDER_VERSION_U32        =       62,
+	BRT_BUCKET_SORT                =      391,
+	BRT_BUFFER                     =      142,
+	BRT_BUFFER_STORED              =       51,
+	BRT_BUMP_O                     =      260,
+	BRT_BUMP_TVL                   =      268,
+	BRT_CACHED_B                   =      153,
+	BRT_CACHED_SIZE_U32            =      154,
+	BRT_CACHED_TOTAL_U32           =      155,
+	BRT_CAN_SHARE_B                =      157,
+	BRT_CLAMP                      =      243,
+	BRT_CLIP                       =      173,
+	BRT_CLIPPING_B                 =      388,
+	BRT_CLIP_MAX_I32               =      147,
+	BRT_CLONE                      =      137,
+	BRT_CLUT_MAX_I32               =      102,
+	BRT_CLUT_O                     =       77,
+	BRT_COLOUR_B                   =      201,
+	BRT_COLOUR_BUFFER_O            =      383,
+	BRT_COLOUR_B_F                 =      329,
+	BRT_COLOUR_B_X                 =      328,
+	BRT_COLOUR_G_F                 =      327,
+	BRT_COLOUR_G_X                 =      326,
+	BRT_COLOUR_I32                 =      295,
+	BRT_COLOUR_KEY_B               =      186,
+	BRT_COLOUR_MAP_1_O             =      530,
+	BRT_COLOUR_MAP_O               =      255,
+	BRT_COLOUR_MAP_TVL             =      263,
+	BRT_COLOUR_RGB                 =       18,
+	BRT_COLOUR_R_F                 =      325,
+	BRT_COLOUR_R_X                 =      324,
+	BRT_COLOUR_SOURCE_T            =      284,
+	BRT_COLOUR_T                   =      202,
+	BRT_COLOUR_TL                  =      203,
+	BRT_COLOUR_WRITE_B             =      182,
+	BRT_CONSTANT                   =      352,
+	BRT_CONSTANT_STRING            =       37,
+	BRT_COPY_BITS_F                =      119,
+	BRT_COPY_BITS_X                =      118,
+	BRT_COPY_DESTINATION_TVL       =      109,
+	BRT_COPY_F                     =      111,
+	BRT_COPY_SOURCE_TVL            =      108,
+	BRT_COPY_X                     =      110,
+	BRT_CREATOR_CSTR               =       64,
+	BRT_CULL                       =      168,
+	BRT_CULLED_B                   =      354,
+	BRT_CULL_B                     =      385,
+	BRT_DDI_VERSION_U32            =       63,
+	BRT_DECAL_B                    =      180,
+	BRT_DEFAULT                    =      190,
+	BRT_DEFAULT_BASE_I32           =      132,
+	BRT_DEFAULT_DEVICE_STR         =      490,
+	BRT_DEFAULT_RANGE_I32          =      133,
+	BRT_DEPTH                      =       93,
+	BRT_DEPTH_15                   =      523,
+	BRT_DEPTH_31                   =      524,
+	BRT_DEPTH_BIAS_F               =      282,
+	BRT_DEPTH_BIAS_X               =      283,
+	BRT_DEPTH_BUFFER_O             =      384,
+	BRT_DEPTH_FP15                 =      525,
+	BRT_DEPTH_FP16                 =      526,
+	BRT_DEPTH_TEST_T               =      230,
+	BRT_DEPTH_TEST_TL              =      231,
+	BRT_DEPTH_WRITE_B              =      181,
+	BRT_DESTINATION_O              =      166,
+	BRT_DEVICE                     =       43,
+	BRT_DEVICE_CLUT                =       47,
+	BRT_DEVICE_PIXELMAP            =       46,
+	BRT_DIBSECTION                 =      464,
+	BRT_DIFFUSE_F                  =      301,
+	BRT_DIFFUSE_X                  =      300,
+	BRT_DIRECT                     =      316,
+	BRT_DIRECTDRAW                 =      465,
+	BRT_DIRECTDRAW_DEVICENAME_CSTR =      470,
+	BRT_DIRECTION_V3_F             =      322,
+	BRT_DIRECTION_V3_X             =      323,
+	BRT_DIRECT_F                   =      126,
+	BRT_DIRECT_X                   =      125,
+	BRT_DITHER                     =      215,
+	BRT_DITHER_B                   =      521,
+	BRT_DITHER_COLOUR_B            =      195,
+	BRT_DITHER_COLOUR_T            =      196,
+	BRT_DITHER_COLOUR_TL           =      197,
+	BRT_DITHER_MAP_B               =      198,
+	BRT_DITHER_MAP_T               =      199,
+	BRT_DITHER_MAP_TL              =      200,
+	BRT_DIVERT_T                   =      392,
+	BRT_DONT_CARE                  =      376,
+	BRT_DOUBLE_TEXTURE_B           =      532,
+	BRT_D_15                       =      510,
+	BRT_D_16                       =      440,
+	BRT_D_24                       =      441,
+	BRT_D_31                       =      511,
+	BRT_D_32                       =      442,
+	BRT_D_FP15                     =      512,
+	BRT_D_FP16                     =      513,
+	BRT_ENABLE                     =      171,
+	BRT_ENVIRONMENT_INFINITE       =      289,
+	BRT_ENVIRONMENT_LOCAL          =      288,
+	BRT_EQUAL                      =      234,
+	BRT_EVEN_ODD                   =       72,
+	BRT_FACE_GROUP_COUNT_U32       =      162,
+	BRT_FACILITY                   =       44,
+	BRT_FACILITY_O                 =      128,
+	BRT_FIXED                      =       15,
+	BRT_FLOAT                      =       16,
+	BRT_FOG_B                      =      540,
+	BRT_FOG_MAX_F                  =      228,
+	BRT_FOG_MAX_X                  =      229,
+	BRT_FOG_MIN_F                  =      226,
+	BRT_FOG_MIN_X                  =      227,
+	BRT_FOG_RGB                    =      225,
+	BRT_FOG_SCALE_U8               =      533,
+	BRT_FOG_T                      =      223,
+	BRT_FOG_TL                     =      224,
+	BRT_FONT_NORMAL_O              =      131,
+	BRT_FONT_NORMAL_P              =      130,
+	BRT_FORCE_BACK_B               =      281,
+	BRT_FORCE_FRONT_B              =      280,
+	BRT_FORMAT_T                   =      161,
+	BRT_GEOMETRY                   =       52,
+	BRT_GEOMETRY_LIGHTING          =       57,
+	BRT_GEOMETRY_MAP               =      290,
+	BRT_GEOMETRY_PRIMITIVES        =       54,
+	BRT_GEOMETRY_STORED            =       53,
+	BRT_GEOMETRY_V1_BUCKETS        =       56,
+	BRT_GEOMETRY_V1_MODEL          =       55,
+	BRT_GEOMETRY_X                 =      291,
+	BRT_GEOMETRY_Y                 =      292,
+	BRT_GEOMETRY_Z                 =      293,
+	BRT_GLOBAL_AMBIENT_I32         =      306,
+	BRT_GLOBAL_AMBIENT_RGB         =      307,
+	BRT_GREATER                    =      232,
+	BRT_GREATER_OR_EQUAL           =      233,
+	BRT_GREEN                      =       91,
+	BRT_HANDLE                     =       20,
+	BRT_HEIGHT_I32                 =       81,
+	BRT_HEIGHT_MAX_I32             =       83,
+	BRT_HEIGHT_MIN_I32             =       82,
+	BRT_HEIGHT_OPTIMUM_I32         =      252,
+	BRT_HEIGHT_T                   =      249,
+	BRT_HEIGHT_TL                  =      250,
+	BRT_HIDDEN                     =      139,
+	BRT_HIDDEN_BUFFER              =      140,
+	BRT_HIDDEN_SURFACE             =      175,
+	BRT_HIDPI_B                    =      467,
+	BRT_HITHER_Z_F                 =      379,
+	BRT_HITHER_Z_X                 =      380,
+	BRT_HOST_MEMORY_U32            =      105,
+	BRT_IDENTIFIER_CSTR            =       60,
+	BRT_INDEX                      =       89,
+	BRT_INDEXA_4_4                 =      445,
+	BRT_INDEXA_8_8                 =      444,
+	BRT_INDEXED_B                  =       95,
+	BRT_INDEX_1                    =      414,
+	BRT_INDEX_2                    =      415,
+	BRT_INDEX_4                    =      416,
+	BRT_INDEX_8                    =      417,
+	BRT_INDEX_BASE_I32             =      205,
+	BRT_INDEX_BLEND_O              =      257,
+	BRT_INDEX_BLEND_TVL            =      265,
+	BRT_INDEX_FOG_O                =      261,
+	BRT_INDEX_FOG_TVL              =      269,
+	BRT_INDEX_LIGHT_O              =      259,
+	BRT_INDEX_LIGHT_TVL            =      267,
+	BRT_INDEX_RANGE_I32            =      206,
+	BRT_INDEX_SHADE_O              =      256,
+	BRT_INDEX_SHADE_TVL            =      264,
+	BRT_INI_STR                    =      487,
+	BRT_INTEL                      =      495,
+	BRT_INTEL_386                  =      499,
+	BRT_INTEL_486                  =      500,
+	BRT_INTEL_PENTIUM              =      501,
+	BRT_INTEL_PENTIUM_PRO          =      502,
+	BRT_INTERLACE_B                =      520,
+	BRT_INTPTR                     =        4,
+	BRT_INT_16                     =        9,
+	BRT_INT_32                     =       11,
+	BRT_INT_64                     =       13,
+	BRT_INT_8                      =        7,
+	BRT_KEY_IS_TRANSPARENT         =      455,
+	BRT_LEFT_RIGHT                 =       73,
+	BRT_LENGTH_PRESERVING          =      367,
+	BRT_LESS                       =      237,
+	BRT_LESS_OR_EQUAL              =      236,
+	BRT_LIGHT                      =      172,
+	BRT_LIGHTING_B                 =      277,
+	BRT_LIGHTING_VOLUME_P          =      353,
+	BRT_LIGHT_MAX_I32              =      146,
+	BRT_LIGHT_VERTICES             =      409,
+	BRT_LINE                       =      403,
+	BRT_LINEAR                     =      216,
+	BRT_LPDIRECTDRAWSURFACE_P      =      471,
+	BRT_MAPPING_SOURCE_T           =      287,
+	BRT_MAP_ANTIALIASING_T         =      207,
+	BRT_MAP_ANTIALIASING_TL        =      208,
+	BRT_MAP_HEIGHT_LIMIT_1_T       =      528,
+	BRT_MAP_HEIGHT_LIMIT_T         =      245,
+	BRT_MAP_HEIGHT_LIMIT_TL        =      246,
+	BRT_MAP_INTERPOLATION_MAG_T    =      217,
+	BRT_MAP_INTERPOLATION_MAG_TL   =      218,
+	BRT_MAP_INTERPOLATION_MIN_T    =      219,
+	BRT_MAP_INTERPOLATION_MIN_TL   =      220,
+	BRT_MAP_INTERPOLATION_T        =      212,
+	BRT_MAP_INTERPOLATION_TL       =      213,
+	BRT_MAP_MATRIX_M23_F           =      308,
+	BRT_MAP_MATRIX_M23_X           =      309,
+	BRT_MAP_WIDTH_LIMIT_1_T        =      529,
+	BRT_MAP_WIDTH_LIMIT_T          =      240,
+	BRT_MAP_WIDTH_LIMIT_TL         =      241,
+	BRT_MATCH_TVL                  =      107,
+	BRT_MATRIX                     =      170,
+	BRT_MATRIX23_FIXED             =       30,
+	BRT_MATRIX23_FLOAT             =       33,
+	BRT_MATRIX34_FIXED             =       31,
+	BRT_MATRIX34_FLOAT             =       34,
+	BRT_MATRIX4_FIXED              =       32,
+	BRT_MATRIX4_FLOAT              =       35,
+	BRT_MAX_V2_F                   =      363,
+	BRT_MAX_V2_I                   =      361,
+	BRT_MAX_V2_X                   =      362,
+	BRT_MEMORY_MAPPED_B            =       96,
+	BRT_MIN_V2_F                   =      360,
+	BRT_MIN_V2_I                   =      358,
+	BRT_MIN_V2_X                   =      359,
+	BRT_MIP                        =      209,
+	BRT_MIPS                       =      497,
+	BRT_MIP_INTERPOLATION_T        =      221,
+	BRT_MIP_INTERPOLATION_TL       =      222,
+	BRT_MIP_MAX_U8                 =      538,
+	BRT_MIP_MIN_U8                 =      537,
+	BRT_MIP_MODIFIER_I8            =      536,
+	BRT_MIP_MOD_ABSOLUTE_B         =      539,
+	BRT_MIP_PER_PIXEL              =      210,
+	BRT_MIP_PER_PRIMITIVE          =      211,
+	BRT_MIRROR                     =      244,
+	BRT_MODEL                      =      276,
+	BRT_MODEL_TO_SCREEN_M4_F       =      377,
+	BRT_MODEL_TO_SCREEN_M4_X       =      378,
+	BRT_MODEL_TO_VIEW_HINT_T       =      366,
+	BRT_MODEL_TO_VIEW_M34_F        =      364,
+	BRT_MODEL_TO_VIEW_M34_X        =      365,
+	BRT_MODE_U32                   =      106,
+	BRT_MODULATE_ALPHA_B           =      185,
+	BRT_MODULATE_B                 =      184,
+	BRT_MOTOROLA                   =      498,
+	BRT_MSAA_SAMPLES_I32           =      472,
+	BRT_NEAREST                    =      214,
+	BRT_NEVER                      =      238,
+	BRT_NONE                       =        1,
+	BRT_NOT_EQUAL                  =      235,
+	BRT_NO_RENDER                  =      141,
+	BRT_OBJECT                     =       19,
+	BRT_OBJECT_CONTAINER           =       42,
+	BRT_OBJECT_LIST                =       38,
+	BRT_ODD_EVEN                   =       71,
+	BRT_OFFSCREEN                  =      138,
+	BRT_ONE_SIDED                  =      272,
+	BRT_OPACITY_F                  =      297,
+	BRT_OPACITY_SOURCE_T           =      286,
+	BRT_OPACITY_X                  =      296,
+	BRT_OPENGL_B                   =      484,
+	BRT_OPENGL_CALLBACKS_P         =      473,
+	BRT_OPENGL_FRAGMENT_SHADER_STR =      475,
+	BRT_OPENGL_PROFILE_COMPATIBILITY =      482,
+	BRT_OPENGL_PROFILE_CORE        =      483,
+	BRT_OPENGL_PROFILE_T           =      481,
+	BRT_OPENGL_RENDERER_CSTR       =      478,
+	BRT_OPENGL_VENDOR_CSTR         =      477,
+	BRT_OPENGL_VERSION_CSTR        =      476,
+	BRT_OPENGL_VERSION_MAJOR_U8    =      479,
+	BRT_OPENGL_VERSION_MINOR_U8    =      480,
+	BRT_OPENGL_VERTEX_SHADER_STR   =      474,
+	BRT_ORIGIN_V2_I                =      129,
+	BRT_OUTPUT                     =      177,
+	BRT_OUTPUT_FACILITY            =       45,
+	BRT_OUTPUT_FACILITY_O          =      127,
+	BRT_PARALLEL                   =      372,
+	BRT_PARTIAL                    =      411,
+	BRT_PARTS_TL                   =      149,
+	BRT_PARTS_U32                  =      160,
+	BRT_PERSPECTIVE                =      371,
+	BRT_PERSPECTIVE_B              =      187,
+	BRT_PERSPECTIVE_T              =      188,
+	BRT_PERSPECTIVE_TL             =      189,
+	BRT_PIXELMAP_MAX_I32           =      101,
+	BRT_PIXEL_BITS_I32             =       85,
+	BRT_PIXEL_CHANNELS_I32         =       87,
+	BRT_PIXEL_CHANNELS_TL          =       88,
+	BRT_PIXEL_GET_F                =      122,
+	BRT_PIXEL_GET_X                =      121,
+	BRT_PIXEL_SET_F                =      124,
+	BRT_PIXEL_SET_X                =      123,
+	BRT_PIXEL_TYPE_U8              =       84,
+	BRT_PLANE                      =      355,
+	BRT_PLANE_V4_F                 =      356,
+	BRT_PLANE_V4_X                 =      357,
+	BRT_POINT                      =      317,
+	BRT_POINTER                    =        3,
+	BRT_POINTER_LIST               =       40,
+	BRT_POSITION_V3_F              =      320,
+	BRT_POSITION_V3_X              =      321,
+	BRT_POWERPC                    =      496,
+	BRT_POWER_OF_2                 =      453,
+	BRT_PREFER_SHARE_B             =      158,
+	BRT_PRELIGHTING_B              =      278,
+	BRT_PRIMITIVE                  =      176,
+	BRT_PRIMITIVES                 =      406,
+	BRT_PRIMITIVE_BLOCK_P          =      253,
+	BRT_PRIMITIVE_CUSTOM_P         =      314,
+	BRT_PRIMITIVE_FILTER_P         =      315,
+	BRT_PRIMITIVE_LIBRARY          =       58,
+	BRT_PRIMITIVE_LIBRARY_O        =       97,
+	BRT_PRIMITIVE_LIBRARY_OL       =       98,
+	BRT_PRIMITIVE_LIBRARY_P        =      167,
+	BRT_PRIMITIVE_STATE            =       59,
+	BRT_PRIVATE                    =      451,
+	BRT_PRODUCT_CSTR               =       66,
+	BRT_PRODUCT_VERSION_CSTR       =       67,
+	BRT_QUAD                       =      294,
+	BRT_QUADRATIC                  =      349,
+	BRT_QUAD_STRIP                 =      519,
+	BRT_RADII                      =      350,
+	BRT_RADIUS_CULL_B              =      346,
+	BRT_RADIUS_INNER_F             =      337,
+	BRT_RADIUS_INNER_X             =      336,
+	BRT_RADIUS_OUTER_F             =      335,
+	BRT_RADIUS_OUTER_X             =      334,
+	BRT_RED                        =       90,
+	BRT_REGISTRY_STR               =      486,
+	BRT_REJECT                     =      413,
+	BRT_RENDERER                   =       49,
+	BRT_RENDERER_FACILITY          =       48,
+	BRT_RENDERER_FACILITY_O        =       99,
+	BRT_RENDERER_FACILITY_OL       =      100,
+	BRT_RENDERER_MAX_I32           =      148,
+	BRT_RENDERER_O                 =      143,
+	BRT_RENDERER_STATE_STORED      =       50,
+	BRT_RENDER_B                   =      390,
+	BRT_RESIZABLE_B                =      468,
+	BRT_RGB                        =      204,
+	BRT_RGBA_4_4_4_4               =      439,
+	BRT_RGBA_8_8_8_8               =      435,
+	BRT_RGBX_8_8_8_8               =      431,
+	BRT_RGB_2_3_2                  =      424,
+	BRT_RGB_5_6_5                  =      422,
+	BRT_RGB_8_8_8                  =      426,
+	BRT_RIGHT_LEFT                 =       74,
+	BRT_SCREEN_DOOR_O              =      258,
+	BRT_SCREEN_DOOR_TVL            =      266,
+	BRT_SDL_EXT_PROCS_P            =      469,
+	BRT_SEPARATE_SPECULAR_B        =      279,
+	BRT_SHARED_B                   =      152,
+	BRT_SMOOTH_1_B                 =      527,
+	BRT_SMOOTH_B                   =      178,
+	BRT_SMOOTH_OPACITY_B           =      179,
+	BRT_SPACE_T                    =      274,
+	BRT_SPECULAR_F                 =      303,
+	BRT_SPECULAR_POWER_F           =      305,
+	BRT_SPECULAR_POWER_X           =      304,
+	BRT_SPECULAR_X                 =      302,
+	BRT_SPOT                       =      318,
+	BRT_SPOT_INNER_F               =      333,
+	BRT_SPOT_INNER_X               =      332,
+	BRT_SPOT_OUTER_F               =      331,
+	BRT_SPOT_OUTER_X               =      330,
+	BRT_SPRITE                     =      402,
+	BRT_SQUARE                     =      452,
+	BRT_STATE_RESTORE              =      405,
+	BRT_STEREO_B                   =       68,
+	BRT_STEREO_T                   =       69,
+	BRT_STEREO_TL                  =       70,
+	BRT_STORED_ONLY_B              =      159,
+	BRT_STORED_STATE_O             =      401,
+	BRT_STRETCHDIBITS              =      463,
+	BRT_STRETCH_COPY_DESTINATION_TVL =      113,
+	BRT_STRETCH_COPY_F             =      117,
+	BRT_STRETCH_COPY_SOURCE_TVL    =      112,
+	BRT_STRETCH_COPY_T             =      114,
+	BRT_STRETCH_COPY_TL            =      115,
+	BRT_STRETCH_COPY_X             =      116,
+	BRT_STRING                     =       36,
+	BRT_SUBDIVIDE                  =      193,
+	BRT_SUBDIVIDE_TOLERANCE_I32    =      194,
+	BRT_SURFACE                    =      169,
+	BRT_SURFACE_B                  =      387,
+	BRT_SURFACE_C_CUSTOM_P         =      310,
+	BRT_SURFACE_C_FILTER_P         =      311,
+	BRT_SURFACE_HANDLE_H           =      466,
+	BRT_SURFACE_V_CUSTOM_P         =      312,
+	BRT_SURFACE_V_FILTER_P         =      313,
+	BRT_SYCHRONISE_I32             =      120,
+	BRT_TEXTURE_1_O                =      531,
+	BRT_TEXTURE_MEMORY_U32         =      104,
+	BRT_TEXTURE_O                  =      254,
+	BRT_TEXTURE_TVL                =      262,
+	BRT_TITLE_CSTR                 =       65,
+	BRT_TOKEN                      =        6,
+	BRT_TOKEN_LIST                 =       39,
+	BRT_TOKEN_VALUE_LIST           =       41,
+	BRT_TOP_BOTTOM                 =       75,
+	BRT_TRANSFORM_B                =      386,
+	BRT_TRIANGLE                   =      404,
+	BRT_TRIANGLES_DRAWN_COUNT_U32  =      163,
+	BRT_TRIANGLES_RENDERED_COUNT_U32 =      164,
+	BRT_TRI_FAN                    =      518,
+	BRT_TRI_STRIP                  =      517,
+	BRT_TWO_SIDED                  =      273,
+	BRT_TYPE_T                     =      271,
+	BRT_UINTPTR                    =        5,
+	BRT_UINT_16                    =       10,
+	BRT_UINT_32                    =       12,
+	BRT_UINT_64                    =       14,
+	BRT_UINT_8                     =        8,
+	BRT_UNKNOWN                    =      270,
+	BRT_UPDATE_DATA_B              =      156,
+	BRT_USES_PRIMITIVE_LIBRARY_B   =      151,
+	BRT_USE_BACKGROUND_ALPHA_B     =      535,
+	BRT_USE_CONSTANT_ALPHA_B       =      534,
+	BRT_USE_NO_3D_B                =      144,
+	BRT_USE_NO_DEPTH_B             =      145,
+	BRT_USE_T                      =      136,
+	BRT_V1BUCKETS                  =      408,
+	BRT_V1INSERT_ARG1_P            =      398,
+	BRT_V1INSERT_ARG2_P            =      399,
+	BRT_V1INSERT_ARG3_P            =      400,
+	BRT_V1INSERT_FUNCTION_P        =      397,
+	BRT_V1MODEL                    =      407,
+	BRT_V1ORDER_TABLE_P            =      395,
+	BRT_V1PRIMITIVE_HEAP_P         =      396,
+	BRT_VECTOR2_FIXED              =       24,
+	BRT_VECTOR2_FLOAT              =       27,
+	BRT_VECTOR2_INTEGER            =       21,
+	BRT_VECTOR3_FIXED              =       25,
+	BRT_VECTOR3_FLOAT              =       28,
+	BRT_VECTOR3_INTEGER            =       22,
+	BRT_VECTOR4_FIXED              =       26,
+	BRT_VECTOR4_FLOAT              =       29,
+	BRT_VECTOR4_INTEGER            =       23,
+	BRT_VERSION_U32                =       61,
+	BRT_VERTEX                     =      285,
+	BRT_VERTEX_DBL                 =      516,
+	BRT_VERTEX_SGL                 =      515,
+	BRT_VERTICAL_BLANK             =      410,
+	BRT_VERTICES_RENDERED_COUNT_U32 =      165,
+	BRT_VIDEO_MEMORY_U32           =      103,
+	BRT_VIEW                       =      275,
+	BRT_VIEW_TO_ENVIRONMENT_HINT_T =      375,
+	BRT_VIEW_TO_ENVIRONMENT_M34_F  =      373,
+	BRT_VIEW_TO_ENVIRONMENT_M34_X  =      374,
+	BRT_VIEW_TO_SCREEN_HINT_T      =      370,
+	BRT_VIEW_TO_SCREEN_M4_F        =      368,
+	BRT_VIEW_TO_SCREEN_M4_X        =      369,
+	BRT_VIRTUALFB_CALLBACKS_P      =      485,
+	BRT_WIDTH_I32                  =       78,
+	BRT_WIDTH_MAX_I32              =       80,
+	BRT_WIDTH_MIN_I32              =       79,
+	BRT_WIDTH_OPTIMUM_I32          =      251,
+	BRT_WIDTH_T                    =      247,
+	BRT_WIDTH_TL                   =      248,
+	BRT_WINDOW_BUFFER_METHOD_T     =      461,
+	BRT_WINDOW_FULLSCREEN_B        =      459,
+	BRT_WINDOW_HANDLE_H            =      458,
+	BRT_WINDOW_MONITOR_I32         =      460,
+	BRT_WINDOW_NAME_CSTR           =      456,
+	BRT_WINDOW_PROCEDURE_P         =      457,
+	BRT_WING                       =      462,
+	BRT_WORD_BYTES_I32             =       86,
+	BRT_WRAP                       =      242,
+	BRT_WRITABLE_BASE_I32          =      134,
+	BRT_WRITABLE_RANGE_I32         =      135,
+	BRT_XBGR_1_5_5_5               =      419,
+	BRT_XBGR_8_8_8_8               =      429,
+	BRT_XRGB_1_5_5_5               =      418,
+	BRT_XRGB_8_8_8_8               =      428,
+	BRT_XYZ_16_16_16               =      449,
+	BRT_XYZ_8_8_8                  =      448,
+	BRT_YON_Z_F                    =      381,
+	BRT_YON_Z_X                    =      382,
+	BRT_YUV_16                     =      450,
+	BRT_ZERO_IS_TRANSPARENT        =      454,
+	_BRT_MAX = 0x7ffffff	/* Forces enum to be 32 bit */
+} br_token;
+#else
+#define BRT_ABGR_1_5_5_5                    421
+#define BRT_ABGR_4_4_4_4                    437
+#define BRT_ABGR_8_8_8_8                    433
+#define BRT_ACCEPT                          412
+#define BRT_AINDEX_4_4                      447
+#define BRT_AINDEX_8_8                      446
+#define BRT_ALL                             393
+#define BRT_ALPHA                            94
+#define BRT_ALTERNATIVE_TO_DEFAULT_B        150
+#define BRT_ALWAYS                          239
+#define BRT_AMBIENT                         319
+#define BRT_AMBIENT_F                       299
+#define BRT_AMBIENT_X                       298
+#define BRT_ANGLE                            17
+#define BRT_ANGLE_CULL_B                    347
+#define BRT_ANGLE_INNER_A                   339
+#define BRT_ANGLE_OUTER_A                   338
+#define BRT_ARGB_1_5_5_5                    420
+#define BRT_ARGB_4_4_4_4                    436
+#define BRT_ARGB_8_8_8_8                    432
+#define BRT_ATTENUATION_C_F                 343
+#define BRT_ATTENUATION_C_X                 342
+#define BRT_ATTENUATION_HINT_T              351
+#define BRT_ATTENUATION_L_F                 341
+#define BRT_ATTENUATION_L_X                 340
+#define BRT_ATTENUATION_Q_F                 345
+#define BRT_ATTENUATION_Q_X                 344
+#define BRT_ATTENUATION_TYPE_T              348
+#define BRT_A_4                             514
+#define BRT_A_8                             443
+#define BRT_BEST_QUALITY                    192
+#define BRT_BEST_SPEED                      191
+#define BRT_BGRA_4_4_4_4                    438
+#define BRT_BGRA_8_8_8_8                    434
+#define BRT_BGRX_8_8_8_8                    430
+#define BRT_BGR_2_3_2                       425
+#define BRT_BGR_5_6_5                       423
+#define BRT_BGR_8_8_8                       427
+#define BRT_BLENDED                         394
+#define BRT_BLENDER_PROGRAM_P               522
+#define BRT_BLEND_B                         183
+#define BRT_BLEND_CONSTANT                  509
+#define BRT_BLEND_DIMMED                    507
+#define BRT_BLEND_MODE_T                    503
+#define BRT_BLEND_MODE_TL                   504
+#define BRT_BLEND_PREMULTIPLIED             508
+#define BRT_BLEND_STANDARD                  505
+#define BRT_BLEND_SUMMED                    506
+#define BRT_BLUE                             92
+#define BRT_BOOLEAN                           2
+#define BRT_BOTTOM_TOP                       76
+#define BRT_BOUNDS                          174
+#define BRT_BOUNDS_B                        389
+#define BRT_BRENDER_DEVELOPER_B             492
+#define BRT_BRENDER_DEVICES_STR             491
+#define BRT_BRENDER_DRIVERS_STR             489
+#define BRT_BRENDER_PATH_STR                488
+#define BRT_BRENDER_USE_CMOV_B              494
+#define BRT_BRENDER_USE_MMX_B               493
+#define BRT_BRENDER_VERSION_U32              62
+#define BRT_BUCKET_SORT                     391
+#define BRT_BUFFER                          142
+#define BRT_BUFFER_STORED                    51
+#define BRT_BUMP_O                          260
+#define BRT_BUMP_TVL                        268
+#define BRT_CACHED_B                        153
+#define BRT_CACHED_SIZE_U32                 154
+#define BRT_CACHED_TOTAL_U32                155
+#define BRT_CAN_SHARE_B                     157
+#define BRT_CLAMP                           243
+#define BRT_CLIP                            173
+#define BRT_CLIPPING_B                      388
+#define BRT_CLIP_MAX_I32                    147
+#define BRT_CLONE                           137
+#define BRT_CLUT_MAX_I32                    102
+#define BRT_CLUT_O                           77
+#define BRT_COLOUR_B                        201
+#define BRT_COLOUR_BUFFER_O                 383
+#define BRT_COLOUR_B_F                      329
+#define BRT_COLOUR_B_X                      328
+#define BRT_COLOUR_G_F                      327
+#define BRT_COLOUR_G_X                      326
+#define BRT_COLOUR_I32                      295
+#define BRT_COLOUR_KEY_B                    186
+#define BRT_COLOUR_MAP_1_O                  530
+#define BRT_COLOUR_MAP_O                    255
+#define BRT_COLOUR_MAP_TVL                  263
+#define BRT_COLOUR_RGB                       18
+#define BRT_COLOUR_R_F                      325
+#define BRT_COLOUR_R_X                      324
+#define BRT_COLOUR_SOURCE_T                 284
+#define BRT_COLOUR_T                        202
+#define BRT_COLOUR_TL                       203
+#define BRT_COLOUR_WRITE_B                  182
+#define BRT_CONSTANT                        352
+#define BRT_CONSTANT_STRING                  37
+#define BRT_COPY_BITS_F                     119
+#define BRT_COPY_BITS_X                     118
+#define BRT_COPY_DESTINATION_TVL            109
+#define BRT_COPY_F                          111
+#define BRT_COPY_SOURCE_TVL                 108
+#define BRT_COPY_X                          110
+#define BRT_CREATOR_CSTR                     64
+#define BRT_CULL                            168
+#define BRT_CULLED_B                        354
+#define BRT_CULL_B                          385
+#define BRT_DDI_VERSION_U32                  63
+#define BRT_DECAL_B                         180
+#define BRT_DEFAULT                         190
+#define BRT_DEFAULT_BASE_I32                132
+#define BRT_DEFAULT_DEVICE_STR              490
+#define BRT_DEFAULT_RANGE_I32               133
+#define BRT_DEPTH                            93
+#define BRT_DEPTH_15                        523
+#define BRT_DEPTH_31                        524
+#define BRT_DEPTH_BIAS_F                    282
+#define BRT_DEPTH_BIAS_X                    283
+#define BRT_DEPTH_BUFFER_O                  384
+#define BRT_DEPTH_FP15                      525
+#define BRT_DEPTH_FP16                      526
+#define BRT_DEPTH_TEST_T                    230
+#define BRT_DEPTH_TEST_TL                   231
+#define BRT_DEPTH_WRITE_B                   181
+#define BRT_DESTINATION_O                   166
+#define BRT_DEVICE                           43
+#define BRT_DEVICE_CLUT                      47
+#define BRT_DEVICE_PIXELMAP                  46
+#define BRT_DIBSECTION                      464
+#define BRT_DIFFUSE_F                       301
+#define BRT_DIFFUSE_X                       300
+#define BRT_DIRECT                          316
+#define BRT_DIRECTDRAW                      465
+#define BRT_DIRECTDRAW_DEVICENAME_CSTR      470
+#define BRT_DIRECTION_V3_F                  322
+#define BRT_DIRECTION_V3_X                  323
+#define BRT_DIRECT_F                        126
+#define BRT_DIRECT_X                        125
+#define BRT_DITHER                          215
+#define BRT_DITHER_B                        521
+#define BRT_DITHER_COLOUR_B                 195
+#define BRT_DITHER_COLOUR_T                 196
+#define BRT_DITHER_COLOUR_TL                197
+#define BRT_DITHER_MAP_B                    198
+#define BRT_DITHER_MAP_T                    199
+#define BRT_DITHER_MAP_TL                   200
+#define BRT_DIVERT_T                        392
+#define BRT_DONT_CARE                       376
+#define BRT_DOUBLE_TEXTURE_B                532
+#define BRT_D_15                            510
+#define BRT_D_16                            440
+#define BRT_D_24                            441
+#define BRT_D_31                            511
+#define BRT_D_32                            442
+#define BRT_D_FP15                          512
+#define BRT_D_FP16                          513
+#define BRT_ENABLE                          171
+#define BRT_ENVIRONMENT_INFINITE            289
+#define BRT_ENVIRONMENT_LOCAL               288
+#define BRT_EQUAL                           234
+#define BRT_EVEN_ODD                         72
+#define BRT_FACE_GROUP_COUNT_U32            162
+#define BRT_FACILITY                         44
+#define BRT_FACILITY_O                      128
+#define BRT_FIXED                            15
+#define BRT_FLOAT                            16
+#define BRT_FOG_B                           540
+#define BRT_FOG_MAX_F                       228
+#define BRT_FOG_MAX_X                       229
+#define BRT_FOG_MIN_F                       226
+#define BRT_FOG_MIN_X                       227
+#define BRT_FOG_RGB                         225
+#define BRT_FOG_SCALE_U8                    533
+#define BRT_FOG_T                           223
+#define BRT_FOG_TL                          224
+#define BRT_FONT_NORMAL_O                   131
+#define BRT_FONT_NORMAL_P                   130
+#define BRT_FORCE_BACK_B                    281
+#define BRT_FORCE_FRONT_B                   280
+#define BRT_FORMAT_T                        161
+#define BRT_GEOMETRY                         52
+#define BRT_GEOMETRY_LIGHTING                57
+#define BRT_GEOMETRY_MAP                    290
+#define BRT_GEOMETRY_PRIMITIVES              54
+#define BRT_GEOMETRY_STORED                  53
+#define BRT_GEOMETRY_V1_BUCKETS              56
+#define BRT_GEOMETRY_V1_MODEL                55
+#define BRT_GEOMETRY_X                      291
+#define BRT_GEOMETRY_Y                      292
+#define BRT_GEOMETRY_Z                      293
+#define BRT_GLOBAL_AMBIENT_I32              306
+#define BRT_GLOBAL_AMBIENT_RGB              307
+#define BRT_GREATER                         232
+#define BRT_GREATER_OR_EQUAL                233
+#define BRT_GREEN                            91
+#define BRT_HANDLE                           20
+#define BRT_HEIGHT_I32                       81
+#define BRT_HEIGHT_MAX_I32                   83
+#define BRT_HEIGHT_MIN_I32                   82
+#define BRT_HEIGHT_OPTIMUM_I32              252
+#define BRT_HEIGHT_T                        249
+#define BRT_HEIGHT_TL                       250
+#define BRT_HIDDEN                          139
+#define BRT_HIDDEN_BUFFER                   140
+#define BRT_HIDDEN_SURFACE                  175
+#define BRT_HIDPI_B                         467
+#define BRT_HITHER_Z_F                      379
+#define BRT_HITHER_Z_X                      380
+#define BRT_HOST_MEMORY_U32                 105
+#define BRT_IDENTIFIER_CSTR                  60
+#define BRT_INDEX                            89
+#define BRT_INDEXA_4_4                      445
+#define BRT_INDEXA_8_8                      444
+#define BRT_INDEXED_B                        95
+#define BRT_INDEX_1                         414
+#define BRT_INDEX_2                         415
+#define BRT_INDEX_4                         416
+#define BRT_INDEX_8                         417
+#define BRT_INDEX_BASE_I32                  205
+#define BRT_INDEX_BLEND_O                   257
+#define BRT_INDEX_BLEND_TVL                 265
+#define BRT_INDEX_FOG_O                     261
+#define BRT_INDEX_FOG_TVL                   269
+#define BRT_INDEX_LIGHT_O                   259
+#define BRT_INDEX_LIGHT_TVL                 267
+#define BRT_INDEX_RANGE_I32                 206
+#define BRT_INDEX_SHADE_O                   256
+#define BRT_INDEX_SHADE_TVL                 264
+#define BRT_INI_STR                         487
+#define BRT_INTEL                           495
+#define BRT_INTEL_386                       499
+#define BRT_INTEL_486                       500
+#define BRT_INTEL_PENTIUM                   501
+#define BRT_INTEL_PENTIUM_PRO               502
+#define BRT_INTERLACE_B                     520
+#define BRT_INTPTR                            4
+#define BRT_INT_16                            9
+#define BRT_INT_32                           11
+#define BRT_INT_64                           13
+#define BRT_INT_8                             7
+#define BRT_KEY_IS_TRANSPARENT              455
+#define BRT_LEFT_RIGHT                       73
+#define BRT_LENGTH_PRESERVING               367
+#define BRT_LESS                            237
+#define BRT_LESS_OR_EQUAL                   236
+#define BRT_LIGHT                           172
+#define BRT_LIGHTING_B                      277
+#define BRT_LIGHTING_VOLUME_P               353
+#define BRT_LIGHT_MAX_I32                   146
+#define BRT_LIGHT_VERTICES                  409
+#define BRT_LINE                            403
+#define BRT_LINEAR                          216
+#define BRT_LPDIRECTDRAWSURFACE_P           471
+#define BRT_MAPPING_SOURCE_T                287
+#define BRT_MAP_ANTIALIASING_T              207
+#define BRT_MAP_ANTIALIASING_TL             208
+#define BRT_MAP_HEIGHT_LIMIT_1_T            528
+#define BRT_MAP_HEIGHT_LIMIT_T              245
+#define BRT_MAP_HEIGHT_LIMIT_TL             246
+#define BRT_MAP_INTERPOLATION_MAG_T         217
+#define BRT_MAP_INTERPOLATION_MAG_TL        218
+#define BRT_MAP_INTERPOLATION_MIN_T         219
+#define BRT_MAP_INTERPOLATION_MIN_TL        220
+#define BRT_MAP_INTERPOLATION_T             212
+#define BRT_MAP_INTERPOLATION_TL            213
+#define BRT_MAP_MATRIX_M23_F                308
+#define BRT_MAP_MATRIX_M23_X                309
+#define BRT_MAP_WIDTH_LIMIT_1_T             529
+#define BRT_MAP_WIDTH_LIMIT_T               240
+#define BRT_MAP_WIDTH_LIMIT_TL              241
+#define BRT_MATCH_TVL                       107
+#define BRT_MATRIX                          170
+#define BRT_MATRIX23_FIXED                   30
+#define BRT_MATRIX23_FLOAT                   33
+#define BRT_MATRIX34_FIXED                   31
+#define BRT_MATRIX34_FLOAT                   34
+#define BRT_MATRIX4_FIXED                    32
+#define BRT_MATRIX4_FLOAT                    35
+#define BRT_MAX_V2_F                        363
+#define BRT_MAX_V2_I                        361
+#define BRT_MAX_V2_X                        362
+#define BRT_MEMORY_MAPPED_B                  96
+#define BRT_MIN_V2_F                        360
+#define BRT_MIN_V2_I                        358
+#define BRT_MIN_V2_X                        359
+#define BRT_MIP                             209
+#define BRT_MIPS                            497
+#define BRT_MIP_INTERPOLATION_T             221
+#define BRT_MIP_INTERPOLATION_TL            222
+#define BRT_MIP_MAX_U8                      538
+#define BRT_MIP_MIN_U8                      537
+#define BRT_MIP_MODIFIER_I8                 536
+#define BRT_MIP_MOD_ABSOLUTE_B              539
+#define BRT_MIP_PER_PIXEL                   210
+#define BRT_MIP_PER_PRIMITIVE               211
+#define BRT_MIRROR                          244
+#define BRT_MODEL                           276
+#define BRT_MODEL_TO_SCREEN_M4_F            377
+#define BRT_MODEL_TO_SCREEN_M4_X            378
+#define BRT_MODEL_TO_VIEW_HINT_T            366
+#define BRT_MODEL_TO_VIEW_M34_F             364
+#define BRT_MODEL_TO_VIEW_M34_X             365
+#define BRT_MODE_U32                        106
+#define BRT_MODULATE_ALPHA_B                185
+#define BRT_MODULATE_B                      184
+#define BRT_MOTOROLA                        498
+#define BRT_MSAA_SAMPLES_I32                472
+#define BRT_NEAREST                         214
+#define BRT_NEVER                           238
+#define BRT_NONE                              1
+#define BRT_NOT_EQUAL                       235
+#define BRT_NO_RENDER                       141
+#define BRT_OBJECT                           19
+#define BRT_OBJECT_CONTAINER                 42
+#define BRT_OBJECT_LIST                      38
+#define BRT_ODD_EVEN                         71
+#define BRT_OFFSCREEN                       138
+#define BRT_ONE_SIDED                       272
+#define BRT_OPACITY_F                       297
+#define BRT_OPACITY_SOURCE_T                286
+#define BRT_OPACITY_X                       296
+#define BRT_OPENGL_B                        484
+#define BRT_OPENGL_CALLBACKS_P              473
+#define BRT_OPENGL_FRAGMENT_SHADER_STR      475
+#define BRT_OPENGL_PROFILE_COMPATIBILITY      482
+#define BRT_OPENGL_PROFILE_CORE             483
+#define BRT_OPENGL_PROFILE_T                481
+#define BRT_OPENGL_RENDERER_CSTR            478
+#define BRT_OPENGL_VENDOR_CSTR              477
+#define BRT_OPENGL_VERSION_CSTR             476
+#define BRT_OPENGL_VERSION_MAJOR_U8         479
+#define BRT_OPENGL_VERSION_MINOR_U8         480
+#define BRT_OPENGL_VERTEX_SHADER_STR        474
+#define BRT_ORIGIN_V2_I                     129
+#define BRT_OUTPUT                          177
+#define BRT_OUTPUT_FACILITY                  45
+#define BRT_OUTPUT_FACILITY_O               127
+#define BRT_PARALLEL                        372
+#define BRT_PARTIAL                         411
+#define BRT_PARTS_TL                        149
+#define BRT_PARTS_U32                       160
+#define BRT_PERSPECTIVE                     371
+#define BRT_PERSPECTIVE_B                   187
+#define BRT_PERSPECTIVE_T                   188
+#define BRT_PERSPECTIVE_TL                  189
+#define BRT_PIXELMAP_MAX_I32                101
+#define BRT_PIXEL_BITS_I32                   85
+#define BRT_PIXEL_CHANNELS_I32               87
+#define BRT_PIXEL_CHANNELS_TL                88
+#define BRT_PIXEL_GET_F                     122
+#define BRT_PIXEL_GET_X                     121
+#define BRT_PIXEL_SET_F                     124
+#define BRT_PIXEL_SET_X                     123
+#define BRT_PIXEL_TYPE_U8                    84
+#define BRT_PLANE                           355
+#define BRT_PLANE_V4_F                      356
+#define BRT_PLANE_V4_X                      357
+#define BRT_POINT                           317
+#define BRT_POINTER                           3
+#define BRT_POINTER_LIST                     40
+#define BRT_POSITION_V3_F                   320
+#define BRT_POSITION_V3_X                   321
+#define BRT_POWERPC                         496
+#define BRT_POWER_OF_2                      453
+#define BRT_PREFER_SHARE_B                  158
+#define BRT_PRELIGHTING_B                   278
+#define BRT_PRIMITIVE                       176
+#define BRT_PRIMITIVES                      406
+#define BRT_PRIMITIVE_BLOCK_P               253
+#define BRT_PRIMITIVE_CUSTOM_P              314
+#define BRT_PRIMITIVE_FILTER_P              315
+#define BRT_PRIMITIVE_LIBRARY                58
+#define BRT_PRIMITIVE_LIBRARY_O              97
+#define BRT_PRIMITIVE_LIBRARY_OL             98
+#define BRT_PRIMITIVE_LIBRARY_P             167
+#define BRT_PRIMITIVE_STATE                  59
+#define BRT_PRIVATE                         451
+#define BRT_PRODUCT_CSTR                     66
+#define BRT_PRODUCT_VERSION_CSTR             67
+#define BRT_QUAD                            294
+#define BRT_QUADRATIC                       349
+#define BRT_QUAD_STRIP                      519
+#define BRT_RADII                           350
+#define BRT_RADIUS_CULL_B                   346
+#define BRT_RADIUS_INNER_F                  337
+#define BRT_RADIUS_INNER_X                  336
+#define BRT_RADIUS_OUTER_F                  335
+#define BRT_RADIUS_OUTER_X                  334
+#define BRT_RED                              90
+#define BRT_REGISTRY_STR                    486
+#define BRT_REJECT                          413
+#define BRT_RENDERER                         49
+#define BRT_RENDERER_FACILITY                48
+#define BRT_RENDERER_FACILITY_O              99
+#define BRT_RENDERER_FACILITY_OL            100
+#define BRT_RENDERER_MAX_I32                148
+#define BRT_RENDERER_O                      143
+#define BRT_RENDERER_STATE_STORED            50
+#define BRT_RENDER_B                        390
+#define BRT_RESIZABLE_B                     468
+#define BRT_RGB                             204
+#define BRT_RGBA_4_4_4_4                    439
+#define BRT_RGBA_8_8_8_8                    435
+#define BRT_RGBX_8_8_8_8                    431
+#define BRT_RGB_2_3_2                       424
+#define BRT_RGB_5_6_5                       422
+#define BRT_RGB_8_8_8                       426
+#define BRT_RIGHT_LEFT                       74
+#define BRT_SCREEN_DOOR_O                   258
+#define BRT_SCREEN_DOOR_TVL                 266
+#define BRT_SDL_EXT_PROCS_P                 469
+#define BRT_SEPARATE_SPECULAR_B             279
+#define BRT_SHARED_B                        152
+#define BRT_SMOOTH_1_B                      527
+#define BRT_SMOOTH_B                        178
+#define BRT_SMOOTH_OPACITY_B                179
+#define BRT_SPACE_T                         274
+#define BRT_SPECULAR_F                      303
+#define BRT_SPECULAR_POWER_F                305
+#define BRT_SPECULAR_POWER_X                304
+#define BRT_SPECULAR_X                      302
+#define BRT_SPOT                            318
+#define BRT_SPOT_INNER_F                    333
+#define BRT_SPOT_INNER_X                    332
+#define BRT_SPOT_OUTER_F                    331
+#define BRT_SPOT_OUTER_X                    330
+#define BRT_SPRITE                          402
+#define BRT_SQUARE                          452
+#define BRT_STATE_RESTORE                   405
+#define BRT_STEREO_B                         68
+#define BRT_STEREO_T                         69
+#define BRT_STEREO_TL                        70
+#define BRT_STORED_ONLY_B                   159
+#define BRT_STORED_STATE_O                  401
+#define BRT_STRETCHDIBITS                   463
+#define BRT_STRETCH_COPY_DESTINATION_TVL      113
+#define BRT_STRETCH_COPY_F                  117
+#define BRT_STRETCH_COPY_SOURCE_TVL         112
+#define BRT_STRETCH_COPY_T                  114
+#define BRT_STRETCH_COPY_TL                 115
+#define BRT_STRETCH_COPY_X                  116
+#define BRT_STRING                           36
+#define BRT_SUBDIVIDE                       193
+#define BRT_SUBDIVIDE_TOLERANCE_I32         194
+#define BRT_SURFACE                         169
+#define BRT_SURFACE_B                       387
+#define BRT_SURFACE_C_CUSTOM_P              310
+#define BRT_SURFACE_C_FILTER_P              311
+#define BRT_SURFACE_HANDLE_H                466
+#define BRT_SURFACE_V_CUSTOM_P              312
+#define BRT_SURFACE_V_FILTER_P              313
+#define BRT_SYCHRONISE_I32                  120
+#define BRT_TEXTURE_1_O                     531
+#define BRT_TEXTURE_MEMORY_U32              104
+#define BRT_TEXTURE_O                       254
+#define BRT_TEXTURE_TVL                     262
+#define BRT_TITLE_CSTR                       65
+#define BRT_TOKEN                             6
+#define BRT_TOKEN_LIST                       39
+#define BRT_TOKEN_VALUE_LIST                 41
+#define BRT_TOP_BOTTOM                       75
+#define BRT_TRANSFORM_B                     386
+#define BRT_TRIANGLE                        404
+#define BRT_TRIANGLES_DRAWN_COUNT_U32       163
+#define BRT_TRIANGLES_RENDERED_COUNT_U32      164
+#define BRT_TRI_FAN                         518
+#define BRT_TRI_STRIP                       517
+#define BRT_TWO_SIDED                       273
+#define BRT_TYPE_T                          271
+#define BRT_UINTPTR                           5
+#define BRT_UINT_16                          10
+#define BRT_UINT_32                          12
+#define BRT_UINT_64                          14
+#define BRT_UINT_8                            8
+#define BRT_UNKNOWN                         270
+#define BRT_UPDATE_DATA_B                   156
+#define BRT_USES_PRIMITIVE_LIBRARY_B        151
+#define BRT_USE_BACKGROUND_ALPHA_B          535
+#define BRT_USE_CONSTANT_ALPHA_B            534
+#define BRT_USE_NO_3D_B                     144
+#define BRT_USE_NO_DEPTH_B                  145
+#define BRT_USE_T                           136
+#define BRT_V1BUCKETS                       408
+#define BRT_V1INSERT_ARG1_P                 398
+#define BRT_V1INSERT_ARG2_P                 399
+#define BRT_V1INSERT_ARG3_P                 400
+#define BRT_V1INSERT_FUNCTION_P             397
+#define BRT_V1MODEL                         407
+#define BRT_V1ORDER_TABLE_P                 395
+#define BRT_V1PRIMITIVE_HEAP_P              396
+#define BRT_VECTOR2_FIXED                    24
+#define BRT_VECTOR2_FLOAT                    27
+#define BRT_VECTOR2_INTEGER                  21
+#define BRT_VECTOR3_FIXED                    25
+#define BRT_VECTOR3_FLOAT                    28
+#define BRT_VECTOR3_INTEGER                  22
+#define BRT_VECTOR4_FIXED                    26
+#define BRT_VECTOR4_FLOAT                    29
+#define BRT_VECTOR4_INTEGER                  23
+#define BRT_VERSION_U32                      61
+#define BRT_VERTEX                          285
+#define BRT_VERTEX_DBL                      516
+#define BRT_VERTEX_SGL                      515
+#define BRT_VERTICAL_BLANK                  410
+#define BRT_VERTICES_RENDERED_COUNT_U32      165
+#define BRT_VIDEO_MEMORY_U32                103
+#define BRT_VIEW                            275
+#define BRT_VIEW_TO_ENVIRONMENT_HINT_T      375
+#define BRT_VIEW_TO_ENVIRONMENT_M34_F       373
+#define BRT_VIEW_TO_ENVIRONMENT_M34_X       374
+#define BRT_VIEW_TO_SCREEN_HINT_T           370
+#define BRT_VIEW_TO_SCREEN_M4_F             368
+#define BRT_VIEW_TO_SCREEN_M4_X             369
+#define BRT_VIRTUALFB_CALLBACKS_P           485
+#define BRT_WIDTH_I32                        78
+#define BRT_WIDTH_MAX_I32                    80
+#define BRT_WIDTH_MIN_I32                    79
+#define BRT_WIDTH_OPTIMUM_I32               251
+#define BRT_WIDTH_T                         247
+#define BRT_WIDTH_TL                        248
+#define BRT_WINDOW_BUFFER_METHOD_T          461
+#define BRT_WINDOW_FULLSCREEN_B             459
+#define BRT_WINDOW_HANDLE_H                 458
+#define BRT_WINDOW_MONITOR_I32              460
+#define BRT_WINDOW_NAME_CSTR                456
+#define BRT_WINDOW_PROCEDURE_P              457
+#define BRT_WING                            462
+#define BRT_WORD_BYTES_I32                   86
+#define BRT_WRAP                            242
+#define BRT_WRITABLE_BASE_I32               134
+#define BRT_WRITABLE_RANGE_I32              135
+#define BRT_XBGR_1_5_5_5                    419
+#define BRT_XBGR_8_8_8_8                    429
+#define BRT_XRGB_1_5_5_5                    418
+#define BRT_XRGB_8_8_8_8                    428
+#define BRT_XYZ_16_16_16                    449
+#define BRT_XYZ_8_8_8                       448
+#define BRT_YON_Z_F                         381
+#define BRT_YON_Z_X                         382
+#define BRT_YUV_16                          450
+#define BRT_ZERO_IS_TRANSPARENT             454
+#endif
+#define BRT_AS_ANGLE(tok)	BRT_##tok##_A
+#define BRT_AS_BOOLEAN(tok)	BRT_##tok##_B
+#define BRT_AS_COLOUR_RGB(tok)	BRT_##tok##_RGB
+#define BRT_AS_CONSTANT_STRING(tok)	BRT_##tok##_CSTR
+#define BRT_AS_FIXED(tok)	BRT_##tok##_X
+#define BRT_AS_FLOAT(tok)	BRT_##tok##_F
+#define BRT_AS_HANDLE(tok)	BRT_##tok##_H
+#define BRT_AS_INT_16(tok)	BRT_##tok##_I16
+#define BRT_AS_INT_32(tok)	BRT_##tok##_I32
+#define BRT_AS_INT_64(tok)	BRT_##tok##_I64
+#define BRT_AS_INT_8(tok)	BRT_##tok##_I8
+#define BRT_AS_INTPTR(tok)	BRT_##tok##_PI
+#define BRT_AS_MATRIX23_FIXED(tok)	BRT_##tok##_M23_X
+#define BRT_AS_MATRIX23_FLOAT(tok)	BRT_##tok##_M23_F
+#define BRT_AS_MATRIX34_FIXED(tok)	BRT_##tok##_M34_X
+#define BRT_AS_MATRIX34_FLOAT(tok)	BRT_##tok##_M34_F
+#define BRT_AS_MATRIX4_FIXED(tok)	BRT_##tok##_M4_X
+#define BRT_AS_MATRIX4_FLOAT(tok)	BRT_##tok##_M4_F
+#define BRT_AS_OBJECT(tok)	BRT_##tok##_O
+#define BRT_AS_OBJECT_LIST(tok)	BRT_##tok##_OL
+#define BRT_AS_POINTER(tok)	BRT_##tok##_P
+#define BRT_AS_POINTER_LIST(tok)	BRT_##tok##_PL
+#define BRT_AS_STRING(tok)	BRT_##tok##_STR
+#define BRT_AS_TOKEN(tok)	BRT_##tok##_T
+#define BRT_AS_TOKEN_LIST(tok)	BRT_##tok##_TL
+#define BRT_AS_TOKEN_VALUE_LIST(tok)	BRT_##tok##_TVL
+#define BRT_AS_UINT_16(tok)	BRT_##tok##_U16
+#define BRT_AS_UINT_32(tok)	BRT_##tok##_U32
+#define BRT_AS_UINT_64(tok)	BRT_##tok##_U64
+#define BRT_AS_UINT_8(tok)	BRT_##tok##_U8
+#define BRT_AS_UINTPTR(tok)	BRT_##tok##_PU
+#define BRT_AS_VECTOR2_FIXED(tok)	BRT_##tok##_V2_X
+#define BRT_AS_VECTOR2_FLOAT(tok)	BRT_##tok##_V2_F
+#define BRT_AS_VECTOR2_INTEGER(tok)	BRT_##tok##_V2_I
+#define BRT_AS_VECTOR3_FIXED(tok)	BRT_##tok##_V3_X
+#define BRT_AS_VECTOR3_FLOAT(tok)	BRT_##tok##_V3_F
+#define BRT_AS_VECTOR3_INTEGER(tok)	BRT_##tok##_V3_I
+#define BRT_AS_VECTOR4_FIXED(tok)	BRT_##tok##_V4_X
+#define BRT_AS_VECTOR4_FLOAT(tok)	BRT_##tok##_V4_F
+#define BRT_AS_VECTOR4_INTEGER(tok)	BRT_##tok##_V4_I
