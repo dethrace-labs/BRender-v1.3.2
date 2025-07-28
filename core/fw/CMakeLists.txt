@@ -27,7 +27,7 @@ target_include_directories(brender-inc-ddi INTERFACE
 # BYPRODUCTS dev_objs.tmp
 # )
 set(GENERATED_FILES
-        dev_objs.cgh
+        ddi/dev_objs.cgh
 )
 
 set(FW_DEV_FILES
