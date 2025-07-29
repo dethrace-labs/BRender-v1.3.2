@@ -3,22 +3,22 @@
 # Embed shaders
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.vert.glsl" -P "${CMAKE_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
         DEPENDS default.vert.glsl
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.frag.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.frag.glsl" -P "${CMAKE_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
         DEPENDS default.frag.glsl
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/brender.vert.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.vert.glsl" -P "${CMAKE_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
         DEPENDS brender.vert.glsl
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/brender.frag.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.frag.glsl" -P "${CMAKE_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
         DEPENDS brender.frag.glsl
 )
 
@@ -147,9 +147,9 @@ add_library(glrend
         )
 
 get_target_property(target_type glrend TYPE)
-if (target_type STREQUAL SHARED_LIBRARY)
+if(target_type STREQUAL SHARED_LIBRARY)
     target_compile_definitions(glrend PRIVATE -DDEFINE_BR_ENTRY_POINT)
-endif ()
+endif()
 
 target_include_directories(glrend PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

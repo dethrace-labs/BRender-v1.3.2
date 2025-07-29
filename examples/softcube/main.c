@@ -7,24 +7,32 @@
 #include <assert.h>
 #include <stdio.h>
 
-
-br_pixelmap *screen = NULL, *colour_buffer = NULL, *depth_buffer = NULL;
-br_actor *world, *camera;
-SDL_Window* window;
-br_uint_64 ticks_last, ticks_now;
+static br_pixelmap *screen = NULL, *colour_buffer = NULL, *depth_buffer = NULL;
+static br_actor *world, *camera;
+static SDL_Window* window;
+static br_uint_64 ticks_last, ticks_now;
 
 // software renderer
-br_device_virtualfb_callback_procs virtualfb_callbacks;
-SDL_Texture *screen_texture;
-uint32_t converted_palette[256];
-SDL_Renderer* renderer;
+static struct {
+    br_device_virtualfb_callback_procs virtualfb_callbacks;
+    SDL_Texture *screen_texture;
+    uint32_t converted_palette[256];
+    SDL_Renderer *renderer;
+} software_props;
 
 // gl renderer
-br_device_gl_callback_procs gl_callbacks;
-SDL_GLContext* gl_context;
+static struct {
+    br_device_gl_callback_procs gl_callbacks;
+    SDL_GLContext *gl_context;
+} opengl_props;
 
-const int width = 640;
-const int height = 480;
+static enum {
+    eRenderer_software,
+    eRenderer_opengl,
+} brender_renderer = eRenderer_software;
+
+static const int width = 640;
+static const int height = 480;
 
 void BR_CALLBACK _BrBeginHook(void) {
     struct br_device* BR_EXPORT BrDrv1SoftPrimBegin(char* arguments);
@@ -43,7 +51,7 @@ void BR_CALLBACK _BrEndHook(void) {
 
 static void software_palette_changed(br_colour entries[256]) {
     for (int i = 0; i < 256; i++) {
-        converted_palette[i] = (0xff << 24 | BR_RED(entries[i]) << 16 | BR_GRN(entries[i]) << 8 | BR_BLU(entries[i]));
+        software_props.converted_palette[i] = (0xff << 24 | BR_RED(entries[i]) << 16 | BR_GRN(entries[i]) << 8 | BR_BLU(entries[i]));
     }
 }
 
@@ -52,32 +60,32 @@ static void software_renderer_swap(br_pixelmap* back_buffer) {
     uint32_t* dest_pixels;
     int dest_pitch;
 
-    SDL_LockTexture(screen_texture, NULL, (void**)&dest_pixels, &dest_pitch);
+    SDL_LockTexture(software_props.screen_texture, NULL, (void**)&dest_pixels, &dest_pitch);
     for (int i = 0; i < back_buffer->height * back_buffer->width; i++) {
-        *dest_pixels = converted_palette[*src_pixels];
+        *dest_pixels = software_props.converted_palette[*src_pixels];
         dest_pixels++;
         src_pixels++;
     }
-    SDL_UnlockTexture(screen_texture);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, screen_texture, NULL, NULL);
-    SDL_RenderPresent(renderer);
+    SDL_UnlockTexture(software_props.screen_texture);
+    SDL_RenderClear(software_props.renderer);
+    SDL_RenderCopy(software_props.renderer, software_props.screen_texture, NULL, NULL);
+    SDL_RenderPresent(software_props.renderer);
 }
 
 
-static void gl_renderer_swap(br_pixelmap* back_buffer) {
+static void BR_CALLBACK gl_renderer_swap(br_pixelmap* back_buffer) {
     SDL_GL_SwapWindow(window);
 }
 
-static void gl_get_viewport(int* x, int* y, float* width_m, float* height_m) {
+static void BR_CALLBACK gl_get_viewport(int* x, int* y, float* width_multiplier, float* height_multiplier) {
     int window_width, window_height;
     int vp_width, vp_height;
     SDL_GetWindowSize(window, &window_width, &window_height);
 
     *x = 0;
     *y = 0;
-    *width_m = 1; //window_width;
-    *height_m = 1; //window_height;
+    *width_multiplier = 1;
+    *height_multiplier = 1;
 }
 
 
@@ -89,23 +97,29 @@ static int init_software_renderer() {
         width, height,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 
-    virtualfb_callbacks.palette_changed = software_palette_changed;
-    virtualfb_callbacks.swap_buffers = software_renderer_swap;
+    software_props.virtualfb_callbacks.palette_changed = software_palette_changed;
+    software_props.virtualfb_callbacks.swap_buffers = software_renderer_swap;
 
     BrDevBeginVar(&screen, "virtualframebuffer",
         BRT_WIDTH_I32, width,
         BRT_HEIGHT_I32, height,
-        BRT_VIRTUALFB_CALLBACKS_P, &virtualfb_callbacks,
+        BRT_VIRTUALFB_CALLBACKS_P, &software_props.virtualfb_callbacks,
         BR_NULL_TOKEN);
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == NULL) {
+    software_props.renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (software_props.renderer == NULL) {
         printf("Failed to create SDL renderer: %s\n", SDL_GetError());
         exit(1);
     }
-    screen_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    software_props.screen_texture = SDL_CreateTexture(software_props.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
     return 0;
 }
+
+static void destroy_software_renderer() {
+    SDL_DestroyRenderer(software_props.renderer);
+    SDL_DestroyWindow(window);
+}
+
 
 static int init_opengl_renderer() {
     window = SDL_CreateWindow(
@@ -118,28 +132,28 @@ static int init_opengl_renderer() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    gl_context = SDL_GL_CreateContext(window);
+    opengl_props.gl_context = SDL_GL_CreateContext(window);
 
-    if (gl_context == NULL) {
+    if (opengl_props.gl_context == NULL) {
         printf("Failed to create OpenGL core profile: %s. Trying OpenGLES...\n", SDL_GetError());
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-        gl_context = SDL_GL_CreateContext(window);
+        opengl_props.gl_context = SDL_GL_CreateContext(window);
     }
-    if (gl_context == NULL) {
+    if (opengl_props.gl_context == NULL) {
         printf("Failed to create OpenGL context: %s\n", SDL_GetError());
         exit(1);
     }
     SDL_GL_SetSwapInterval(1);
 
-    gl_callbacks.get_proc_address = SDL_GL_GetProcAddress;
-    gl_callbacks.swap_buffers = gl_renderer_swap;
-    gl_callbacks.get_viewport = gl_get_viewport;
+    opengl_props.gl_callbacks.get_proc_address = SDL_GL_GetProcAddress;
+    opengl_props.gl_callbacks.swap_buffers = gl_renderer_swap;
+    opengl_props.gl_callbacks.get_viewport = gl_get_viewport;
     BrDevBeginVar(&screen, "glrend",
         BRT_WIDTH_I32, width,
         BRT_HEIGHT_I32, height,
-        BRT_OPENGL_CALLBACKS_P, &gl_callbacks,
+        BRT_OPENGL_CALLBACKS_P, &opengl_props.gl_callbacks,
         BRT_PIXEL_TYPE_U8, BR_PMT_RGB_565,
         BR_NULL_TOKEN);
 
@@ -150,18 +164,51 @@ static int init_opengl_renderer() {
     return 0;
 }
 
+static void destroy_opengl_renderer() {
+    SDL_GL_DeleteContext(opengl_props.gl_context);
+    SDL_DestroyWindow(window);
+}
+
 int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ) {
+        int consumed = 0;
+        if (BrStrCmp(argv[i], "--renderer") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "--renderer needs an argument: software or opengl\n");
+                return 1;
+            }
+            consumed = 2;
+            if (BrStrCmp(argv[i + 1], "software") == 0) {
+                brender_renderer = eRenderer_software;
+            } else if (BrStrCmp(argv[i + 1], "opengl") == 0) {
+                brender_renderer = eRenderer_opengl;
+            } else {
+                fprintf(stderr, "Unsupported renderer: %s\n", argv[i + 1]);
+                return 1;
+            }
+        }
+        if (consumed < 0) {
+            fprintf(stderr, "Unsupported argument: %s\n", argv[i]);
+            return 1;
+        }
+        i += consumed;
+    }
 
-
-    BrBegin();
-
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("sdl_init panic! (%s)\n", SDL_GetError());
         return -1;
     }
 
-    // init_software_renderer();
-    init_opengl_renderer();
+    BrBegin();
+
+    switch (brender_renderer) {
+    case eRenderer_software:
+        init_software_renderer();
+        break;
+    case eRenderer_opengl:
+        init_opengl_renderer();
+        break;
+    }
 
     colour_buffer = BrPixelmapMatch(screen, BR_PMMATCH_OFFSCREEN);
     depth_buffer = BrPixelmapMatch(colour_buffer, BR_PMMATCH_DEPTH_16);
@@ -216,17 +263,19 @@ int main(int argc, char** argv) {
 
     ticks_last = SDL_GetTicks64();
 
-    for (SDL_Event evt;;) {
+    for (SDL_bool running = SDL_TRUE; running;) {
         float dt;
+        SDL_Event event;
 
         ticks_now = SDL_GetTicks64();
         dt = (float)(ticks_now - ticks_last) / 1000.0f;
         ticks_last = ticks_now;
 
-        while (SDL_PollEvent(&evt) > 0) {
-            switch (evt.type) {
+        while (SDL_PollEvent(&event) > 0) {
+            switch (event.type) {
             case SDL_QUIT:
-                exit(0);
+                running = SDL_FALSE;
+                break;
             }
         }
 
@@ -238,4 +287,16 @@ int main(int argc, char** argv) {
         BrZbSceneRender(world, camera, colour_buffer, depth_buffer);
         BrPixelmapDoubleBuffer(screen, colour_buffer);
     }
+
+    BrEnd();
+    switch (brender_renderer) {
+    case eRenderer_software:
+        destroy_software_renderer();
+        break;
+    case eRenderer_opengl:
+        destroy_opengl_renderer();
+        break;
+    }
+    SDL_Quit();
+    return 0;
 }
