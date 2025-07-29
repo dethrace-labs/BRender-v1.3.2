@@ -1,4 +1,4 @@
-project(v1db)
+﻿project(v1db)
 
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

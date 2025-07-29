@@ -399,18 +399,6 @@ void BR_PUBLIC_ENTRY BrMatrix4Pre34(br_matrix4 *A, br_matrix34 *B)
 	BrMatrix4Mul34(A,B,&C);
 }
 
-
-/*
- *                 Ú                ¿
- *                 ³  1   0   0   0 ³
- *                 ³                ³
- *                 ³  0   1   0   0 ³
- * ShearZ(sx,sy) = ³                ³
- *                 ³  sx  sy  1   0 ³
- *                 ³                ³
- *                 ³  0   0   0   1 ³
- *                 À                Ù
- */
 void BR_PUBLIC_ENTRY BrMatrix4ShearZ(br_matrix4 *mat, br_scalar sx, br_scalar sy)
 {
         UASSERT_MESSAGE("Subject matrix is NULL", mat != NULL);
@@ -454,9 +442,10 @@ void BR_PUBLIC_ENTRY BrMatrix4Copy23(br_matrix4* A, br_matrix23* B) {
 
 void BR_PUBLIC_ENTRY BrMatrix4Transpose(br_matrix4* A) {
     br_scalar tmp;
+    int i,j;
 
-    for (int i = 0; i < 4; ++i) {
-        for (int j = i; j < 4; ++j) {
+    for (i = 0; i < 4; ++i) {
+        for (j = i; j < 4; ++j) {
             tmp = A->m[i][j];
             A->m[i][j] = A->m[j][i];
             A->m[j][i] = tmp;

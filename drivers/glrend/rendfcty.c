@@ -120,7 +120,7 @@ static struct br_tv_template_entry rendererNewTemplateEntries[] = {
  */
 static br_error BR_CMETHOD_DECL(br_renderer_facility_gl, rendererNew)(br_renderer_facility* self,
     struct br_renderer** prenderer, br_token_value* tv) {
-    struct newRendererTokens rt = { .dest = NULL };
+    struct newRendererTokens rt = { NULL };
     br_int_32 count;
     br_renderer* renderer;
 

@@ -1,4 +1,4 @@
-project(std)
+﻿project(std)
 
 set(STD_FILES
         brexcept.c

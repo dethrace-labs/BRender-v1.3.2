@@ -31,6 +31,7 @@ void BR_PUBLIC_ENTRY BrSceneModelLight(br_model *model,
     struct v11model *v11m;
     struct v11group *group;
     br_matrix34 m2v;
+    br_value v;
 
     UASSERT_MESSAGE("NULL model pointer passed to BrSceneModelLight",
                     model);
@@ -56,9 +57,10 @@ void BR_PUBLIC_ENTRY BrSceneModelLight(br_model *model,
     if((root != NULL) && (a != NULL)){
         BrActorToActorMatrix34(&m2v, root, a);
         BrMatrix34Pre(&m2v, &v1db.camera_path[0].m);
+        v.p = &m2v;
         RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
                         BRT_AS_MATRIX34_SCALAR(MODEL_TO_VIEW),
-                        (br_value){.m34 = &m2v});
+                        v);
         RendererModelInvert(v1db.renderer);
     }
 

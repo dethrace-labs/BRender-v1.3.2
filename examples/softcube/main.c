@@ -84,8 +84,8 @@ static void BR_CALLBACK gl_get_viewport(int* x, int* y, float* width_multiplier,
 
     *x = 0;
     *y = 0;
-    *width_multiplier = window_width;
-    *height_multiplier = window_height;
+    *width_multiplier = 1;
+    *height_multiplier = 1;
 }
 
 

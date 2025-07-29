@@ -5,7 +5,7 @@
  * $Locker: $
  *
  * Loader for vue format
- * 
+ *
  * TODO hierarchy support
  */
 #include "brender.h"
@@ -75,7 +75,7 @@ fileh = BrFileOpenRead(file_name,0,NULL,NULL);
         if (BrSScanf(buff, "frame %d", &i) > 0) {
 			if (f >= 0)
 				vue->frames[f].ntransforms = t - vue->frames[f].transforms;
-			else 
+			else
 				first=i;
 
 			f = i-first;
@@ -148,13 +148,13 @@ if (total_frames != 0)
 
 		if (vue->current_frame < 0)
 			vue->current_frame = total_frames - 1;
-	  
+
 		if (vue->current_frame >= total_frames)
 			vue->current_frame = 0;
 
 
 		// Apply animation to world.
-		if (frame_delta != 0)  
+		if (frame_delta != 0)
         for (i = 0; i < vue->frames[vue->current_frame].ntransforms; i++)
             vue->frames[vue->current_frame].transforms[i].actor->t.t.mat =
                 vue->frames[vue->current_frame].transforms[i].mat;
@@ -164,10 +164,9 @@ if (total_frames != 0)
 		vue->current_frame += frame_delta;
 
 	}
-	
+
 	// Restore current world transform.
 BrTransformToTransform(&(actors->t), &store_root_transform);
 
 }
 //***************************************************************
-

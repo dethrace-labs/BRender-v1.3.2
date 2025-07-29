@@ -21,9 +21,9 @@ void BR_PUBLIC_ENTRY BrMapUpdate(br_pixelmap *map, br_uint_16 flags)
 void BrBufferUpdate(br_pixelmap *pm, br_token use, br_uint_16 flags)
 {
 	br_token_value tv[] = {
-		{BRT_PREFER_SHARE_B,			{.b = BR_FALSE}},
-                {BRT_CAN_SHARE_B,       {.b = BR_TRUE}},
-                {BRT_UPDATE_DATA_B,     {.b = BR_FALSE}},
+		{BRT_PREFER_SHARE_B, BR_FALSE},
+		{BRT_CAN_SHARE_B, BR_TRUE},
+		{BRT_UPDATE_DATA_B, BR_FALSE},
 		{0}
 	};
 
