@@ -20,18 +20,12 @@ void BR_PUBLIC_ENTRY BrMapUpdate(br_pixelmap *map, br_uint_16 flags)
 
 void BrBufferUpdate(br_pixelmap *pm, br_token use, br_uint_16 flags)
 {
-	br_token_value tv[4];
-
-	tv[0].t = BRT_PREFER_SHARE_B;
-	tv[0].v.b = BR_FALSE;
-
-	tv[1].t = BRT_CAN_SHARE_B;
-	tv[1].v.b = BR_TRUE;
-
-	tv[2].t = BRT_UPDATE_DATA_B;
-	tv[2].v.b = BR_FALSE;
-
-	tv[3].t = 0;
+	br_token_value tv[] = {
+		{BRT_PREFER_SHARE_B, BR_FALSE},
+		{BRT_CAN_SHARE_B, BR_TRUE},
+		{BRT_UPDATE_DATA_B, BR_FALSE},
+		{0}
+	};
 
     ASSERT_MESSAGE("Invalid BrBufferUpdate pointer", pm != NULL);
 	if(v1db.renderer == NULL)

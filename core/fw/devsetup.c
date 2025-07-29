@@ -448,8 +448,8 @@ br_error BR_RESIDENT_ENTRY BrRendererFacilityListFind(br_renderer_facility **prf
 	char object_pattern[] = "*-Renderer-00000";
 	br_boolean scalar_is_valid = BR_FALSE;
 	br_token_value is_alternative[] = {
-		{ BR_NULL_TOKEN , { 0 } },
-		{ BRT_ALTERNATIVE_TO_DEFAULT_B, { BR_TRUE } }
+		{ BRT_ALTERNATIVE_TO_DEFAULT_B, { BR_TRUE } },
+		{ BR_NULL_TOKEN , { 0 } }
 	};
 	char *identifier;
 	br_size_t identifier_len;

@@ -603,9 +603,7 @@ void BrSetupEnvironment(br_actor* world, br_matrix34* world_to_view, br_int_32 w
      */
     if (h != BRT_DONT_CARE) {
         matrix_val.m34 = &view_to_this;
-        RendererPartSet(v1db.renderer, BRT_MATRIX, 0,
-                        BRT_AS_MATRIX34_SCALAR(VIEW_TO_ENVIRONMENT),
-                        matrix_val);
+        RendererPartSet(v1db.renderer, BRT_MATRIX, 0, BRT_AS_MATRIX34_SCALAR(VIEW_TO_ENVIRONMENT), matrix_val);
     }
 
     hint_val.t = h;

@@ -2140,7 +2140,7 @@ br_error BrTokenValueDup(br_token_value **dstp, br_token_value *src)
 
 // Added from CrocDE
 br_value BR_RESIDENT_ENTRY BrTokenValueVaArg(br_token token, va_list* ap) {
-	br_value v = {0};
+    br_value v = {0};
 
     switch (BrTokenType(token)) {
     case BR_NULL_TOKEN:

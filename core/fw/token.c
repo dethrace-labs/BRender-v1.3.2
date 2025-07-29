@@ -199,7 +199,7 @@ br_int_32 BR_RESIDENT_ENTRY BrTokenCount(char *pattern)
  */
 br_size_t BR_RESIDENT_ENTRY BrTokenSize(br_token t)
 {
-	br_size_t i;
+    br_size_t i;
     if(t == BR_NULL_TOKEN)
         return 0;
 
