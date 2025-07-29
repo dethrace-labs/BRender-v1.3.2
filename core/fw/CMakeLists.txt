@@ -17,6 +17,7 @@ target_include_directories(brender-inc-ddi INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/ddi>
 )
 
+# This was moved to a manual process in the README to avoid depending on perl for regular builds
 # add_custom_command(
 # OUTPUT dev_objs.cgh
 # # This will work with MSVC and GCC

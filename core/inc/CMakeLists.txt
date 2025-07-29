@@ -12,6 +12,7 @@ target_compile_definitions(brender-inc INTERFACE
         PARANOID=1
 )
 
+# This was moved to a manual process in the README to avoid depending on perl for regular builds
 # Generate pretok.h, pretok_c.h, and toktype.c
 # add_custom_command(
 # OUTPUT pretok.h pretok.c toktype.c
