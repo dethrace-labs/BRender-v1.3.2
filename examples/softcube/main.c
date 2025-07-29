@@ -69,15 +69,15 @@ static void gl_renderer_swap(br_pixelmap* back_buffer) {
     SDL_GL_SwapWindow(window);
 }
 
-static void gl_get_viewport(int* x, int* y, int* width, int* height) {
+static void gl_get_viewport(int* x, int* y, float* width_m, float* height_m) {
     int window_width, window_height;
     int vp_width, vp_height;
     SDL_GetWindowSize(window, &window_width, &window_height);
 
     *x = 0;
     *y = 0;
-    *width = window_width;
-    *height = window_height;
+    *width_m = 1; //window_width;
+    *height_m = 1; //window_height;
 }
 
 

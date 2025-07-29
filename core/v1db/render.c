@@ -81,8 +81,8 @@ void BR_PUBLIC_ENTRY BrDbModelRender(br_actor *actor,
 
 		ot->visits++;
 
-		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0,
-			BRT_V1ORDER_TABLE_P, v);
+		v.p = ot;
+		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_V1ORDER_TABLE_P, v);
 
 		/*
 		 * See if a 'primitive insertion' function needs to be added
@@ -851,7 +851,7 @@ void BR_PUBLIC_ENTRY BrZbSceneRenderBegin(br_actor *world,
 		v.t = BRT_BUCKET_SORT;
 		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_TYPE_T, v);
 		v.t = BRT_BLENDED;
-        RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, v);
+		RendererPartSet(v1db.renderer, BRT_HIDDEN_SURFACE, 0, BRT_DIVERT_T, v);
 
 		v1db.default_render_data = v1db.default_order_table;
 
