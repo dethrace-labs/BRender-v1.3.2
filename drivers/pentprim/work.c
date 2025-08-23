@@ -14,7 +14,7 @@ BR_RCS_ID("$Id: work.c 1.1 1997/12/10 16:49:21 jon Exp $");
 /*
  * The static work area for all the renderers
  */
-_prim_work BR_ASM_DATA work;
+_prim_work BR_ASM_DATA work = {0};
 
 /*
  * Exported entry point that provides a pointer to the static area for this image
