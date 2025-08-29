@@ -30,10 +30,6 @@ br_material _DefaultScriptMaterial = {
 		BR_VECTOR2(0,1),
 		BR_VECTOR2(0,0),
 	}},
-	BR_MATM_DEPTH_TEST_LE |
-	BR_MATM_BLEND_MODE_STANDARD |
-	BR_MATM_MAP_WIDTH_LIMIT_WRAP |
-	BR_MATM_MAP_HEIGHT_LIMIT_WRAP,	/* mode				*/
 	0,63,						/* index base/range	*/
 };
 
