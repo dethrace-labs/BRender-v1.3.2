@@ -474,7 +474,8 @@ void BR_PUBLIC_ENTRY BrMatrix23LPNormalise(br_matrix23 *A, br_matrix23 *B);
 #ifndef NO_INLINE_MATH
 
 #if defined(_MSC_VER) && !defined(_USE_INTEL_COMPILER)
-#include "mscimath.h"
+// In dethrace, the BRender build used is not compiled with MSVC
+// #include "mscimath.h"
 #endif
 
 #endif

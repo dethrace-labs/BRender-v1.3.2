@@ -41,7 +41,8 @@ typedef struct br_material {
 	/*
 	 * Various mode bit fields
 	 */
-	br_uint_16 mode;
+	// Removed - not present in the dethrace build
+	//br_uint_16 mode;
 
 	/*
 	 * The direct index ramp base and range

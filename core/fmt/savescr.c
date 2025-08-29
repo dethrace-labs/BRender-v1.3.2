@@ -159,34 +159,6 @@ static void WriteScriptMaterial(br_material *mat, void *df)
 		BrFilePrintf(df,"                    ];\n");
 	}
 
-	if((mat->mode & BR_MATM_DEPTH_TEST_MASK) != (_DefaultScriptMaterial.mode & BR_MATM_DEPTH_TEST_MASK))
-		for (i = 0; i < BR_ASIZE(DepthTestNames); i++)
-			if ((mat->mode & BR_MATM_DEPTH_TEST_MASK) == DepthTestNames[i].value) {
-				BrFilePrintf(df,"    depth_test = %s;\n",DepthTestNames[i].name);
-				break;
-			}
-
-	if((mat->mode & BR_MATM_BLEND_MODE_MASK) != (_DefaultScriptMaterial.mode & BR_MATM_BLEND_MODE_MASK))
-		for (i = 0; i < BR_ASIZE(BlendModeNames); i++)
-			if ((mat->mode & BR_MATM_BLEND_MODE_MASK) == BlendModeNames[i].value) {
-				BrFilePrintf(df,"    blend_mode = %s;\n",BlendModeNames[i].name);
-				break;
-			}
-
-	if((mat->mode & BR_MATM_MAP_WIDTH_LIMIT_MASK) != (_DefaultScriptMaterial.mode & BR_MATM_MAP_WIDTH_LIMIT_MASK))
-		for (i = 0; i < BR_ASIZE(WidthLimitNames); i++)
-			if ((mat->mode & BR_MATM_MAP_WIDTH_LIMIT_MASK) == WidthLimitNames[i].value) {
-				BrFilePrintf(df,"    map_width_limit = %s;\n",WidthLimitNames[i].name);
-				break;
-			}
-
-	if((mat->mode & BR_MATM_MAP_HEIGHT_LIMIT_MASK) != (_DefaultScriptMaterial.mode & BR_MATM_MAP_HEIGHT_LIMIT_MASK))
-		for (i = 0; i < BR_ASIZE(HeightLimitNames); i++)
-			if ((mat->mode & BR_MATM_MAP_HEIGHT_LIMIT_MASK) == HeightLimitNames[i].value) {
-				BrFilePrintf(df,"    map_height_limit = %s;\n",HeightLimitNames[i].name);
-				break;
-			}
-
 	/*
 	 * Maps and Tables
 	 */
