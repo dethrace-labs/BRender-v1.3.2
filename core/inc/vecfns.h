@@ -192,12 +192,22 @@
 /*
  * v1=v2*scalar
  */
+// JeffH: This was in the BRender v1.3.2 source (https://github.com/foone/BRender-v1.3.2/blob/main/inc/vecfns.h#L196C5-L196C14),
+// but not in the BRender version used by Stainless, or in the 1997 BRender source (https://github.com/foone/BRender-1997/blob/main/inc/vecfns.h#L195)
+// #define BrVector3Scale(v1, v2, s) do {\
+//     br_scalar __scale=(s); \
+//     (v1)->v[0]=BR_MUL((v2)->v[0],__scale);\
+//     (v1)->v[1]=BR_MUL((v2)->v[1],__scale);\
+//     (v1)->v[2]=BR_MUL((v2)->v[2],__scale);\
+// } while(0)
+
 #define BrVector3Scale(v1, v2, s) do {\
-    br_scalar __scale=(s); \
-    (v1)->v[0]=BR_MUL((v2)->v[0],__scale);\
-    (v1)->v[1]=BR_MUL((v2)->v[1],__scale);\
-    (v1)->v[2]=BR_MUL((v2)->v[2],__scale);\
+    (v1)->v[0]=BR_MUL((v2)->v[0],s);\
+    (v1)->v[1]=BR_MUL((v2)->v[1],s);\
+    (v1)->v[2]=BR_MUL((v2)->v[2],s);\
 } while(0)
+
+
 
 #define BrVector3Mul(v1, v2, v3) do {\
     (v1)->v[0]=(v2)->v[0]*(v3)->v[0];\
@@ -217,10 +227,9 @@
 } while(0)
 #else
 #define BrVector3InvScale(v1, v2, s) do {\
-    br_scalar __scale=1.0f/(s); \
-    (v1)->v[0]=BR_MUL((v2)->v[0],__scale);\
-    (v1)->v[1]=BR_MUL((v2)->v[1],__scale);\
-    (v1)->v[2]=BR_MUL((v2)->v[2],__scale);\
+    (v1)->v[0]=BR_DIV((v2)->v[0],(s));\
+	(v1)->v[1]=BR_DIV((v2)->v[1],(s));\
+	(v1)->v[2]=BR_DIV((v2)->v[2],(s));\
 } while(0)
 #endif
 /*
@@ -250,10 +259,25 @@
 /*
  * v1 = v2/|v2|
  */
+// #define BrVector3Normalise(v1,v2) do {\
+// 	br_scalar _scale;\
+// 	_scale = BR_LENGTH3((v2)->v[0],(v2)->v[1],(v2)->v[2]);\
+// 	if (!BR_SCALAR_LE_2_EPSILON(_scale)) {\
+// 		_scale = BR_RCP(_scale);\
+// 		(v1)->v[0]=BR_MUL((v2)->v[0],_scale);\
+// 		(v1)->v[1]=BR_MUL((v2)->v[1],_scale);\
+// 		(v1)->v[2]=BR_MUL((v2)->v[2],_scale);\
+// 	} else {\
+// 		(v1)->v[0]=BR_SCALAR(1.0);\
+// 		(v1)->v[1]=BR_SCALAR(0.0);\
+// 		(v1)->v[2]=BR_SCALAR(0.0);\
+// 	}\
+// } while(0)
+
 #define BrVector3Normalise(v1,v2) do {\
 	br_scalar _scale;\
 	_scale = BR_LENGTH3((v2)->v[0],(v2)->v[1],(v2)->v[2]);\
-	if (!BR_SCALAR_LE_2_EPSILON(_scale)) {\
+	if(_scale > (BR_SCALAR_EPSILON*2)) {\
 		_scale = BR_RCP(_scale);\
 		(v1)->v[0]=BR_MUL((v2)->v[0],_scale);\
 		(v1)->v[1]=BR_MUL((v2)->v[1],_scale);\
@@ -335,4 +359,3 @@
 } while(0)
 
 #endif
-
