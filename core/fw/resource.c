@@ -119,6 +119,7 @@ static void *ResToUser(struct resource_header *r)
  */
 static struct resource_header *UserToRes(void *r)
 {
+	struct resource_header *res;
 	br_uint_8 *p = r;
 
 	/*
@@ -136,7 +137,8 @@ static struct resource_header *UserToRes(void *r)
 #else
     p -= offsetof(struct resource_header, class) + sizeof(((struct resource_header *)NULL)->class);
 #endif
-	struct resource_header *res = (struct resource_header *)p;
+	
+	res = (struct resource_header *)p;
 
 #if BR_RES_TAGGING
     UASSERT(res->magic_ptr == res);

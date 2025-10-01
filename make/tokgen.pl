@@ -167,13 +167,13 @@ foreach $t (sort({length($type_ext{$b}) <=> length($type_ext{$a})} keys %type_to
 
 close(STDOUT);
 
-# Dump out a new database
+# Dump out a new database for debugging
 #
-open(STDOUT,">tokens.new");
+# open(STDOUT,">tokens.new");
 
-foreach $t (sort(keys %token_val)) {
-	printf("%s %s %s\n", $t, $token_val{$t}, $token_id{$t});
-}
-printf("=%d\n",$current);
+# foreach $t (sort(keys %token_val)) {
+# 	printf("%s %s %s\n", $t, $token_val{$t}, $token_id{$t});
+# }
+# printf("=%d\n",$current);
 
-close(STDOUT);
+# close(STDOUT);

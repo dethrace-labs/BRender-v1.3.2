@@ -9,12 +9,30 @@
 #ifndef _COMPILER_H_
 #define _COMPILER_H_
 
-#include <stdint.h>
 #include <stddef.h>
 
 /*
  * Fixed bitsize integers
  */
+#if _MSC_VER == 1020
+
+typedef  long  br_int_64;
+typedef  long br_uint_64;
+
+typedef signed long br_int_32;
+typedef unsigned long br_uint_32;
+
+typedef signed short br_int_16;
+typedef unsigned short br_uint_16;
+
+typedef signed char br_int_8;
+typedef unsigned char br_uint_8;
+
+typedef long  br_intptr_t;
+typedef long br_uintptr_t;
+
+#else
+#include <stdint.h>
 typedef int64_t  br_int_64;
 typedef uint64_t br_uint_64;
 typedef int32_t  br_int_32;
@@ -24,13 +42,16 @@ typedef uint16_t br_uint_16;
 typedef int8_t  br_int_8;
 typedef uint8_t br_uint_8;
 
+typedef intptr_t  br_intptr_t;
+typedef uintptr_t br_uintptr_t;
+
+#endif
 /*
  * Generic size type (in case target environment does not have size_t)
  */
 typedef size_t br_size_t;
 
-typedef intptr_t  br_intptr_t;
-typedef uintptr_t br_uintptr_t;
+
 
 /*
  * Boolean type

@@ -1,4 +1,4 @@
-BR_SOURCE_DIR	Root of source tree				Required
+﻿BR_SOURCE_DIR	Root of source tree				Required
 BR_MAKE_DIR	Makefile directory				Required
 BR_TARGET_DIR	Target directory				Required
 BR_MAKEFILE	Makefile to use					Required

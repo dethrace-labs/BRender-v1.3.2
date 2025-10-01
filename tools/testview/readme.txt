@@ -1,4 +1,4 @@
-Actor Hierarchy Viewer
+﻿Actor Hierarchy Viewer
 ----------------------
 
 A simple program to view an actor hierarchy that has been saved

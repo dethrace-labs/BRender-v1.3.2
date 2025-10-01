@@ -1,4 +1,4 @@
-# BRender device driver dependancy list
+﻿# BRender device driver dependancy list
 # =====================================
 
 

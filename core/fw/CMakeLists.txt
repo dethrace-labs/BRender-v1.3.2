@@ -1,41 +1,40 @@
-project(fw)
+﻿project(fw)
 
-##
+# #
 # A bit hacky, but there's ONE file in softrend that needs to be in the DDI.
 # Do the needful.
-##
+# #
 set(SOFTREND_DDI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../drivers/softrend/ddi)
 
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender>
-        )
+)
 
 target_include_directories(brender-inc-ddi INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ddi>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
         $<BUILD_INTERFACE:${SOFTREND_DDI_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/ddi>
-        )
-
-add_custom_command(
-        OUTPUT dev_objs.cgh
-        # This will work with MSVC and GCC
-        COMMAND "${CMAKE_C_COMPILER}" -D__CLASSGEN__ -E "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp" > dev_objs.tmp
-        COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl" < dev_objs.tmp > dev_objs.cgh
-        MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp"
-        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl"
-        BYPRODUCTS dev_objs.tmp
 )
 
+# This was moved to a manual process in the README to avoid depending on perl for regular builds
+# add_custom_command(
+# OUTPUT dev_objs.cgh
+# # This will work with MSVC and GCC
+# COMMAND "${CMAKE_C_COMPILER}" -D__CLASSGEN__ -E "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp" > dev_objs.tmp
+# COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl" < dev_objs.tmp > dev_objs.cgh
+# MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp"
+# DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl"
+# BYPRODUCTS dev_objs.tmp
+# )
 set(GENERATED_FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/dev_objs.cgh
-        )
+        ddi/dev_objs.cgh
+)
 
 set(FW_DEV_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl
-        )
+)
 
 source_group("Device" FILES ${FW_DEV_FILES} ${GENERATED_FILES})
 set_source_files_properties(${FW_DEV_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -57,15 +56,15 @@ set(DDI_FILES
         ddi/shortcut.h
         ddi/tokenmap.h
 
-        ${CMAKE_CURRENT_BINARY_DIR}/dev_objs.cgh
+        ddi/dev_objs.cgh
 
         ${SOFTREND_DDI_DIR}/priminfo.h
-        )
+)
 
 set(INC_FILES
         include/brlists.h
         include/brstdlib.h
-        )
+)
 
 set(FW_FILES
         assocarr.c
@@ -106,7 +105,7 @@ set(FW_FILES
 
         fw.h
         fw_ip.h
-        )
+)
 
 add_library(fw OBJECT ${FW_FILES} ${FW_DEV_FILES})
 
@@ -115,14 +114,14 @@ target_sources(fw INTERFACE
         TYPE HEADERS
         BASE_DIRS include
         FILES ${INC_FILES}
-        )
+)
 
 target_sources(fw INTERFACE
         FILE_SET ddi
         TYPE HEADERS
-        BASE_DIRS ddi ${CMAKE_CURRENT_BINARY_DIR} ${SOFTREND_DDI_DIR}
+        BASE_DIRS ddi ${SOFTREND_DDI_DIR}
         FILES ${DDI_FILES}
-        )
+)
 
 target_include_directories(fw PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(fw PRIVATE __BR_V1DB__=0)

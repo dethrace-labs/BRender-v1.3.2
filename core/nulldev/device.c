@@ -103,33 +103,33 @@ static void* BR_CMETHOD_DECL(br_device_nulldev, listQuery)(struct br_object_cont
  * Default dispatch table for device
  */
 static const struct br_device_dispatch deviceDispatch = {
-    .__reserved0 = NULL,
-    .__reserved1 = NULL,
-    .__reserved2 = NULL,
-    .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_device_nulldev, free),
-    ._identifier = BR_CMETHOD_REF(br_device_nulldev, identifier),
-    ._type = BR_CMETHOD_REF(br_device_nulldev, type),
-    ._isType = BR_CMETHOD_REF(br_device_nulldev, isType),
-    ._device = BR_CMETHOD_REF(br_device_nulldev, device),
-    ._space = BR_CMETHOD_REF(br_device_nulldev, space),
+    NULL,                                              // .__reserved0
+    NULL,                                              // .__reserved1
+    NULL,                                              // .__reserved2
+    NULL,                                              // .__reserved3
+    BR_CMETHOD_REF(br_device_nulldev, free),           // ._free
+    BR_CMETHOD_REF(br_device_nulldev, identifier),     // ._identifier
+    BR_CMETHOD_REF(br_device_nulldev, type),           // ._type
+    BR_CMETHOD_REF(br_device_nulldev, isType),         // ._isType
+    BR_CMETHOD_REF(br_device_nulldev, device),         // ._device
+    BR_CMETHOD_REF(br_device_nulldev, space),          // ._space
 
-    ._templateQuery = BR_CMETHOD_REF(br_device_nulldev, templateQuery),
-    ._query = BR_CMETHOD_REF(br_object, query),
-    ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
-    ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
-    ._queryManySize = BR_CMETHOD_REF(br_object, queryManySize),
-    ._queryAll = BR_CMETHOD_REF(br_object, queryAll),
-    ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
+    BR_CMETHOD_REF(br_device_nulldev, templateQuery),  // ._templateQuery
+    BR_CMETHOD_REF(br_object, query),                  // ._query
+    BR_CMETHOD_REF(br_object, queryBuffer),            // ._queryBuffer
+    BR_CMETHOD_REF(br_object, queryMany),              // ._queryMany
+    BR_CMETHOD_REF(br_object, queryManySize),          // ._queryManySize
+    BR_CMETHOD_REF(br_object, queryAll),               // ._queryAll
+    BR_CMETHOD_REF(br_object, queryAllSize),           // ._queryAllSize
 
-    ._listQuery = BR_CMETHOD_REF(br_device_nulldev, listQuery),
-    ._tokensMatchBegin = BR_CMETHOD_REF(br_object_container, tokensMatchBegin),
-    ._tokensMatch = BR_CMETHOD_REF(br_object_container, tokensMatch),
-    ._tokensMatchEnd = BR_CMETHOD_REF(br_object_container, tokensMatchEnd),
-    ._addFront = BR_CMETHOD_REF(br_object_container, addFront),
-    ._removeFront = BR_CMETHOD_REF(br_object_container, removeFront),
-    ._remove = BR_CMETHOD_REF(br_object_container, remove),
-    ._find = BR_CMETHOD_REF(br_object_container, find),
-    ._findMany = BR_CMETHOD_REF(br_object_container, findMany),
-    ._count = BR_CMETHOD_REF(br_object_container, count),
+    BR_CMETHOD_REF(br_device_nulldev, listQuery),             // ._listQuery
+    BR_CMETHOD_REF(br_object_container, tokensMatchBegin),    // ._tokensMatchBegin
+    BR_CMETHOD_REF(br_object_container, tokensMatch),         // ._tokensMatch
+    BR_CMETHOD_REF(br_object_container, tokensMatchEnd),      // ._tokensMatchEnd
+    BR_CMETHOD_REF(br_object_container, addFront),            // ._addFront
+    BR_CMETHOD_REF(br_object_container, removeFront),         // ._removeFront
+    BR_CMETHOD_REF(br_object_container, remove),              // ._remove
+    BR_CMETHOD_REF(br_object_container, find),                // ._find
+    BR_CMETHOD_REF(br_object_container, findMany),            // ._findMany
+    BR_CMETHOD_REF(br_object_container, count),               // ._count
 };

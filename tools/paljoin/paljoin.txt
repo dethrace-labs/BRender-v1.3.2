@@ -1,4 +1,4 @@
-;Usage: PalJoin <input-text-file> <output-palette>
+﻿;Usage: PalJoin <input-text-file> <output-palette>
 ;
 ;This utility is designed to allow you to construct a new palette out of bits
 ;of existing palettes.

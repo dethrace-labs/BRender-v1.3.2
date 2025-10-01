@@ -1,4 +1,4 @@
-##
+﻿##
 # BRender public includes.
 # Added to by each target.
 ##
