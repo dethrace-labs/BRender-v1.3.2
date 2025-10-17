@@ -51,7 +51,7 @@ typedef struct br_camera {
 	 * (BR_CAMERA_PERSPECTIVE_FOV only)
 	 */
 	br_scalar aspect;
-	
+
 	/*
 	 * Width and height of projection surface
 	 * (BR_CAMERA_PERSPECTIVE_WHD and BR_CAMERA_PARALLEL only)
@@ -66,10 +66,10 @@ typedef struct br_camera {
 	 */
 	br_scalar distance;
 
-        void * user;
+	// dethrace: doesn't appear to be present in the dethrace branch of BRender
+    // void * user;
 
 } br_camera;
 
 
 #endif
-
