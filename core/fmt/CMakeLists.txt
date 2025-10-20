@@ -1,4 +1,4 @@
-﻿project(fmt)
+﻿project(fmt C)
 
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
