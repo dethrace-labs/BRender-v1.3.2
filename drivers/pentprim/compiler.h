@@ -1,7 +1,7 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__) || defined(__clang__) || defined(__TINYC__)
 #  define ALIGN(x) __attribute__ ((aligned(x)))
 #elif defined(_MSC_VER)
 #  define ALIGN(x) __declspec(align(x))

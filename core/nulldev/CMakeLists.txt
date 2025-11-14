@@ -1,4 +1,4 @@
-﻿project(nulldev)
+﻿project(nulldev C)
 
 add_library(nulldev OBJECT
         drv.h

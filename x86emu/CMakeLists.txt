@@ -1,4 +1,4 @@
-﻿project(x86emu)
+﻿project(x86emu C)
 
 
 set(INC_FILES
