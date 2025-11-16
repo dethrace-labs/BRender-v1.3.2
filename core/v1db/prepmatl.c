@@ -150,6 +150,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 		tvp++;
 
 		tvp->t = BRT_DEPTH_TEST_T;
+
 		switch (mat->mode & BR_MATM_DEPTH_TEST_MASK) {
 
 		case BR_MATM_DEPTH_TEST_GT:
@@ -184,6 +185,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 			tvp->v.t = BRT_ALWAYS;
 			break;
 		}
+
 		tvp++;
 
 		tvp->t = BRT_BLEND_MODE_T;
@@ -206,6 +208,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 			tvp->v.t = BRT_BLEND_PREMULTIPLIED;
 			break;
 		}
+
 		tvp++;
 
 		tvp->t = BRT_MAP_WIDTH_LIMIT_T;
@@ -224,6 +227,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 			tvp->v.t = BRT_MIRROR;
 			break;
 		}
+
 		tvp++;
 
 		tvp->t = BRT_MAP_HEIGHT_LIMIT_T;
@@ -242,6 +246,7 @@ void BR_PUBLIC_ENTRY BrMaterialUpdate(br_material *mat, br_uint_16 flags)
 			tvp->v.t = BRT_MIRROR;
 			break;
 		}
+
 		tvp++;
 
 		tvp->t = BRT_FOG_B;
