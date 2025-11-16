@@ -252,7 +252,7 @@ typedef float br_float;
 /*
  * GNU C
  */
-#elif defined (__GNUC__)
+#elif defined (__GNUC__) || defined (__TINYC__)
 
 /*
  * Function qualifiers

@@ -1,4 +1,4 @@
-﻿project(glrend)
+﻿project(glrend C)
 
 # Embed shaders
 add_custom_command(
