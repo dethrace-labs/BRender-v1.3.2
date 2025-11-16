@@ -39,6 +39,11 @@ typedef struct br_material {
 	br_matrix23 map_transform;
 
 	/*
+	 * Various mode bit fields
+	 */
+	br_uint_16 mode;
+
+	/*
 	 * The direct index ramp base and range
 	 */
 	br_uint_8 index_base;
@@ -67,19 +72,13 @@ typedef struct br_material {
 
 	br_int_32 subdivide_tolerance;
 
+	br_scalar depth_bias;
+
 	/*
 	 * Workspace fields for user and database
 	 */
 	void	  *user;
 	void	  *stored;
-
-	// Fields underneath this don't appear to be present in c1 version of brender and were moved to bottom
-
-	/*
-	 * Various mode bit fields
-	 */
-	br_uint_16 mode;
-	br_scalar depth_bias;
 
 } br_material;
 
