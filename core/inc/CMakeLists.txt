@@ -1,4 +1,10 @@
 ﻿project(inc)
+ 
+if(IS_BIGENDIAN)
+    target_compile_definitions(brender-inc INTERFACE BR_ENDIAN_BIG=1 BR_ENDIAN_LITTLE=0)
+else()
+    target_compile_definitions(brender-inc INTERFACE BR_ENDIAN_BIG=0 BR_ENDIAN_LITTLE=1)
+endif()
 
 target_include_directories(brender-inc INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
