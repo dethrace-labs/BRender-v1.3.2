@@ -17,6 +17,17 @@ option(BRENDER_ASAN_ENABLED "Address Sanitizer" OFF)
 
 add_subdirectory(core)
 
+if(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+    set(WORDS_BIGENDIAN TRUE)
+    add_definitions(-DBR_ENDIAN_BIG=1 -DBR_ENDIAN_LITTLE=0)
+elseif(CMAKE_C_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+    set(WORDS_BIGENDIAN FALSE)
+    add_definitions(-DBR_ENDIAN_BIG=0 -DBR_ENDIAN_LITTLE=1)
+else()
+    set(WORDS_BIGENDIAN FALSE)
+    message(WARNING "Endianness could not be determined.")
+endif()
+
 if(BRENDER_BUILD_DRIVERS)
     add_subdirectory(x86emu)
     add_subdirectory(drivers)
