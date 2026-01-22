@@ -4,7 +4,11 @@
 #ifndef _DRV_H_
 #define _DRV_H_
 
+#if defined(_MSC_VER) && _MSC_VER <= 1929
+#define alignas(X) _Alignas(X)
+#else
 #include <stdalign.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
