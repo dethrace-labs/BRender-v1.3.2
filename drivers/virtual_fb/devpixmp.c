@@ -104,7 +104,7 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
 br_device_pixelmap* DevicePixelmapVirtualFBAllocate(br_device* dev, br_output_facility* facility, br_token_value* tv) {
     br_device_pixelmap* self;
     br_error r;
-    br_uint_16 original_mode;
+    br_uint_16 original_mode = 0;
     br_uint_16 sel;
     br_int_32 count;
 
