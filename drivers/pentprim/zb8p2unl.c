@@ -406,5 +406,5 @@ void BR_ASM_CALL TriangleRender_ZT_I8_D16_256(brp_block *block, brp_vertex* v0, 
 }
 
 void BR_ASM_CALL TriangleRender_ZT_I8_D16_1024(brp_block *block, brp_vertex *v0, brp_vertex *v1,brp_vertex *v2) {
-    TriangleRender_ZTB_I8_D16_POW2(block, 10, 0, v0, v1, v2);
+    TriangleRender_ZT_I8_D16_POW2(block, 10, 0, v0, v1, v2);
 }
