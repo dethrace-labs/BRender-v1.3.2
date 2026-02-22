@@ -36,7 +36,7 @@ char* preprocessShader(char* shader, size_t size) {
     filter_state = 0;
     is_context_opengles = glContextIsOpenGLES();
     processed = BrScratchAllocate(size);
-    BrMemSet(processed, 0, sizeof(processed));
+    processed[0] = '\0';
 
     for (i = 0; i < size; i++) {
         line[line_i] = shader[i];
