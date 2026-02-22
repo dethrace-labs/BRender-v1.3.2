@@ -41,8 +41,8 @@ char* preprocessShader(char* shader, size_t size) {
     for (i = 0; i < size; i++) {
         line[line_i] = shader[i];
         line[line_i+1] = '\0';
-        line_i++;
-        if (shader[i] == '\n') {
+        if (shader[i] == '\n' || shader[i] == '\r') {
+            line[line_i] = '\n';
             // we've captured a whole line
             if (strcmp(line, "##ifdef GL_ES\n") == 0) {
                 filter_state = 1;
@@ -59,7 +59,12 @@ char* preprocessShader(char* shader, size_t size) {
                     strcat(processed, line);
                 }
             }
+            if (shader[i] == '\r' && shader[i+1] == '\n') {
+                i++;
+            }
             line_i = 0;
+        } else {
+            line_i++;
         }
     }
     return processed;
