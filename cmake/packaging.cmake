@@ -43,20 +43,6 @@ if (BRENDER_BUILD_DRIVERS)
         )
     endif()
 
-    if (TARGET sdl2dev)
-        install(TARGETS sdl2dev-headers
-            EXPORT BRenderTargets
-            FILE_SET include DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/brender/sdl2dev
-            COMPONENT drivers
-        )
-
-        install(TARGETS sdl2dev
-            EXPORT BRenderTargets
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            COMPONENT drivers
-        )
-    endif()
-
     if (TARGET softrend)
         install(TARGETS softrend
             EXPORT BRenderTargets

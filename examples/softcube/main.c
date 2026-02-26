@@ -2,15 +2,15 @@
 #include <brender.h>
 #include <inttypes.h>
 #include <priminfo.h>
-// #include <brsdl2dev.h>
-#include <SDL.h>
+
+#include <SDL3/SDL.h>
 #include <assert.h>
 #include <stdio.h>
 
 static br_pixelmap *screen = NULL, *colour_buffer = NULL, *depth_buffer = NULL;
 static br_actor *world, *camera;
 static SDL_Window* window;
-static br_uint_64 ticks_last, ticks_now;
+static Uint64 ticks_last, ticks_now;
 
 // software renderer
 static struct {
@@ -23,7 +23,7 @@ static struct {
 // gl renderer
 static struct {
     br_device_gl_callback_procs gl_callbacks;
-    SDL_GLContext *gl_context;
+    SDL_GLContext gl_context;
 } opengl_props;
 
 static enum {
@@ -68,7 +68,7 @@ static void software_renderer_swap(br_pixelmap* back_buffer) {
     }
     SDL_UnlockTexture(software_props.screen_texture);
     SDL_RenderClear(software_props.renderer);
-    SDL_RenderCopy(software_props.renderer, software_props.screen_texture, NULL, NULL);
+    SDL_RenderTexture(software_props.renderer, software_props.screen_texture, NULL, NULL);
     SDL_RenderPresent(software_props.renderer);
 }
 
@@ -92,10 +92,8 @@ static void BR_CALLBACK gl_get_viewport(int* x, int* y, float* width_multiplier,
 static int init_software_renderer() {
     window = SDL_CreateWindow(
         "BRender v1.3.2 software renderer",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
         width, height,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+        SDL_WINDOW_RESIZABLE);
 
     software_props.virtualfb_callbacks.palette_changed = software_palette_changed;
     software_props.virtualfb_callbacks.swap_buffers = software_renderer_swap;
@@ -106,7 +104,7 @@ static int init_software_renderer() {
         BRT_VIRTUALFB_CALLBACKS_P, &software_props.virtualfb_callbacks,
         BR_NULL_TOKEN);
 
-    software_props.renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    software_props.renderer = SDL_CreateRenderer(window, NULL);
     if (software_props.renderer == NULL) {
         printf("Failed to create SDL renderer: %s\n", SDL_GetError());
         exit(1);
@@ -124,10 +122,8 @@ static void destroy_software_renderer() {
 static int init_opengl_renderer() {
     window = SDL_CreateWindow(
         "BRender v1.3.2 gl renderer",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
         width, height,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -147,7 +143,7 @@ static int init_opengl_renderer() {
     }
     SDL_GL_SetSwapInterval(1);
 
-    opengl_props.gl_callbacks.get_proc_address = SDL_GL_GetProcAddress;
+    opengl_props.gl_callbacks.get_proc_address = (br_device_gl_getprocaddress_cbfn *)SDL_GL_GetProcAddress;
     opengl_props.gl_callbacks.swap_buffers = gl_renderer_swap;
     opengl_props.gl_callbacks.get_viewport = gl_get_viewport;
     BrDevBeginVar(&screen, "glrend",
@@ -165,7 +161,7 @@ static int init_opengl_renderer() {
 }
 
 static void destroy_opengl_renderer() {
-    SDL_GL_DeleteContext(opengl_props.gl_context);
+    SDL_GL_DestroyContext(opengl_props.gl_context);
     SDL_DestroyWindow(window);
 }
 
@@ -261,20 +257,20 @@ int main(int argc, char** argv) {
 
     BrActorAdd(world, mini);
 
-    ticks_last = SDL_GetTicks64();
+    ticks_last = SDL_GetTicks();
 
-    for (SDL_bool running = SDL_TRUE; running;) {
+    for (bool running = true; running;) {
         float dt;
         SDL_Event event;
 
-        ticks_now = SDL_GetTicks64();
+        ticks_now = SDL_GetTicks();
         dt = (float)(ticks_now - ticks_last) / 1000.0f;
         ticks_last = ticks_now;
 
         while (SDL_PollEvent(&event) > 0) {
             switch (event.type) {
-            case SDL_QUIT:
-                running = SDL_FALSE;
+            case SDL_EVENT_QUIT:
+                running = false;
                 break;
             }
         }
