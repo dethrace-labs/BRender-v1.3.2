@@ -926,7 +926,7 @@ static br_error V1Model_Render
 		 * Merge opacity into alpha byte of colour
 		 */
 		scache.colour = renderer->state.surface.colour & 0xFFFFFF;
-		scache.colour |= BrScalarToInt(BR_CONST_MUL(renderer->state.surface.opacity,256)) << 24;
+		scache.colour |= (br_uint_32)BrScalarToInt(BR_CONST_MUL(renderer->state.surface.opacity,256)) << 24;
 
 		/*
 		 * Make sure base primitive block is hooked up to the right place
