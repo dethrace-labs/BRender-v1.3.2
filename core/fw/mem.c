@@ -30,7 +30,7 @@ void * BR_RESIDENT_ENTRY BrMemAllocate(br_size_t size, br_uint_8 type)
 	/*
 	 * Clear block
 	 */
-	if (b != NULL || size != 0) {
+	if (size != 0) {
 		BrMemSet(b,0,size);
 	}
 
@@ -101,7 +101,7 @@ void * BR_RESIDENT_ENTRY BrMemCalloc(int nelems, br_size_t size, br_uint_8 type)
 	b = fw.mem->allocate(size * nelems,type);
 
 
-	if (b != NULL || size * nelems != 0) {
+	if (size * nelems != 0) {
 		BrMemSet(b,0,size * nelems);
 	}
 
