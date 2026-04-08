@@ -10,6 +10,7 @@
 #ifndef _MATERIAL_H_
 #define _MATERIAL_H_
 
+// dethrace: updated field ordering to match the older BRender version used by Carmageddon
 typedef struct br_material {
 	br_uintptr_t _reserved;
 
@@ -39,15 +40,15 @@ typedef struct br_material {
 	br_matrix23 map_transform;
 
 	/*
-	 * Various mode bit fields
-	 */
-	br_uint_16 mode;
-
-	/*
 	 * The direct index ramp base and range
 	 */
 	br_uint_8 index_base;
 	br_uint_8 index_range;
+
+	/*
+	 * Various mode bit fields
+	 */
+	br_uint_16 mode;
 
 	/*
 	 * Pointers to colour map
@@ -70,9 +71,12 @@ typedef struct br_material {
 	br_scalar fog_max;
 	br_colour fog_colour;
 
-	br_int_32 subdivide_tolerance;
-
 	br_scalar depth_bias;
+
+	// dethrace added to preserve field offsets
+	br_uint_8 _pad_6c[0x24];
+
+	br_int_32 subdivide_tolerance;
 
 	/*
 	 * Workspace fields for user and database
