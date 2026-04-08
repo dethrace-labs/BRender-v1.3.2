@@ -73,8 +73,9 @@ typedef struct br_material {
 
 	br_scalar depth_bias;
 
-	// dethrace added to preserve field offsets
-	br_uint_8 _pad_6c[0x24];
+	// dethrace added to preserve field offsets from the older BRender version used by Carmageddon
+	br_pixelmap *colour_map_1;           // @0x6c
+	br_uint_8 _pad_70[0x20];             // @0x70..0x8f
 
 	br_int_32 subdivide_tolerance;
 
