@@ -30,8 +30,8 @@ uint16_t fp_extended_cw = 0x137f;
 int      sort_table_1[] = {1, 2, 0, 0, 0, 0, 2, 1};
 int      sort_table_0[] = {0, 0, 0, 2, 1, 0, 1, 2};
 int      sort_table_2[] = {2, 1, 0, 1, 2, 0, 0, 0};
-uint32_t flip_table[8]  = {0x000000000, 0x080000000, 0x080000000, 0x000000000,
-                           0x080000000, 0x000000000, 0x000000000, 0x080000000};
+uint32_t flip_table[8]  = {0x00000000, 0x80000000, 0x80000000, 0x00000000,
+                           0x80000000, 0x00000000, 0x00000000, 0x80000000};
 
 #define MASK_MANTISSA   0x007fffff
 #define IMPLICIT_ONE    1 << 23
@@ -111,7 +111,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     RCL_1(ebx.v);
 
 
-    CMP(edx.v, ecx.v)
+    CMP(edx.v, ecx.v);
     RCL_1(ebx.v); // ebx now has 3 bit number characterising the order of the vertices.
 
     eax.v = sort_table_0[ebx.v];
@@ -133,7 +133,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ebp.v &= MASK_MANTISSA;
     ecx.v >>= 23;
     ebp.v |= IMPLICIT_ONE;
-    ebp.v >>= ecx.l;
+    ebp.v >>= (ecx.l & 31);
     esi.float_val = ((brp_vertex *)ebx.ptr_v)->comp_f[C_SY];
     ecx.v = EXPONENT_OFFSET;
     ecx.v -= esi.v;
@@ -141,7 +141,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ecx.v >>= 23;
     esi.v |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    esi.v >>= ecx.l;
+    esi.v >>= (ecx.l & 31);
 
     edi.float_val = ((brp_vertex *)edx.ptr_v)->comp_f[C_SY];
     ecx.v = EXPONENT_OFFSET;
@@ -150,7 +150,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ecx.v >>= 23;
     edi.v |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    edi.v >>= ecx.l;
+    edi.v >>= (ecx.l & 31);
 
     // Catch special cases of empty top or bottom trapezoids
 
@@ -682,7 +682,7 @@ void SETUP_FLOAT_PARAM(int comp, char *param /*unused*/, fp64_t *s_p, fp64_t *d_
         //mov(x86_op_reg(esi), x86_op_mem32(s_p));
         esi.v = s_p->dword_low;
         // 			xor		esi,080000000h
-        esi.v ^= 0x080000000;
+        esi.v ^= 0x80000000;
         // 			mov		dword ptr s_p,esi
         s_p->dword_low = esi.v;
         // endif
@@ -1115,11 +1115,14 @@ static void ARBITRARY_SETUP()
 
 void SETUP_FLOAT_COLOUR(brp_vertex *v0) {
     // fld dword ptr [eax+4*C_I]
-	// fadd fp_conv_d16
-	// fstp qword ptr temporary_intensity
-	// mov bl, byte ptr temporary_intensity+2
-	// mov byte ptr workspace.colour,bl
-    workspace.colour = (int)v0->comp_f[C_I];
+    FLD(v0->comp_f[C_I]);
+    // fadd fp_conv_d16
+    FADD(fp_conv_d16);
+    // fstp qword ptr temporary_intensity
+    FSTP64(&temporary_intensity);
+    // mov bl, byte ptr temporary_intensity+2
+    // mov byte ptr workspace.colour,bl
+    workspace.colour = ((uint8_t *)&temporary_intensity)[2];
 }
 
 

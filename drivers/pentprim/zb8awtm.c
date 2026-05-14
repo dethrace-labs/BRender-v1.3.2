@@ -83,7 +83,7 @@ static inline void PER_SCAN_ZT(int32_t *halfCount, char wrap_flag, uint32_t *min
 vBelowRetest:
     // 	cmp eax,work.texture.base
     // 	jae vPerLineNoWrapNegative
-    if(eax.int_val >= WORK_TEXTURE_BASE) {
+    if(eax.v >= (uint32_t)WORK_TEXTURE_BASE) {
         goto vPerLineNoWrapNegative;
     }
 
@@ -95,7 +95,7 @@ vPerLineNoWrapNegative:
 vAboveRetest:
     // 	cmp eax,workspaceA.vUpperBound
     // 	jb vPerLineNoWrapPositive
-    if(eax.int_val < workspaceA.vUpperBound) {
+    if(eax.v < workspaceA.vUpperBound) {
         goto vPerLineNoWrapPositive;
     }
     // 	sub eax,work.texture._size
@@ -239,7 +239,7 @@ static inline void PER_SCAN_ZTI(int32_t *halfCount, char wrap_flag, uint32_t *mi
 vBelowRetest:
     // 	cmp eax,work.texture.base
     // 	jae vPerLineNoWrapNegative
-    if(eax.int_val >= WORK_TEXTURE_BASE) {
+    if(eax.v >= (uint32_t)WORK_TEXTURE_BASE) {
         goto vPerLineNoWrapNegative;
     }
 
@@ -251,7 +251,7 @@ vPerLineNoWrapNegative:
 vAboveRetest:
     // 	cmp eax,workspaceA.vUpperBound
     // 	jb vPerLineNoWrapPositive
-    if(eax.int_val < workspaceA.vUpperBound) {
+    if(eax.v < workspaceA.vUpperBound) {
         goto vPerLineNoWrapPositive;
     }
     // 	sub eax,work.texture._size
@@ -384,7 +384,7 @@ drawLine:
 
 drawPixel:
     // 	mov bx,[ebp+2*ecx]
-    ebx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
+    ebx.short_low = DEPTH_READ16(work.depth.base, ebp.v, ecx.v);
     // 	mov dx,word ptr workspace.c_z+2
     edx.short_low = workspace.c_z >> 16;
 
@@ -439,7 +439,7 @@ drawPixel:
         // else
         } else {
             //     mov [ebp+2*ecx],dx
-            ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_low;
+            DEPTH_WRITE16(work.depth.base, ebp.v, ecx.v, edx.short_low);
             // 	   mov [edi+ecx],bl
             ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // endif
@@ -468,7 +468,7 @@ noPlot:
 vBelowRetest:
     // 	cmp esi,work.texture.base
     // 	jae vPerPixelNoWrapNegative
-    if(esi.int_val >= WORK_TEXTURE_BASE) {
+    if(esi.v >= (uint32_t)WORK_TEXTURE_BASE) {
         goto vPerPixelNoWrapNegative;
     }
     // 	add esi,work.texture._size
@@ -479,7 +479,7 @@ vPerPixelNoWrapNegative:
 vAboveRetest:
     // 	cmp esi,workspaceA.vUpperBound
     // 	jb vPerPixelNoWrapPositive
-    if(esi.int_val < workspaceA.vUpperBound) {
+    if(esi.v < workspaceA.vUpperBound) {
         goto vPerPixelNoWrapPositive;
     }
     // 	sub esi,work.texture._size
@@ -618,7 +618,7 @@ drawLine:
 
 drawPixel:
     // 	mov bx,[ebp+2*ecx]
-    ebx.short_low = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
+    ebx.short_low = DEPTH_READ16(work.depth.base, ebp.v, ecx.v);
     // 	mov dx,word ptr workspace.c_z+2
     edx.short_low = workspace.c_z >> 16;
 
@@ -684,7 +684,7 @@ drawPixel:
             // mov bl,byte ptr [eax+ebx]
             ebx.l = ((uint8_t *)work.shade_table)[ebx.v];
 	        // mov [ebp+2*ecx],dx
-            ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_low;
+            DEPTH_WRITE16(work.depth.base, ebp.v, ecx.v, edx.short_low);
             // 	   mov [edi+ecx],bl
             ((uint8_t *)work.colour.base)[edi.v + ecx.v] = ebx.l;
         // endif
@@ -719,7 +719,7 @@ noPlot:
 vBelowRetest:
     // 	cmp esi,work.texture.base
     // 	jae vPerPixelNoWrapNegative
-    if(esi.int_val >= WORK_TEXTURE_BASE) {
+    if(esi.v >= (uint32_t)WORK_TEXTURE_BASE) {
         goto vPerPixelNoWrapNegative;
     }
     // 	add esi,work.texture._size
@@ -730,7 +730,7 @@ vPerPixelNoWrapNegative:
 vAboveRetest:
     // 	cmp esi,workspaceA.vUpperBound
     // 	jb vPerPixelNoWrapPositive
-    if(esi.int_val < workspaceA.vUpperBound) {
+    if(esi.v < workspaceA.vUpperBound) {
         goto vPerPixelNoWrapPositive;
     }
     // 	sub esi,work.texture._size

@@ -141,7 +141,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
 	RCL_1(ebx.v);
     CMP(edx.v, eax.v);
     RCL_1(ebx.v);
-    CMP(edx.v, ecx.v)
+    CMP(edx.v, ecx.v);
     RCL_1(ebx.v); // ebx now has 3 bit number characterising the order of the vertices.
 
     eax.v = sort_table_0[ebx.v];
@@ -163,7 +163,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ebp.v &= MASK_MANTISSA;
     ecx.v >>= 23;
     ebp.v |= IMPLICIT_ONE;
-    ebp.v >>= ecx.l;
+    ebp.v >>= (ecx.l & 31);
     esi.float_val = ((brp_vertex *)ebx.ptr_v)->comp_f[C_SY];
     ecx.v = EXPONENT_OFFSET;
     ecx.v -= esi.v;
@@ -171,7 +171,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ecx.v >>= 23;
     esi.v |= IMPLICIT_ONE;
     // shr		 ebp,cl				; ESI = y_m
-    esi.v >>= ecx.l;
+    esi.v >>= (ecx.l & 31);
 
     edi.float_val = ((brp_vertex *)edx.ptr_v)->comp_f[C_SY];
     ecx.v = EXPONENT_OFFSET;
@@ -180,7 +180,7 @@ static int SETUP_FLOAT(brp_vertex *v0, brp_vertex *v1, brp_vertex *v2)
     ecx.v >>= 23;
     edi.v |= IMPLICIT_ONE;
     // shr		 edi,cl				; edi = y_b
-    edi.v >>= ecx.l;
+    edi.v >>= (ecx.l & 31);
 
     // Catch special cases of empty top or bottom trapezoids
 
@@ -645,7 +645,7 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// mov		edx,[ebp].comp_f[C_W*4]
     edx.float_val = BRP_VERTEX(ebp)->comp_f[C_W];
 	// cmp		ebx,eax
-    CMP(ebx.float_val, eax.float_val);
+    CMP(ebx.v, eax.v);
 
 	// fld		st(0)						;	xrange	xrange	yrange
     FLD_ST(0);
@@ -655,12 +655,12 @@ int SETUP_FLOAT_CHECK_PERSPECTIVE_CHEAT() {
 	// rcl		ecx,1
     RCL_1(ecx.v);
 	// cmp		edx,eax
-    CMP(edx.float_val, eax.float_val);
+    CMP(edx.v, eax.v);
 
 	// rcl		ecx,1
     RCL_1(ecx.v);
 	// cmp		edx,ebx
-    CMP(edx.float_val, ebx.float_val);
+    CMP(edx.v, ebx.v);
 
 	// fstp	xr_yr
     FSTP(&xr_yr);
@@ -746,7 +746,7 @@ xrange_larger:
 	// ;
     // cmp		ecx,edx
     CMP(ecx.v, edx.v);
-    int jb_flag = ecx.v < edx.v;
+    int jb_flag = x86_state.cf;
     // mov		ecx,workspace_v1
     ecx.ptr_v = workspace.v1;
 
