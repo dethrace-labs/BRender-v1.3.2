@@ -253,7 +253,7 @@ nodraw:
 
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
-    if (dirn == DIR_F && edi.ptr_v > ecx.ptr_v || dirn == DIR_B && edi.ptr_v < ecx.ptr_v) {
+    if (dirn == DIR_F && edi.v > ecx.v || dirn == DIR_B && edi.v < ecx.v) {
         return;
     }
 
@@ -343,7 +343,7 @@ inculoop:
         ebx.v -= edx.v;
         // cmp		ebx,edx
         // jge		inculoop
-        if (ebx.int_val > edx.int_val) {
+        if (ebx.int_val >= edx.int_val) {
             goto inculoop;
         }
         // mov		work.tsl.du_numerator,edi
@@ -357,11 +357,11 @@ inculoop:
 	    // ;
         // jl_&udirn	doneu
         if (udirn == eScan_direction_i && ebx.int_val < 0) {
-            goto nodecu;
+            goto doneu;
         } else if (udirn == eScan_direction_b && ebx.int_val > 0) {
-            goto nodecu;
+            goto doneu;
         } else if (udirn == eScan_direction_d && ebx.int_val >= 0) {
-            goto nodecu;
+            goto doneu;
         }
 
         // ; Adjust u
@@ -718,7 +718,7 @@ nodraw:
     ADD_D(ebp.ptr_8, 2, dirn);
     // cmp		edi,ecx
     // jg_&dirn    ScanlineRender_ZPT&fogging&&blend&_I8_D16_&size&_&dirn&_done
-    if (dirn == DIR_F && edi.ptr_v > ecx.ptr_v || dirn == DIR_B && edi.ptr_v < ecx.ptr_v) {
+    if (dirn == DIR_F && edi.v > ecx.v || dirn == DIR_B && edi.v < ecx.v) {
         return;
     }
 
@@ -817,7 +817,7 @@ inculoop:
         ebx.v -= edx.v;
         // cmp		ebx,edx
         // jge		inculoop
-        if (ebx.int_val > edx.int_val) {
+        if (ebx.int_val >= edx.int_val) {
             goto inculoop;
         }
         // mov		work.tsl.du_numerator,edi
@@ -831,11 +831,11 @@ inculoop:
 	    // ;
         // jl_&udirn	doneu
         if (udirn == eScan_direction_i && ebx.int_val < 0) {
-            goto nodecu;
+            goto doneu;
         } else if (udirn == eScan_direction_b && ebx.int_val > 0) {
-            goto nodecu;
+            goto doneu;
         } else if (udirn == eScan_direction_d && ebx.int_val >= 0) {
-            goto nodecu;
+            goto doneu;
         }
 
         // ; Adjust u
@@ -1940,16 +1940,16 @@ void BR_ASM_CALL TriangleRender_ZPTI_I8_D16_32(brp_block *block, brp_vertex *v0,
     // mov		work.tsl.dz,ecx
     work.tsl.dz = ecx.v;
 
-    // shl		al,2
+    // shl		al,3
     eax.l <<= 3;
     // mov		work.tsl._di,edx
     work.tsl.di = edx.v;
 
-    // shr		eax,2
+    // shr		eax,3
     eax.v >>= 3;
     // mov		ebx,work.pq.grad_x
     ebx.v = work.pq.grad_x;
-    // and		eax,63*65
+    // and		eax,31*33
     eax.v &= 31*33;
     // mov		work.tsl.ddenominator,ebx
     work.tsl.ddenominator = ebx.v;

@@ -107,9 +107,6 @@ scan_loop:
     // mov	ebx,edx				; need same junk in high word of old and new z
     ebx.v = edx.v;
 
-    // TOOD: not sure here
-    x86_state.cf = 0;
-
     // ; eax = i
 	// ; ebx = old z, dz
 	// ; ecx =	di
@@ -123,7 +120,7 @@ pixel_loop:
     // adc_&dirn	edx,0		; carry into integer part of z
     ADC_D(edx.v, 0, dirn);
     // mov	bl,[edi+ebp*2]		; fetch old z
-    ebx.short_low = ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val];
+    ebx.short_low = DEPTH_READ16(work.depth.base, edi.v, ebp.v);
 
     // add_&dirn	eax,ecx		; step i
     ADD_SET_CF_D(eax.v, ecx.v, dirn);
@@ -142,7 +139,7 @@ pixel_loop:
     }
 
     // mov	[edi+ebp*2],dx		; store pixel and depth (prefix cannot be avoided since
-    ((uint16_t *)work.depth.base)[edi.v / 2 + ebp.int_val] = edx.short_low;
+    DEPTH_WRITE16(work.depth.base, edi.v, ebp.v, edx.short_low);
     // mov	[esi+ebp],al		; two byte writes would fill the write buffers)
     ((uint8_t *)work.colour.base)[esi.v + ebp.v] = eax.l;
 
@@ -150,11 +147,13 @@ pixel_behind:
 
     // add_&dirn	edx,ebx		; step z
     // inc_&dirn	ebp			; increment (negative) counter/offset
+    // IMPORTANT: add/sub must update CF because next iteration starts with
+    // adc_&dirn edx,0 (carry into integer part of z)
     if (dirn == DIR_F) {
-        edx.v += ebx.v;
+        ADD_AND_SET_CF(edx.v, ebx.v);
         ebp.v++;
     } else {
-        edx.v -= ebx.v;
+        SUB_AND_SET_CF(edx.v, ebx.v);
         ebp.v--;
     }
 
@@ -248,10 +247,7 @@ no_pixels:
     }
 }
 
-
-
 void BR_ASM_CALL TriangleRender_ZI_I8_D16(brp_block *block, brp_vertex *v0, brp_vertex *v1, brp_vertex *v2) {
-
     // ; Get pointers to vertex structures
 	// ;
 	// 	mov	eax,pvertex_0

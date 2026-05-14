@@ -72,7 +72,7 @@ drawPixel:
 	// 	shr esi,16-pow2
 	esi.v >>= (16 - pow2);
 	// 	mov bl,[ebp+2*ecx]
-	ebx.v = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val];
+	ebx.v = DEPTH_READ16(work.depth.base, ebp.v, ecx.v);
 
 	// 	shr eax,16
 	eax.v >>= 16;
@@ -109,7 +109,7 @@ drawPixel:
 
 	// 	mov [ebp+2*ecx],dl
 	// 	mov [ebp+2*ecx+1],dh
-	((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = edx.short_low;
+	DEPTH_WRITE16(work.depth.base, ebp.v, ecx.v, edx.short_low);
 
 	// and eax,0ffffh
 	eax.v &= 0xffff;
@@ -350,7 +350,7 @@ void BR_ASM_CALL TriangleRender_ZTB_I8_D16_POW2(brp_block *block, int pow2, int 
 // 	mov workspace.d_xm_f,ebx
 	workspace.d_xm_f = ebx.v;
 // 	cmp edx,80000000
-	CMP(edx.v, 80000000);
+	CMP(edx.v, 0x80000000);
 
 // 	adc edx,-1
 	ADC(edx.v, -1);

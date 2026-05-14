@@ -89,5 +89,19 @@ static void MAKE_N_LOW_BIT_MASK(uint32_t *name, int n) {
         goto label; \
     }
 
+/*
+ * x86-style effective address for word accesses:
+ * [base_off + 2*idx], with idx interpreted as raw 32-bit register bits.
+ */
+#define X86_WORD_EA(base_off, idx_bits) \
+    ((uint32_t)(base_off) + (((uint32_t)(idx_bits)) << 1))
+
+#define DEPTH_READ16(base_ptr, base_off, idx_bits) \
+    (*(uint16_t *)((uint8_t *)(base_ptr) + X86_WORD_EA((base_off), (idx_bits))))
+
+#define DEPTH_WRITE16(base_ptr, base_off, idx_bits, val16) \
+    do { \
+        *(uint16_t *)((uint8_t *)(base_ptr) + X86_WORD_EA((base_off), (idx_bits))) = (uint16_t)(val16); \
+    } while (0)
 
 #endif

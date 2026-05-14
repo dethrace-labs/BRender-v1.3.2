@@ -77,7 +77,7 @@ drawPixel:
     // and edi,mask shl pow2
     edi.v &= (mask << pow2);
     // mov dl,[ebp+2*ecx]
-    edx.v = ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val]; //grab both bytes at once
+    edx.v = DEPTH_READ16(work.depth.base, ebp.v, ecx.v); //grab both bytes at once
     // or eax,edi
     eax.v |= edi.v;
     // mov dh,[ebp+2*ecx+1]
@@ -105,7 +105,7 @@ drawPixel:
         goto noPlot;
     }
     // mov [ebp+2*ecx],bx ;two cycles
-    ((uint16_t *)work.depth.base)[ebp.v / 2 + ecx.int_val] = ebx.short_low;
+    DEPTH_WRITE16(work.depth.base, ebp.v, ecx.v, ebx.short_low);
     // mov [esi+ecx],al
     ((uint8_t *)work.colour.base)[esi.v + ecx.v] = eax.l;
 
@@ -329,7 +329,7 @@ void BR_ASM_CALL TriangleRender_ZTI_I8_D16_POW2(brp_block *block, int pow2, int 
 // 	mov workspace.d_xm_f,ebx
 	workspace.d_xm_f = ebx.v;
 // 	cmp edx,80000000
-	CMP(edx.v, 80000000);
+	CMP(edx.v, 0x80000000);
 
 // 	adc edx,-1
 	ADC(edx.v, -1);

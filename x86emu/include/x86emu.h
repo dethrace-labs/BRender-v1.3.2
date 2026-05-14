@@ -266,26 +266,37 @@ extern x86_reg eax, ebx, ecx, edx, ebp, edi, esi;
 
 #define RCL_1(val) \
     do { \
-    int msb = val & 0x80000000; \
+    uint32_t old_cf = x86_state.cf & 1u; \
+    uint32_t new_cf = ((val) >> 31) & 1u; \
     /* rotate CF flag into lsb */ \
-    val = (val << 1) + x86_state.cf; \
-    /* rotate msb into CF */ \
-    x86_state.cf = msb; \
+    val = ((val) << 1) | old_cf; \
+    /* rotate msb into CF (single bit) */ \
+    x86_state.cf = new_cf; \
     } while(0)
 
 #define ADD_AND_SET_CF(val1, val2) \
     val1 += val2; \
-	x86_state.cf = val1 < val2;
+    x86_state.cf = val1 < val2;
 
 #define SUB_AND_SET_CF(val1, val2) \
     x86_state.cf = val1 < val2; \
     val1 -= val2;
 
 #define ADC(val1, val2) \
-    val1 += val2 + x86_state.cf;
+    do { \
+    uint32_t _cf = x86_state.cf & 1u; \
+    uint64_t _sum = (uint64_t)(uint32_t)(val1) + (uint32_t)(val2) + _cf; \
+    val1 = _sum; \
+    x86_state.cf = (_sum >> 32) & 1u; \
+    } while (0)
 
 #define SBB(val1, val2) \
-    val1 = val1 - (val2 + x86_state.cf);
+    do { \
+    uint32_t _cf = x86_state.cf & 1u; \
+    uint64_t _sub = (uint64_t)(uint32_t)(val2) + _cf; \
+    x86_state.cf = (uint32_t)(val1) < _sub; \
+    val1 = (uint32_t)(val1) - (uint32_t)_sub; \
+    } while (0)
 
 #define ROR16(dest) \
     x86_state.x86_swap = dest.short_low; \
