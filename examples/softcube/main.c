@@ -166,9 +166,13 @@ static void destroy_opengl_renderer() {
 }
 
 int main(int argc, char** argv) {
+    const char *working_path = NULL;
     for (int i = 1; i < argc; ) {
-        int consumed = 0;
-        if (BrStrCmp(argv[i], "--renderer") == 0) {
+        int consumed = -1;
+        if (BrStrCmp(argv[i], "-v") == 0 || BrStrCmp(argv[i], "--verbose") == 0) {
+            SDL_SetLogPriorities(SDL_LOG_PRIORITY_DEBUG);
+        }
+        else if (BrStrCmp(argv[i], "--renderer") == 0) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "--renderer needs an argument: software or opengl\n");
                 return 1;
@@ -183,8 +187,8 @@ int main(int argc, char** argv) {
                 return 1;
             }
         }
-        if (consumed < 0) {
-            fprintf(stderr, "Unsupported argument: %s\n", argv[i]);
+        if (consumed <= 0) {
+            fprintf(stderr, "Unsupported argument: \"%s\"\n", argv[i]);
             return 1;
         }
         i += consumed;
