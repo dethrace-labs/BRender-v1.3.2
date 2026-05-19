@@ -11,6 +11,10 @@ target_link_libraries(softcube16 BRender::Full BRender::DDI SDL3::SDL3)
 set_property(TARGET softcube16 PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../dat")
 set_property(TARGET softcube16 PROPERTY FOLDER "BRender/Examples")
 
+if(DOS)
+    set_property(TARGET softcube16 PROPERTY OUTPUT_NAME sofcub16)
+endif()
+
 # add_executable(softcube24 main.c)
 # target_compile_definitions(softcube24 PUBLIC -DSDL_MAIN_HANDLED)
 # target_link_libraries(softcube24 BRender::Full BRender::DDI)
