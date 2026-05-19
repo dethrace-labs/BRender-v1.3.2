@@ -287,6 +287,9 @@ int main(int argc, char** argv) {
 
     ticks_last = SDL_GetTicks();
 
+    Uint64 start_sample = SDL_GetTicks();
+    Uint64 count_frames = 0;
+    char fps_text_buffer[16] = "";
     for (bool running = true; running;) {
         float dt;
         SDL_Event event;
@@ -295,10 +298,15 @@ int main(int argc, char** argv) {
         dt = (float)(ticks_now - ticks_last) / 1000.0f;
         ticks_last = ticks_now;
 
-        while (SDL_PollEvent(&event) > 0) {
+        while (SDL_PollEvent(&event)) {
             switch (event.type) {
             case SDL_EVENT_QUIT:
                 running = false;
+                break;
+            case SDL_EVENT_KEY_DOWN:
+                if (event.key.key == SDLK_Q || event.key.scancode == SDL_SCANCODE_ESCAPE) {
+                    running = false;
+                }
                 break;
             }
         }
@@ -309,6 +317,17 @@ int main(int argc, char** argv) {
         BrPixelmapFill(depth_buffer, 0xFFFFFFFF);
 
         BrZbSceneRender(world, camera, colour_buffer, depth_buffer);
+        count_frames += 1;
+        Uint64 now = SDL_GetTicks();
+        if (now - start_sample >= 1000) {
+            float fps = 1000.0f * (float)count_frames / (float)(now - start_sample);
+            BrSprintfN(fps_text_buffer, sizeof(fps_text_buffer), "%2.1ffps", fps);
+            fps_text_buffer[sizeof(fps_text_buffer) - 1] = '\0';
+            start_sample = now;
+            count_frames = 0;
+        }
+        BrPixelmapText(colour_buffer, -width / 2, -height / 2, 10, BrFontProp7x9, fps_text_buffer);
+
         BrPixelmapDoubleBuffer(screen, colour_buffer);
     }
 
