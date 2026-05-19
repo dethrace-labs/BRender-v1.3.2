@@ -213,12 +213,17 @@ int main(int argc, char** argv) {
         chdir(working_path);
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("sdl_init panic! (%s)\n", SDL_GetError());
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        printf("SDL_Init panic! (%s)\n", SDL_GetError());
         return -1;
     }
 
-    BrBegin();
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "About to call BrBegin");
+    if (BrBegin() != BRE_OK) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "BrBegin failed");
+        return 1;
+    }
+    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "BrBegin successful!");
 
     switch (brender_renderer) {
     case eRenderer_software:
