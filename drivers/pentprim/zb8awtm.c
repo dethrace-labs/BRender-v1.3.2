@@ -83,7 +83,7 @@ static inline void PER_SCAN_ZT(int32_t *halfCount, char wrap_flag, uint32_t *min
 vBelowRetest:
     // 	cmp eax,work.texture.base
     // 	jae vPerLineNoWrapNegative
-    if(eax.v >= (uint32_t)WORK_TEXTURE_BASE) {
+    if(eax.int_val >= WORK_TEXTURE_BASE) {
         goto vPerLineNoWrapNegative;
     }
 
@@ -239,7 +239,7 @@ static inline void PER_SCAN_ZTI(int32_t *halfCount, char wrap_flag, uint32_t *mi
 vBelowRetest:
     // 	cmp eax,work.texture.base
     // 	jae vPerLineNoWrapNegative
-    if(eax.v >= (uint32_t)WORK_TEXTURE_BASE) {
+    if(eax.int_val >= WORK_TEXTURE_BASE) {
         goto vPerLineNoWrapNegative;
     }
 
@@ -468,7 +468,7 @@ noPlot:
 vBelowRetest:
     // 	cmp esi,work.texture.base
     // 	jae vPerPixelNoWrapNegative
-    if(esi.v >= (uint32_t)WORK_TEXTURE_BASE) {
+    if(esi.int_val >= WORK_TEXTURE_BASE) {
         goto vPerPixelNoWrapNegative;
     }
     // 	add esi,work.texture._size
@@ -719,7 +719,7 @@ noPlot:
 vBelowRetest:
     // 	cmp esi,work.texture.base
     // 	jae vPerPixelNoWrapNegative
-    if(esi.v >= (uint32_t)WORK_TEXTURE_BASE) {
+    if(esi.int_val >= WORK_TEXTURE_BASE) {
         goto vPerPixelNoWrapNegative;
     }
     // 	add esi,work.texture._size
