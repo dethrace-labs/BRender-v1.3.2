@@ -329,7 +329,7 @@ typedef enum {
 	BRT_OPENGL_B                   =      484,
 	BRT_OPENGL_CALLBACKS_P         =      473,
 	BRT_OPENGL_FRAGMENT_SHADER_STR =      475,
-	BRT_OPENGL_PROFILE_COMPATIBILITY =      482,
+	BRT_OPENGL_PROFILE_COMPATIBILITY =    482,
 	BRT_OPENGL_PROFILE_CORE        =      483,
 	BRT_OPENGL_PROFILE_T           =      481,
 	BRT_OPENGL_RENDERER_CSTR       =      478,
@@ -440,7 +440,7 @@ typedef enum {
 	BRT_STORED_ONLY_B              =      159,
 	BRT_STORED_STATE_O             =      401,
 	BRT_STRETCHDIBITS              =      463,
-	BRT_STRETCH_COPY_DESTINATION_TVL =      113,
+	BRT_STRETCH_COPY_DESTINATION_TVL =    113,
 	BRT_STRETCH_COPY_F             =      117,
 	BRT_STRETCH_COPY_SOURCE_TVL    =      112,
 	BRT_STRETCH_COPY_T             =      114,
@@ -469,7 +469,7 @@ typedef enum {
 	BRT_TRANSFORM_B                =      386,
 	BRT_TRIANGLE                   =      404,
 	BRT_TRIANGLES_DRAWN_COUNT_U32  =      163,
-	BRT_TRIANGLES_RENDERED_COUNT_U32 =      164,
+	BRT_TRIANGLES_RENDERED_COUNT_U32 =    164,
 	BRT_TRI_FAN                    =      518,
 	BRT_TRI_STRIP                  =      517,
 	BRT_TWO_SIDED                  =      273,
@@ -519,6 +519,7 @@ typedef enum {
 	BRT_VIEW_TO_SCREEN_M4_F        =      368,
 	BRT_VIEW_TO_SCREEN_M4_X        =      369,
 	BRT_VIRTUALFB_CALLBACKS_P      =      485,
+	BRT_VULKAN_CALLBACKS_P         =      541,
 	BRT_WIDTH_I32                  =       78,
 	BRT_WIDTH_MAX_I32              =       80,
 	BRT_WIDTH_MIN_I32              =       79,
@@ -872,7 +873,7 @@ typedef enum {
 #define BRT_OPENGL_B                        484
 #define BRT_OPENGL_CALLBACKS_P              473
 #define BRT_OPENGL_FRAGMENT_SHADER_STR      475
-#define BRT_OPENGL_PROFILE_COMPATIBILITY      482
+#define BRT_OPENGL_PROFILE_COMPATIBILITY    482
 #define BRT_OPENGL_PROFILE_CORE             483
 #define BRT_OPENGL_PROFILE_T                481
 #define BRT_OPENGL_RENDERER_CSTR            478
@@ -983,7 +984,7 @@ typedef enum {
 #define BRT_STORED_ONLY_B                   159
 #define BRT_STORED_STATE_O                  401
 #define BRT_STRETCHDIBITS                   463
-#define BRT_STRETCH_COPY_DESTINATION_TVL      113
+#define BRT_STRETCH_COPY_DESTINATION_TVL    113
 #define BRT_STRETCH_COPY_F                  117
 #define BRT_STRETCH_COPY_SOURCE_TVL         112
 #define BRT_STRETCH_COPY_T                  114
@@ -1012,7 +1013,7 @@ typedef enum {
 #define BRT_TRANSFORM_B                     386
 #define BRT_TRIANGLE                        404
 #define BRT_TRIANGLES_DRAWN_COUNT_U32       163
-#define BRT_TRIANGLES_RENDERED_COUNT_U32      164
+#define BRT_TRIANGLES_RENDERED_COUNT_U32    164
 #define BRT_TRI_FAN                         518
 #define BRT_TRI_STRIP                       517
 #define BRT_TWO_SIDED                       273
@@ -1052,7 +1053,7 @@ typedef enum {
 #define BRT_VERTEX_DBL                      516
 #define BRT_VERTEX_SGL                      515
 #define BRT_VERTICAL_BLANK                  410
-#define BRT_VERTICES_RENDERED_COUNT_U32      165
+#define BRT_VERTICES_RENDERED_COUNT_U32     165
 #define BRT_VIDEO_MEMORY_U32                103
 #define BRT_VIEW                            275
 #define BRT_VIEW_TO_ENVIRONMENT_HINT_T      375
@@ -1062,6 +1063,7 @@ typedef enum {
 #define BRT_VIEW_TO_SCREEN_M4_F             368
 #define BRT_VIEW_TO_SCREEN_M4_X             369
 #define BRT_VIRTUALFB_CALLBACKS_P           485
+#define BRT_VULKAN_CALLBACKS_P              541
 #define BRT_WIDTH_I32                        78
 #define BRT_WIDTH_MAX_I32                    80
 #define BRT_WIDTH_MIN_I32                    79

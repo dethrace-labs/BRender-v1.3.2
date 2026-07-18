@@ -511,6 +511,7 @@
 	{ {0,}, "VIEW_TO_SCREEN_M4_F",          BRT_MATRIX4_FLOAT,      BRT_VIEW_TO_SCREEN_M4_F,              14},
 	{ {0,}, "VIEW_TO_SCREEN_M4_X",          BRT_MATRIX4_FIXED,      BRT_VIEW_TO_SCREEN_M4_X,              14},
 	{ {0,}, "VIRTUALFB_CALLBACKS_P",        BRT_POINTER,            BRT_VIRTUALFB_CALLBACKS_P,            19},
+	{ {0,}, "VULKAN_CALLBACKS_P",           BRT_POINTER,            BRT_VULKAN_CALLBACKS_P,              18},
 	{ {0,}, "WIDTH_I32",                    BRT_INT_32,             BRT_WIDTH_I32,                         5},
 	{ {0,}, "WIDTH_MAX_I32",                BRT_INT_32,             BRT_WIDTH_MAX_I32,                     9},
 	{ {0,}, "WIDTH_MIN_I32",                BRT_INT_32,             BRT_WIDTH_MIN_I32,                     9},
@@ -538,4 +539,4 @@
 	{ {0,}, "YON_Z_X",                      BRT_FIXED,              BRT_YON_Z_X,                           5},
 	{ {0,}, "YUV_16",                       BRT_NONE,               BRT_YUV_16,                            6},
 	{ {0,}, "ZERO_IS_TRANSPARENT",          BRT_NONE,               BRT_ZERO_IS_TRANSPARENT,              19},
-#define NEXT_FREE_TOKEN 541
+#define NEXT_FREE_TOKEN 542
