@@ -246,4 +246,6 @@ void main() {
     }
 
     doDistanceFog();
+
+    gl_FragDepth = gl_FrontFacing ? gl_FragCoord.z : gl_FragCoord.z + 1.5e-5;
 }
