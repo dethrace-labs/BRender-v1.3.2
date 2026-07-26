@@ -238,6 +238,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, match)(br_device_pixelmap* self,
         mt.msaa_samples = hVideo->maxSamples;
 
     pm = BrResAllocate(self->device, sizeof(br_device_pixelmap), BR_MEMORY_OBJECT);
+    memset(pm, 0, sizeof(br_device_pixelmap));
     pm->dispatch = &devicePixelmapDispatch;
     BrSprintfN(tmp, sizeof(tmp) - 1, "OpenGL:%s:%dx%d", typestring, mt.width, mt.height);
     pm->pm_identifier = BrResStrDup(self, tmp);
