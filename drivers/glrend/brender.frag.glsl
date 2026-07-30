@@ -68,7 +68,7 @@ layout(std140) uniform br_model_state
     bool disable_colour_key;
     bool disable_texture;
     bool fog_enabled;
-    vec3 fog_colour;
+    vec4 fog_colour;
     float fog_min;
     float fog_max;
     float alpha;
@@ -193,7 +193,7 @@ void doDistanceFog() {
         float linear_depth_normalized = linear_depth / yon_z;
         float density = 1/fog_max * FOGGING_EMULATE_3DFX_DENSITY_MULTIPLIER;
         float fogging_factor = 1.0 - exp(-density * linear_depth_normalized * linear_depth_normalized);
-        fragColour.rgb = mix(fragColour.rgb, fog_colour, clamp(fogging_factor, 0.0, 1.0));
+        fragColour.rgb = mix(fragColour.rgb, fog_colour.rgb, clamp(fogging_factor, 0.0, 1.0));
     }
 }
 

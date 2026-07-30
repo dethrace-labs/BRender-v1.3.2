@@ -68,7 +68,7 @@ layout(std140) uniform br_model_state
     bool disable_colour_key;
     bool disable_texture;
     bool fog_enabled;
-    vec3 fog_colour;
+    vec4 fog_colour;
     float fog_min;
     float fog_max;
     float alpha;
