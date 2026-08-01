@@ -214,7 +214,7 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
         }
     }
 
-    br_boolean is_pratcam = (blending_on && depth_off &&
+    br_boolean is_pratcam = (depth_off &&
         renderer->state.current->prim.colour_map != NULL &&
         screen != NULL && screen->pm_type == BR_PMT_RGB_565);
     if (is_pratcam) {
