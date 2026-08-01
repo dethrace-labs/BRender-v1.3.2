@@ -1,6 +1,7 @@
 #include "drv.h"
 #include "brassert.h"
 #include <string.h>
+#include <math.h>
 
 static const struct br_renderer_dispatch rendererDispatch;
 
@@ -200,7 +201,11 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneBegin)(br_renderer* self) {
 
         VkViewport viewport = {vp_x, vp_y, vp_w, vp_h, 0.0f, 1.0f};
         vkCmdSetViewport(cmd, 0, 1, &viewport);
-        VkRect2D scissor = {{(int32_t)vp_x, (int32_t)vp_y}, {(uint32_t)vp_w, (uint32_t)vp_h}};
+        int32_t sc_x = (int32_t)floorf(vp_x);
+        int32_t sc_y = (int32_t)floorf(vp_y);
+        VkRect2D scissor = {{sc_x, sc_y},
+            {(uint32_t)((int32_t)ceilf(vp_x + vp_w) - sc_x),
+             (uint32_t)((int32_t)ceilf(vp_y + vp_h) - sc_y)}};
         vkCmdSetScissor(cmd, 0, 1, &scissor);
 
         hVideo->viewportX = (int)vp_x;

@@ -34,8 +34,8 @@ static br_boolean VK_ComputeScreenAABB(const br_matrix4* mvp, struct v11group* g
     }
     out->x = (int)min_x;
     out->y = (int)min_y;
-    out->w = (int)(max_x - min_x + 1);
-    out->h = (int)(max_y - min_y + 1);
+    out->w = (int)(max_x - min_x + 0.5f);
+    out->h = (int)(max_y - min_y + 0.5f);
     return BR_TRUE;
 }
 
