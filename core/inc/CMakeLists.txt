@@ -12,19 +12,27 @@ target_compile_definitions(brender-inc INTERFACE
         PARANOID=1
 )
 
-# This was moved to a manual process in the README to avoid depending on perl for regular builds
-# Generate pretok.h, pretok_c.h, and toktype.c
-# add_custom_command(
-# OUTPUT pretok.h pretok.c toktype.c
-# COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl" "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
-# MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
-# DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl"
-# )
 set(GENERATED_FILES
-        pretok.h
-        pretok.c
-        toktype.c
+    pretok.h
+    pretok.c
+    toktype.c
 )
+
+if(PERL_EXECUABLE AND EXISTS "${PERL_EXECUTABLE}")
+        # Generate pretok.h, pretok_c.h, and toktype.c in build directory
+        # NOTE: the paths in the source tree are not added to OUTPUTS.
+        #       This is done such that the clean target does not remove these.
+        add_custom_command(
+                OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/pretok.h" "${CMAKE_CURRENT_BINARY_DIR}/pretok.c" "${CMAKE_CURRENT_BINARY_DIR}/toktype.c"
+                COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl" "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
+                COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/pretok.h" "${CMAKE_CURRENT_SOURCE_DIR}/pretok.h"
+                COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/pretok.c" "${CMAKE_CURRENT_SOURCE_DIR}/pretok.c"
+                COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/toktype.c" "${CMAKE_CURRENT_SOURCE_DIR}/toktype.c"
+                WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok"
+                DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/tokgen.pl"
+    )
+endif()
 
 set(INC_TOKEN_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/pretok.tok
@@ -77,7 +85,6 @@ set(INC_FILES
         transfrm.h
         v1db_p.h
         vecfns.h
-        ${CMAKE_CURRENT_BINARY_DIR}/pretok.h
 
         # added by dethrace
         device_p.h

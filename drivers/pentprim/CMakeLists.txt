@@ -1,72 +1,78 @@
 ﻿project(pentprim C)
 
-# This was moved to a manual process in the README to avoid depending on perl for regular builds
+if(PERL_EXECUABLE AND EXISTS "${PERL_EXECUTABLE}")
+    set(INFOGEN ${CMAKE_CURRENT_SOURCE_DIR}/infogen.pl)
+    set(PRIM_FILES ${CMAKE_CURRENT_SOURCE_DIR}/prim_t8.ifg)
 
-# set(INFOGEN ${CMAKE_CURRENT_SOURCE_DIR}/infogen.pl)
-# set(PRIM_FILES ${CMAKE_CURRENT_SOURCE_DIR}/prim_t8.ifg)
+    # Generate files in the build directory
+    # NOTE: the files in the source tree are not added to OUTPUTS.
+    #       This is done such that the clean target does not remove these.
 
-# function(add_prim base)
-# set(input_file "${CMAKE_CURRENT_SOURCE_DIR}/${base}.ifg")
-# set(output_file "${base}.c")
+    function(add_prim base)
+        set(input_file "$${base}.ifg")
+        set(output_file "${base}.c")
 
-# add_custom_command(
-# OUTPUT ${output_file}
-# COMMAND ${PERL_EXECUTABLE} ${INFOGEN} < ${input_file} > ${output_file}
-# MAIN_DEPENDENCY ${input_file}
-# DEPENDS ${INFOGEN}
-# )
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${output_file}"
+            COMMAND ${PERL_EXECUTABLE} ${INFOGEN} < ${input_file} > "${CMAKE_CURRENT_BINARY_DIR}/${output_file}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${outptu_file}" "${CMAKE_CURRENT_SOURCE_DIR}/${output_file}"
+            MAIN_DEPENDENCY ${input_file}
+            DEPENDS ${INFOGEN}
+        )
 
-# set(XXXX ${input_file} ${output_file})
-# set(PRIM_FILES ${PRIM_FILES} ${XXXX} PARENT_SCOPE)
-# endfunction()
+        set(XXXX ${input_file} ${output_file})
+        set(PRIM_FILES ${PRIM_FILES} ${XXXX} PARENT_SCOPE)
+    endfunction()
 
-# function(add_prim_suffixed base with_suffixes)
-# set(input_file "${CMAKE_CURRENT_SOURCE_DIR}/${base}.ifg")
-# set(output_files "${base}f.c" "${base}x.c")
+    function(add_prim_suffixed base with_suffixes)
+        set(input_file "${CMAKE_CURRENT_SOURCE_DIR}/${base}.ifg")
+        set(output_files "${base}f.c" "${base}x.c")
 
-# set(args_float "")
-# set(argx_fixed "")
+        set(args_float "")
+        set(argx_fixed "")
 
-# if(with_suffixes)
-# list(APPEND args_float "image_suffix=f")
-# list(APPEND args_fixed "image_suffix=x")
-# endif()
+        if(with_suffixes)
+        list(APPEND args_float "image_suffix=f")
+        list(APPEND args_fixed "image_suffix=x")
+        endif()
 
-# list(APPEND args_float "float_components")
+        list(APPEND args_float "float_components")
 
-# add_custom_command(
-# OUTPUT ${output_files}
-# COMMAND ${PERL_EXECUTABLE} ${INFOGEN} ${args_float} < ${input_file} > "${base}f.c"
-# COMMAND ${PERL_EXECUTABLE} ${INFOGEN} ${args_fixed} < ${input_file} > "${base}x.c"
-# MAIN_DEPENDENCY ${input_file}
-# DEPENDS ${PRIM_FILES}
-# )
+        add_custom_command(
+            OUTPUT ${CMAKE_CURRENT_BINARYD_IR}/${base}f.c" ${CMAKE_CURRENT_BINARY_DIR}/${base}x.c"
+            COMMAND ${PERL_EXECUTABLE} ${INFOGEN} ${args_float} < "${input_file}" > "${CMAKE_CURRENT_BINARY_DIR}/${base}f.c"
+            COMMAND ${PERL_EXECUTABLE} ${INFOGEN} ${args_fixed} < "${input_file}" > "${CMAKE_CURRENT_BINARY_DIR}/${base}x.c"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${base}f.c" "${CMAKE_CURRENT_SOURCE_DIR}/${base}f.c"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${base}x.c" "${CMAKE_CURRENT_SOURCE_DIR}/${base}x.c"
+            MAIN_DEPENDENCY ${input_file}
+            DEPENDS ${PRIM_FILES}
+        )
 
-# set(XXXX ${input_file} ${output_files})
-# set(PRIM_FILES ${PRIM_FILES} ${XXXX} PARENT_SCOPE)
+        set(XXXX ${input_file} ${output_files})
+        set(PRIM_FILES ${PRIM_FILES} ${XXXX} PARENT_SCOPE)
 
-# # set_property(SOURCE match.c APPEND PROPERTY OBJECT_DEPENDS ${output_files})
-# endfunction()
+        # set_property(SOURCE match.c APPEND PROPERTY OBJECT_DEPENDS ${output_files})
+    endfunction()
 
-# # add_prim(prim_l15 "")
-# # add_prim(prim_l16 "")
-# # add_prim(prim_l24 "")
-# add_prim(prim_l8 "")
+    # add_prim(prim_l15 "")
+    # add_prim(prim_l16 "")
+    # add_prim(prim_l24 "")
+    add_prim(prim_l8 "")
 
-# # add_prim(prim_p15 "")
-# # add_prim(prim_p16 "")
-# # add_prim(prim_p24 "")
-# add_prim(prim_p8 "")
+    # add_prim(prim_p15 "")
+    # add_prim(prim_p16 "")
+    # add_prim(prim_p24 "")
+    add_prim(prim_p8 "")
 
-# # add_prim(prim_t24 "")
-# add_prim_suffixed(prim_t8 TRUE)
+    # add_prim(prim_t24 "")
+    add_prim_suffixed(prim_t8 TRUE)
+    # add_prim_suffixed(prm_t15 FALSE)
+    # add_prim_suffixed(prm_t16 FALSE)
+    # add_prim_suffixed(mmx_t15 FALSE)
+    # add_prim_suffixed(mmx_t16 FALSE)
+    set_source_files_properties(${PRIM_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
 
-# # add_prim_suffixed(prm_t15 FALSE)
-# # add_prim_suffixed(prm_t16 FALSE)
-# # add_prim_suffixed(mmx_t15 FALSE)
-# # add_prim_suffixed(mmx_t16 FALSE)
-# set_source_files_properties(${PRIM_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
-# -- auto-generation finished
 set(OUTPUT_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/prim_p8.c
 	${CMAKE_CURRENT_SOURCE_DIR}/prim_l8.c

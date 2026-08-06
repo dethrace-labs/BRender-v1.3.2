@@ -17,19 +17,26 @@ target_include_directories(brender-inc-ddi INTERFACE
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/ddi>
 )
 
-# This was moved to a manual process in the README to avoid depending on perl for regular builds
-# add_custom_command(
-# OUTPUT dev_objs.cgh
-# # This will work with MSVC and GCC
-# COMMAND "${CMAKE_C_COMPILER}" -D__CLASSGEN__ -E "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp" > dev_objs.tmp
-# COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl" < dev_objs.tmp > dev_objs.cgh
-# MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp"
-# DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl"
-# BYPRODUCTS dev_objs.tmp
-# )
 set(GENERATED_FILES
-        ddi/dev_objs.cgh
+    ddi/dev_objs.cgh
 )
+
+if(PERL_EXECUABLE AND EXISTS "${PERL_EXECUTABLE}")
+    # Generate dev_objs.cgh in build directory
+    # NOTE: the file in the source tree are not added to OUTPUTS.
+    #       This is done such that the clean target does not remove these.
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/dev_objs.cgh"
+        # This will work with MSVC and GCC
+        COMMAND "${CMAKE_C_COMPILER}" -D__CLASSGEN__ -E "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp" > dev_objs.tmp
+        COMMAND "${PERL_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl" < dev_objs.tmp > dev_objs.cgh
+        COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/dev_objs.cgh" "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.cgh"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp"
+        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../make/classgen.pl"
+        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/dev_objs.tmp"
+    )
+endif()
 
 set(FW_DEV_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/dev_objs.hpp
