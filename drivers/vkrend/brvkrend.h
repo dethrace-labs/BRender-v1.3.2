@@ -28,12 +28,11 @@ void VKREND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud)
 }
 #endif
 
+/*
+ * Main entry point for device.
+ */
 #ifndef _NO_PROTOTYPES
-
-#ifndef _BRVKREND_P_H
-#include "brvkrend_p.h"
-#endif
-
+struct br_device *BR_EXPORT BrDrv1VKBegin(const char *arguments);
 #endif /* _NO_PROTOTYPES */
 
 #endif /* _BRVKREND_H_ */

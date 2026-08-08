@@ -136,20 +136,19 @@ set(VKREND_FILES
         )
 
 set(INC_FILES
-        include/brvkrend.h
-        include/brvkrend_p.h
+        brvkrend.h
         )
 
 add_library(vkrend-headers INTERFACE)
 target_sources(vkrend-headers INTERFACE
         FILE_SET include
         TYPE HEADERS
-        BASE_DIRS include
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
         FILES ${INC_FILES}
         )
 
 target_include_directories(vkrend-headers INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/vkrend>
         )
 
