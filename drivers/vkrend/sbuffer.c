@@ -267,78 +267,11 @@ br_error BufferStoredVKUpdate(struct br_buffer_stored* self, struct br_device_pi
 
     vkBindImageMemory(dev, self->image, self->memory, 0);
 
-    {
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingMemory;
-        if (VK_CreateStagingBuffer(hVideo, imageSize, &stagingBuffer, &stagingMemory) != VK_SUCCESS)
-            goto cleanup;
-
-        void* mapped;
-        vkMapMemory(dev, stagingMemory, 0, imageSize, 0, &mapped);
-        memcpy(mapped, pixelData, (size_t)imageSize);
-        vkUnmapMemory(dev, stagingMemory);
-
-        VkCommandBufferAllocateInfo cbAi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-        cbAi.commandPool = hVideo->commandPool;
-        cbAi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        cbAi.commandBufferCount = 1;
-        VkCommandBuffer cb;
-        if (vkAllocateCommandBuffers(dev, &cbAi, &cb) != VK_SUCCESS) {
-            vkDestroyBuffer(dev, stagingBuffer, NULL);
-            vkFreeMemory(dev, stagingMemory, NULL);
-            goto cleanup;
-        }
-
-        VkCommandBufferBeginInfo cbBegin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-        cbBegin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(cb, &cbBegin);
-
-        VkImageMemoryBarrier2 b = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
-        b.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        b.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        b.image = self->image;
-        b.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        b.subresourceRange.levelCount = 1;
-        b.subresourceRange.layerCount = 1;
-        b.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
-        b.srcAccessMask = VK_ACCESS_2_NONE;
-        b.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-        b.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-
-        VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-        depInfo.imageMemoryBarrierCount = 1;
-        depInfo.pImageMemoryBarriers = &b;
-        vkCmdPipelineBarrier2(cb, &depInfo);
-
-        VkBufferImageCopy region = {0};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.layerCount = 1;
-        region.imageExtent.width = w;
-        region.imageExtent.height = h;
-        region.imageExtent.depth = 1;
-        vkCmdCopyBufferToImage(cb, stagingBuffer, self->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-        b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        b.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        b.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-        b.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        b.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-        b.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-        vkCmdPipelineBarrier2(cb, &depInfo);
-
-        vkEndCommandBuffer(cb);
-
-        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        si.commandBufferCount = 1;
-        si.pCommandBuffers = &cb;
-        vkQueueSubmit(hVideo->graphicsQueue, 1, &si, VK_NULL_HANDLE);
-        vkQueueWaitIdle(hVideo->graphicsQueue);
-        vkFreeCommandBuffers(dev, hVideo->commandPool, 1, &cb);
-        vkDestroyBuffer(dev, stagingBuffer, NULL);
-        vkFreeMemory(dev, stagingMemory, NULL);
-    }
+    if (VK_UploadBufferToImage(hVideo, self->image,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            w, h, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
+            pixelData, (size_t)imageSize) != VK_SUCCESS)
+        goto cleanup;
 
     VkImageViewCreateInfo ivi = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
     ivi.image = self->image;
@@ -410,7 +343,6 @@ br_boolean BufferStoredVKReupload(struct br_buffer_stored* self) {
 
     br_device_pixelmap* screen = (br_device_pixelmap*)self->renderer->pixelmap->screen;
     HVIDEO hVideo = &screen->asFront.video;
-    VkDevice dev = hVideo->device;
 
     br_uint_32* palette = NULL;
     if (dev_obj && dev_obj->clut && dev_obj->clut->entries) {
@@ -427,81 +359,12 @@ br_boolean BufferStoredVKReupload(struct br_buffer_stored* self) {
     br_uint_32* rgba = BrScratchAllocate((size_t)w * h * 4);
     expandIndex8ToRGBA((const br_uint_8*)pm->pm_pixels, w, h, pm->pm_row_bytes, rgba, palette);
 
-    {
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingMemory;
-        VkDeviceSize uploadSize = (VkDeviceSize)w * h * 4;
-        if (VK_CreateStagingBuffer(hVideo, uploadSize, &stagingBuffer, &stagingMemory) != VK_SUCCESS) {
-            BrScratchFree(rgba);
-            return BR_FALSE;
-        }
-
-        void* mapped;
-        vkMapMemory(dev, stagingMemory, 0, uploadSize, 0, &mapped);
-        memcpy(mapped, rgba, (size_t)uploadSize);
-        vkUnmapMemory(dev, stagingMemory);
-
-        VkCommandBufferAllocateInfo cbAi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-        cbAi.commandPool = hVideo->commandPool;
-        cbAi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        cbAi.commandBufferCount = 1;
-        VkCommandBuffer cb;
-        if (vkAllocateCommandBuffers(dev, &cbAi, &cb) != VK_SUCCESS) {
-            vkDestroyBuffer(dev, stagingBuffer, NULL);
-            vkFreeMemory(dev, stagingMemory, NULL);
-            BrScratchFree(rgba);
-            return BR_FALSE;
-        }
-
-        VkCommandBufferBeginInfo cbBegin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-        cbBegin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(cb, &cbBegin);
-
-        VkImageMemoryBarrier2 b = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
-        b.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        b.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        b.image = self->image;
-        b.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        b.subresourceRange.levelCount = 1;
-        b.subresourceRange.layerCount = 1;
-        b.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-        b.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-        b.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-        b.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-
-        VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-        depInfo.imageMemoryBarrierCount = 1;
-        depInfo.pImageMemoryBarriers = &b;
-        vkCmdPipelineBarrier2(cb, &depInfo);
-
-        VkBufferImageCopy region = {0};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.layerCount = 1;
-        region.imageExtent.width = w;
-        region.imageExtent.height = h;
-        region.imageExtent.depth = 1;
-        vkCmdCopyBufferToImage(cb, stagingBuffer, self->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-        b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        b.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        b.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-        b.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        b.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-        b.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-        vkCmdPipelineBarrier2(cb, &depInfo);
-
-        vkEndCommandBuffer(cb);
-
-        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        si.commandBufferCount = 1;
-        si.pCommandBuffers = &cb;
-        vkQueueSubmit(hVideo->graphicsQueue, 1, &si, VK_NULL_HANDLE);
-        vkQueueWaitIdle(hVideo->graphicsQueue);
-        vkFreeCommandBuffers(dev, hVideo->commandPool, 1, &cb);
-        vkDestroyBuffer(dev, stagingBuffer, NULL);
-        vkFreeMemory(dev, stagingMemory, NULL);
+    if (VK_UploadBufferToImage(hVideo, self->image,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            w, h, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
+            rgba, (size_t)w * h * 4) != VK_SUCCESS) {
+        BrScratchFree(rgba);
+        return BR_FALSE;
     }
 
     BrScratchFree(rgba);

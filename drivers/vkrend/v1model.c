@@ -146,7 +146,6 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
     if (hVideo->currentModelOffset >= hVideo->modelBufferCapacity)
         hVideo->currentModelOffset = 0;
 
-    VkDeviceSize offset = 0;
     br_boolean blending_on = (renderer->state.current->prim.flags & PRIMF_BLEND) ||
         (renderer->state.current->prim.colour_map != NULL && renderer->state.current->prim.colour_map->blended);
     br_boolean depth_off = renderer->state.current->surface.force_front || renderer->state.current->surface.force_back;
@@ -156,11 +155,26 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
         : (depth_off ? hVideo->brenderPipelineNoDepth : hVideo->brenderPipeline);
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-    if (self->vbo != hVideo->lastVbo || self->ibo != hVideo->lastIbo) {
-        vkCmdBindVertexBuffers(cmd, 0, 1, &self->vbo, &offset);
-        vkCmdBindIndexBuffer(cmd, self->ibo, 0, VK_INDEX_TYPE_UINT16);
+    /* Small ring models (sub-allocated from the per-frame dynamic rings in
+     * build_vbo/build_ibo) are only valid within the frame they were rebuilt:
+     * the ring cursors reset in VK_EnsureRecording, so a ring model that
+     * persists across frames references clobbered data. Re-upload the geometry
+     * from the v11model into the current frame's ring slot when stale. Models
+     * rebuilt this frame already stamped ringEpoch == frameEpoch and skip. */
+    if ((self->vboMemory == VK_NULL_HANDLE || self->iboMemory == VK_NULL_HANDLE) &&
+        self->ringEpoch != hVideo->frameEpoch) {
+        VK_RefreshRingStored(hVideo, self);
+    }
+
+    if (self->vbo != hVideo->lastVbo || self->vboOffset != hVideo->lastVboOffset ||
+        self->ibo != hVideo->lastIbo || self->iboOffset != hVideo->lastIboOffset) {
+        VkDeviceSize vboOffset = self->vboOffset;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &self->vbo, &vboOffset);
+        vkCmdBindIndexBuffer(cmd, self->ibo, self->iboOffset, VK_INDEX_TYPE_UINT16);
         hVideo->lastVbo = self->vbo;
+        hVideo->lastVboOffset = self->vboOffset;
         hVideo->lastIbo = self->ibo;
+        hVideo->lastIboOffset = self->iboOffset;
     }
 
     int descriptorStart = 0;
@@ -203,7 +217,7 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
     br_boolean is_dim = (renderer->state.current->surface.colour == 0 &&
         blending_on && depth_off &&
         renderer->state.current->prim.colour_map == NULL);
-    if (is_dim && hVideo->dimAreaCount < 4 && screen != NULL &&
+    if (is_dim && hVideo->dimAreaCount < 8 && screen != NULL &&
         screen->pm_type == BR_PMT_RGB_565) {
         br_matrix4 combined;
         BrMatrix4Mul(&combined, &cache->model.p, &cache->model.mv);
@@ -211,6 +225,21 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
         if (VK_ComputeScreenAABB(&combined, groupinfo->group, hVideo, renderer->state.current->output.colour, &aabb)) {
             int di = hVideo->dimAreaCount++;
             hVideo->dimAreas[di] = aabb;
+
+            // The dim quad is rendered GPU-side. Purge its screen rect from the
+            // CPU locked buffer so the swap-time overlay composite doesn't re-draw
+            // the pre-dim 2D content (cockpit dashboard) ON TOP of the dim quad.
+            // Content written into the buffer AFTER this dim (headup text,
+            // instruments) lands on the magenta and still reaches the swap
+            // composite. Skipped in map mode: the flush-time dimArea dimming
+            // (devpixmp.c) dims the map image instead.
+            extern int gMap_mode;
+            if (!gMap_mode && hVideo->lockedPixels != NULL &&
+                hVideo->pm_type == BR_PMT_RGB_565) {
+                VK_PurgeRect(2, BR_COLOUR_565(31, 0, 31), hVideo->lockedPixels,
+                    hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
+                    aabb.x, aabb.y, aabb.w, aabb.h);
+            }
         }
     }
 

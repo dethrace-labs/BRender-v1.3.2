@@ -419,18 +419,14 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, rectangleCopyTo)(br_device_pixel
 
     VkDeviceSize pixelDataSize = (VkDeviceSize)sr->w * sr->h * bytesPerPixel;
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
-    if (VK_CreateStagingBuffer(hVideo, pixelDataSize, &stagingBuffer, &stagingMemory) != VK_SUCCESS)
-        return BRE_FAIL;
-
-    void* mapped;
-    vkMapMemory(hVideo->device, stagingMemory, 0, pixelDataSize, 0, &mapped);
-
     if (src->pm_pixels) {
+        uint8_t* scratch = BrScratchAllocate((size_t)pixelDataSize);
+        if (scratch == NULL)
+            return BRE_FAIL;
+
         if (src->pm_type == BR_PMT_INDEX_8) {
             br_uint_8* src8 = src->pm_pixels;
-            uint8_t* dst8 = mapped;
+            uint8_t* dst8 = scratch;
             int srcStride = src->pm_row_bytes;
             for (int y = 0; y < sr->h; y++) {
                 for (int x = 0; x < sr->w; x++) {
@@ -447,78 +443,20 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, rectangleCopyTo)(br_device_pixel
             int srcStride = src->pm_row_bytes;
             int srcBpp = bytesPerPixel;
             for (int y = 0; y < sr->h; y++)
-                memcpy((char*)mapped + y * sr->w * srcBpp,
+                memcpy((char*)scratch + y * sr->w * srcBpp,
                        src->pm_pixels + (y + sr->y) * srcStride + sr->x * srcBpp,
                        sr->w * srcBpp);
         }
+
+        if (VK_UploadBufferToImage(hVideo, dstImage,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                sr->w, sr->h, self->pm_base_x + p->x, self->pm_base_y + p->y,
+                VK_IMAGE_ASPECT_COLOR_BIT, scratch, (size_t)pixelDataSize) != VK_SUCCESS) {
+            BrScratchFree(scratch);
+            return BRE_FAIL;
+        }
+        BrScratchFree(scratch);
     }
-    vkUnmapMemory(hVideo->device, stagingMemory);
-
-    VkCommandBufferAllocateInfo cbAi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-    cbAi.commandPool = hVideo->commandPool;
-    cbAi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cbAi.commandBufferCount = 1;
-    VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(hVideo->device, &cbAi, &cmd);
-
-    VkCommandBufferBeginInfo cbBegin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    cbBegin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cmd, &cbBegin);
-
-    VkImageMemoryBarrier2 barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
-    barrier.image = dstImage;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
-    barrier.srcAccessMask = VK_ACCESS_2_NONE;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-
-    VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-    depInfo.imageMemoryBarrierCount = 1;
-    depInfo.pImageMemoryBarriers = &barrier;
-    vkCmdPipelineBarrier2(cmd, &depInfo);
-
-    VkBufferImageCopy copyRegion = {0};
-    copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.imageSubresource.mipLevel = 0;
-    copyRegion.imageSubresource.baseArrayLayer = 0;
-    copyRegion.imageSubresource.layerCount = 1;
-    copyRegion.imageOffset.x = self->pm_base_x + p->x;
-    copyRegion.imageOffset.y = self->pm_base_y + p->y;
-    copyRegion.imageExtent.width = sr->w;
-    copyRegion.imageExtent.height = sr->h;
-    copyRegion.imageExtent.depth = 1;
-
-    vkCmdCopyBufferToImage(cmd, stagingBuffer, dstImage,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-
-    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    vkCmdPipelineBarrier2(cmd, &depInfo);
-
-    vkEndCommandBuffer(cmd);
-
-    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    si.commandBufferCount = 1;
-    si.pCommandBuffers = &cmd;
-    vkQueueSubmit(hVideo->graphicsQueue, 1, &si, VK_NULL_HANDLE);
-    vkQueueWaitIdle(hVideo->graphicsQueue);
-
-    vkFreeCommandBuffers(hVideo->device, hVideo->commandPool, 1, &cmd);
-    vkDestroyBuffer(hVideo->device, stagingBuffer, NULL);
-    vkFreeMemory(hVideo->device, stagingMemory, NULL);
 
     return BRE_OK;
 }
@@ -554,6 +492,62 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, allocateSub)(br_device_pixelmap*
     return BRE_OK;
 }
 
+/* Single entry point for all CPU locked-buffer region processing at flush time:
+ * the map-mode dimArea dimming (565 only), the clearArea/pratcam/mainViewport
+ * purges to transparent magenta, and the counter resets. Runs BEFORE the upload
+ * so the overlay image is uploaded with the purged regions. */
+static void VK_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
+    int bpp = (self->pm_type == BR_PMT_RGB_565 || self->pm_type == BR_PMT_RGB_555) ? 2 : 4;
+    br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
+
+    if (bpp == 2) {
+        if (gMap_mode) {
+            int row_w = self->pm_row_bytes / 2;
+            for (int i = 0; i < hVideo->dimAreaCount; i++) {
+                int ax = hVideo->dimAreas[i].x, ay = hVideo->dimAreas[i].y;
+                int aw = hVideo->dimAreas[i].w, ah = hVideo->dimAreas[i].h;
+                for (int dy = 0; dy < ah; dy++) {
+                    int py = ay + dy;
+                    if (py < 0 || py >= self->pm_height) continue;
+                    for (int dx = 0; dx < aw; dx++) {
+                        int px = ax + dx;
+                        if (px < 0 || px >= self->pm_width) continue;
+                        int off = py * row_w + px;
+                        br_uint_16 p = ((br_uint_16*)hVideo->lockedPixels)[off];
+                        if (p == BR_COLOUR_565(31, 0, 31)) continue;
+                        int r5 = (p >> 11) & 0x1F, g6 = (p >> 5) & 0x3F, b5 = p & 0x1F;
+                        r5 = r5 >> 1; g6 = g6 >> 1; b5 = b5 >> 1;
+                        ((br_uint_16*)hVideo->lockedPixels)[off] = (br_uint_16)((r5 << 11) | (g6 << 5) | b5);
+                    }
+                }
+            }
+        }
+        hVideo->dimAreaCount = 0;
+    }
+
+    for (int i = 0; i < hVideo->clearAreaCount; i++) {
+        VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+            self->pm_width, self->pm_height, self->pm_row_bytes,
+            hVideo->clearAreas[i].x, hVideo->clearAreas[i].y,
+            hVideo->clearAreas[i].w, hVideo->clearAreas[i].h);
+    }
+    hVideo->clearAreaCount = 0;
+
+    if (bpp == 2 && hVideo->pratcamAreaCount) {
+        VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+            self->pm_width, self->pm_height, self->pm_row_bytes,
+            hVideo->pratcamArea.x, hVideo->pratcamArea.y,
+            hVideo->pratcamArea.w, hVideo->pratcamArea.h);
+        hVideo->pratcamAreaCount = 0;
+    }
+
+    /* The main scene rect is purged at sceneBegin (where it is freshly computed
+     * for the current frame), not here. A flush-time purge using the stale
+     * mainViewport from the previous frame would fire on 2D-only frames (e.g.
+     * the ESC pause menu, which never runs a scene) and wipe the entire menu
+     * overlay, yielding a black screen. */
+}
+
 br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, flush)(br_device_pixelmap* self) {
     HVIDEO hVideo = &self->screen->asFront.video;
 
@@ -565,12 +559,25 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, flush)(br_device_pixelmap* self)
         return BRE_OK;
     }
 
+    if (!hVideo->isRecording) {
+        VK_EnsureRecording(hVideo);
+        VkCommandBuffer setup_cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
+        if (!hVideo->renderPassActive) {
+            VK_BeginRenderPass(hVideo, setup_cmd);
+            hVideo->renderPassActive = 1;
+        }
+    }
+
     if (hVideo->lockedPixels != NULL) {
         size_t pixelSize = (self->pm_type == BR_PMT_RGB_565) ? 2 : 4;
-        int useRgbaOverlay = (self->pm_type == BR_PMT_RGB_565 || self->pm_type == BR_PMT_RGB_555);
+        int usePacked565 = (self->pm_type == BR_PMT_RGB_565);
+        int useRgbaOverlay = (self->pm_type == BR_PMT_RGB_555);
         VkDeviceSize imageSize;
         VkFormat overlayVkFormat;
-        if (useRgbaOverlay) {
+        if (usePacked565) {
+            overlayVkFormat = VK_FORMAT_R5G6B5_UNORM_PACK16;
+            imageSize = self->pm_width * self->pm_height * 2;
+        } else if (useRgbaOverlay) {
             overlayVkFormat = VK_FORMAT_B8G8R8A8_UNORM;
             imageSize = self->pm_width * self->pm_height * 4;
         } else {
@@ -584,7 +591,7 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, flush)(br_device_pixelmap* self)
             VkImageUsageFlags usage;
             VkMemoryPropertyFlags memProps;
 
-            if (useRgbaOverlay) {
+            if (usePacked565 || useRgbaOverlay) {
                 vkFormat = overlayVkFormat;
                 tiling = VK_IMAGE_TILING_LINEAR;
                 usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -648,202 +655,78 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_vk, flush)(br_device_pixelmap* self)
             }
         }
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingMemory;
-        if (VK_CreateStagingBuffer(hVideo, imageSize, &stagingBuffer, &stagingMemory) != VK_SUCCESS)
-            return BRE_FAIL;
-
-        void* data;
-        vkMapMemory(hVideo->device, stagingMemory, 0, imageSize, 0, &data);
         size_t srcOffset = self->pm_base_y * self->pm_row_bytes + self->pm_base_x * pixelSize;
-        if (useRgbaOverlay) {
-            if (gMap_mode) {
-                for (int i = 0; i < hVideo->dimAreaCount; i++) {
-                    int ax = hVideo->dimAreas[i].x, ay = hVideo->dimAreas[i].y;
-                    int aw = hVideo->dimAreas[i].w, ah = hVideo->dimAreas[i].h;
-                    int row_w = self->pm_row_bytes / 2;
-                    for (int dy = 0; dy < ah; dy++) {
-                        int py = ay + dy;
-                        if (py < 0 || py >= self->pm_height) continue;
-                        for (int dx = 0; dx < aw; dx++) {
-                            int px = ax + dx;
-                            if (px < 0 || px >= self->pm_width) continue;
-                            int off = py * row_w + px;
-                            br_uint_16 p = ((br_uint_16*)hVideo->lockedPixels)[off];
-                            if (p == BR_COLOUR_565(31, 0, 31)) continue;
-                            int r5 = (p >> 11) & 0x1F, g6 = (p >> 5) & 0x3F, b5 = p & 0x1F;
-                            r5 = r5 >> 1; g6 = g6 >> 1; b5 = b5 >> 1;
-                            ((br_uint_16*)hVideo->lockedPixels)[off] = (br_uint_16)((r5 << 11) | (g6 << 5) | b5);
-                        }
-                    }
-                }
-                hVideo->dimAreaCount = 0;
-            } else {
-                hVideo->dimAreaCount = 0;
+
+        VK_PurgeLockedRegions(hVideo, self);
+
+        if (usePacked565) {
+            /* Raw 565 rows, packed — no CPU colour conversion. The transparent
+             * magenta sentinel (0xF81F) stays untouched: sampled UNORM from the
+             * R5G6B5 overlay it reads back as (1,0,1), which the overlay frag
+             * shader discards exactly like the BGRA path. NEAREST filtering
+             * (overlaySampler) keeps magenta texels from bleeding, so nothing
+             * needs pre-clearing. Rows are copied per-row to honour
+             * pm_row_bytes. Half the upload bytes of the old BGRA path. */
+            br_uint_16* packed = BrScratchAllocate((size_t)self->pm_width * self->pm_height * 2);
+            if (packed == NULL)
+                return BRE_FAIL;
+            const br_uint_16* src565 = (const br_uint_16*)((char*)hVideo->lockedPixels + srcOffset);
+            size_t srcPitch = self->pm_row_bytes / 2;
+            for (int y = 0; y < self->pm_height; y++) {
+                memcpy((char*)packed + y * self->pm_width * 2, src565 + y * srcPitch,
+                    (size_t)self->pm_width * 2);
             }
-            for (int i = 0; i < hVideo->clearAreaCount; i++) {
-                int row_w = self->pm_row_bytes / 2;
-                for (int cy = 0; cy < hVideo->clearAreas[i].h; cy++) {
-                    int off = (cy + hVideo->clearAreas[i].y) * row_w + hVideo->clearAreas[i].x;
-                    for (int cx = 0; cx < hVideo->clearAreas[i].w; cx++) {
-                        ((br_uint_16*)hVideo->lockedPixels)[off + cx] = BR_COLOUR_565(31, 0, 31);
-                    }
-                }
+            if (VK_UploadBufferToImage(hVideo, hVideo->overlayImage,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+                    self->pm_width, self->pm_height, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
+                    packed, (size_t)imageSize) != VK_SUCCESS) {
+                BrScratchFree(packed);
+                return BRE_FAIL;
             }
-            hVideo->clearAreaCount = 0;
-            if (hVideo->pratcamAreaCount) {
-                int row_w = self->pm_row_bytes / 2;
-                int px = hVideo->pratcamArea.x, py = hVideo->pratcamArea.y;
-                int pw = hVideo->pratcamArea.w, ph = hVideo->pratcamArea.h;
-                for (int dy = 0; dy < ph; dy++) {
-                    int sy = py + dy;
-                    if (sy < 0 || sy >= self->pm_height) continue;
-                    int off = sy * row_w + px;
-                    int cw = pw;
-                    if (px < 0) { off -= px; cw += px; }
-                    if (px + cw > self->pm_width) cw = self->pm_width - px;
-                    if (off < 0) continue;
-                    for (int dx = 0; dx < cw; dx++) {
-                        ((br_uint_16*)hVideo->lockedPixels)[off + dx] = BR_COLOUR_565(31, 0, 31);
-                    }
-                }
-                hVideo->pratcamAreaCount = 0;
-            }
-            if (!hVideo->renderingStarted && hVideo->mainViewportW > 0 && hVideo->mainViewportH > 0 && !gMap_mode) {
-                int row_w = self->pm_row_bytes / 2;
-                for (int vy = hVideo->mainViewportY; vy < hVideo->mainViewportY + hVideo->mainViewportH; vy++) {
-                    if (vy < 0 || vy >= self->pm_height) continue;
-                    int off = vy * row_w + hVideo->mainViewportX;
-                    int vw = hVideo->mainViewportW;
-                    if (hVideo->mainViewportX + vw > self->pm_width) vw = self->pm_width - hVideo->mainViewportX;
-                    if (hVideo->mainViewportX < 0) { off -= hVideo->mainViewportX; vw += hVideo->mainViewportX; }
-                    for (int vx = 0; vx < vw; vx++) {
-                        ((br_uint_16*)hVideo->lockedPixels)[off + vx] = BR_COLOUR_565(31, 0, 31);
-                    }
-                }
-            }
-            br_uint_16* src = (br_uint_16*)((char*)hVideo->lockedPixels + srcOffset);
-            br_uint_32* dst = (br_uint_32*)data;
+            BrScratchFree(packed);
+        } else if (useRgbaOverlay) {
+            br_uint_32* rgba = BrScratchAllocate((size_t)self->pm_width * self->pm_height * 4);
+            if (rgba == NULL)
+                return BRE_FAIL;
+            const br_uint_16* src = (const br_uint_16*)((char*)hVideo->lockedPixels + srcOffset);
             for (int y = 0; y < self->pm_height; y++) {
                 for (int x = 0; x < self->pm_width; x++) {
                     br_uint_16 p = src[y * (self->pm_row_bytes / 2) + x];
                     if (p == BR_COLOUR_565(31, 0, 31)) {
-                        dst[y * self->pm_width + x] = 0;  // transparent
+                        rgba[y * self->pm_width + x] = 0;  // transparent
                     } else {
                         int r5 = (p >> 11) & 0x1F;
                         int g6 = (p >> 5) & 0x3F;
                         int b5 = p & 0x1F;
-                        dst[y * self->pm_width + x] = (b5 * 255 / 31)
+                        rgba[y * self->pm_width + x] = (b5 * 255 / 31)
                             | ((g6 * 255 / 63) << 8)
                             | ((r5 * 255 / 31) << 16)
                             | (0xFF << 24);
                     }
                 }
             }
+            if (VK_UploadBufferToImage(hVideo, hVideo->overlayImage,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+                    self->pm_width, self->pm_height, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
+                    rgba, (size_t)imageSize) != VK_SUCCESS) {
+                BrScratchFree(rgba);
+                return BRE_FAIL;
+            }
+            BrScratchFree(rgba);
         } else {
-            int bpp = (self->pm_type == BR_PMT_RGB_565) ? 2 : 4;
-            for (int i = 0; i < hVideo->clearAreaCount; i++) {
-                br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                int row_w = self->pm_row_bytes / bpp;
-                for (int cy = 0; cy < hVideo->clearAreas[i].h; cy++) {
-                    int off = (cy + hVideo->clearAreas[i].y) * row_w + hVideo->clearAreas[i].x;
-                    for (int cx = 0; cx < hVideo->clearAreas[i].w; cx++) {
-                        if (bpp == 2)
-                            ((br_uint_16*)hVideo->lockedPixels)[off + cx] = (br_uint_16)magenta;
-                        else
-                            ((br_uint_32*)hVideo->lockedPixels)[off + cx] = magenta;
-                    }
-                }
-            }
-            hVideo->clearAreaCount = 0;
-            if (!hVideo->renderingStarted && hVideo->mainViewportW > 0 && hVideo->mainViewportH > 0 && !gMap_mode) {
-                int bpp = (self->pm_type == BR_PMT_RGB_565) ? 2 : 4;
-                br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                int row_w = self->pm_row_bytes / bpp;
-                for (int vy = hVideo->mainViewportY; vy < hVideo->mainViewportY + hVideo->mainViewportH; vy++) {
-                    if (vy < 0 || vy >= self->pm_height) continue;
-                    int off = vy * row_w + hVideo->mainViewportX;
-                    int vw = hVideo->mainViewportW;
-                    if (hVideo->mainViewportX + vw > self->pm_width) vw = self->pm_width - hVideo->mainViewportX;
-                    if (hVideo->mainViewportX < 0) { off -= hVideo->mainViewportX; vw += hVideo->mainViewportX; }
-                    for (int vx = 0; vx < vw; vx++) {
-                        if (bpp == 2)
-                            ((br_uint_16*)hVideo->lockedPixels)[off + vx] = (br_uint_16)magenta;
-                        else
-                            ((br_uint_32*)hVideo->lockedPixels)[off + vx] = magenta;
-                    }
-                }
-            }
-            memcpy(data, (char*)hVideo->lockedPixels + srcOffset, (size_t)imageSize);
+            if (VK_UploadBufferToImage(hVideo, hVideo->overlayImage,
+                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+                    self->pm_width, self->pm_height, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
+                    (const char*)hVideo->lockedPixels + srcOffset, (size_t)imageSize) != VK_SUCCESS)
+                return BRE_FAIL;
         }
-        vkUnmapMemory(hVideo->device, stagingMemory);
-
-        VkCommandBufferAllocateInfo cbAi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-        cbAi.commandPool = hVideo->commandPool;
-        cbAi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        cbAi.commandBufferCount = 1;
-        VkCommandBuffer cmd;
-        vkAllocateCommandBuffers(hVideo->device, &cbAi, &cmd);
-
-        VkCommandBufferBeginInfo cbBegin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-        cbBegin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(cmd, &cbBegin);
-
-        VkImageMemoryBarrier2 barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
-        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = hVideo->overlayImage;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
-        barrier.srcAccessMask = VK_ACCESS_2_NONE;
-        barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-
-        VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-        depInfo.imageMemoryBarrierCount = 1;
-        depInfo.pImageMemoryBarriers = &barrier;
-        vkCmdPipelineBarrier2(cmd, &depInfo);
-
-        VkBufferImageCopy copyRegion = {0};
-        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copyRegion.imageSubresource.mipLevel = 0;
-        copyRegion.imageSubresource.baseArrayLayer = 0;
-        copyRegion.imageSubresource.layerCount = 1;
-        copyRegion.imageExtent.width = self->pm_width;
-        copyRegion.imageExtent.height = self->pm_height;
-        copyRegion.imageExtent.depth = 1;
-
-        vkCmdCopyBufferToImage(cmd, stagingBuffer, hVideo->overlayImage,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-        barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-        barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-        vkCmdPipelineBarrier2(cmd, &depInfo);
-
-        vkEndCommandBuffer(cmd);
-
-        VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        si.commandBufferCount = 1;
-        si.pCommandBuffers = &cmd;
-        vkQueueSubmit(hVideo->graphicsQueue, 1, &si, VK_NULL_HANDLE);
-        vkQueueWaitIdle(hVideo->graphicsQueue);
-
-        vkFreeCommandBuffers(hVideo->device, hVideo->commandPool, 1, &cmd);
-
-        vkDestroyBuffer(hVideo->device, stagingBuffer, NULL);
-        vkFreeMemory(hVideo->device, stagingMemory, NULL);
 
         hVideo->overlayDirty = 1;
+    }
+
+    if (hVideo->overlayDirty) {
+        VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
+        VK_DrawOverlay(hVideo, cmd, self->screen);
     }
 
     self->asBack.possiblyDirty = 0;

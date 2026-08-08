@@ -46,6 +46,14 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneBegin)(br_renderer* self) {
     br_device_pixelmap* screen = self->pixelmap->screen;
     HVIDEO hVideo = &screen->asFront.video;
 
+    /* Whether this is the FIRST scene of the frame. renderingStarted is 0 at
+     * frame start (reset by doubleBuffer) and set to 1 by the first sceneBegin.
+     * The mainViewport purge below must only run for that first scene: the dim
+     * quads (DimRectangle -> BrZbSceneRender) call sceneBegin mid-frame with a
+     * full-screen target, and purging there would erase the post-scene 2D (headup
+     * text, damage meter, cockpit dashboard) already written into lockedPixels. */
+    int firstScene = !hVideo->renderingStarted;
+
     self->scene_stats.face_group_count = 0;
     self->scene_stats.triangles_drawn_count = 0;
     self->scene_stats.triangles_rendered_count = 0;
@@ -80,101 +88,19 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneBegin)(br_renderer* self) {
 
     if (hVideo->sceneCount == 0) {
         if (!hVideo->isRecording) {
-            hVideo->currentModelOffset = 0;
-            hVideo->sceneSlotIndex = 0;
-            hVideo->dimAreaCount = 0;
-            hVideo->clearAreaCount = 0;
-            hVideo->pratcamAreaCount = 0;
-            hVideo->lastVbo = VK_NULL_HANDLE;
-            hVideo->lastIbo = VK_NULL_HANDLE;
-            hVideo->lastTextureView = VK_NULL_HANDLE;
-            hVideo->lastTextureSampler = VK_NULL_HANDLE;
-
-            uint32_t f = hVideo->currentFrame;
-            vkWaitForFences(hVideo->device, 1, &hVideo->inFlightFences[f], VK_TRUE, UINT64_MAX);
-            vkResetFences(hVideo->device, 1, &hVideo->inFlightFences[f]);
-
-            if (hVideo->deferredBufferFreeCount[f] > 0) {
-                for (uint32_t i = 0; i < hVideo->deferredBufferFreeCount[f]; i++) {
-                    if (hVideo->deferredBufferFrees[f][i].buffer != VK_NULL_HANDLE)
-                        vkDestroyBuffer(hVideo->device, hVideo->deferredBufferFrees[f][i].buffer, NULL);
-                    if (hVideo->deferredBufferFrees[f][i].memory != VK_NULL_HANDLE)
-                        vkFreeMemory(hVideo->device, hVideo->deferredBufferFrees[f][i].memory, NULL);
-                }
-                hVideo->deferredBufferFreeCount[f] = 0;
-            }
-
-            if (hVideo->deferredImageFreeCount[f] > 0) {
-                for (uint32_t i = 0; i < hVideo->deferredImageFreeCount[f]; i++) {
-                    if (hVideo->deferredImageFrees[f][i].sampler != VK_NULL_HANDLE)
-                        vkDestroySampler(hVideo->device, hVideo->deferredImageFrees[f][i].sampler, NULL);
-                    if (hVideo->deferredImageFrees[f][i].view != VK_NULL_HANDLE)
-                        vkDestroyImageView(hVideo->device, hVideo->deferredImageFrees[f][i].view, NULL);
-                    if (hVideo->deferredImageFrees[f][i].image != VK_NULL_HANDLE)
-                        vkDestroyImage(hVideo->device, hVideo->deferredImageFrees[f][i].image, NULL);
-                    if (hVideo->deferredImageFrees[f][i].memory != VK_NULL_HANDLE)
-                        vkFreeMemory(hVideo->device, hVideo->deferredImageFrees[f][i].memory, NULL);
-                }
-                hVideo->deferredImageFreeCount[f] = 0;
-            }
-
-            {
-                extern int gHarness_window_width, gHarness_window_height;
-                if (gHarness_window_width > 0 && gHarness_window_height > 0 &&
-                    ((uint32_t)gHarness_window_width != hVideo->swapchainExtent.width ||
-                     (uint32_t)gHarness_window_height != hVideo->swapchainExtent.height)) {
-                    VK_VideoRecreateSwapchain(hVideo);
-                    hVideo->mainViewportW = 0;
-                }
-            }
-
-            VkResult res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
-                hVideo->imageAvailableSemaphores[hVideo->currentFrame], VK_NULL_HANDLE, &hVideo->currentImageIndex);
-            if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-                VK_VideoRecreateSwapchain(hVideo);
-                hVideo->mainViewportW = 0;
-                res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
-                    hVideo->imageAvailableSemaphores[hVideo->currentFrame], VK_NULL_HANDLE, &hVideo->currentImageIndex);
-            }
-
-            VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-            vkResetCommandBuffer(cmd, 0);
-
-            VkCommandBufferBeginInfo begin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-            begin.flags = 0;
-            vkBeginCommandBuffer(cmd, &begin);
-
-            hVideo->isRecording = 1;
-            hVideo->renderingStarted = 1;
-            if (colour_target != NULL &&
-                colour_target->pm_width >= screen->pm_width &&
-                colour_target->pm_height >= screen->pm_height)
-                hVideo->primaryColourTarget = colour_target;
+            VK_EnsureRecording(hVideo);
         }
+        hVideo->renderingStarted = 1;
+
+        if (colour_target != NULL &&
+            colour_target->pm_width >= screen->pm_width &&
+            colour_target->pm_height >= screen->pm_height)
+            hVideo->primaryColourTarget = colour_target;
 
         VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
         if (!hVideo->renderPassActive) {
             VK_BeginRenderPass(hVideo, cmd);
             hVideo->renderPassActive = 1;
-        }
-    }
-    {
-        VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-        if (hVideo->overlayDirty) {
-            br_device_pixelmap* screen = self->pixelmap->screen;
-            int vp_x, vp_y;
-            float rx, ry;
-            DevicePixelmapVKGetViewport(screen, &vp_x, &vp_y, &rx, &ry);
-            float ov_vp_x = (float)screen->pm_base_x * rx + (float)vp_x;
-            float ov_vp_y = (float)screen->pm_base_y * ry + (float)vp_y;
-            float ov_vp_w = (float)screen->pm_width * rx;
-            float ov_vp_h = (float)screen->pm_height * ry;
-            VkViewport ov_vp = {ov_vp_x, ov_vp_y, ov_vp_w, ov_vp_h, 0.0f, 1.0f};
-            vkCmdSetViewport(cmd, 0, 1, &ov_vp);
-            VkRect2D ov_sc = {{(int32_t)ov_vp_x, (int32_t)ov_vp_y}, {(uint32_t)ov_vp_w, (uint32_t)ov_vp_h}};
-            vkCmdSetScissor(cmd, 0, 1, &ov_sc);
-            VK_OverlayDraw(hVideo, cmd);
-            hVideo->overlayDirty = 0;
         }
     }
 
@@ -222,6 +148,24 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneBegin)(br_renderer* self) {
             hVideo->mainViewportY = (int)((vp_y - (float)y) / ry);
             hVideo->mainViewportW = (int)(vp_w / rx);
             hVideo->mainViewportH = (int)(vp_h / ry);
+
+            /* Purge the main scene's rect from the CPU locked buffer NOW, using
+             * the freshly-computed rect. The old flush-time purge relied on the
+             * previous frame's mainViewport, so it fired on 2D-only frames (ESC
+             * pause menu) and erased the whole menu. This mirrors the sceneEnd
+             * sub-area purge: pre-scene 2D (fog/sky fill) inside the scene rect
+             * is erased so the 3D scene shows through; post-scene 2D drawn into
+             * the same rect lands on the magenta and survives to the composite.
+             * Gated on firstScene so the mid-frame dim-quad sceneBegins (which
+             * reuse a full-screen target) don't wipe that post-scene content. */
+            if (firstScene && hVideo->lockedPixels != NULL && hVideo->mainViewportW > 0 && hVideo->mainViewportH > 0) {
+                int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
+                br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
+                VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                    hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
+                    hVideo->mainViewportX, hVideo->mainViewportY,
+                    hVideo->mainViewportW, hVideo->mainViewportH);
+            }
         }
     }
 
@@ -249,6 +193,24 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneEnd)(br_renderer* self) {
                 hVideo->clearAreas[idx].w = colour_target->pm_width;
                 hVideo->clearAreas[idx].h = colour_target->pm_height;
                 hVideo->overlayDirty = 1;
+
+                // Purge the scene's render rect from the CPU locked buffer NOW,
+                // so 2D content drawn AFTER the scene (cockpit dashboard surround,
+                // map blips, race HUD) lands on the magenta and survives to the
+                // overlay composite. Purging only at the next flush would also
+                // erase that post-scene content, since it is written into the
+                // same rect before the flush runs.
+                if (hVideo->lockedPixels != NULL && hVideo->pm_width > 0) {
+                    int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
+                    br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
+                    VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                        hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
+                        hVideo->clearAreas[idx].x, hVideo->clearAreas[idx].y,
+                        hVideo->clearAreas[idx].w, hVideo->clearAreas[idx].h);
+                    // Already purged here, so the flush must not re-purge the same
+                    // rect (which would erase post-scene 2D drawn into it).
+                    hVideo->clearAreaCount = 0;
+                }
             }
         }
     }

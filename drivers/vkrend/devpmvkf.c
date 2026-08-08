@@ -115,6 +115,26 @@ void VK_OverlayDraw(HVIDEO hVideo, VkCommandBuffer cmd) {
     hVideo->overlayDirty = 0;
 }
 
+/* The single overlay composite point: draws the uploaded overlay image over the
+ * front-screen rect. Only meaningful while a render pass is active. */
+void VK_DrawOverlay(HVIDEO hVideo, VkCommandBuffer cmd, br_device_pixelmap* screen) {
+    if (!hVideo->overlayDirty)
+        return;
+
+    int vp_x, vp_y;
+    float rx, ry;
+    DevicePixelmapVKGetViewport(screen, &vp_x, &vp_y, &rx, &ry);
+    float ov_vp_x = (float)screen->pm_base_x * rx + (float)vp_x;
+    float ov_vp_y = (float)screen->pm_base_y * ry + (float)vp_y;
+    float ov_vp_w = (float)screen->pm_width * rx;
+    float ov_vp_h = (float)screen->pm_height * ry;
+    VkViewport vp = {ov_vp_x, ov_vp_y, ov_vp_w, ov_vp_h, 0.0f, 1.0f};
+    vkCmdSetViewport(cmd, 0, 1, &vp);
+    VkRect2D sc = {{(int32_t)ov_vp_x, (int32_t)ov_vp_y}, {(uint32_t)ov_vp_w, (uint32_t)ov_vp_h}};
+    vkCmdSetScissor(cmd, 0, 1, &sc);
+    VK_OverlayDraw(hVideo, cmd);
+}
+
 void VK_SetPratcamArea(HVIDEO hVideo, int x, int y, int w, int h) {
     hVideo->pratcamAreaCount = 1;
     hVideo->pratcamArea.x = x;
@@ -190,23 +210,7 @@ void DevicePixelmapVKSwapBuffers(br_device_pixelmap* self) {
         VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
 
         if (hVideo->renderPassActive) {
-            if (hVideo->overlayDirty) {
-                int vp_x, vp_y;
-                float rx, ry;
-                DevicePixelmapVKGetViewport(self, &vp_x, &vp_y, &rx, &ry);
-                float ov_vp_x = (float)self->pm_base_x * rx + (float)vp_x;
-                float ov_vp_y = (float)self->pm_base_y * ry + (float)vp_y;
-                float ov_vp_w = (float)self->pm_width * rx;
-                float ov_vp_h = (float)self->pm_height * ry;
-                VkViewport vp = {ov_vp_x, ov_vp_y, ov_vp_w, ov_vp_h, 0.0f, 1.0f};
-                vkCmdSetViewport(cmd, 0, 1, &vp);
-                VkRect2D sc = {{(int32_t)ov_vp_x, (int32_t)ov_vp_y}, {(uint32_t)ov_vp_w, (uint32_t)ov_vp_h}};
-                vkCmdSetScissor(cmd, 0, 1, &sc);
-                VK_OverlayDraw(hVideo, cmd);
-                hVideo->overlayDirty = 0;
-            }
             VK_EndRenderPass(hVideo, cmd);
-
             hVideo->renderPassActive = 0;
         }
 
@@ -216,56 +220,16 @@ void DevicePixelmapVKSwapBuffers(br_device_pixelmap* self) {
 
         submitAndPresent(self);
     } else {
-        uint32_t f = hVideo->currentFrame;
-        vkWaitForFences(hVideo->device, 1, &hVideo->inFlightFences[f], VK_TRUE, UINT64_MAX);
-        vkResetFences(hVideo->device, 1, &hVideo->inFlightFences[f]);
-
-        {
-            extern int gHarness_window_width, gHarness_window_height;
-            if (gHarness_window_width > 0 && gHarness_window_height > 0 &&
-                ((uint32_t)gHarness_window_width != hVideo->swapchainExtent.width ||
-                 (uint32_t)gHarness_window_height != hVideo->swapchainExtent.height)) {
-                VK_VideoRecreateSwapchain(hVideo);
-                hVideo->mainViewportW = 0;
-            }
-        }
-
-        VkResult res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
-            hVideo->imageAvailableSemaphores[f], VK_NULL_HANDLE, &hVideo->currentImageIndex);
-        if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-            VK_VideoRecreateSwapchain(hVideo);
-            hVideo->mainViewportW = 0;
-            res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
-                hVideo->imageAvailableSemaphores[f], VK_NULL_HANDLE, &hVideo->currentImageIndex);
-        }
+        VK_EnsureRecording(hVideo);
 
         VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-        vkResetCommandBuffer(cmd, 0);
-
-        VkCommandBufferBeginInfo begin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-        begin.flags = 0;
-        vkBeginCommandBuffer(cmd, &begin);
-
-        hVideo->isRecording = 1;
-
-        VK_BeginRenderPass(hVideo, cmd);
-        hVideo->renderPassActive = 1;
-
-        if (hVideo->overlayDirty) {
-            int vp_x, vp_y;
-            float rx, ry;
-            DevicePixelmapVKGetViewport(self, &vp_x, &vp_y, &rx, &ry);
-            float ov_vp_x = (float)self->pm_base_x * rx + (float)vp_x;
-            float ov_vp_y = (float)self->pm_base_y * ry + (float)vp_y;
-            float ov_vp_w = (float)self->pm_width * rx;
-            float ov_vp_h = (float)self->pm_height * ry;
-            VkViewport vp = {ov_vp_x, ov_vp_y, ov_vp_w, ov_vp_h, 0.0f, 1.0f};
-            vkCmdSetViewport(cmd, 0, 1, &vp);
-            VkRect2D sc = {{(int32_t)ov_vp_x, (int32_t)ov_vp_y}, {(uint32_t)ov_vp_w, (uint32_t)ov_vp_h}};
-            vkCmdSetScissor(cmd, 0, 1, &sc);
-            VK_OverlayDraw(hVideo, cmd);
-            hVideo->overlayDirty = 0;
+        if (!hVideo->renderPassActive) {
+            VK_BeginRenderPass(hVideo, cmd);
+            hVideo->renderPassActive = 1;
         }
+
+        if (hVideo->overlayDirty)
+            VK_DrawOverlay(hVideo, cmd, self);
 
         VK_EndRenderPass(hVideo, cmd);
         hVideo->renderPassActive = 0;

@@ -39,6 +39,19 @@ typedef struct br_geometry_stored {
     VkBuffer ibo;
     VkDeviceMemory iboMemory;
 
+    /* Non-zero when vbo/ibo are sub-allocations of the shared dynamic rings
+     * (see VIDEO.dynVbo/dynIbo). The ring is owned by the video context, so
+     * the free path must NOT destroy them, and the render path must bind with
+     * vboOffset/iboOffset instead of offset 0. */
+    int inDynamicRing;
+    VkDeviceSize vboOffset;
+    VkDeviceSize iboOffset;
+    /* Frame epoch when this stored's ring sub-allocations were last written.
+     * The ring cursor resets every frame, so a ring model whose ringEpoch no
+     * longer matches VIDEO.frameEpoch references clobbered data and must be
+     * re-uploaded (see VK_RefreshRingStored). */
+    uint32_t ringEpoch;
+
     int num_groups;
 
     VkDevice deviceHandle;

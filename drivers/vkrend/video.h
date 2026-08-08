@@ -23,6 +23,20 @@ typedef struct VK_DeferredImageFree {
     VkDeviceMemory memory;
 } VK_DeferredImageFree;
 
+/* Per-frame CPU->GPU upload staging. Each VK_UploadBufferToImage writes the data
+ * into the current frame slot's staging buffer, records barrier+copy+barrier into
+ * the slot's upload command buffer, and submits it immediately with the slot's own
+ * uploadFence. The slot is never reused until that fence signals, so uploads are
+ * safe to record from anywhere (frame loop or out-of-frame track/asset loading)
+ * with no vkQueueWaitIdle and no full GPU drain. */
+typedef struct VK_FrameStaging {
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+    VkDeviceSize size;
+    VkDeviceSize offset;
+    void* mapped;
+} VK_FrameStaging;
+
 #pragma pack(push, 16)
 typedef struct shader_data_light {
     alignas(16) br_vector4 position;
@@ -122,13 +136,16 @@ typedef struct _VIDEO {
     uint32_t minUniformBufferOffsetAlignment;
     uint32_t maxVertexInputBindings;
     uint32_t maxVertexInputAttributes;
+    uint32_t hostMemType;
 
     struct {
         VkDescriptorSetLayout layout;
         VkBuffer sceneBuffer;
         VkDeviceMemory sceneMemory;
+        void* sceneMapped;
         VkBuffer modelBuffer;
         VkDeviceMemory modelMemory;
+        void* modelMapped;
     } brenderDescriptors;
 
     PFN_vkCmdPushDescriptorSetKHR pfnPushDescriptorSet;
@@ -153,7 +170,7 @@ typedef struct _VIDEO {
     int overlayDirty;
     VkImage overlayImage;
     int dimAreaCount;
-    br_rectangle dimAreas[4];
+    br_rectangle dimAreas[8];
     VkDeviceMemory overlayMemory;
     VkImageView overlayImageView;
     void* lockedPixels;
@@ -179,8 +196,36 @@ typedef struct _VIDEO {
 
     VkBuffer lastVbo;
     VkBuffer lastIbo;
+    VkDeviceSize lastVboOffset;
+    VkDeviceSize lastIboOffset;
     VkImageView lastTextureView;
     VkSampler lastTextureSampler;
+
+    /* Shared persistent dynamic VBO/IBO rings for small models. Models rebuilt
+     * per frame (electro-ray segments, sparks, dim quads, pratcam quad) get
+     * sub-allocated from these rings via a plain memcpy instead of a full
+     * vkCreateBuffer/vkAllocateMemory/vkBindBufferMemory per rebuild, which is
+     * ~10x slower than GL's glBufferData and tanked FPS to single digits. Each
+     * frame slot has its own ring pair: the cursor is reset in VK_EnsureRecording
+     * only after the per-slot fence wait, so a slot's ring data is never reused
+     * while the GPU may still reference it. Ring usage is gated on isRecording
+     * (models built at load time keep dedicated buffers). */
+    VkBuffer dynVbo[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory dynVboMemory[MAX_FRAMES_IN_FLIGHT];
+    void* dynVboMapped[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceSize dynVboOffset[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceSize dynVboCapacity;
+    VkBuffer dynIbo[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory dynIboMemory[MAX_FRAMES_IN_FLIGHT];
+    void* dynIboMapped[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceSize dynIboOffset[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceSize dynIboCapacity;
+    /* Monotonic counter bumped once per frame (in VK_EnsureRecording after the
+     * ring cursors reset). Stored geometries that sub-allocate from the ring
+     * stamp ringEpoch with this value; a mismatch at render time means the
+     * ring slot was reset since the model was built, so its geometry is stale
+     * and must be re-uploaded. */
+    uint32_t frameEpoch;
 
     VkImage defaultTextureImage;
     VkDeviceMemory defaultTextureMemory;
@@ -205,6 +250,15 @@ typedef struct _VIDEO {
     VK_DeferredImageFree* deferredImageFrees[MAX_FRAMES_IN_FLIGHT];
     uint32_t deferredImageFreeCount[MAX_FRAMES_IN_FLIGHT];
     uint32_t deferredImageFreeCapacity[MAX_FRAMES_IN_FLIGHT];
+
+    VK_FrameStaging frameStaging[MAX_FRAMES_IN_FLIGHT];
+    VkCommandPool uploadPool[MAX_FRAMES_IN_FLIGHT];
+    VkCommandBuffer uploadBuffer[MAX_FRAMES_IN_FLIGHT];
+    /* Per-slot fence signalling completion of the slot's upload command buffer and
+     * staging data. Every VK_UploadBufferToImage waits this fence before reusing
+     * the slot, so uploads may be recorded from anywhere (frame loop or out-of-frame
+     * track/asset loading) — the slot is simply unavailable until the GPU is done. */
+    VkFence uploadFence[MAX_FRAMES_IN_FLIGHT];
 } VIDEO, *HVIDEO;
 
 HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size_t vert_spv_size,
@@ -227,6 +281,8 @@ VkPipelineLayout VK_CreatePipelineLayout(HVIDEO hVideo, VkDescriptorSetLayout* d
 
 VkResult VK_CreateBrenderDescriptors(HVIDEO hVideo, uint32_t width, uint32_t height);
 
+VkResult VK_CreateDynamicRings(HVIDEO hVideo);
+
 void VK_UpdateSceneUBO(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset);
 
 void VK_UpdateModelUBOAtOffset(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset);
@@ -237,6 +293,13 @@ void VK_BeginOverlayRenderPass(HVIDEO hVideo, VkCommandBuffer cmd);
 
 void VK_EndRenderPass(HVIDEO hVideo, VkCommandBuffer cmd);
 
+void VK_EnsureRecording(HVIDEO hVideo);
+
+struct br_geometry_stored;
+void VK_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
+
+void VK_DrawOverlay(HVIDEO hVideo, VkCommandBuffer cmd, struct br_device_pixelmap* screen);
+
 void VK_OverlayDraw(HVIDEO hVideo, VkCommandBuffer cmd);
 
 VkResult VK_Present(HVIDEO hVideo);
@@ -246,7 +309,18 @@ br_error VK_BrPixelmapGetTypeDetails(br_uint_8 pmType, VkFormat* format, VkImage
 
 void VK_DeferFreeImage(HVIDEO hVideo, VkImage image, VkImageView view, VkSampler sampler, VkDeviceMemory memory);
 
-VkResult VK_CreateStagingBuffer(HVIDEO hVideo, VkDeviceSize size, VkBuffer* outBuffer, VkDeviceMemory* outMemory);
+/* Uploads `hostDataSize` bytes from host memory into `image` (width x height at
+ * dstX,dstY) through the current frame slot's staging buffer. The data is memcpy'd
+ * into the staging buffer synchronously, then barrier+copy+barrier is recorded and
+ * the slot's upload command buffer is submitted IMMEDIATELY with the slot's own
+ * uploadFence. The next call on this slot (two frames later in the steady frame
+ * loop) waits that fence before resetting the buffer and staging, so uploads are
+ * safe to record from anywhere — frame loop OR out-of-frame track/asset loading —
+ * and the wait is on the tiny copy's fence, never a full GPU drain. The image is
+ * transitioned oldLayout -> TRANSFER_DST -> newLayout. */
+VkResult VK_UploadBufferToImage(HVIDEO hVideo, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+    uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY, VkImageAspectFlags aspectMask,
+    const void* hostData, size_t hostDataSize);
 
 static inline uint32_t VK_FindMemoryType(VkPhysicalDevice phys, uint32_t typeFilter, VkMemoryPropertyFlags props) {
     VkPhysicalDeviceMemoryProperties memProps;
@@ -256,6 +330,29 @@ static inline uint32_t VK_FindMemoryType(VkPhysicalDevice phys, uint32_t typeFil
             return i;
     }
     return UINT32_MAX;
+}
+
+/* Fills a screen-space rectangle in the CPU locked buffer with the transparent
+ * magenta sentinel so it isn't composited over GPU-rendered content. */
+static inline void VK_PurgeRect(int bpp, br_uint_32 magenta, void* pixels,
+    int pm_width, int pm_height, int pm_row_bytes,
+    int x, int y, int w, int h) {
+    int row_w = pm_row_bytes / bpp;
+    for (int dy = 0; dy < h; dy++) {
+        int py = y + dy;
+        if (py < 0 || py >= pm_height) continue;
+        int off = py * row_w + x;
+        int cw = w;
+        if (x < 0) { off -= x; cw += x; }
+        if (x + cw > pm_width) cw = pm_width - x;
+        if (off < 0) continue;
+        for (int dx = 0; dx < cw; dx++) {
+            if (bpp == 2)
+                ((br_uint_16*)pixels)[off + dx] = (br_uint_16)magenta;
+            else
+                ((br_uint_32*)pixels)[off + dx] = magenta;
+        }
+    }
 }
 
 #ifdef __cplusplus

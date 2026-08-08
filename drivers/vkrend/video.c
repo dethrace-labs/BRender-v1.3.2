@@ -570,6 +570,12 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
     hVideo->maxVertexInputBindings = props.limits.maxVertexInputBindings;
     hVideo->maxVertexInputAttributes = props.limits.maxVertexInputAttributes;
 
+    // Cache the host-visible+coherent memory type once. VBO/IBO and staging
+    // uploads are created repeatedly (model crush rebuilds, per-flush staging),
+    // and vkGetPhysicalDeviceMemoryProperties is a heavyweight driver query.
+    hVideo->hostMemType = VK_FindMemoryType(hVideo->physicalDevice, ~0u,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
     float queuePriority = 1.0f;
     uint32_t uniqueFamilies[2] = {hVideo->graphicsFamilyIndex, hVideo->presentFamilyIndex};
     uint32_t uniqueCount = (hVideo->graphicsFamilyIndex == hVideo->presentFamilyIndex) ? 1 : 2;
@@ -641,6 +647,9 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
         goto cleanup_device;
 
     if (VK_CreateBrenderDescriptors(hVideo, width, height) != VK_SUCCESS)
+        goto cleanup_shaders;
+
+    if (VK_CreateDynamicRings(hVideo) != VK_SUCCESS)
         goto cleanup_shaders;
 
     hVideo->brenderPipelineLayout = VK_CreatePipelineLayout(hVideo, &hVideo->brenderDescriptors.layout, 1);
@@ -845,9 +854,9 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
 
     {
         VkSamplerCreateInfo sci = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-        sci.magFilter = VK_FILTER_LINEAR;
-        sci.minFilter = VK_FILTER_LINEAR;
-        sci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        sci.magFilter = VK_FILTER_NEAREST;
+        sci.minFilter = VK_FILTER_NEAREST;
+        sci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
         sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         sci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -944,6 +953,32 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
     CreateCommandBuffers(hVideo);
     CreateSyncObjects(hVideo);
 
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        hVideo->frameStaging[i].buffer = VK_NULL_HANDLE;
+        hVideo->frameStaging[i].memory = VK_NULL_HANDLE;
+        hVideo->frameStaging[i].size = 0;
+        hVideo->frameStaging[i].offset = 0;
+        hVideo->frameStaging[i].mapped = NULL;
+
+        VkCommandPoolCreateInfo cpCi = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+        cpCi.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        cpCi.queueFamilyIndex = hVideo->graphicsFamilyIndex;
+        if (vkCreateCommandPool(hVideo->device, &cpCi, NULL, &hVideo->uploadPool[i]) != VK_SUCCESS)
+            return NULL;
+
+        VkCommandBufferAllocateInfo cbAi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+        cbAi.commandPool = hVideo->uploadPool[i];
+        cbAi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        cbAi.commandBufferCount = 1;
+        if (vkAllocateCommandBuffers(hVideo->device, &cbAi, &hVideo->uploadBuffer[i]) != VK_SUCCESS)
+            return NULL;
+
+        VkFenceCreateInfo fCi = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+        fCi.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        if (vkCreateFence(hVideo->device, &fCi, NULL, &hVideo->uploadFence[i]) != VK_SUCCESS)
+            return NULL;
+    }
+
     hVideo->isRecording = 0;
 
     VK_CHECK_RESULT(VK_SUCCESS);
@@ -959,11 +994,35 @@ cleanup_instance:
     return NULL;
 }
 
+static void VK_DestroyDynamicRings(HVIDEO hVideo);
+
 void VK_VideoClose(HVIDEO hVideo) {
     if (!hVideo)
         return;
 
     vkDeviceWaitIdle(hVideo->device);
+
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VK_FrameStaging* st = &hVideo->frameStaging[i];
+        if (st->mapped) vkUnmapMemory(hVideo->device, st->memory);
+        if (st->buffer) vkDestroyBuffer(hVideo->device, st->buffer, NULL);
+        if (st->memory) vkFreeMemory(hVideo->device, st->memory, NULL);
+        st->buffer = VK_NULL_HANDLE;
+        st->memory = VK_NULL_HANDLE;
+        st->mapped = NULL;
+        st->size = 0;
+        st->offset = 0;
+
+        if (hVideo->uploadBuffer[i]) {
+            vkDestroyCommandPool(hVideo->device, hVideo->uploadPool[i], NULL);
+            hVideo->uploadPool[i] = VK_NULL_HANDLE;
+            hVideo->uploadBuffer[i] = VK_NULL_HANDLE;
+        }
+        if (hVideo->uploadFence[i]) {
+            vkDestroyFence(hVideo->device, hVideo->uploadFence[i], NULL);
+            hVideo->uploadFence[i] = VK_NULL_HANDLE;
+        }
+    }
 
     for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
         for (uint32_t i = 0; i < hVideo->deferredImageFreeCount[f]; i++) {
@@ -987,9 +1046,13 @@ void VK_VideoClose(HVIDEO hVideo) {
 
     if (hVideo->brenderDescriptors.layout) vkDestroyDescriptorSetLayout(hVideo->device, hVideo->brenderDescriptors.layout, NULL);
     if (hVideo->brenderDescriptors.sceneBuffer) vkDestroyBuffer(hVideo->device, hVideo->brenderDescriptors.sceneBuffer, NULL);
+    if (hVideo->brenderDescriptors.sceneMapped) vkUnmapMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory);
     if (hVideo->brenderDescriptors.sceneMemory) vkFreeMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory, NULL);
     if (hVideo->brenderDescriptors.modelBuffer) vkDestroyBuffer(hVideo->device, hVideo->brenderDescriptors.modelBuffer, NULL);
+    if (hVideo->brenderDescriptors.modelMapped) vkUnmapMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory);
     if (hVideo->brenderDescriptors.modelMemory) vkFreeMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory, NULL);
+
+    VK_DestroyDynamicRings(hVideo);
 
     if (hVideo->commandPool) vkDestroyCommandPool(hVideo->device, hVideo->commandPool, NULL);
 
@@ -1103,6 +1166,45 @@ static VkResult createBuffer(HVIDEO hVideo, VkDeviceSize size, VkBufferUsageFlag
     return VK_SUCCESS;
 }
 
+#define VK_DYN_RING_CAPACITY (4u * 1024u * 1024u)
+
+VkResult VK_CreateDynamicRings(HVIDEO hVideo) {
+    for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
+        VkResult res = createBuffer(hVideo, VK_DYN_RING_CAPACITY, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &hVideo->dynVbo[f], &hVideo->dynVboMemory[f]);
+        if (res != VK_SUCCESS) return res;
+        res = vkMapMemory(hVideo->device, hVideo->dynVboMemory[f], 0, VK_DYN_RING_CAPACITY, 0,
+            &hVideo->dynVboMapped[f]);
+        if (res != VK_SUCCESS) return res;
+
+        res = createBuffer(hVideo, VK_DYN_RING_CAPACITY, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &hVideo->dynIbo[f], &hVideo->dynIboMemory[f]);
+        if (res != VK_SUCCESS) return res;
+        res = vkMapMemory(hVideo->device, hVideo->dynIboMemory[f], 0, VK_DYN_RING_CAPACITY, 0,
+            &hVideo->dynIboMapped[f]);
+        if (res != VK_SUCCESS) return res;
+
+        hVideo->dynVboOffset[f] = 0;
+        hVideo->dynIboOffset[f] = 0;
+    }
+    hVideo->dynVboCapacity = VK_DYN_RING_CAPACITY;
+    hVideo->dynIboCapacity = VK_DYN_RING_CAPACITY;
+    return VK_SUCCESS;
+}
+
+static void VK_DestroyDynamicRings(HVIDEO hVideo) {
+    for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
+        if (hVideo->dynVboMapped[f]) vkUnmapMemory(hVideo->device, hVideo->dynVboMemory[f]);
+        if (hVideo->dynVbo[f]) vkDestroyBuffer(hVideo->device, hVideo->dynVbo[f], NULL);
+        if (hVideo->dynVboMemory[f]) vkFreeMemory(hVideo->device, hVideo->dynVboMemory[f], NULL);
+        if (hVideo->dynIboMapped[f]) vkUnmapMemory(hVideo->device, hVideo->dynIboMemory[f]);
+        if (hVideo->dynIbo[f]) vkDestroyBuffer(hVideo->device, hVideo->dynIbo[f], NULL);
+        if (hVideo->dynIboMemory[f]) vkFreeMemory(hVideo->device, hVideo->dynIboMemory[f], NULL);
+    }
+}
+
 VkResult VK_CreateBrenderDescriptors(HVIDEO hVideo, uint32_t width, uint32_t height) {
     (void)width;
     (void)height;
@@ -1154,21 +1256,23 @@ VkResult VK_CreateBrenderDescriptors(HVIDEO hVideo, uint32_t width, uint32_t hei
         &hVideo->brenderDescriptors.modelBuffer, &hVideo->brenderDescriptors.modelMemory);
     if (res != VK_SUCCESS) return res;
 
+    // Persistently map both UBO buffers: per-group uploads become plain memcpys.
+    // vkMapMemory/vkUnmapMemory per group was a major CPU cost that grew linearly
+    // with scene group count (crash debris, ped gibs, many actors).
+    vkMapMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory, 0, sceneSize, 0,
+        &hVideo->brenderDescriptors.sceneMapped);
+    vkMapMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory, 0, modelSize, 0,
+        &hVideo->brenderDescriptors.modelMapped);
+
     return VK_SUCCESS;
 }
 
 void VK_UpdateSceneUBO(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset) {
-    void* mapped;
-    vkMapMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory, offset, size, 0, &mapped);
-    memcpy(mapped, data, size);
-    vkUnmapMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory);
+    memcpy((char*)hVideo->brenderDescriptors.sceneMapped + offset, data, size);
 }
 
 void VK_UpdateModelUBOAtOffset(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset) {
-    void* mapped;
-    vkMapMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory, offset, size, 0, &mapped);
-    memcpy(mapped, data, size);
-    vkUnmapMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory);
+    memcpy((char*)hVideo->brenderDescriptors.modelMapped + offset, data, size);
 }
 
 static void VK_BeginDynamicRenderingWithOps(HVIDEO hVideo, VkCommandBuffer cmd,
@@ -1202,6 +1306,90 @@ static void VK_BeginDynamicRenderingWithOps(HVIDEO hVideo, VkCommandBuffer cmd,
     renderInfo.pDepthAttachment = &depthAttachment;
 
     vkCmdBeginRendering(cmd, &renderInfo);
+}
+
+/* Starts recording the current frame's command buffer exactly once. Called by
+ * the first sceneBegin AND the first flush of a frame; idempotent via
+ * hVideo->isRecording. renderingStarted is NOT set here — it is scene-scoped
+ * (set in sceneBegin) so the pre-scene flush can still run the mainViewport
+ * purge. */
+void VK_EnsureRecording(HVIDEO hVideo) {
+    hVideo->currentModelOffset = 0;
+    hVideo->sceneSlotIndex = 0;
+    hVideo->dimAreaCount = 0;
+    hVideo->clearAreaCount = 0;
+    hVideo->pratcamAreaCount = 0;
+    hVideo->lastVbo = VK_NULL_HANDLE;
+    hVideo->lastIbo = VK_NULL_HANDLE;
+    hVideo->lastVboOffset = 0;
+    hVideo->lastIboOffset = 0;
+    hVideo->lastTextureView = VK_NULL_HANDLE;
+    hVideo->lastTextureSampler = VK_NULL_HANDLE;
+
+    uint32_t f = hVideo->currentFrame;
+    vkWaitForFences(hVideo->device, 1, &hVideo->inFlightFences[f], VK_TRUE, UINT64_MAX);
+    vkResetFences(hVideo->device, 1, &hVideo->inFlightFences[f]);
+
+    /* Reset the dynamic-ring cursors. The fence wait above guarantees the GPU is
+     * done with the previous command buffer submitted for this frame slot, so its
+     * ring data is no longer referenced and may be overwritten. Within a frame the
+     * cursor only advances (no wrap), so every small-model build gets its own slot
+     * even when the same model is rebuilt hundreds of times (electro ray). */
+    hVideo->dynVboOffset[f] = 0;
+    hVideo->dynIboOffset[f] = 0;
+    hVideo->frameEpoch++;
+
+    if (hVideo->deferredBufferFreeCount[f] > 0) {
+        for (uint32_t i = 0; i < hVideo->deferredBufferFreeCount[f]; i++) {
+            if (hVideo->deferredBufferFrees[f][i].buffer != VK_NULL_HANDLE)
+                vkDestroyBuffer(hVideo->device, hVideo->deferredBufferFrees[f][i].buffer, NULL);
+            if (hVideo->deferredBufferFrees[f][i].memory != VK_NULL_HANDLE)
+                vkFreeMemory(hVideo->device, hVideo->deferredBufferFrees[f][i].memory, NULL);
+        }
+        hVideo->deferredBufferFreeCount[f] = 0;
+    }
+
+    if (hVideo->deferredImageFreeCount[f] > 0) {
+        for (uint32_t i = 0; i < hVideo->deferredImageFreeCount[f]; i++) {
+            if (hVideo->deferredImageFrees[f][i].sampler != VK_NULL_HANDLE)
+                vkDestroySampler(hVideo->device, hVideo->deferredImageFrees[f][i].sampler, NULL);
+            if (hVideo->deferredImageFrees[f][i].view != VK_NULL_HANDLE)
+                vkDestroyImageView(hVideo->device, hVideo->deferredImageFrees[f][i].view, NULL);
+            if (hVideo->deferredImageFrees[f][i].image != VK_NULL_HANDLE)
+                vkDestroyImage(hVideo->device, hVideo->deferredImageFrees[f][i].image, NULL);
+            if (hVideo->deferredImageFrees[f][i].memory != VK_NULL_HANDLE)
+                vkFreeMemory(hVideo->device, hVideo->deferredImageFrees[f][i].memory, NULL);
+        }
+        hVideo->deferredImageFreeCount[f] = 0;
+    }
+
+    {
+        extern int gHarness_window_width, gHarness_window_height;
+        if (gHarness_window_width > 0 && gHarness_window_height > 0 &&
+            ((uint32_t)gHarness_window_width != hVideo->swapchainExtent.width ||
+             (uint32_t)gHarness_window_height != hVideo->swapchainExtent.height)) {
+            VK_VideoRecreateSwapchain(hVideo);
+            hVideo->mainViewportW = 0;
+        }
+    }
+
+    VkResult res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
+        hVideo->imageAvailableSemaphores[hVideo->currentFrame], VK_NULL_HANDLE, &hVideo->currentImageIndex);
+    if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+        VK_VideoRecreateSwapchain(hVideo);
+        hVideo->mainViewportW = 0;
+        res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
+            hVideo->imageAvailableSemaphores[hVideo->currentFrame], VK_NULL_HANDLE, &hVideo->currentImageIndex);
+    }
+
+    VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
+    vkResetCommandBuffer(cmd, 0);
+
+    VkCommandBufferBeginInfo begin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin.flags = 0;
+    vkBeginCommandBuffer(cmd, &begin);
+
+    hVideo->isRecording = 1;
 }
 
 void VK_BeginRenderPass(HVIDEO hVideo, VkCommandBuffer cmd) {
@@ -1319,29 +1507,146 @@ void VK_DeferFreeImage(HVIDEO hVideo, VkImage image, VkImageView view, VkSampler
     hVideo->deferredImageFreeCount[f]++;
 }
 
-VkResult VK_CreateStagingBuffer(HVIDEO hVideo, VkDeviceSize size, VkBuffer* outBuffer, VkDeviceMemory* outMemory) {
+/* Grows (or lazily creates) the current frame slot's staging buffer to at least
+ * `aligned` bytes. The caller has already waited the slot's uploadFence, so no
+ * uploads reference the old buffer and it may be destroyed immediately. Returns 1
+ * on success, 0 on allocation failure. */
+static int VK_GrowFrameStaging(HVIDEO hVideo, VK_FrameStaging* st, VkDeviceSize aligned) {
+    VkDeviceSize newSize = st->size > 0 ? st->size : 16u * 1024u * 1024u;
+    while (newSize < aligned)
+        newSize *= 2;
+
     VkBufferCreateInfo bi = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bi.size = size;
+    bi.size = newSize;
     bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult res = vkCreateBuffer(hVideo->device, &bi, NULL, outBuffer);
-    if (res != VK_SUCCESS) return res;
+    VkBuffer newBuffer;
+    if (vkCreateBuffer(hVideo->device, &bi, NULL, &newBuffer) != VK_SUCCESS)
+        return 0;
 
     VkMemoryRequirements memReq;
-    vkGetBufferMemoryRequirements(hVideo->device, *outBuffer, &memReq);
+    vkGetBufferMemoryRequirements(hVideo->device, newBuffer, &memReq);
     VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
     ai.allocationSize = memReq.size;
     ai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, memReq.memoryTypeBits,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    if (ai.memoryTypeIndex == UINT32_MAX) {
-        vkDestroyBuffer(hVideo->device, *outBuffer, NULL);
-        return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+    VkDeviceMemory newMemory;
+    if (ai.memoryTypeIndex == UINT32_MAX || vkAllocateMemory(hVideo->device, &ai, NULL, &newMemory) != VK_SUCCESS) {
+        vkDestroyBuffer(hVideo->device, newBuffer, NULL);
+        return 0;
     }
-    res = vkAllocateMemory(hVideo->device, &ai, NULL, outMemory);
-    if (res != VK_SUCCESS) {
-        vkDestroyBuffer(hVideo->device, *outBuffer, NULL);
-        return res;
+    vkBindBufferMemory(hVideo->device, newBuffer, newMemory, 0);
+
+    void* mapped;
+    if (vkMapMemory(hVideo->device, newMemory, 0, VK_WHOLE_SIZE, 0, &mapped) != VK_SUCCESS) {
+        vkDestroyBuffer(hVideo->device, newBuffer, NULL);
+        vkFreeMemory(hVideo->device, newMemory, NULL);
+        return 0;
     }
-    vkBindBufferMemory(hVideo->device, *outBuffer, *outMemory, 0);
+
+    if (st->buffer != VK_NULL_HANDLE) {
+        vkDestroyBuffer(hVideo->device, st->buffer, NULL);
+        vkFreeMemory(hVideo->device, st->memory, NULL);
+    }
+
+    st->buffer = newBuffer;
+    st->memory = newMemory;
+    st->mapped = mapped;
+    st->size = newSize;
+    st->offset = 0;
+    return 1;
+}
+
+VkResult VK_UploadBufferToImage(HVIDEO hVideo, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+    uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY, VkImageAspectFlags aspectMask,
+    const void* hostData, size_t hostDataSize) {
+
+    uint32_t f = hVideo->currentFrame;
+    VK_FrameStaging* st = &hVideo->frameStaging[f];
+
+    /* Wait for this slot's previous upload batch before reusing its staging buffer
+     * and command buffer. In the steady frame loop the slot is reused two frames
+     * later and the upload submit (a tiny copy, submitted before that frame's main
+     * command buffer) has long finished, so this is a cheap already-signaled check
+     * — never a full GPU drain. Because the wait precedes every reuse, uploads may
+     * be recorded from anywhere: the frame loop OR out-of-frame track/asset loading
+     * (BufferStoredVKUpdate during LoadTrack). */
+    vkWaitForFences(hVideo->device, 1, &hVideo->uploadFence[f], VK_TRUE, UINT64_MAX);
+    vkResetFences(hVideo->device, 1, &hVideo->uploadFence[f]);
+
+    st->offset = 0;
+    vkResetCommandBuffer(hVideo->uploadBuffer[f], 0);
+
+    VkCommandBufferBeginInfo begin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    if (vkBeginCommandBuffer(hVideo->uploadBuffer[f], &begin) != VK_SUCCESS)
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+    VkDeviceSize aligned = (hostDataSize + 255u) & ~(VkDeviceSize)255u;
+    if (st->buffer == VK_NULL_HANDLE || st->offset + aligned > st->size) {
+        if (!VK_GrowFrameStaging(hVideo, st, aligned))
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    memcpy((char*)st->mapped + st->offset, hostData, hostDataSize);
+    VkDeviceSize srcOffset = st->offset;
+    st->offset += aligned;
+
+    VkCommandBuffer cmd = hVideo->uploadBuffer[f];
+
+    VkImageMemoryBarrier2 b = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+    b.oldLayout = oldLayout;
+    b.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = image;
+    b.subresourceRange.aspectMask = aspectMask;
+    b.subresourceRange.baseMipLevel = 0;
+    b.subresourceRange.levelCount = 1;
+    b.subresourceRange.baseArrayLayer = 0;
+    b.subresourceRange.layerCount = 1;
+    b.srcStageMask = (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+        ? VK_PIPELINE_STAGE_2_NONE : VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    b.srcAccessMask = (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+        ? VK_ACCESS_2_NONE : VK_ACCESS_2_SHADER_READ_BIT;
+    b.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    b.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+
+    VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+    depInfo.imageMemoryBarrierCount = 1;
+    depInfo.pImageMemoryBarriers = &b;
+    vkCmdPipelineBarrier2(cmd, &depInfo);
+
+    VkBufferImageCopy region = {0};
+    region.bufferOffset = srcOffset;
+    region.imageSubresource.aspectMask = aspectMask;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset.x = dstX;
+    region.imageOffset.y = dstY;
+    region.imageExtent.width = width;
+    region.imageExtent.height = height;
+    region.imageExtent.depth = 1;
+    vkCmdCopyBufferToImage(cmd, st->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    b.newLayout = newLayout;
+    b.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    b.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    b.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    b.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    vkCmdPipelineBarrier2(cmd, &depInfo);
+
+    vkEndCommandBuffer(cmd);
+
+    /* Submit immediately with the slot's own fence: the next call on this slot waits
+     * it before reusing the staging/command buffer, and the frame's main command
+     * buffer (submitted later, same queue) executes in-order after this copy. */
+    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    si.commandBufferCount = 1;
+    si.pCommandBuffers = &cmd;
+    vkQueueSubmit(hVideo->graphicsQueue, 1, &si, hVideo->uploadFence[f]);
+
     return VK_SUCCESS;
 }
