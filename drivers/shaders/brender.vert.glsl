@@ -1,3 +1,6 @@
+##ifdef VK
+#version 450
+##endif
 ##ifdef GL_ES
 #version 300 es
 precision mediump float;
@@ -33,7 +36,11 @@ struct br_light
     vec2 spot_angles; /* (inner, outer), if (0.0, 0.0), then this is a point light. */
 };
 
+##ifdef VK
+layout(std140, binding = 1) uniform br_scene_state
+##else
 layout(std140) uniform br_scene_state
+##endif
 {
     vec4 eye_view; /* Eye position in view-space */
     br_light lights[MAX_LIGHTS];
@@ -46,7 +53,11 @@ layout(std140) uniform br_scene_state
     float yon_z;
 };
 
+##ifdef VK
+layout(std140, binding = 2) uniform br_model_state
+##else
 layout(std140) uniform br_model_state
+##endif
 {
     mat4 model_view;
     mat4 projection;
@@ -68,27 +79,52 @@ layout(std140) uniform br_model_state
     bool disable_colour_key;
     bool disable_texture;
     bool fog_enabled;
-    vec3 fog_colour;
+    vec4 fog_colour;
     float fog_min;
     float fog_max;
     float alpha;
     uint prelit;
 };
 
+##ifdef VK
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec2 aUV;
+layout(location = 2) in vec3 aNormal;
+layout(location = 3) in vec4 aColour;
+##else
 in vec3 aPosition;
 in vec2 aUV;
 in vec3 aNormal;
 in vec4 aColour;
+##endif
 
+##ifdef VK
+layout(location = 0) out vec4 position;
+layout(location = 1) out vec2 uv;
+layout(location = 2) out vec4 normal;
+layout(location = 3) out vec4 colour;
+##else
 out vec4 position;
 out vec4 normal;
 out vec2 uv;
 out vec4 colour;
+##endif
 
+##ifdef VK
+layout(location = 4) out vec3 rawPosition;
+layout(location = 5) out vec3 rawNormal;
+##else
 out vec3 rawPosition;
 out vec3 rawNormal;
+##endif
 
+##ifdef VK
+layout(location = 6) out vec3 v_frag_pos;
+layout(location = 7) out float v_view_z;
+##else
 out vec3 v_frag_pos;
+out float v_view_z;
+##endif
 
 bool directLightExists;
 
@@ -233,20 +269,16 @@ vec3 lightingColourSpotAtten(in vec4 p, in vec4 n, in br_light alp)
 
 vec4 fragmain()
 {
-#if DEBUG_DISABLE_LIGHTS
-    return surface_colour;
-#endif
-
     if (num_lights == 0u || lighting == 0u) {
         return surface_colour;
     }
 
-    vec4 normalDirection = vec4(0.0);
-    position = vec4(0.0);
+#if DEBUG_DISABLE_LIGHTS
+    return surface_colour;
+#else
 
     vec3 _colour = surface_colour.xyz;
 
-    /* This is shit, but this is the way the engine does it */
     vec3 lightColour = vec3(0.0);
     vec3 directLightColour = vec3(0.0);
     directLightExists = false;
@@ -254,32 +286,32 @@ vec4 fragmain()
     for (uint i = 0u; i < num_lights; ++i) {
 #if !DEBUG_DISABLE_LIGHT_AMBIENT
         if(lights[i].colour.w != 0.0) {
-            lightColour += lightingColourAmbient(position, normalDirection, lights[i]);
+            lightColour += lightingColourAmbient(position, normal, lights[i]);
             continue;
         }
 #endif
         if (lights[i].position.w == 0.0) {
 #if !DEBUG_DISABLE_LIGHT_DIRECTIONAL
             directLightExists = true;
-            directLightColour += lightingColourDirect(position, normalDirection, lights[i]);
+            directLightColour += lightingColourDirect(position, normal, lights[i]);
 #endif
         } else {
             if (lights[i].spot_angles == vec2(0.0, 0.0)) {
                 if (lights[i].iclq.zw == vec2(0)) {
 #if !DEBUG_DISABLE_LIGHT_POINT
-                    lightColour += lightingColourPoint(position, normalDirection, lights[i]);
+                    lightColour += lightingColourPoint(position, normal, lights[i]);
 #endif
                 } else {
 #if !DEBUG_DISABLE_LIGHT_POINTATTEN
-                    lightColour += lightingColourPointAtten(position, normalDirection, lights[i]);
+                    lightColour += lightingColourPointAtten(position, normal, lights[i]);
 #endif
                 }
             } else {
 #if !DEBUG_DISABLE_LIGHT_SPOT
                 if (lights[i].iclq.zw == vec2(0))
-                    lightColour += lightingColourSpot(position, normalDirection, lights[i]);
+                    lightColour += lightingColourSpot(position, normal, lights[i]);
                 else
-                    lightColour += lightingColourSpotAtten(position, normalDirection, lights[i]);
+                    lightColour += lightingColourSpotAtten(position, normal, lights[i]);
 #endif
             }
         }
@@ -290,6 +322,7 @@ vec4 fragmain()
 
     lightColour = clamp(lightColour, 0.0, 1.0);
     return vec4(lightColour, surface_colour.a);
+#endif
 }
 
 #if ENABLE_PSX_SIMULATION
@@ -309,6 +342,7 @@ void main()
     vec4 pos = vec4(aPosition, 1.0);
 
     position = model_view * pos;
+    v_view_z = position.z;
     normal = vec4(normalize(mat3(normal_matrix) * aNormal), 0);
     uv = aUV;
 
@@ -333,10 +367,13 @@ void main()
     pos = projection * model_view * pos;
 #endif
 
-
-
-
-
+##ifdef VK
+    // Match GL depth mapping: GL maps NDC z [-1,1] → depth [0,1] via (ndc+1)/2.
+    // After negate_z_column near→+1 far→-1, so GL depth near→1 far→0.
+    // VK has no depthRange remap, so we replicate it here:
+    // depth_vk = (clip_z/clip_w + 1)/2 = (clip_z + clip_w) / (2*clip_w)
+    pos.z = (pos.z + pos.w) * 0.5;
+##endif
 
     gl_Position = pos;
 }

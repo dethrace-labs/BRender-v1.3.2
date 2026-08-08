@@ -9,6 +9,10 @@ if(GLSL_COMPILER)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
+# Shared shaders live in drivers/shaders with ##ifdef VK/GL_ES/GL_CORE markers.
+# Filter them for Vulkan (plain GLSL, literal-first #version 450) before compiling.
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shaders")
+
 set(SPV_GENERATED)
 foreach(spv_file
     brender.vert.spv
@@ -21,17 +25,24 @@ foreach(spv_file
     set(h_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_file}.h")
 
     if(GLSL_COMPILER)
+        set(glsl_src "${SHADER_DIR}/${glsl_file}")
+        set(glsl_filtered "${CMAKE_CURRENT_BINARY_DIR}/${glsl_file}")
         set(spv_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_file}")
-        set(glsl_path "${CMAKE_CURRENT_SOURCE_DIR}/${glsl_file}")
+        add_custom_command(
+            OUTPUT ${glsl_filtered}
+            COMMAND ${CMAKE_COMMAND} "-DINPUT=${glsl_src}" "-DOUTPUT=${glsl_filtered}" "-DKEEP=VK" -P "${BRender_SOURCE_DIR}/cmake/FilterShader.cmake"
+            DEPENDS ${glsl_src}
+            COMMENT "Filtering ${glsl_file} for Vulkan"
+        )
         if(GLSL_COMPILER_NAME STREQUAL "glslangValidator")
-            set(compile_cmd ${GLSL_COMPILER} -V -o ${spv_path} ${glsl_path})
+            set(compile_cmd ${GLSL_COMPILER} -V -o ${spv_path} ${glsl_filtered})
         else()
-            set(compile_cmd ${GLSL_COMPILER} -o ${spv_path} ${glsl_path})
+            set(compile_cmd ${GLSL_COMPILER} -o ${spv_path} ${glsl_filtered})
         endif()
         add_custom_command(
             OUTPUT ${spv_path}
             COMMAND ${compile_cmd}
-            DEPENDS ${glsl_path}
+            DEPENDS ${glsl_filtered}
             COMMENT "Compiling ${glsl_file} → ${spv_file}"
         )
         set(embed_source_dir "${CMAKE_CURRENT_BINARY_DIR}")

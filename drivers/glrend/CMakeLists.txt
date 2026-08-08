@@ -1,25 +1,27 @@
 ﻿project(glrend C)
 
-# Embed shaders
+# Embed shared shaders (drivers/shaders)
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shaders")
+
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS default.vert.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=default.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/default.vert.glsl"
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.frag.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS default.frag.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=default.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/default.frag.glsl"
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/brender.vert.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS brender.vert.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=brender.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/brender.vert.glsl"
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/brender.frag.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS brender.frag.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=brender.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/brender.frag.glsl"
 )
 
 

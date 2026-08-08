@@ -23,6 +23,8 @@ int glContextIsOpenGLES() {
 // Quick n dirty shader pre-processor
 // Wrap opengles only lines with ##ifdef GL_ES ... ##endif
 // Wrap opengl core only lines with ##ifdef GL_CORE ... ##endif
+// Wrap vulkan only lines with ##ifdef VK ... ##endif
+// ##else selects the complementary branch of the enclosing block.
 // Note the double "##" to avoid collision with the standard glsl preprocessor
 char* preprocessShader(char* shader, size_t size) {
     int i;
@@ -30,10 +32,12 @@ char* preprocessShader(char* shader, size_t size) {
     int line_i;
     char line[2048];
     int is_context_opengles;
-    int filter_state;  // 0 - none, 1, only opengles, 2 only opengl core
+    int filter_state;  // 0 - none, 1 - GL_ES block, 2 - GL_CORE block, 3 - VK block
+    int emit;          // whether the current block content should be kept
 
     line_i = 0;
     filter_state = 0;
+    emit = 1;
     is_context_opengles = glContextIsOpenGLES();
     processed = BrScratchAllocate(size);
     processed[0] = '\0';
@@ -46,16 +50,26 @@ char* preprocessShader(char* shader, size_t size) {
             // we've captured a whole line
             if (strcmp(line, "##ifdef GL_ES\n") == 0) {
                 filter_state = 1;
+                emit = is_context_opengles;
             } else if (strcmp(line, "##ifdef GL_CORE\n") == 0) {
                 filter_state = 2;
+                emit = !is_context_opengles;
+            } else if (strcmp(line, "##ifdef VK\n") == 0) {
+                filter_state = 3;
+                emit = 0;
+            } else if (strcmp(line, "##else\n") == 0) {
+                if (filter_state == 1) {
+                    emit = !is_context_opengles;
+                } else if (filter_state == 2) {
+                    emit = is_context_opengles;
+                } else if (filter_state == 3) {
+                    emit = 1;
+                }
             } else if (strcmp(line, "##endif\n") == 0) {
                 filter_state = 0;
+                emit = 1;
             } else {
-                if (filter_state == 1 && is_context_opengles) {
-                    strcat(processed, line);
-                } else if (filter_state == 2 && !is_context_opengles) {
-                    strcat(processed, line);
-                } else if (filter_state == 0) {
+                if (emit) {
                     strcat(processed, line);
                 }
             }
