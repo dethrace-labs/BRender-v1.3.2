@@ -10,6 +10,8 @@ cmake_policy(SET CMP0079 NEW)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+find_package(Perl)
+
 option(BRENDER_BUILD_DRIVERS "Build Drivers" ON)
 option(BRENDER_BUILD_EXAMPLES "Build Examples" "${BRender_IS_TOPLEVEL}")
 option(BRENDER_INSTALL "Enable installation" "${BRender_IS_TOPLEVEL}")
