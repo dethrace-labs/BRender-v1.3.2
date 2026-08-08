@@ -55,7 +55,7 @@ struct  br_object_dispatch {
 		struct br_object *self);
 	void BR_CMETHOD_PTR_DECL(br_object, free)(
 		struct br_object *self);
-	char * BR_CMETHOD_PTR_DECL(br_object, identifier)(
+	const char * BR_CMETHOD_PTR_DECL(br_object, identifier)(
 		struct br_object *self);
 	br_token BR_CMETHOD_PTR_DECL(br_object, type)(
 		struct br_object *self);
@@ -117,7 +117,7 @@ struct  br_object_container_dispatch {
 		struct br_object *self);
 	void BR_CMETHOD_PTR_DECL(br_object, free)(
 		struct br_object *self);
-	char * BR_CMETHOD_PTR_DECL(br_object, identifier)(
+	const char * BR_CMETHOD_PTR_DECL(br_object, identifier)(
 		struct br_object *self);
 	br_token BR_CMETHOD_PTR_DECL(br_object, type)(
 		struct br_object *self);
