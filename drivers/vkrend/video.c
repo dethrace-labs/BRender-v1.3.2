@@ -1325,6 +1325,7 @@ void VK_EnsureRecording(HVIDEO hVideo) {
     hVideo->lastIboOffset = 0;
     hVideo->lastTextureView = VK_NULL_HANDLE;
     hVideo->lastTextureSampler = VK_NULL_HANDLE;
+    hVideo->lastPipeline = VK_NULL_HANDLE;
 
     uint32_t f = hVideo->currentFrame;
     vkWaitForFences(hVideo->device, 1, &hVideo->inFlightFences[f], VK_TRUE, UINT64_MAX);

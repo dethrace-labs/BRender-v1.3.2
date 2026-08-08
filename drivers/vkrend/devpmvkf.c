@@ -106,6 +106,7 @@ void VK_OverlayDraw(HVIDEO hVideo, VkCommandBuffer cmd) {
 
     VkDeviceSize offset = 0;
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, hVideo->overlayPipeline);
+    hVideo->lastPipeline = hVideo->overlayPipeline;
     vkCmdBindVertexBuffers(cmd, 0, 1, &hVideo->overlayQuadVbo, &offset);
     vkCmdBindIndexBuffer(cmd, hVideo->overlayQuadIbo, 0, VK_INDEX_TYPE_UINT16);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

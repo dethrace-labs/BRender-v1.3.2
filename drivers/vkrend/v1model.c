@@ -153,7 +153,10 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
     VkPipeline pipeline = blending_on
         ? (depth_off ? hVideo->brenderBlendPipelineNoDepth : hVideo->brenderBlendPipeline)
         : (depth_off ? hVideo->brenderPipelineNoDepth : hVideo->brenderPipeline);
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    if (pipeline != hVideo->lastPipeline) {
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        hVideo->lastPipeline = pipeline;
+    }
 
     /* Small ring models (sub-allocated from the per-frame dynamic rings in
      * build_vbo/build_ibo) are only valid within the frame they were rebuilt:

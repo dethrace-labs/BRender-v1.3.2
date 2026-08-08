@@ -200,6 +200,7 @@ typedef struct _VIDEO {
     VkDeviceSize lastIboOffset;
     VkImageView lastTextureView;
     VkSampler lastTextureSampler;
+    VkPipeline lastPipeline;
 
     /* Shared persistent dynamic VBO/IBO rings for small models. Models rebuilt
      * per frame (electro-ray segments, sparks, dim quads, pratcam quad) get
