@@ -6,15 +6,15 @@
 /* ImGui / external render callback */
 static void (*g_external_render_cb)(void* cmd, void* ud) = NULL;
 static void* g_external_render_ud = NULL;
-static VKREND_DeviceInfo g_vkrend_info = {NULL};
+static SDL3REND_DeviceInfo g_sdl3rend_info = {NULL};
 
-void VKREND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud) {
+void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud) {
     g_external_render_cb = cb;
     g_external_render_ud = ud;
 }
 
-void VKREND_GetDeviceInfo(VKREND_DeviceInfo* info) {
-    if (info) *info = g_vkrend_info;
+void SDL3REND_GetDeviceInfo(SDL3REND_DeviceInfo* info) {
+    if (info) *info = g_sdl3rend_info;
 }
 
 static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch;
@@ -307,14 +307,14 @@ br_device_pixelmap* DevicePixelmapVKAllocateFront(br_device* dev, br_output_faci
         return NULL;
     }
 
-    g_vkrend_info.instance = (void*)self->asFront.video.instance;
-    g_vkrend_info.physical_device = (void*)self->asFront.video.physicalDevice;
-    g_vkrend_info.device = (void*)self->asFront.video.device;
-    g_vkrend_info.graphics_queue = (void*)self->asFront.video.graphicsQueue;
-    g_vkrend_info.graphics_queue_family = self->asFront.video.graphicsFamilyIndex;
-    g_vkrend_info.render_pass = (void*)self->asFront.video.imguiCompatRenderPass;
-    g_vkrend_info.min_image_count = self->asFront.video.swapchainImageCount;
-    g_vkrend_info.image_count = self->asFront.video.swapchainImageCount;
+    g_sdl3rend_info.instance = (void*)self->asFront.video.instance;
+    g_sdl3rend_info.physical_device = (void*)self->asFront.video.physicalDevice;
+    g_sdl3rend_info.device = (void*)self->asFront.video.device;
+    g_sdl3rend_info.graphics_queue = (void*)self->asFront.video.graphicsQueue;
+    g_sdl3rend_info.graphics_queue_family = self->asFront.video.graphicsFamilyIndex;
+    g_sdl3rend_info.render_pass = (void*)self->asFront.video.imguiCompatRenderPass;
+    g_sdl3rend_info.min_image_count = self->asFront.video.swapchainImageCount;
+    g_sdl3rend_info.image_count = self->asFront.video.swapchainImageCount;
 
     {
         VkPhysicalDeviceProperties props;
@@ -328,7 +328,7 @@ br_device_pixelmap* DevicePixelmapVKAllocateFront(br_device* dev, br_output_faci
     self->asFront.vk_physical_device = self->asFront.video.physicalDevice;
     self->asFront.vk_context = NULL;
 
-    BrLogPrintf("VKREND: Vulkan Initialized\n");
+    BrLogPrintf("SDL3REND: Vulkan Initialized\n");
 
     self->asFront.num_refs = 0;
 

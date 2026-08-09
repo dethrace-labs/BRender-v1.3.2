@@ -31,7 +31,7 @@ typedef struct br_device_gl_callback_procs {
     br_device_gl_free_cbfn                *free;
 } br_device_gl_callback_procs;
 
-// For use with `vkrend` device.
+// For use with `sdl3rend` device.
 typedef void BR_CALLBACK br_device_vk_swapbuffers_cbfn(br_pixelmap* pm);
 typedef void* BR_CALLBACK br_device_vk_getprocaddress_cbfn(const char* name);
 typedef void BR_CALLBACK br_device_vk_free_cbfn(br_pixelmap* pm, void* user);

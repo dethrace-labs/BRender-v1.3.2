@@ -1,5 +1,5 @@
-#ifndef _BRVKREND_H_
-#define _BRVKREND_H_
+#ifndef _BRSDL3REND_H_
+#define _BRSDL3REND_H_
 
 #ifndef _BRENDER_H_
 #error Please include brender.h first
@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-typedef struct VKREND_DeviceInfo {
+typedef struct SDL3REND_DeviceInfo {
     void* instance;
     void* physical_device;
     void* device;
@@ -18,11 +18,11 @@ typedef struct VKREND_DeviceInfo {
     void* render_pass;
     uint32_t min_image_count;
     uint32_t image_count;
-} VKREND_DeviceInfo;
+} SDL3REND_DeviceInfo;
 
-void VKREND_GetDeviceInfo(VKREND_DeviceInfo* info);
+void SDL3REND_GetDeviceInfo(SDL3REND_DeviceInfo* info);
 
-void VKREND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud);
+void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud);
 
 #ifdef __cplusplus
 }
@@ -32,7 +32,7 @@ void VKREND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud)
  * Main entry point for device.
  */
 #ifndef _NO_PROTOTYPES
-struct br_device *BR_EXPORT BrDrv1VKBegin(const char *arguments);
+struct br_device *BR_EXPORT BrDrv1SDL3RendBegin(const char *arguments);
 #endif /* _NO_PROTOTYPES */
 
-#endif /* _BRVKREND_H_ */
+#endif /* _BRSDL3REND_H_ */

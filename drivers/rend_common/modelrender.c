@@ -8,7 +8,7 @@
 #include <string.h>
 
 /*
- * Per-group model render, shared by the glrend/vkrend drivers.
+ * Per-group model render, shared by the glrend/sdl3rend drivers.
  *
  * Both drivers follow the same shape:
  *   1. refresh the per-model matrix/light cache

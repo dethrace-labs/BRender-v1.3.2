@@ -1,4 +1,4 @@
-project(vkrend C)
+project(sdl3rend C)
 
 find_package(VulkanHeaders REQUIRED)
 find_package(VulkanLoader REQUIRED)
@@ -9,9 +9,9 @@ if(GLSL_COMPILER)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
-# Shared shaders live in drivers/rend_common/shaders with ##ifdef VK/GL_ES/GL_CORE markers.
+# Shared shaders live in drivers/rend_common with ##ifdef VK/GL_ES/GL_CORE markers.
 # Filter them for Vulkan (plain GLSL, literal-first #version 450) before compiling.
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common/shaders")
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
 
 set(SPV_GENERATED)
 foreach(spv_file
@@ -98,7 +98,7 @@ set(RENDERER_FILES
 
         ${REND_COMMON_DIR}/onscreen.c
 
-        renderer.c
+        ${REND_COMMON_DIR}/renderer.c
         renderer.h
 
         sbuffer.h
@@ -109,7 +109,7 @@ set(RENDERER_FILES
         )
 source_group("Renderer" FILES ${RENDERER_FILES})
 
-set(VKREND_FILES
+set(SDL3REND_FILES
         drv_ip.h
 
         driver.c
@@ -125,7 +125,7 @@ set(VKREND_FILES
         ${REND_COMMON_DIR}/device.c
         ${REND_COMMON_DIR}/device.h
 
-        devpixmp.c
+        ${REND_COMMON_DIR}/devpixmp.c
         devpixmp.h
         devpmvkf.c
 
@@ -139,29 +139,29 @@ set(VKREND_FILES
         )
 
 set(INC_FILES
-        brvkrend.h
+        brsdl3rend.h
         )
 
-add_library(vkrend-headers INTERFACE)
-target_sources(vkrend-headers INTERFACE
+add_library(sdl3rend-headers INTERFACE)
+target_sources(sdl3rend-headers INTERFACE
         FILE_SET include
         TYPE HEADERS
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
         FILES ${INC_FILES}
         )
 
-target_include_directories(vkrend-headers INTERFACE
+target_include_directories(sdl3rend-headers INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/vkrend>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/sdl3rend>
         )
 
-set_target_properties(vkrend-headers PROPERTIES
-        EXPORT_NAME "Drivers::VKRend::Headers"
+set_target_properties(sdl3rend-headers PROPERTIES
+        EXPORT_NAME "Drivers::SDL3Rend::Headers"
         FOLDER "BRender/Drivers"
         )
 
-add_library(vkrend
-        ${VKREND_FILES}
+add_library(sdl3rend
+        ${SDL3REND_FILES}
         ${RENDERER_FILES}
         ${VIDEO_FILES}
         ${VKSTATE_FILES}
@@ -169,30 +169,30 @@ add_library(vkrend
         ${SPV_GENERATED}
         )
 
-get_target_property(target_type vkrend TYPE)
+get_target_property(target_type sdl3rend TYPE)
 if(target_type STREQUAL SHARED_LIBRARY)
-    target_compile_definitions(vkrend PRIVATE -DDEFINE_BR_ENTRY_POINT)
+    target_compile_definitions(sdl3rend PRIVATE -DDEFINE_BR_ENTRY_POINT)
 endif()
 
-target_compile_definitions(vkrend PRIVATE
+target_compile_definitions(sdl3rend PRIVATE
         BREND_DRIVER_VK
         BREND_DRIVER_SUFFIX_UPPER=VK
         BREND_DRIVER_SUFFIX_LOWER=vk
         )
 
-target_include_directories(vkrend PRIVATE
+target_include_directories(sdl3rend PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${REND_COMMON_DIR}
         )
 
-target_link_libraries(vkrend PRIVATE BRender::DDI Vulkan::Loader Vulkan::Headers)
-target_link_libraries(vkrend PUBLIC vkrend-headers)
+target_link_libraries(sdl3rend PRIVATE BRender::DDI Vulkan::Loader Vulkan::Headers)
+target_link_libraries(sdl3rend PUBLIC sdl3rend-headers)
 
-set_target_properties(vkrend PROPERTIES
+set_target_properties(sdl3rend PROPERTIES
         C_STANDARD 11
         C_STANDARD_REQUIRED TRUE
-        EXPORT_NAME "Drivers::VKRend"
+        EXPORT_NAME "Drivers::SDL3Rend"
         FOLDER "BRender/Drivers"
         )
 
@@ -200,11 +200,11 @@ if(BRENDER_ASAN_ENABLED)
     set(CMAKE_C_FLAGS
             "${CMAKE_C_FLAGS}  -fsanitize=undefined -fsanitize=address"
     )
-    target_compile_options(vkrend PUBLIC -fsanitize=address)
-    target_link_options(vkrend
+    target_compile_options(sdl3rend PUBLIC -fsanitize=address)
+    target_link_options(sdl3rend
             BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,undefined
     )
 endif()
 
-add_library(BRender::Drivers::VKRend::Headers ALIAS vkrend-headers)
-add_library(BRender::Drivers::VKRend ALIAS vkrend)
+add_library(BRender::Drivers::SDL3Rend::Headers ALIAS sdl3rend-headers)
+add_library(BRender::Drivers::SDL3Rend ALIAS sdl3rend)

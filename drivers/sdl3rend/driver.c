@@ -1,8 +1,8 @@
 #include "drv.h"
 
-br_device *BR_EXPORT BrDrv1VKBegin(const char *arguments)
+br_device *BR_EXPORT BrDrv1SDL3RendBegin(const char *arguments)
 {
-    br_device *dev = DeviceVKAllocate("vkrend", arguments);
+    br_device *dev = DeviceVKAllocate("sdl3rend", arguments);
     if(!dev)
         return NULL;
 
@@ -12,6 +12,6 @@ br_device *BR_EXPORT BrDrv1VKBegin(const char *arguments)
 #ifdef DEFINE_BR_ENTRY_POINT
 br_device *BR_EXPORT BrDrv1Begin(const char *arguments)
 {
-    return BrDrv1VKBegin(arguments);
+    return BrDrv1SDL3RendBegin(arguments);
 }
 #endif

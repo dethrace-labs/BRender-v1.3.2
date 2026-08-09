@@ -2,10 +2,10 @@
 #define REND_COMMON_H_
 
 /*
- * Shared scaffolding for the glrend/vkrend renderer drivers.
+ * Shared scaffolding for the glrend/sdl3rend renderer drivers.
  *
- * These sources are compiled by each driver with:
- *   -DBREND_DRIVER_GL            (glrend)  or -DBREND_DRIVER_VK (vkrend)
+ * This file is compiled twice — once per GL driver, once per VK driver:
+ *   -DBREND_DRIVER_GL            (glrend)  or -DBREND_DRIVER_VK (sdl3rend)
  *   -DBREND_DRIVER_SUFFIX_UPPER=GL  or =VK
  *   -DBREND_DRIVER_SUFFIX_LOWER=gl  or =vk
  *

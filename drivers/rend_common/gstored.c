@@ -1,5 +1,5 @@
 /*
- * Geometry format for version 1 models — shared glrend/vkrend.
+ * Geometry format for version 1 models — shared glrend/sdl3rend.
  *
  * The two drivers differ only in how they build and free the GPU-side
  * vertex/index storage and in GL's legacy order-table (bucket) divert path,

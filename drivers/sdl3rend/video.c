@@ -569,7 +569,7 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
 
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(hVideo->physicalDevice, &props);
-    BrLogPrintf("VKREND: Vulkan Device = %s\n", props.deviceName);
+    BrLogPrintf("SDL3REND: Vulkan Device = %s\n", props.deviceName);
     hVideo->maxUniformBufferRange = props.limits.maxUniformBufferRange;
     hVideo->minUniformBufferOffsetAlignment = props.limits.minUniformBufferOffsetAlignment;
     hVideo->maxVertexInputBindings = props.limits.maxVertexInputBindings;

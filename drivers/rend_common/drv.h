@@ -43,7 +43,7 @@ extern "C" {
 #if defined(BREND_DRIVER_GL)
 #include "brglrend.h"
 #else
-#include "brvkrend.h"
+#include "brsdl3rend.h"
 #endif
 
 #include "formats.h"

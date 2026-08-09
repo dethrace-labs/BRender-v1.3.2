@@ -1,7 +1,7 @@
 ﻿project(glrend C)
 
-# Embed shared shaders (drivers/rend_common/shaders)
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common/shaders")
+# Embed shared shaders (drivers/rend_common)
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
@@ -67,7 +67,7 @@ set(RENDERER_FILES
 
         ${REND_COMMON_DIR}/onscreen.c
 
-        renderer.c
+        ${REND_COMMON_DIR}/renderer.c
         renderer.h
 
         sbuffer.h
@@ -94,7 +94,7 @@ set(GLREND_FILES
         ${REND_COMMON_DIR}/device.c
         ${REND_COMMON_DIR}/device.h
 
-        devpixmp.c
+        ${REND_COMMON_DIR}/devpixmp.c
         devpixmp.h
         devpmglf.c
 

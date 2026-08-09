@@ -97,7 +97,7 @@ br_error BR_CMETHOD_DECL(br_geometry_v1_model_vk, render)(struct br_geometry_v1_
     static br_boolean warned_imm = BR_FALSE;
 
     if (warned_imm != BR_TRUE) {
-        BR_FATAL0("VKREND: Immediate-mode rendering is not supported.");
+        BR_FATAL0("SDL3REND: Immediate-mode rendering is not supported.");
         warned_imm = BR_TRUE;
     }
 

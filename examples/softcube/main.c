@@ -54,13 +54,13 @@ void BR_CALLBACK _BrBeginHook(void) {
     struct br_device* BR_EXPORT BrDrv1SoftRendBegin(char* arguments);
     struct br_device* BR_EXPORT BrDrv1VirtualFramebufferBegin(char* arguments);
     struct br_device* BR_EXPORT BrDrv1GLBegin(char* arguments);
-    struct br_device* BR_EXPORT BrDrv1VKBegin(char* arguments);
+    struct br_device* BR_EXPORT BrDrv1SDL3RendBegin(char* arguments);
 
     BrDevAddStatic(NULL, BrDrv1SoftPrimBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1SoftRendBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1VirtualFramebufferBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1GLBegin, NULL);
-    BrDevAddStatic(NULL, BrDrv1VKBegin, NULL);
+    BrDevAddStatic(NULL, BrDrv1SDL3RendBegin, NULL);
 }
 
 void BR_CALLBACK _BrEndHook(void) {
@@ -196,7 +196,7 @@ static void* BR_CALLBACK vk_create_surface(void* instance) {
 }
 
 static void BR_CALLBACK vk_swap_buffers(br_pixelmap* pm) {
-    /* The vkrend driver presents through its own swapchain + present queue;
+    /* The sdl3rend driver presents through its own swapchain + present queue;
      * this hook only fires after the driver has already presented. */
 }
 
@@ -235,7 +235,7 @@ static int init_vulkan_renderer() {
     vulkan_props.vk_callbacks.get_map_mode = vk_get_map_mode;
     vulkan_props.vk_callbacks.get_window_size = vk_get_window_size;
 
-    BrDevBeginVar(&screen, "vkrend",
+    BrDevBeginVar(&screen, "sdl3rend",
         BRT_WIDTH_I32, width,
         BRT_HEIGHT_I32, height,
         BRT_VULKAN_CALLBACKS_P, &vulkan_props.vk_callbacks,

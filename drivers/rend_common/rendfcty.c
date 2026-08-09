@@ -40,7 +40,7 @@ br_renderer_facility* BREND_FN(RendererFacility, Init)(br_device* device) {
 #if defined(BREND_DRIVER_GL)
         BR_ERROR("GLREND: Error creating geometry objects.");
 #else
-        BR_ERROR("VKREND: Error creating geometry objects.");
+        BR_ERROR("SDL3REND: Error creating geometry objects.");
 #endif
         BrResFree(self);
         return NULL;
