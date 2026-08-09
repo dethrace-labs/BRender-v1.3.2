@@ -260,7 +260,26 @@ typedef struct _VIDEO {
      * the slot, so uploads may be recorded from anywhere (frame loop or out-of-frame
      * track/asset loading) — the slot is simply unavailable until the GPU is done. */
     VkFence uploadFence[MAX_FRAMES_IN_FLIGHT];
+
+    /* Host-side hooks copied from br_device_vk_callback_procs at VK_VideoOpen.
+     * Optional — the driver tolerates NULL (no map mode, no resize detection),
+     * which is what keeps the driver buildable/runnable outside dethrace. */
+    br_device_vk_get_map_mode_cbfn      *get_map_mode;
+    br_device_vk_get_window_size_cbfn   *get_window_size;
 } VIDEO, *HVIDEO;
+
+static inline int VK_IsMapMode(HVIDEO hVideo) {
+    return hVideo->get_map_mode ? hVideo->get_map_mode() : 0;
+}
+
+static inline void VK_GetWindowSize(HVIDEO hVideo, int* width, int* height) {
+    if (hVideo->get_window_size) {
+        hVideo->get_window_size(width, height);
+    } else {
+        *width = 0;
+        *height = 0;
+    }
+}
 
 HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size_t vert_spv_size,
     const char* frag_spv_data, size_t frag_spv_size,

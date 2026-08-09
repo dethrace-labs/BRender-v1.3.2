@@ -4,6 +4,7 @@
 #include <priminfo.h>
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,9 +35,15 @@ static struct {
     SDL_GLContext gl_context;
 } opengl_props;
 
+// vulkan renderer
+static struct {
+    br_device_vk_callback_procs vk_callbacks;
+} vulkan_props;
+
 static enum {
     eRenderer_software,
     eRenderer_opengl,
+    eRenderer_vulkan,
 } brender_renderer = eRenderer_software;
 
 static const int width = 640;
@@ -47,11 +54,13 @@ void BR_CALLBACK _BrBeginHook(void) {
     struct br_device* BR_EXPORT BrDrv1SoftRendBegin(char* arguments);
     struct br_device* BR_EXPORT BrDrv1VirtualFramebufferBegin(char* arguments);
     struct br_device* BR_EXPORT BrDrv1GLBegin(char* arguments);
+    struct br_device* BR_EXPORT BrDrv1VKBegin(char* arguments);
 
     BrDevAddStatic(NULL, BrDrv1SoftPrimBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1SoftRendBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1VirtualFramebufferBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1GLBegin, NULL);
+    BrDevAddStatic(NULL, BrDrv1VKBegin, NULL);
 }
 
 void BR_CALLBACK _BrEndHook(void) {
@@ -173,6 +182,77 @@ static void destroy_opengl_renderer() {
     SDL_DestroyWindow(window);
 }
 
+static const char** BR_CALLBACK vk_get_instance_extensions(uint32_t* count) {
+    return (const char**)SDL_Vulkan_GetInstanceExtensions((unsigned int*)count);
+}
+
+static void* BR_CALLBACK vk_create_surface(void* instance) {
+    VkSurfaceKHR surface;
+    if (!SDL_Vulkan_CreateSurface(window, (VkInstance)instance, NULL, &surface)) {
+        printf("Failed to create Vulkan surface: %s\n", SDL_GetError());
+        return NULL;
+    }
+    return surface;
+}
+
+static void BR_CALLBACK vk_swap_buffers(br_pixelmap* pm) {
+    /* The vkrend driver presents through its own swapchain + present queue;
+     * this hook only fires after the driver has already presented. */
+}
+
+static void BR_CALLBACK vk_get_viewport(int* x, int* y, float* width_multiplier, float* height_multiplier) {
+    *x = 0;
+    *y = 0;
+    *width_multiplier = 1;
+    *height_multiplier = 1;
+}
+
+static void BR_CALLBACK vk_get_window_size(int* width, int* height) {
+    SDL_GetWindowSize(window, width, height);
+}
+
+static int BR_CALLBACK vk_get_map_mode(void) {
+    return 0;
+}
+
+static int init_vulkan_renderer() {
+    window = SDL_CreateWindow(
+        "BRender v1.3.2 vulkan renderer",
+        width, height,
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+
+    if (window == NULL) {
+        printf("Failed to create Vulkan window: %s\n", SDL_GetError());
+        exit(1);
+    }
+
+    vulkan_props.vk_callbacks.get_proc_address = NULL;
+    vulkan_props.vk_callbacks.get_viewport = vk_get_viewport;
+    vulkan_props.vk_callbacks.swap_buffers = vk_swap_buffers;
+    vulkan_props.vk_callbacks.free = NULL;
+    vulkan_props.vk_callbacks.create_surface = vk_create_surface;
+    vulkan_props.vk_callbacks.get_instance_extensions = vk_get_instance_extensions;
+    vulkan_props.vk_callbacks.get_map_mode = vk_get_map_mode;
+    vulkan_props.vk_callbacks.get_window_size = vk_get_window_size;
+
+    BrDevBeginVar(&screen, "vkrend",
+        BRT_WIDTH_I32, width,
+        BRT_HEIGHT_I32, height,
+        BRT_VULKAN_CALLBACKS_P, &vulkan_props.vk_callbacks,
+        BRT_PIXEL_TYPE_U8, BR_PMT_RGB_565,
+        BR_NULL_TOKEN);
+
+    if (screen == NULL) {
+        printf("Failed to create Vulkan driver\n");
+        exit(1);
+    }
+    return 0;
+}
+
+static void destroy_vulkan_renderer() {
+    SDL_DestroyWindow(window);
+}
+
 int main(int argc, char** argv) {
     const char *working_path = NULL;
     for (int i = 1; i < argc; ) {
@@ -190,7 +270,7 @@ int main(int argc, char** argv) {
         }
         else if (BrStrCmp(argv[i], "--renderer") == 0) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "--renderer needs an argument: software or opengl\n");
+                fprintf(stderr, "--renderer needs an argument: software, opengl or vulkan\n");
                 return 1;
             }
             consumed = 2;
@@ -198,6 +278,8 @@ int main(int argc, char** argv) {
                 brender_renderer = eRenderer_software;
             } else if (BrStrCmp(argv[i + 1], "opengl") == 0) {
                 brender_renderer = eRenderer_opengl;
+            } else if (BrStrCmp(argv[i + 1], "vulkan") == 0) {
+                brender_renderer = eRenderer_vulkan;
             } else {
                 fprintf(stderr, "Unsupported renderer: %s\n", argv[i + 1]);
                 return 1;
@@ -231,6 +313,9 @@ int main(int argc, char** argv) {
         break;
     case eRenderer_opengl:
         init_opengl_renderer();
+        break;
+    case eRenderer_vulkan:
+        init_vulkan_renderer();
         break;
     }
 
@@ -338,6 +423,9 @@ int main(int argc, char** argv) {
         break;
     case eRenderer_opengl:
         destroy_opengl_renderer();
+        break;
+    case eRenderer_vulkan:
+        destroy_vulkan_renderer();
         break;
     }
     SDL_Quit();

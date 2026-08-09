@@ -244,7 +244,8 @@ void DevicePixelmapVKSwapBuffers(br_device_pixelmap* self) {
 }
 
 void DevicePixelmapVKFree(br_device_pixelmap* self) {
-    self->asFront.callbacks.free((br_pixelmap*)self, NULL);
+    if (self->asFront.callbacks.free)
+        self->asFront.callbacks.free((br_pixelmap*)self, NULL);
 }
 
 br_device_pixelmap* DevicePixelmapVKAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {

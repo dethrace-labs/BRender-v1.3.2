@@ -489,6 +489,11 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
     memset(hVideo, 0, sizeof(VIDEO));
     hVideo->res = parent;
 
+    if (callbacks) {
+        hVideo->get_map_mode = callbacks->get_map_mode;
+        hVideo->get_window_size = callbacks->get_window_size;
+    }
+
     VkApplicationInfo appInfo = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
     appInfo.pApplicationName = "dethrace";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -1365,10 +1370,11 @@ void VK_EnsureRecording(HVIDEO hVideo) {
     }
 
     {
-        extern int gHarness_window_width, gHarness_window_height;
-        if (gHarness_window_width > 0 && gHarness_window_height > 0 &&
-            ((uint32_t)gHarness_window_width != hVideo->swapchainExtent.width ||
-             (uint32_t)gHarness_window_height != hVideo->swapchainExtent.height)) {
+        int win_w = 0, win_h = 0;
+        VK_GetWindowSize(hVideo, &win_w, &win_h);
+        if (win_w > 0 && win_h > 0 &&
+            ((uint32_t)win_w != hVideo->swapchainExtent.width ||
+             (uint32_t)win_h != hVideo->swapchainExtent.height)) {
             VK_VideoRecreateSwapchain(hVideo);
             hVideo->mainViewportW = 0;
         }

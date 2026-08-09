@@ -38,6 +38,8 @@ typedef void BR_CALLBACK br_device_vk_free_cbfn(br_pixelmap* pm, void* user);
 typedef void BR_CALLBACK br_device_vk_getviewport_cbfn(int *x, int *y, float *width_multiplier, float *height_multiplier);
 typedef void* BR_CALLBACK br_device_vk_create_surface_cbfn(void* instance);
 typedef const char** BR_CALLBACK br_device_vk_get_instance_extensions_cbfn(uint32_t* count);
+typedef int BR_CALLBACK br_device_vk_get_map_mode_cbfn(void);
+typedef void BR_CALLBACK br_device_vk_get_window_size_cbfn(int *width, int *height);
 
 typedef struct br_device_vk_callback_procs {
     br_device_vk_getprocaddress_cbfn             *get_proc_address;
@@ -46,6 +48,8 @@ typedef struct br_device_vk_callback_procs {
     br_device_vk_free_cbfn                       *free;
     br_device_vk_create_surface_cbfn             *create_surface;
     br_device_vk_get_instance_extensions_cbfn    *get_instance_extensions;
+    br_device_vk_get_map_mode_cbfn               *get_map_mode;
+    br_device_vk_get_window_size_cbfn            *get_window_size;
 } br_device_vk_callback_procs;
 
 #endif

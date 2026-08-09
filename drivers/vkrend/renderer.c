@@ -139,11 +139,10 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneBegin)(br_renderer* self) {
         hVideo->viewportW = (int)vp_w;
         hVideo->viewportH = (int)vp_h;
 
-        extern int gMap_mode;
         if (colour_target != NULL &&
             colour_target->pm_width >= screen->pm_width &&
             colour_target->pm_height >= screen->pm_height &&
-            !gMap_mode) {
+            !VK_IsMapMode(hVideo)) {
             hVideo->mainViewportX = (int)((vp_x - (float)x) / rx);
             hVideo->mainViewportY = (int)((vp_y - (float)y) / ry);
             hVideo->mainViewportW = (int)(vp_w / rx);

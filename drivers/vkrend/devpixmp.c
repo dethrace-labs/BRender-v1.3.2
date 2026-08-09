@@ -2,8 +2,6 @@
 #include "drv.h"
 #include <string.h>
 
-extern int gMap_mode;
-
 static const struct br_device_pixelmap_dispatch devicePixelmapDispatch;
 
 static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_size, void* block, struct br_tv_template_entry* tep) {
@@ -501,7 +499,7 @@ static void VK_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
     br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
 
     if (bpp == 2) {
-        if (gMap_mode) {
+        if (VK_IsMapMode(hVideo)) {
             int row_w = self->pm_row_bytes / 2;
             for (int i = 0; i < hVideo->dimAreaCount; i++) {
                 int ax = hVideo->dimAreas[i].x, ay = hVideo->dimAreas[i].y;

@@ -236,8 +236,7 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
             // instruments) lands on the magenta and still reaches the swap
             // composite. Skipped in map mode: the flush-time dimArea dimming
             // (devpixmp.c) dims the map image instead.
-            extern int gMap_mode;
-            if (!gMap_mode && hVideo->lockedPixels != NULL &&
+            if (!VK_IsMapMode(hVideo) && hVideo->lockedPixels != NULL &&
                 hVideo->pm_type == BR_PMT_RGB_565) {
                 VK_PurgeRect(2, BR_COLOUR_565(31, 0, 31), hVideo->lockedPixels,
                     hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
