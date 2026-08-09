@@ -77,8 +77,8 @@ static void BR_CMETHOD_DECL(br_renderer_vk, sceneBegin)(br_renderer* self) {
         }
     }
 
-    StateVKReset(&self->state.cache);
-    StateVKUpdateScene(&self->state.cache, self->state.current);
+    BREND_FN(State, Reset)(&self->state.cache);
+    BREND_FN(State, UpdateScene)(&self->state.cache, self->state.current);
 
     hVideo->currentSceneOffset = hVideo->sceneSlotIndex * hVideo->sceneSlotSize;
     hVideo->sceneSlotIndex++;

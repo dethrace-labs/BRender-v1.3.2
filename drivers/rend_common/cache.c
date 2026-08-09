@@ -1,6 +1,7 @@
 #include "brassert.h"
 
 #include "drv.h"
+#include "rend_common.h"
 
 #include "shortcut.h"
 
@@ -8,7 +9,6 @@
 
 /*
 ** Process each light, doing as much once-per-frame work as possible.
-** - For work that cannot be done here, see GLSTATE_ProcessActiveLights()
 */
 static void ProcessSceneLights(state_cache* cache, const state_light* lights) {
     cache->scene.num_lights = 0;
@@ -65,6 +65,25 @@ static void ProcessClipPlanes(state_cache* cache, const state_clip* clips) {
     }
 }
 
+#if defined(BREND_DRIVER_VK)
+/* Vulkan clip space has Z in [0, w] and Y down, so the BRender projection
+ * matrix needs a z-column flip (perspective only) and a y-row flip. */
+static void negate_z_column(br_matrix4* m) {
+    m->m[0][2] = -m->m[0][2];
+    m->m[1][2] = -m->m[1][2];
+    m->m[2][2] = -m->m[2][2];
+    m->m[3][2] = -m->m[3][2];
+}
+
+static void negate_y_row(br_matrix4* m) {
+    m->m[1][0] = -m->m[1][0];
+    m->m[1][1] = -m->m[1][1];
+    m->m[1][2] = -m->m[1][2];
+    m->m[1][3] = -m->m[1][3];
+    m->m[3][1] = -m->m[3][1];
+}
+#endif
+
 /*
 ** Update the per-model matrices.
 **
@@ -84,7 +103,14 @@ static void UpdateMatrices(state_cache* cache, state_matrix* matrix) {
     BrMatrix4Copy(&cache->model.p_br, &matrix->view_to_screen);
     BrMatrix4Copy(&cache->model.p, &matrix->view_to_screen);
 
+#if defined(BREND_DRIVER_GL)
     VIDEOI_D3DtoGLProjection(&cache->model.p);
+#elif defined(BREND_DRIVER_VK)
+    if (matrix->view_to_screen_hint == BRT_PERSPECTIVE) {
+        negate_z_column(&cache->model.p);
+    }
+    negate_y_row(&cache->model.p);
+#endif
 
     /*
      * ModelView Matrix
@@ -167,15 +193,17 @@ static br_vector4 EyeInModel(state_cache* cache, const state_matrix* matrix) {
     return eye_m;
 }
 
-void StateGLUpdateModel(state_cache* cache, state_matrix* matrix) {
+void BREND_FN(State, UpdateModel)(state_cache* cache, state_matrix* matrix) {
     UpdateMatrices(cache, matrix);
 
     cache->model.eye_m = EyeInModel(cache, matrix);
 }
 
-void StateGLUpdateScene(state_cache* cache, state_stack* state) {
+void BREND_FN(State, UpdateScene)(state_cache* cache, state_stack* state) {
+#if defined(BREND_DRIVER_GL)
     ASSERT(state->output.colour);
     cache->fbo = state->output.colour->asBack.glFbo;
+#endif
 
     BrVector4Set(&cache->scene.eye_view, 0.0f, 0.0f, 1.0f, 0.0f);
 
@@ -187,15 +215,6 @@ void StateGLUpdateScene(state_cache* cache, state_stack* state) {
 }
 
 static void ResetCacheLight(shader_data_light* alp) {
-    /* NB: For future reference, if shit crashes check that we're aligned properly.
-    uintptr_t p = reinterpret_cast<uintptr_t>(&hLight->position);
-    if(p % 16 != 0)
-    {
-        fprintf(stderr, "not aligned\n");
-        BrDebugBreak();
-    }
-    */
-
     BrVector4Set(&alp->position, 0, 0, 0, 0);
     BrVector4Set(&alp->direction, 0, 0, 0, 0);
     BrVector4Set(&alp->half, 0, 0, 0, 0);
@@ -204,7 +223,7 @@ static void ResetCacheLight(shader_data_light* alp) {
     BrVector2Set(&alp->spot_angles, 0, 0);
 }
 
-void StateGLReset(state_cache* cache) {
+void BREND_FN(State, Reset)(state_cache* cache) {
     BrMatrix4Identity(&cache->model.p_br);
     BrMatrix4Identity(&cache->model.p);
     BrMatrix4Identity(&cache->model.mv);
@@ -216,8 +235,9 @@ void StateGLReset(state_cache* cache) {
     BrVector4Set(&cache->scene.eye_view, 0, 0, 0, 0);
 
     for (int i = 0; i < BR_ASIZE(cache->scene.lights); ++i) {
-        ResetCacheLight(cache->scene.lights + i);
+        ResetCacheLight(&cache->scene.lights[i]);
     }
 
     cache->scene.num_lights = 0;
+    cache->scene.num_clip_planes = 0;
 }

@@ -3,7 +3,7 @@
 # Usage:
 #   cmake -DINPUT=in.glsl -DOUTPUT=out.glsl -DKEEP=VK -P FilterShader.cmake
 #
-# The shared shaders in drivers/shaders/ mark per-backend sections with
+# The shared shaders in drivers/rend_common/shaders/ mark per-backend sections with
 # ##ifdef VK / ##ifdef GL_ES / ##ifdef GL_CORE / ##else / ##endif markers
 # (double-hash so that neither the GLSL compiler nor glslang ever sees them).
 # The GL driver strips these in C (glrend/video.c preprocessShader); this

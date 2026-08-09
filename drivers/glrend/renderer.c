@@ -92,8 +92,8 @@ static void BR_CMETHOD_DECL(br_renderer_gl, sceneBegin)(br_renderer* self) {
         BR_ERROR("Can't render without a destination");
     }
 
-    StateGLReset(&self->state.cache);
-    StateGLUpdateScene(&self->state.cache, self->state.current);
+    BREND_FN(State, Reset)(&self->state.cache);
+    BREND_FN(State, UpdateScene)(&self->state.cache, self->state.current);
 
     glUseProgram(hVideo->brenderProgram.program);
     glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);

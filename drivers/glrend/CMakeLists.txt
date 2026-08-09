@@ -1,7 +1,7 @@
 ﻿project(glrend C)
 
-# Embed shared shaders (drivers/shaders)
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shaders")
+# Embed shared shaders (drivers/rend_common/shaders)
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common/shaders")
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
@@ -28,7 +28,10 @@ add_custom_command(
 set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
 
 set(GLSTATE_FILES
-        cache.c
+        ${REND_COMMON_DIR}/cache.c
+        ${REND_COMMON_DIR}/modeldata.c
+        ${REND_COMMON_DIR}/modelrender.c
+        ${REND_COMMON_DIR}/gstored.c
         ${REND_COMMON_DIR}/state.c
         ${REND_COMMON_DIR}/state.h
         ${REND_COMMON_DIR}/state_clip.c
@@ -59,7 +62,6 @@ set(RENDERER_FILES
         gv1model.c
         gv1model.h
 
-        gstored.c
         gstored.h
         v1model.c
 

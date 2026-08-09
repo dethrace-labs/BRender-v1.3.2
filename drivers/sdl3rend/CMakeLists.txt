@@ -9,9 +9,9 @@ if(GLSL_COMPILER)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
-# Shared shaders live in drivers/shaders with ##ifdef VK/GL_ES/GL_CORE markers.
+# Shared shaders live in drivers/rend_common/shaders with ##ifdef VK/GL_ES/GL_CORE markers.
 # Filter them for Vulkan (plain GLSL, literal-first #version 450) before compiling.
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shaders")
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common/shaders")
 
 set(SPV_GENERATED)
 foreach(spv_file
@@ -65,7 +65,10 @@ endforeach()
 set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
 
 set(VKSTATE_FILES
-        cache.c
+        ${REND_COMMON_DIR}/cache.c
+        ${REND_COMMON_DIR}/modeldata.c
+        ${REND_COMMON_DIR}/modelrender.c
+        ${REND_COMMON_DIR}/gstored.c
         ${REND_COMMON_DIR}/state.c
         ${REND_COMMON_DIR}/state.h
         ${REND_COMMON_DIR}/state_clip.c
@@ -90,7 +93,6 @@ set(RENDERER_FILES
         gv1model.c
         gv1model.h
 
-        gstored.c
         gstored.h
         v1model.c
 

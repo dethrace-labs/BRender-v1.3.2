@@ -61,7 +61,14 @@ void StateVKDefault(state_all* state, uint32_t mask);
 
 void StateVKUpdateScene(state_cache* cache, state_stack* state);
 void StateVKUpdateModel(state_cache* cache, state_matrix* matrix);
+void StateVKFillModel(state_stack* state, uint32_t states, shader_data_model* model);
 void StateVKCopy(state_stack* dst, state_stack* src, uint32_t mask);
+
+/*
+ * v1model.c
+ */
+void StoredVKApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, br_buffer_stored* default_texture, VkWriteDescriptorSet* writes, int* writeCount, VkDescriptorImageInfo* imageInfo);
+br_boolean VK_ComputeScreenAABB(const br_matrix4* mvp, struct v11group* gp, HVIDEO hVideo, br_device_pixelmap* colour_target, br_rectangle* out);
 
 /*
  * gstored.c

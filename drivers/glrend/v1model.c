@@ -3,6 +3,7 @@
  */
 #include "brassert.h"
 #include "drv.h"
+#include "rend_common.h"
 #include <string.h>
 
 static void apply_blend_mode(state_stack* self) {
@@ -112,14 +113,18 @@ static void apply_depth_properties(state_stack* state, uint32_t states) {
 // take a pixelmap and palette and convert 8 bit to 32 bit just in time
 static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
     uint32_t* buffer = BrScratchAllocate(sizeof(uint32_t) * src->width * src->height);
-    uint32_t* buffer_ptr = buffer;
+    uint8_t* buffer_ptr = (uint8_t*)buffer;
     br_uint_8* src_px = src->pixels;
 
     for (int y = 0; y < src->height; y++) {
         for (int x = 0; x < src->width; x++) {
             int index = src_px[y * src->row_bytes + x];
-            *buffer_ptr = (0xff000000 | BR_BLU(palette[index]) << 16 | BR_GRN(palette[index]) << 8 | BR_RED(palette[index]));
-            buffer_ptr++;
+            br_uint_32 entry = palette[index];
+            buffer_ptr[0] = BR_RED(entry);
+            buffer_ptr[1] = BR_GRN(entry);
+            buffer_ptr[2] = BR_BLU(entry);
+            buffer_ptr[3] = 0xff;
+            buffer_ptr += 4;
         }
     }
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, src->width, src->height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
@@ -128,11 +133,13 @@ static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
     GL_CHECK_ERROR();
 }
 
-static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default) {
+void StoredGLApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default) {
     br_boolean blending_on;
 
     /* Only use the states we want (if valid). */
     states = state->valid & states;
+
+    BREND_FN(State, FillModel)(state, states, model);
 
     if (states & MASK_STATE_CULL) {
         /*
@@ -167,42 +174,6 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
 
     if (states & MASK_STATE_SURFACE) {
         glActiveTexture(GL_TEXTURE0);
-
-        if (state->surface.colour_source == BRT_SURFACE) {
-            br_uint_32 colour = state->surface.colour;
-            float r = BR_RED(colour) / 255.0f;
-            float g = BR_GRN(colour) / 255.0f;
-            float b = BR_BLU(colour) / 255.0f;
-            //
-            BrVector4Set(&model->surface_colour, r, g, b, state->surface.opacity);
-        } else {
-            BrVector4Set(&model->surface_colour, 0.0f, 1.0f, 1.0f, state->surface.opacity);
-        }
-
-        model->ka = state->surface.ka;
-        model->ks = state->surface.ks;
-        model->kd = state->surface.kd;
-        model->power = state->surface.power;
-
-        switch (state->surface.mapping_source) {
-        case BRT_GEOMETRY_MAP:
-        default:
-            model->uv_source = 0;
-            break;
-
-        case BRT_ENVIRONMENT_LOCAL:
-            model->uv_source = 1;
-            break;
-
-        case BRT_ENVIRONMENT_INFINITE:
-            model->uv_source = 2;
-            break;
-        }
-
-        BrMatrix4Copy23(&model->map_transform, &state->surface.map_transform);
-
-        model->prelit = state->surface.prelighting;
-        model->lighting = state->surface.lighting;
     }
 
     if (states & MASK_STATE_PRIMITIVE) {
@@ -229,7 +200,6 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
                 state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
             }
 
-            // glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
             model->disable_texture = 0;
 
         } else {
@@ -238,9 +208,6 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
             model->disable_colour_key = 0;
             glBindTexture(GL_TEXTURE_2D, tex_default);
             model->disable_texture = 1;
-            // BrVector4Set(&model->surface_colour, 0, 1, 0, 1);
-            // glBindTexture(GL_TEXTURE_2D, 27);
-            // glUniform1i(hVideo->brenderProgram.uniforms.main_texture, hVideo->brenderProgram.mainTextureBinding);
         }
 
         GLenum minFilter, magFilter;
@@ -279,83 +246,7 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
         } else {
             glDisable(GL_BLEND);
         }
-
-        model->fog_enabled = state->prim.fog_enabled;
-        BrVector4Set(&model->fog_colour, BR_RED(state->prim.fog_colour) / 255.0f, BR_GRN(state->prim.fog_colour) / 255.0f, BR_BLU(state->prim.fog_colour) / 255.0f, 0.0f);
-        model->fog_min = state->prim.fog_min;
-        model->fog_max = state->prim.fog_max;
     }
     apply_depth_properties(state, states);
-    GL_CHECK_ERROR();
-}
-
-void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const gl_groupinfo* groupinfo) {
-    state_cache* cache = &renderer->state.cache;
-    br_device_pixelmap* screen = renderer->pixelmap->screen;
-    HVIDEO hVideo = &screen->asFront.video;
-    br_renderer_state_stored* stored = groupinfo->stored;
-    br_boolean unlit;
-    shader_data_model model = {0};
-
-    /* Update the per-model cache (matrices and lights) */
-    StateGLUpdateModel(cache, &renderer->state.current->matrix);
-
-#if DEBUG
-    { /* Check that sceneBegin() actually did it's shit. */
-
-        /* Program */
-        GLint p;
-        glGetIntegerv(GL_CURRENT_PROGRAM, &p);
-        ASSERT(p == hVideo->brenderProgram.program);
-
-        /* FBO */
-        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &p);
-        ASSERT(p == renderer->state.current->output.colour->asBack.glFbo);
-
-        /* Model UBO */
-        glGetIntegerv(GL_UNIFORM_BUFFER_BINDING, &p);
-        ASSERT(p == hVideo->brenderProgram.uboModel);
-    }
-#endif
-
-    model.projection_brender = cache->model.p_br;
-    model.projection = cache->model.p;
-    model.model_view = cache->model.mv;
-    model.mvp = cache->model.mvp;
-    model.normal_matrix = cache->model.normal;
-    model.environment_matrix = cache->model.environment;
-    model.eye_m = cache->model.eye_m;
-
-    glBindVertexArray(self->gl_vao);
-
-    if (stored) {
-        // jeff: disable culling to match behavior of existing hardware drivers
-        apply_stored_properties(hVideo, &stored->state, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE /*| MASK_STATE_CULL */,
-            &model, screen->asFront.tex_white);
-    } else {
-        /* If there's no stored state, apply all states from global. */
-        GLuint default_tex;
-        if (groupinfo->default_state->state.prim.colour_map) {
-            default_tex = groupinfo->default_state->state.prim.colour_map->gl_tex;
-        } else {
-            default_tex = renderer->pixelmap->asFront.tex_white;
-        }
-
-        renderer->state.current->surface = groupinfo->default_state->state.surface;
-        renderer->state.current->prim = groupinfo->default_state->state.prim;
-        renderer->state.current->cull = groupinfo->default_state->state.cull;
-        // Jeff: disable culling to match behavior of existing hardware drivers
-        apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE /*| MASK_STATE_CULL */, &model, default_tex);
-    }
-
-    BrVector4Set(&model.clear_colour, 0.0f, 0.0f, 0.0f, 0.0f);
-
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(model), &model, GL_STATIC_DRAW);
-    glDrawElements(GL_TRIANGLES, groupinfo->count, GL_UNSIGNED_SHORT, groupinfo->offset);
-
-    renderer->scene_stats.face_group_count++;
-    renderer->scene_stats.triangles_rendered_count += groupinfo->group->nfaces;
-    renderer->scene_stats.triangles_drawn_count += groupinfo->group->nfaces;
-    renderer->scene_stats.vertices_rendered_count += groupinfo->group->nfaces * 3;
     GL_CHECK_ERROR();
 }

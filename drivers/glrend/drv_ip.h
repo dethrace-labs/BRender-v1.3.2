@@ -129,7 +129,12 @@ void StateGLDefault(state_all* state, uint32_t mask);
 
 void StateGLUpdateScene(state_cache* cache, state_stack* state);
 void StateGLUpdateModel(state_cache* cache, state_matrix* matrix);
+void StateGLFillModel(state_stack* state, uint32_t states, shader_data_model* model);
 void StateGLCopy(state_stack* dst, state_stack* src, uint32_t mask);
+/*
+ * v1model.c
+ */
+void StoredGLApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default);
 
 /*
  * renderer.c
