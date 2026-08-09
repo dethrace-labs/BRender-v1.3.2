@@ -27,7 +27,7 @@
 #if defined(BREND_DRIVER_GL)
 void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const gl_groupinfo* groupinfo)
 #else
-void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_groupinfo* groupinfo)
+void StoredSDL3RENDRenderGroup(br_geometry_stored* self, br_renderer* renderer, sdl3_groupinfo* groupinfo)
 #endif
 {
     state_cache* cache = &renderer->state.cache;
@@ -103,95 +103,61 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
     }
 #else
     {
-        VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
+        SDL_GPUTexture* texture = NULL;
+        SDL_GPUSampler* sampler = NULL;
 
-        VkWriteDescriptorSet writes[3] = {0};
-        VkDescriptorImageInfo imageInfo = {0};
-        int writeCount = 0;
-
-        StoredVKApplyProperties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE,
-            &model, NULL, writes, &writeCount, &imageInfo);
-
-        VkDeviceSize modelOffset = hVideo->currentModelOffset;
-        VkDeviceSize sceneDataSize = sizeof(renderer->state.cache.scene);
-        VkDeviceSize modelDataSize = sizeof(model);
-        VK_UpdateModelUBOAtOffset(hVideo, &renderer->state.cache.scene, sceneDataSize, modelOffset);
-        VK_UpdateModelUBOAtOffset(hVideo, &model, modelDataSize, modelOffset + hVideo->sceneSlotSize);
-        hVideo->currentModelOffset += hVideo->modelSlotSize;
-        if (hVideo->currentModelOffset >= hVideo->modelBufferCapacity)
-            hVideo->currentModelOffset = 0;
+        StoredSDL3RENDApplyProperties(hVideo, renderer->state.current,
+            MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE, &model, NULL, &texture, &sampler);
 
         br_boolean blending_on = (renderer->state.current->prim.flags & PRIMF_BLEND) ||
             (renderer->state.current->prim.colour_map != NULL && renderer->state.current->prim.colour_map->blended);
         br_boolean depth_off = renderer->state.current->surface.force_front || renderer->state.current->surface.force_back;
 
-        VkPipeline pipeline = blending_on
+        SDL_GPUGraphicsPipeline* pipeline = blending_on
             ? (depth_off ? hVideo->brenderBlendPipelineNoDepth : hVideo->brenderBlendPipeline)
             : (depth_off ? hVideo->brenderPipelineNoDepth : hVideo->brenderPipeline);
         if (pipeline != hVideo->lastPipeline) {
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+            SDL_BindGPUGraphicsPipeline(hVideo->currentPass, pipeline);
             hVideo->lastPipeline = pipeline;
         }
 
         /* Small ring models (sub-allocated from the per-frame dynamic rings in
          * build_vbo/build_ibo) are only valid within the frame they were rebuilt:
-         * the ring cursors reset in VK_EnsureRecording, so a ring model that
+         * the ring cursors reset in SDL3REND_EnsureRecording, so a ring model that
          * persists across frames references clobbered data. Re-upload the geometry
          * from the v11model into the current frame's ring slot when stale. Models
          * rebuilt this frame already stamped ringEpoch == frameEpoch and skip. */
-        if ((self->vboMemory == VK_NULL_HANDLE || self->iboMemory == VK_NULL_HANDLE) &&
-            self->ringEpoch != hVideo->frameEpoch) {
-            VK_RefreshRingStored(hVideo, self);
+        if (self->inDynamicRing && self->ringEpoch != hVideo->frameEpoch) {
+            SDL3REND_RefreshRingStored(hVideo, self);
         }
 
         if (self->vbo != hVideo->lastVbo || self->vboOffset != hVideo->lastVboOffset ||
             self->ibo != hVideo->lastIbo || self->iboOffset != hVideo->lastIboOffset) {
-            VkDeviceSize vboOffset = self->vboOffset;
-            vkCmdBindVertexBuffers(cmd, 0, 1, &self->vbo, &vboOffset);
-            vkCmdBindIndexBuffer(cmd, self->ibo, self->iboOffset, VK_INDEX_TYPE_UINT16);
+            SDL_GPUBufferBinding vb = { self->vbo, (Uint32)self->vboOffset };
+            SDL_BindGPUVertexBuffers(hVideo->currentPass, 0, &vb, 1);
+            SDL_GPUBufferBinding ib = { self->ibo, (Uint32)self->iboOffset };
+            SDL_BindGPUIndexBuffer(hVideo->currentPass, &ib, SDL_GPU_INDEXELEMENTSIZE_16BIT);
             hVideo->lastVbo = self->vbo;
             hVideo->lastVboOffset = self->vboOffset;
             hVideo->lastIbo = self->ibo;
             hVideo->lastIboOffset = self->iboOffset;
         }
 
-        int descriptorStart = 0;
-        VkWriteDescriptorSet pushWrites[3] = {0};
-        int pushCount = 0;
-        if (imageInfo.imageView == hVideo->lastTextureView && imageInfo.sampler == hVideo->lastTextureSampler) {
-            descriptorStart = 1;
-        } else {
-            hVideo->lastTextureView = imageInfo.imageView;
-            hVideo->lastTextureSampler = imageInfo.sampler;
+        if (texture != NULL) {
+            if (texture != hVideo->lastTexture || sampler != hVideo->lastSampler) {
+                SDL_GPUTextureSamplerBinding tsb = { texture, sampler };
+                SDL_BindGPUFragmentSamplers(hVideo->currentPass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+                hVideo->lastTexture = texture;
+                hVideo->lastSampler = sampler;
+            }
         }
 
-        VkDescriptorBufferInfo sceneBufferInfo = {hVideo->brenderDescriptors.modelBuffer, modelOffset, sceneDataSize};
-        VkDescriptorBufferInfo modelBufferInfo = {hVideo->brenderDescriptors.modelBuffer, modelOffset + hVideo->sceneSlotSize, modelDataSize};
+        SDL3REND_PushModel(hVideo, &model, sizeof(model));
 
-        if (descriptorStart == 0) {
-            pushWrites[pushCount++] = writes[0];
-        }
+        SDL_DrawGPUIndexedPrimitives(hVideo->currentPass, groupinfo->count, 1,
+            groupinfo->offset / sizeof(br_uint_16), 0, 0);
 
-        pushWrites[pushCount].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        pushWrites[pushCount].dstBinding = 1;
-        pushWrites[pushCount].descriptorCount = 1;
-        pushWrites[pushCount].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        pushWrites[pushCount].pBufferInfo = &sceneBufferInfo;
-        pushCount++;
-
-        pushWrites[pushCount].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        pushWrites[pushCount].dstBinding = 2;
-        pushWrites[pushCount].descriptorCount = 1;
-        pushWrites[pushCount].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        pushWrites[pushCount].pBufferInfo = &modelBufferInfo;
-        pushCount++;
-
-        hVideo->pfnPushDescriptorSet(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, hVideo->brenderPipelineLayout,
-            0, pushCount, pushWrites);
-
-        vkCmdDrawIndexed(cmd, groupinfo->count, 1, groupinfo->offset / sizeof(br_uint_16), 0, 0);
-
-        // Dim quad detection and screen-space AABB tracking for overlay compositing.
+        /* Dim quad detection and screen-space AABB tracking for overlay compositing. */
         br_boolean is_dim = (renderer->state.current->surface.colour == 0 &&
             blending_on && depth_off &&
             renderer->state.current->prim.colour_map == NULL);
@@ -200,20 +166,20 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
             br_matrix4 combined;
             BrMatrix4Mul(&combined, &cache->model.p, &cache->model.mv);
             br_rectangle aabb;
-            if (VK_ComputeScreenAABB(&combined, groupinfo->group, hVideo, renderer->state.current->output.colour, &aabb)) {
+            if (SDL3REND_ComputeScreenAABB(&combined, groupinfo->group, hVideo, renderer->state.current->output.colour, &aabb)) {
                 int di = hVideo->dimAreaCount++;
                 hVideo->dimAreas[di] = aabb;
 
-                // The dim quad is rendered GPU-side. Purge its screen rect from the
-                // CPU locked buffer so the swap-time overlay composite doesn't re-draw
-                // the pre-dim 2D content (cockpit dashboard) ON TOP of the dim quad.
-                // Content written into the buffer AFTER this dim (headup text,
-                // instruments) lands on the magenta and still reaches the swap
-                // composite. Skipped in map mode: the flush-time dimArea dimming
-                // (devpixmp.c) dims the map image instead.
-                if (!VK_IsMapMode(hVideo) && hVideo->lockedPixels != NULL &&
+                /* The dim quad is rendered GPU-side. Purge its screen rect from the
+                 * CPU locked buffer so the swap-time overlay composite doesn't re-draw
+                 * the pre-dim 2D content (cockpit dashboard) ON TOP of the dim quad.
+                 * Content written into the buffer AFTER this dim (headup text,
+                 * instruments) lands on the magenta and still reaches the swap
+                 * composite. Skipped in map mode: the flush-time dimArea dimming
+                 * (devpixmp.c) dims the map image instead. */
+                if (!SDL3REND_IsMapMode(hVideo) && hVideo->lockedPixels != NULL &&
                     hVideo->pm_type == BR_PMT_RGB_565) {
-                    VK_PurgeRect(2, BR_COLOUR_565(31, 0, 31), hVideo->lockedPixels,
+                    SDL3REND_PurgeRect(2, BR_COLOUR_565(31, 0, 31), hVideo->lockedPixels,
                         hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
                         aabb.x, aabb.y, aabb.w, aabb.h);
                 }
@@ -227,7 +193,7 @@ void StoredVKRenderGroup(br_geometry_stored* self, br_renderer* renderer, vk_gro
             br_matrix4 combined;
             BrMatrix4Mul(&combined, &cache->model.p, &cache->model.mv);
             br_rectangle aabb;
-            if (VK_ComputeScreenAABB(&combined, groupinfo->group, hVideo, renderer->state.current->output.colour, &aabb)) {
+            if (SDL3REND_ComputeScreenAABB(&combined, groupinfo->group, hVideo, renderer->state.current->output.colour, &aabb)) {
                 hVideo->pratcamAreaCount = 1;
                 hVideo->pratcamArea = aabb;
             }

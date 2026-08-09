@@ -1,486 +1,463 @@
-#include "brassert.h"
-#include "drv.h"
+/*
+ * SDL3 GPU video driver for BRender.
+ *
+ * Rendering model: every render pass targets an offscreen
+ * (transferTexture + depthTexture) so the depth attachment and all pipeline
+ * formats are fixed for the lifetime of the window; the frame is blitted to
+ * the swapchain texture at present. SDL3 GPU inserts the necessary layout
+ * transitions, so this driver needs no explicit barriers.
+ */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "vk_shaders.h"
+#include "drv.h"
+#include "drv_ip.h"
+#include "brsdl3rend.h"
+#include "gstored.h"
+#include "sdl3_shaders.h"
+#include "video.h"
 
-#define VK_CHECK_RESULT(result) VK_AssertOrWarnIfError(result, __FILE__, __LINE__, #result)
+#define SDL3REND_DEFAULT_RING_VBO_CAPACITY (512 * 1024)
+#define SDL3REND_DEFAULT_RING_IBO_CAPACITY (256 * 1024)
+#define SDL3REND_DEFAULT_STAGING_CAPACITY  (16 * 1024 * 1024)
 
-static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-    VkDebugUtilsMessageTypeFlagsEXT type,
-    const VkDebugUtilsMessengerCallbackDataEXT* cbData, void* userData) {
-    (void)type;
-    (void)userData;
-    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        BrWarning("VULKAN: %s\n", cbData->pMessage);
-    }
-    return VK_FALSE;
+#define SDL3REND_OVERLAY_QUAD_VERTS   4
+#define SDL3REND_OVERLAY_QUAD_INDICES 6
+
+static HVIDEO g_sdl3rend_video = NULL;
+static void (*g_sdl3rend_external_cb)(void* cmd, void* ud) = NULL;
+static void* g_sdl3rend_external_ud = NULL;
+
+static void WaitFence(SDL_GPUDevice* device, SDL_GPUFence* fence) {
+    if (!fence) return;
+    SDL_GPUFence* fences[1] = { fence };
+    SDL_WaitForGPUFences(device, true, fences, 1);
+    SDL_ReleaseGPUFence(device, fence);
 }
 
-static int ratePhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface,
-    uint32_t* graphicsFamily, uint32_t* presentFamily) {
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, NULL);
-    VkQueueFamilyProperties* families = malloc(sizeof(VkQueueFamilyProperties) * queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, families);
+int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const void* hostData, size_t size);
 
-    int foundGraphics = 0, foundPresent = 0;
-    for (uint32_t i = 0; i < queueFamilyCount; i++) {
-        if (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            *graphicsFamily = i;
-            foundGraphics = 1;
-        }
-        VkBool32 presentSupport = VK_FALSE;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        if (presentSupport) {
-            *presentFamily = i;
-            foundPresent = 1;
-        }
+static int CreateOffscreenTargets(HVIDEO hVideo) {
+    SDL_GPUTextureCreateInfo ti = {0};
+    ti.type = SDL_GPU_TEXTURETYPE_2D;
+    ti.format = hVideo->swapchainTextureFormat;
+    ti.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
+    ti.width = hVideo->windowWidth;
+    ti.height = hVideo->windowHeight;
+    ti.layer_count_or_depth = 1;
+    ti.num_levels = 1;
+    ti.sample_count = SDL_GPU_SAMPLECOUNT_1;
+
+    hVideo->transferTexture = SDL_CreateGPUTexture(hVideo->device, &ti);
+    if (!hVideo->transferTexture) {
+        BR_FATAL("SDL3GPU: Failed to create transfer texture.");
+        return 0;
     }
-    free(families);
 
-    if (!foundGraphics || !foundPresent)
+    ti.format = hVideo->depthFormat;
+    ti.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
+    hVideo->depthTexture = SDL_CreateGPUTexture(hVideo->device, &ti);
+    if (!hVideo->depthTexture) {
+        BR_FATAL("SDL3GPU: Failed to create depth texture.");
+        return 0;
+    }
+    return 1;
+}
+
+static int CreateSamplers(HVIDEO hVideo) {
+    SDL_GPUSamplerCreateInfo si = {0};
+    si.min_filter = SDL_GPU_FILTER_LINEAR;
+    si.mag_filter = SDL_GPU_FILTER_LINEAR;
+    si.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
+    si.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    si.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    si.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    si.compare_op = SDL_GPU_COMPAREOP_INVALID;
+    si.max_anisotropy = 0.0f;
+    si.enable_anisotropy = false;
+
+    hVideo->samplerLinear = SDL_CreateGPUSampler(hVideo->device, &si);
+    if (!hVideo->samplerLinear) {
+        BR_FATAL("SDL3GPU: Failed to create linear sampler.");
+        return 0;
+    }
+
+    si.min_filter = SDL_GPU_FILTER_NEAREST;
+    si.mag_filter = SDL_GPU_FILTER_NEAREST;
+    si.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
+    hVideo->samplerNearest = SDL_CreateGPUSampler(hVideo->device, &si);
+    if (!hVideo->samplerNearest) {
+        BR_FATAL("SDL3GPU: Failed to create nearest sampler.");
+        return 0;
+    }
+
+    hVideo->overlaySampler = hVideo->samplerLinear;
+    return 1;
+}
+
+static int CreateDefaultTexture(HVIDEO hVideo) {
+    SDL_GPUTextureCreateInfo ti = {0};
+    ti.type = SDL_GPU_TEXTURETYPE_2D;
+    ti.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+    ti.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+    ti.width = 1;
+    ti.height = 1;
+    ti.layer_count_or_depth = 1;
+    ti.num_levels = 1;
+    ti.sample_count = SDL_GPU_SAMPLECOUNT_1;
+
+    hVideo->defaultTexture = SDL_CreateGPUTexture(hVideo->device, &ti);
+    if (!hVideo->defaultTexture) {
+        BR_FATAL("SDL3GPU: Failed to create default texture.");
+        return 0;
+    }
+
+    const uint32_t white = 0xFFFFFFFF;
+    if (SDL3REND_UploadBufferToImage(hVideo, hVideo->defaultTexture, 1, 1, 0, 0,
+            &white, sizeof(white)) != 0)
         return 0;
 
-    uint32_t extCount = 0;
-    vkEnumerateDeviceExtensionProperties(device, NULL, &extCount, NULL);
-    VkExtensionProperties* exts = malloc(sizeof(VkExtensionProperties) * extCount);
-    vkEnumerateDeviceExtensionProperties(device, NULL, &extCount, exts);
+    return 1;
+}
 
-    int hasSwapchain = 0;
-    for (uint32_t i = 0; i < extCount; i++) {
-        if (strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
-            hasSwapchain = 1;
-            break;
-        }
+static int CreateOverlayQuad(HVIDEO hVideo) {
+    float quad[] = {
+         1.0f, -1.0f,   1.0f, 1.0f,
+         1.0f,  1.0f,   1.0f, 0.0f,
+        -1.0f,  1.0f,   0.0f, 0.0f,
+        -1.0f, -1.0f,   0.0f, 1.0f,
+    };
+    uint16_t quadIdx[] = {0, 1, 3, 1, 2, 3};
+
+    SDL_GPUBufferCreateInfo bi = {0};
+    bi.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+    bi.size = sizeof(quad);
+    hVideo->overlayQuadVbo = SDL_CreateGPUBuffer(hVideo->device, &bi);
+    if (!hVideo->overlayQuadVbo) {
+        BR_FATAL("SDL3GPU: Failed to create overlay quad VBO.");
+        return 0;
     }
-    free(exts);
 
-    if (!hasSwapchain)
+    bi.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+    bi.size = sizeof(quadIdx);
+    hVideo->overlayQuadIbo = SDL_CreateGPUBuffer(hVideo->device, &bi);
+    if (!hVideo->overlayQuadIbo) {
+        BR_FATAL("SDL3GPU: Failed to create overlay quad IBO.");
+        return 0;
+    }
+
+    /* Static resources upload through the staging path (fills slot 0; its
+     * fence is waited in the first SDL3REND_EnsureRecording). */
+    if (SDL3REND_UploadBufferToBuffer(hVideo, hVideo->overlayQuadVbo, quad, sizeof(quad)) != 0)
+        return 0;
+    if (SDL3REND_UploadBufferToBuffer(hVideo, hVideo->overlayQuadIbo, quadIdx, sizeof(quadIdx)) != 0)
         return 0;
 
-    VkPhysicalDeviceProperties props;
-    vkGetPhysicalDeviceProperties(device, &props);
-
-    int score = 1;
-    if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-        score += 1000;
-
-    return score;
+    return 1;
 }
 
-static VkSurfaceFormatKHR chooseSurfaceFormat(VkPhysicalDevice device, VkSurfaceKHR surface) {
-    uint32_t count;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &count, NULL);
-    VkSurfaceFormatKHR* formats = malloc(sizeof(VkSurfaceFormatKHR) * count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &count, formats);
+/*
+ * Ensures the current frame slot has a mapped staging transfer buffer with at
+ * least `need` free bytes. Grows (waits the slot's pending upload first) when
+ * the current staging buffer is exhausted.
+ */
+static int EnsureStagingCapacity(HVIDEO hVideo, size_t need) {
+    uint32_t f = hVideo->currentFrame;
 
-    VkSurfaceFormatKHR result = {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-    for (uint32_t i = 0; i < count; i++) {
-        if (formats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
-            formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            result = formats[i];
-            break;
-        }
+    if (hVideo->stagingTransfer[f] &&
+        hVideo->stagingMapped[f] &&
+        hVideo->stagingOffset[f] + need <= hVideo->stagingSize) {
+        return 1;
     }
-    free(formats);
-    return result;
-}
 
-static VkPresentModeKHR choosePresentMode(VkPhysicalDevice device, VkSurfaceKHR surface) {
-    uint32_t count;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &count, NULL);
-    VkPresentModeKHR* modes = malloc(sizeof(VkPresentModeKHR) * count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &count, modes);
-
-    VkPresentModeKHR result = VK_PRESENT_MODE_FIFO_KHR;
-    for (uint32_t i = 0; i < count; i++) {
-        if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
-            result = modes[i];
-            break;
-        }
-        if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-            result = modes[i];
-        }
+    if (hVideo->uploadFence[f]) {
+        WaitFence(hVideo->device, hVideo->uploadFence[f]);
+        hVideo->uploadFence[f] = NULL;
     }
-    free(modes);
-    return result;
-}
-
-static VkExtent2D chooseExtent(VkPhysicalDevice device, VkSurfaceKHR surface, int width, int height) {
-    VkSurfaceCapabilitiesKHR caps;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &caps);
-
-    if (caps.currentExtent.width != UINT32_MAX) {
-        return caps.currentExtent;
+    if (hVideo->stagingMapped[f]) {
+        SDL_UnmapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f]);
+        hVideo->stagingMapped[f] = NULL;
     }
-    VkExtent2D extent = {width, height};
-    extent.width = caps.minImageExtent.width > extent.width ? caps.minImageExtent.width : extent.width;
-    extent.width = caps.maxImageExtent.width < extent.width ? caps.maxImageExtent.width : extent.width;
-    extent.height = caps.minImageExtent.height > extent.height ? caps.minImageExtent.height : extent.height;
-    extent.height = caps.maxImageExtent.height < extent.height ? caps.maxImageExtent.height : extent.height;
-    return extent;
+
+    size_t newSize = hVideo->stagingSize ? hVideo->stagingSize * 2 : SDL3REND_DEFAULT_STAGING_CAPACITY;
+    while (newSize < need) newSize *= 2;
+
+    SDL_GPUTransferBufferCreateInfo tci = {0};
+    tci.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+    tci.size = newSize;
+    SDL_GPUTransferBuffer* tb = SDL_CreateGPUTransferBuffer(hVideo->device, &tci);
+    if (!tb) {
+        BR_FATAL("SDL3GPU: Failed to create staging transfer buffer.");
+        return 0;
+    }
+
+    if (hVideo->stagingTransfer[f])
+        SDL_ReleaseGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f]);
+    hVideo->stagingTransfer[f] = tb;
+    hVideo->stagingSize = newSize;
+    hVideo->stagingOffset[f] = 0;
+    hVideo->stagingMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, tb, false);
+    if (!hVideo->stagingMapped[f]) {
+        BR_FATAL("SDL3GPU: Failed to map staging transfer buffer.");
+        return 0;
+    }
+    return 1;
 }
 
-static VkResult CreateSwapchain(HVIDEO hVideo, int width, int height) {
-    VkSurfaceCapabilitiesKHR caps;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(hVideo->physicalDevice, hVideo->surface, &caps);
+static int EnsureStagingMapped(HVIDEO hVideo, uint32_t f) {
+    if (hVideo->stagingMapped[f]) return 1;
+    if (!hVideo->stagingTransfer[f])
+        return EnsureStagingCapacity(hVideo, SDL3REND_DEFAULT_STAGING_CAPACITY);
+    hVideo->stagingMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f], false);
+    return hVideo->stagingMapped[f] != NULL;
+}
 
-    VkSurfaceFormatKHR format = chooseSurfaceFormat(hVideo->physicalDevice, hVideo->surface);
-    VkPresentModeKHR presentMode = choosePresentMode(hVideo->physicalDevice, hVideo->surface);
-    VkExtent2D extent = chooseExtent(hVideo->physicalDevice, hVideo->surface, width, height);
+/*
+ * Uploads host data into a GPU buffer through the current frame slot's staging
+ * transfer buffer. Same staging/fence discipline as SDL3REND_UploadBufferToImage.
+ * Returns 0 on success, nonzero on failure.
+ */
+int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const void* hostData, size_t size) {
+    if (!hostData || size == 0) return -1;
 
-    uint32_t imageCount = caps.minImageCount + 1;
-    if (caps.maxImageCount > 0 && imageCount > caps.maxImageCount)
-        imageCount = caps.maxImageCount;
+    uint32_t f = hVideo->currentFrame;
 
-    VkSwapchainCreateInfoKHR ci = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
-    ci.surface = hVideo->surface;
-    ci.minImageCount = imageCount;
-    ci.imageFormat = format.format;
-    ci.imageColorSpace = format.colorSpace;
-    ci.imageExtent = extent;
-    ci.imageArrayLayers = 1;
-    ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (hVideo->uploadFence[f]) {
+        WaitFence(hVideo->device, hVideo->uploadFence[f]);
+        hVideo->uploadFence[f] = NULL;
+    }
+    if (!hVideo->stagingMapped[f]) {
+        if (!EnsureStagingMapped(hVideo, f))
+            return -1;
+        hVideo->stagingOffset[f] = 0;
+    }
+    if (hVideo->stagingOffset[f] + size > hVideo->stagingSize) {
+        if (!EnsureStagingCapacity(hVideo, size))
+            return -1;
+    }
+    if (!hVideo->stagingMapped[f])
+        return -1;
 
-    uint32_t queueFamilyIndices[] = {hVideo->graphicsFamilyIndex, hVideo->presentFamilyIndex};
-    if (hVideo->graphicsFamilyIndex != hVideo->presentFamilyIndex) {
-        ci.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        ci.queueFamilyIndexCount = 2;
-        ci.pQueueFamilyIndices = queueFamilyIndices;
+    memcpy((char*)hVideo->stagingMapped[f] + hVideo->stagingOffset[f], hostData, size);
+    SDL_UnmapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f]);
+    hVideo->stagingMapped[f] = NULL;
+
+    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(hVideo->device);
+    if (!cmd) {
+        BR_FATAL("SDL3GPU: Failed to acquire upload command buffer.");
+        return -1;
+    }
+
+    SDL_GPUCopyPass* copy = SDL_BeginGPUCopyPass(cmd);
+    SDL_GPUTransferBufferLocation src = { hVideo->stagingTransfer[f], (Uint32)hVideo->stagingOffset[f] };
+    SDL_GPUBufferRegion dst = { buffer, 0, (Uint32)size };
+    SDL_UploadToGPUBuffer(copy, &src, &dst, false);
+    SDL_EndGPUCopyPass(copy);
+
+    SDL_GPUFence* fence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmd);
+    if (!fence) {
+        BR_FATAL("SDL3GPU: Failed to submit upload command buffer.");
+        return -1;
+    }
+    hVideo->uploadFence[f] = fence;
+    hVideo->stagingOffset[f] += (Uint32)size;
+    return 0;
+}
+
+static int CreateRings(HVIDEO hVideo) {
+    hVideo->dynVboCapacity = SDL3REND_DEFAULT_RING_VBO_CAPACITY;
+    hVideo->dynIboCapacity = SDL3REND_DEFAULT_RING_IBO_CAPACITY;
+
+    for (uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
+        SDL_GPUBufferCreateInfo bi = {0};
+        bi.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+        bi.size = hVideo->dynVboCapacity;
+        hVideo->dynVbo[f] = SDL_CreateGPUBuffer(hVideo->device, &bi);
+        if (!hVideo->dynVbo[f]) {
+            BR_FATAL("SDL3GPU: Failed to create dynamic VBO.");
+            return 0;
+        }
+
+        bi.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+        bi.size = hVideo->dynIboCapacity;
+        hVideo->dynIbo[f] = SDL_CreateGPUBuffer(hVideo->device, &bi);
+        if (!hVideo->dynIbo[f]) {
+            BR_FATAL("SDL3GPU: Failed to create dynamic IBO.");
+            return 0;
+        }
+
+        SDL_GPUTransferBufferCreateInfo tci = {0};
+        tci.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+        tci.size = hVideo->dynVboCapacity;
+        hVideo->dynVboTransfer[f] = SDL_CreateGPUTransferBuffer(hVideo->device, &tci);
+        if (!hVideo->dynVboTransfer[f]) {
+            BR_FATAL("SDL3GPU: Failed to create dynamic VBO transfer buffer.");
+            return 0;
+        }
+        hVideo->dynVboMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->dynVboTransfer[f], false);
+        if (!hVideo->dynVboMapped[f]) {
+            BR_FATAL("SDL3GPU: Failed to map dynamic VBO transfer buffer.");
+            return 0;
+        }
+
+        tci.size = hVideo->dynIboCapacity;
+        hVideo->dynIboTransfer[f] = SDL_CreateGPUTransferBuffer(hVideo->device, &tci);
+        if (!hVideo->dynIboTransfer[f]) {
+            BR_FATAL("SDL3GPU: Failed to create dynamic IBO transfer buffer.");
+            return 0;
+        }
+        hVideo->dynIboMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->dynIboTransfer[f], false);
+        if (!hVideo->dynIboMapped[f]) {
+            BR_FATAL("SDL3GPU: Failed to map dynamic IBO transfer buffer.");
+            return 0;
+        }
+
+        tci.size = SDL3REND_DEFAULT_STAGING_CAPACITY;
+        hVideo->stagingTransfer[f] = SDL_CreateGPUTransferBuffer(hVideo->device, &tci);
+        if (!hVideo->stagingTransfer[f]) {
+            BR_FATAL("SDL3GPU: Failed to create staging transfer buffer.");
+            return 0;
+        }
+        hVideo->stagingMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f], false);
+        if (!hVideo->stagingMapped[f]) {
+            BR_FATAL("SDL3GPU: Failed to map staging transfer buffer.");
+            return 0;
+        }
+        hVideo->stagingSize = SDL3REND_DEFAULT_STAGING_CAPACITY;
+    }
+    return 1;
+}
+
+static void ReleaseRings(HVIDEO hVideo) {
+    SDL_GPUDevice* device = hVideo->device;
+    if (!device) return;
+    for (uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
+        if (hVideo->dynVboMapped[f]) { SDL_UnmapGPUTransferBuffer(device, hVideo->dynVboTransfer[f]); hVideo->dynVboMapped[f] = NULL; }
+        if (hVideo->dynIboMapped[f]) { SDL_UnmapGPUTransferBuffer(device, hVideo->dynIboTransfer[f]); hVideo->dynIboMapped[f] = NULL; }
+        if (hVideo->stagingMapped[f]) { SDL_UnmapGPUTransferBuffer(device, hVideo->stagingTransfer[f]); hVideo->stagingMapped[f] = NULL; }
+        if (hVideo->dynVboTransfer[f]) { SDL_ReleaseGPUTransferBuffer(device, hVideo->dynVboTransfer[f]); hVideo->dynVboTransfer[f] = NULL; }
+        if (hVideo->dynIboTransfer[f]) { SDL_ReleaseGPUTransferBuffer(device, hVideo->dynIboTransfer[f]); hVideo->dynIboTransfer[f] = NULL; }
+        if (hVideo->stagingTransfer[f]) { SDL_ReleaseGPUTransferBuffer(device, hVideo->stagingTransfer[f]); hVideo->stagingTransfer[f] = NULL; }
+        if (hVideo->dynVbo[f]) { SDL_ReleaseGPUBuffer(device, hVideo->dynVbo[f]); hVideo->dynVbo[f] = NULL; }
+        if (hVideo->dynIbo[f]) { SDL_ReleaseGPUBuffer(device, hVideo->dynIbo[f]); hVideo->dynIbo[f] = NULL; }
+    }
+}
+
+SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const char* code, size_t code_size, SDL_GPUShaderStage stage) {
+    if (!code || code_size == 0) return NULL;
+
+    SDL_GPUShaderCreateInfo ci = {0};
+    ci.code = (const Uint8*)code;
+    ci.code_size = code_size;
+    ci.entrypoint = "main";
+    ci.format = SDL_GPU_SHADERFORMAT_SPIRV;
+    ci.stage = stage;
+    ci.num_samplers = 0;
+    ci.num_storage_textures = 0;
+    ci.num_storage_buffers = 0;
+    ci.num_uniform_buffers = 0;
+
+    if (stage == SDL_GPU_SHADERSTAGE_VERTEX) {
+        /* set1: model + scene UBOs. */
+        ci.num_uniform_buffers = 2;
     } else {
-        ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        ci.queueFamilyIndexCount = 0;
-        ci.pQueueFamilyIndices = NULL;
+        /* set2: main_texture sampler; set3: model + scene UBOs. */
+        ci.num_samplers = 1;
+        ci.num_uniform_buffers = 2;
     }
 
-    ci.preTransform = caps.currentTransform;
-    ci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    ci.presentMode = presentMode;
-    ci.clipped = VK_TRUE;
-    ci.oldSwapchain = hVideo->swapchain;
-
-    VkResult res = vkCreateSwapchainKHR(hVideo->device, &ci, NULL, &hVideo->swapchain);
-    if (res != VK_SUCCESS) {
-        BR_FATAL1("Vulkan: Failed to create swapchain (0x%x)", (int)res);
-        return res;
+    SDL_GPUShader* shader = SDL_CreateGPUShader(hVideo->device, &ci);
+    if (!shader) {
+        BR_FATAL("SDL3GPU: Failed to create shader.");
+        return NULL;
     }
-
-    hVideo->swapchainImageFormat = format.format;
-    hVideo->swapchainExtent = extent;
-
-    vkGetSwapchainImagesKHR(hVideo->device, hVideo->swapchain, &hVideo->swapchainImageCount, NULL);
-    if (hVideo->swapchainImages)
-        free(hVideo->swapchainImages);
-    hVideo->swapchainImages = malloc(sizeof(VkImage) * hVideo->swapchainImageCount);
-    vkGetSwapchainImagesKHR(hVideo->device, hVideo->swapchain, &hVideo->swapchainImageCount, hVideo->swapchainImages);
-
-    return VK_SUCCESS;
+    return shader;
 }
 
-static VkResult CreateImageViews(HVIDEO hVideo) {
-    if (hVideo->swapchainImageViews)
-        BrResFree(hVideo->swapchainImageViews);
+SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
+    SDL_GPUShader* vertModule, SDL_GPUShader* fragModule,
+    const SDL_GPUVertexBufferDescription* bindingDesc,
+    const SDL_GPUVertexAttribute* attrDescs, uint32_t attrCount,
+    uint32_t width, uint32_t height, bool blendEnable,
+    bool depthTestEnable, bool depthWriteEnable) {
 
-    hVideo->swapchainImageViews = BrResAllocate(hVideo->res, sizeof(VkImageView) * hVideo->swapchainImageCount, BR_MEMORY_DRIVER);
+    (void)width;
+    (void)height;
 
-    for (uint32_t i = 0; i < hVideo->swapchainImageCount; i++) {
-        VkImageViewCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        ci.image = hVideo->swapchainImages[i];
-        ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ci.format = hVideo->swapchainImageFormat;
-        ci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        ci.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        ci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-        ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        ci.subresourceRange.baseMipLevel = 0;
-        ci.subresourceRange.levelCount = 1;
-        ci.subresourceRange.baseArrayLayer = 0;
-        ci.subresourceRange.layerCount = 1;
+    SDL_GPUGraphicsPipelineCreateInfo ci = {0};
+    ci.vertex_shader = vertModule;
+    ci.fragment_shader = fragModule;
+    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 
-        VkResult res = vkCreateImageView(hVideo->device, &ci, NULL, &hVideo->swapchainImageViews[i]);
-        if (res != VK_SUCCESS) {
-            BR_FATAL1("Vulkan: Failed to create image view (0x%x)", (int)res);
-            return res;
-        }
-    }
-    return VK_SUCCESS;
-}
+    ci.vertex_input_state.num_vertex_buffers = bindingDesc ? 1 : 0;
+    ci.vertex_input_state.vertex_buffer_descriptions = bindingDesc;
+    ci.vertex_input_state.num_vertex_attributes = attrCount;
+    ci.vertex_input_state.vertex_attributes = attrDescs;
 
-static VkFormat FindDepthFormat(HVIDEO hVideo) {
-    VkFormat candidates[] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
-    for (int i = 0; i < 3; i++) {
-        VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(hVideo->physicalDevice, candidates[i], &props);
-        if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-            return candidates[i];
-    }
-    return VK_FORMAT_UNDEFINED;
-}
+    ci.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL;
+    ci.rasterizer_state.cull_mode = SDL_GPU_CULLMODE_NONE;
+    ci.rasterizer_state.front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE;
+    ci.rasterizer_state.enable_depth_clip = true;
+    ci.rasterizer_state.enable_depth_bias = false;
+    ci.rasterizer_state.depth_bias_constant_factor = 0.0f;
+    ci.rasterizer_state.depth_bias_clamp = 0.0f;
+    ci.rasterizer_state.depth_bias_slope_factor = 0.0f;
 
-static VkResult CreateDepthResources(HVIDEO hVideo) {
-    hVideo->depthFormat = FindDepthFormat(hVideo);
-    if (hVideo->depthFormat == VK_FORMAT_UNDEFINED) {
-        BR_FATAL0("Vulkan: No supported depth format found.");
-        return VK_ERROR_FORMAT_NOT_SUPPORTED;
-    }
+    ci.multisample_state.sample_count = SDL_GPU_SAMPLECOUNT_1;
+    ci.multisample_state.sample_mask = 0;
+    ci.multisample_state.enable_mask = false;
+    ci.multisample_state.enable_alpha_to_coverage = false;
 
-    VkImageCreateInfo ii = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-    ii.imageType = VK_IMAGE_TYPE_2D;
-    ii.format = hVideo->depthFormat;
-    ii.extent.width = hVideo->swapchainExtent.width;
-    ii.extent.height = hVideo->swapchainExtent.height;
-    ii.extent.depth = 1;
-    ii.mipLevels = 1;
-    ii.arrayLayers = 1;
-    ii.samples = VK_SAMPLE_COUNT_1_BIT;
-    ii.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ii.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ci.depth_stencil_state.compare_op = SDL_GPU_COMPAREOP_LESS;
+    ci.depth_stencil_state.enable_depth_test = depthTestEnable;
+    ci.depth_stencil_state.enable_depth_write = depthWriteEnable;
+    ci.depth_stencil_state.enable_stencil_test = false;
+    ci.depth_stencil_state.compare_mask = 0xFF;
+    ci.depth_stencil_state.write_mask = 0xFF;
 
-    VkResult res = vkCreateImage(hVideo->device, &ii, NULL, &hVideo->depthImage);
-    if (res != VK_SUCCESS) return res;
-
-    VkMemoryRequirements memReq;
-    vkGetImageMemoryRequirements(hVideo->device, hVideo->depthImage, &memReq);
-
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    ai.allocationSize = memReq.size;
-    ai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, memReq.memoryTypeBits,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    if (ai.memoryTypeIndex == UINT32_MAX) BR_FATAL0("Vulkan: No suitable memory type for depth image");
-
-    res = vkAllocateMemory(hVideo->device, &ai, NULL, &hVideo->depthMemory);
-    if (res != VK_SUCCESS) {
-        vkDestroyImage(hVideo->device, hVideo->depthImage, NULL);
-        hVideo->depthImage = VK_NULL_HANDLE;
-        return res;
-    }
-    vkBindImageMemory(hVideo->device, hVideo->depthImage, hVideo->depthMemory, 0);
-
-    VkImageViewCreateInfo ivi = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-    ivi.image = hVideo->depthImage;
-    ivi.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivi.format = hVideo->depthFormat;
-    ivi.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    ivi.subresourceRange.baseMipLevel = 0;
-    ivi.subresourceRange.levelCount = 1;
-    ivi.subresourceRange.baseArrayLayer = 0;
-    ivi.subresourceRange.layerCount = 1;
-
-    res = vkCreateImageView(hVideo->device, &ivi, NULL, &hVideo->depthImageView);
-    if (res != VK_SUCCESS) {
-        vkFreeMemory(hVideo->device, hVideo->depthMemory, NULL);
-        vkDestroyImage(hVideo->device, hVideo->depthImage, NULL);
-        hVideo->depthImageView = VK_NULL_HANDLE;
-        hVideo->depthMemory = VK_NULL_HANDLE;
-        hVideo->depthImage = VK_NULL_HANDLE;
-        return res;
-    }
-
-    return VK_SUCCESS;
-}
-
-static VkResult CreateImGuiCompatRenderPass(HVIDEO hVideo) {
-    VkAttachmentDescription colorAttachment = {0};
-    colorAttachment.format = hVideo->swapchainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference colorRef = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-
-    VkSubpassDescription subpass = {0};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorRef;
-
-    VkRenderPassCreateInfo ci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
-    ci.attachmentCount = 1;
-    ci.pAttachments = &colorAttachment;
-    ci.subpassCount = 1;
-    ci.pSubpasses = &subpass;
-
-    return vkCreateRenderPass(hVideo->device, &ci, NULL, &hVideo->imguiCompatRenderPass);
-}
-
-static VkResult CreateCommandPool(HVIDEO hVideo) {
-    VkCommandPoolCreateInfo ci = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-    ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ci.queueFamilyIndex = hVideo->graphicsFamilyIndex;
-    return vkCreateCommandPool(hVideo->device, &ci, NULL, &hVideo->commandPool);
-}
-
-static VkResult CreateCommandBuffers(HVIDEO hVideo) {
-    hVideo->drawCommandBuffers = BrResAllocate(hVideo->res, sizeof(VkCommandBuffer) * hVideo->swapchainImageCount, BR_MEMORY_DRIVER);
-
-    VkCommandBufferAllocateInfo ai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-    ai.commandPool = hVideo->commandPool;
-    ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    ai.commandBufferCount = hVideo->swapchainImageCount;
-
-    return vkAllocateCommandBuffers(hVideo->device, &ai, hVideo->drawCommandBuffers);
-}
-
-static VkResult CreateSyncObjects(HVIDEO hVideo) {
-    VkSemaphoreCreateInfo si = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    VkFenceCreateInfo fi = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    fi.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(hVideo->device, &si, NULL, &hVideo->imageAvailableSemaphores[i]) != VK_SUCCESS)
-            return VK_ERROR_INITIALIZATION_FAILED;
-        if (vkCreateSemaphore(hVideo->device, &si, NULL, &hVideo->renderFinishedSemaphores[i]) != VK_SUCCESS)
-            return VK_ERROR_INITIALIZATION_FAILED;
-        if (vkCreateFence(hVideo->device, &fi, NULL, &hVideo->inFlightFences[i]) != VK_SUCCESS)
-            return VK_ERROR_INITIALIZATION_FAILED;
-    }
-
-    return VK_SUCCESS;
-}
-
-VkShaderModule VK_CreateShaderModule(HVIDEO hVideo, const char* code, size_t code_size, VkShaderStageFlagBits stage) {
-    (void)hVideo;
-    (void)stage;
-    VkShaderModuleCreateInfo ci = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-    ci.codeSize = code_size;
-    ci.pCode = (const uint32_t*)code;
-
-    VkShaderModule module;
-    VkResult res = vkCreateShaderModule(hVideo->device, &ci, NULL, &module);
-    if (res != VK_SUCCESS) {
-        BR_FATAL1("Vulkan: Failed to create shader module (0x%x)", (int)res);
-        return VK_NULL_HANDLE;
-    }
-    return module;
-}
-
-VkPipelineLayout VK_CreatePipelineLayout(HVIDEO hVideo, VkDescriptorSetLayout* descLayout, uint32_t descLayoutCount) {
-    VkPipelineLayoutCreateInfo ci = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-    ci.setLayoutCount = descLayoutCount;
-    ci.pSetLayouts = descLayout;
-
-    VkPipelineLayout layout;
-    VkResult res = vkCreatePipelineLayout(hVideo->device, &ci, NULL, &layout);
-    if (res != VK_SUCCESS) {
-        BR_FATAL1("Vulkan: Failed to create pipeline layout (0x%x)", (int)res);
-        return VK_NULL_HANDLE;
-    }
-    return layout;
-}
-
-VkPipeline VK_CreateGraphicsPipeline(HVIDEO hVideo, VkShaderModule vertModule, VkShaderModule fragModule,
-    VkPipelineLayout layout,
-    VkVertexInputBindingDescription* bindingDesc,
-    VkVertexInputAttributeDescription* attrDescs, uint32_t attrCount,
-    uint32_t width, uint32_t height, VkBool32 blendEnable, VkBool32 depthTestEnable, VkBool32 depthWriteEnable) {
-
-    VkPipelineShaderStageCreateInfo stages[2] = {0};
-    stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    stages[0].module = vertModule;
-    stages[0].pName = "main";
-
-    stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    stages[1].module = fragModule;
-    stages[1].pName = "main";
-
-    VkPipelineVertexInputStateCreateInfo vertexInput = {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
-    vertexInput.vertexBindingDescriptionCount = bindingDesc ? 1 : 0;
-    vertexInput.pVertexBindingDescriptions = bindingDesc;
-    vertexInput.vertexAttributeDescriptionCount = attrCount;
-    vertexInput.pVertexAttributeDescriptions = attrDescs;
-
-    VkPipelineInputAssemblyStateCreateInfo assembly = {VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-    assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-    VkDynamicState dynStates[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dynState = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-    dynState.dynamicStateCount = 2;
-    dynState.pDynamicStates = dynStates;
-
-    VkViewport viewport = {0, 0, (float)width, (float)height, 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {width, height}};
-
-    VkPipelineViewportStateCreateInfo viewportState = {VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
-    viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
-    viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
-
-    VkPipelineRasterizationStateCreateInfo rasterizer = {VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.cullMode = VK_CULL_MODE_NONE;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterizer.depthClampEnable = VK_TRUE;
-    rasterizer.lineWidth = 1.0f;
-
-    VkPipelineMultisampleStateCreateInfo multisampling = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-    VkPipelineColorBlendAttachmentState blend = {0};
-    blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                           VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    blend.blendEnable = blendEnable;
+    SDL_GPUColorTargetBlendState blend = {0};
+    blend.color_write_mask = SDL_GPU_COLORCOMPONENT_R | SDL_GPU_COLORCOMPONENT_G |
+                             SDL_GPU_COLORCOMPONENT_B | SDL_GPU_COLORCOMPONENT_A;
+    blend.enable_blend = blendEnable;
+    blend.enable_color_write_mask = false;
     if (blendEnable) {
-        blend.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        blend.colorBlendOp = VK_BLEND_OP_ADD;
-        blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-        blend.alphaBlendOp = VK_BLEND_OP_ADD;
+        blend.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+        blend.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+        blend.color_blend_op = SDL_GPU_BLENDOP_ADD;
+        blend.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+        blend.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ZERO;
+        blend.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
     }
 
-    VkPipelineColorBlendStateCreateInfo blending = {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
-    blending.attachmentCount = 1;
-    blending.pAttachments = &blend;
+    /* Pipelines always declare the depth attachment: every render pass targets
+     * transferTexture + depthTexture, and depth testing simply stays disabled
+     * when the flags say so (mirrors the VK driver). */
+    SDL_GPUColorTargetDescription target = {0};
+    target.format = hVideo->swapchainTextureFormat;
+    target.blend_state = blend;
 
-    VkPipelineDepthStencilStateCreateInfo depthStencil = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-    depthStencil.depthTestEnable = depthTestEnable;
-    depthStencil.depthWriteEnable = depthWriteEnable;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    ci.target_info.color_target_descriptions = &target;
+    ci.target_info.num_color_targets = 1;
+    ci.target_info.depth_stencil_format = hVideo->depthFormat;
+    ci.target_info.has_depth_stencil_target = true;
 
-    VkPipelineRenderingCreateInfo renderingInfo = {VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
-    renderingInfo.colorAttachmentCount = 1;
-    renderingInfo.pColorAttachmentFormats = &hVideo->swapchainImageFormat;
-    renderingInfo.depthAttachmentFormat = hVideo->depthFormat;
-
-    VkGraphicsPipelineCreateInfo ci = {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-    ci.pNext = &renderingInfo;
-    ci.stageCount = 2;
-    ci.pStages = stages;
-    ci.pVertexInputState = &vertexInput;
-    ci.pInputAssemblyState = &assembly;
-    ci.pViewportState = &viewportState;
-    ci.pRasterizationState = &rasterizer;
-    ci.pMultisampleState = &multisampling;
-    ci.pDepthStencilState = &depthStencil;
-    ci.pColorBlendState = &blending;
-    ci.pDynamicState = &dynState;
-    ci.layout = layout;
-    ci.renderPass = VK_NULL_HANDLE;
-
-    VkPipeline pipeline;
-    VkResult res = vkCreateGraphicsPipelines(hVideo->device, VK_NULL_HANDLE, 1, &ci, NULL, &pipeline);
-    if (res != VK_SUCCESS) {
-        BR_FATAL1("Vulkan: Failed to create graphics pipeline (0x%x)", (int)res);
-        return VK_NULL_HANDLE;
+    SDL_GPUGraphicsPipeline* pipeline = SDL_CreateGPUGraphicsPipeline(hVideo->device, &ci);
+    if (!pipeline) {
+        BR_FATAL("SDL3GPU: Failed to create graphics pipeline.");
+        return NULL;
     }
     return pipeline;
 }
 
-HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size_t vert_spv_size,
-    const char* frag_spv_data, size_t frag_spv_size,
-    br_device_vk_callback_procs* callbacks, int width, int height) {
+HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
+    const char* vertSpv, size_t vertSpvSize,
+    const char* fragSpv, size_t fragSpvSize,
+    const char* ovVertSpv, size_t ovVertSpvSize,
+    const char* ovFragSpv, size_t ovFragSpvSize,
+    const char* defVertSpv, size_t defVertSpvSize,
+    const char* defFragSpv, size_t defFragSpvSize,
+    br_device_sdl3_callback_procs* callbacks, int width, int height) {
+
     if (hVideo == NULL) {
         BR_FATAL("VIDEO: Invalid handle.");
         return NULL;
@@ -494,1166 +471,563 @@ HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size
         hVideo->get_window_size = callbacks->get_window_size;
     }
 
-    VkApplicationInfo appInfo = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
-    appInfo.pApplicationName = "dethrace";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "BRender Vulkan";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_3;
+    /* Fall back to the embedded SPIR-V (sdl3_shaders.c) when the caller does
+     * not supply a shader. The caller may still override via the arguments. */
+    if (!vertSpv) { vertSpv = brender_vert_spv; vertSpvSize = brender_vert_spv_size; }
+    if (!fragSpv) { fragSpv = brender_frag_spv; fragSpvSize = brender_frag_spv_size; }
+    if (!ovVertSpv) { ovVertSpv = overlay_vert_spv; ovVertSpvSize = overlay_vert_spv_size; }
+    if (!ovFragSpv) { ovFragSpv = overlay_frag_spv; ovFragSpvSize = overlay_frag_spv_size; }
 
-    uint32_t instanceExtCount = 0;
-    const char* instanceExts[8];
-
-    if (callbacks->get_instance_extensions) {
-        const char** exts = callbacks->get_instance_extensions(&instanceExtCount);
-        if (exts && instanceExtCount > 0) {
-            uint32_t copyCount = instanceExtCount < 8 ? instanceExtCount : 8;
-            for (uint32_t i = 0; i < copyCount; i++)
-                instanceExts[i] = exts[i];
-        } else {
-            instanceExtCount = 0;
-        }
-    }
-
-    VkInstanceCreateInfo instCi = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
-    instCi.pApplicationInfo = &appInfo;
-    instCi.enabledExtensionCount = instanceExtCount;
-    instCi.ppEnabledExtensionNames = instanceExtCount > 0 ? instanceExts : NULL;
-
-    VkResult res = vkCreateInstance(&instCi, NULL, &hVideo->instance);
-    if (res != VK_SUCCESS) {
-        BR_FATAL1("Vulkan: Failed to create instance (0x%x).", (int)res);
+    hVideo->window = callbacks && callbacks->get_window ? (SDL_Window*)callbacks->get_window() : NULL;
+    if (hVideo->window == NULL) {
+        BR_FATAL("SDL3GPU: No window provided (get_window callback missing).");
         return NULL;
     }
 
-    if (callbacks->create_surface) {
-        hVideo->surface = callbacks->create_surface(hVideo->instance);
-        if (hVideo->surface == VK_NULL_HANDLE) {
-            BR_FATAL("Vulkan: Failed to create surface.");
-            goto cleanup_instance;
-        }
-    } else {
-        BR_FATAL("Vulkan: No create_surface callback provided.");
-        goto cleanup_instance;
+    hVideo->device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
+    if (!hVideo->device) {
+        BR_FATAL("SDL3GPU: Failed to create GPU device.");
+        return NULL;
     }
 
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(hVideo->instance, &deviceCount, NULL);
-    if (deviceCount == 0) {
-        BR_FATAL("Vulkan: No physical devices found.");
-        goto cleanup_instance;
+    if (!SDL_ClaimWindowForGPUDevice(hVideo->device, hVideo->window)) {
+        BR_FATAL("SDL3GPU: Failed to claim window for GPU device.");
+        return NULL;
     }
 
-    VkPhysicalDevice* devices = malloc(sizeof(VkPhysicalDevice) * deviceCount);
-    vkEnumeratePhysicalDevices(hVideo->instance, &deviceCount, devices);
+    hVideo->swapchainTextureFormat = SDL_GetGPUSwapchainTextureFormat(hVideo->device, hVideo->window);
+    hVideo->depthFormat = SDL_GPU_TEXTUREFORMAT_D32_FLOAT;
 
-    int bestScore = 0;
-    int selected = -1;
-    for (uint32_t i = 0; i < deviceCount; i++) {
-        uint32_t gf, pf;
-        int score = ratePhysicalDevice(devices[i], hVideo->surface, &gf, &pf);
-        if (score > bestScore) {
-            bestScore = score;
-            selected = i;
-            hVideo->physicalDevice = devices[i];
-            hVideo->graphicsFamilyIndex = gf;
-            hVideo->presentFamilyIndex = pf;
-        }
+    if (width <= 0 || height <= 0) {
+        SDL_GetWindowSizeInPixels(hVideo->window, &width, &height);
     }
-    free(devices);
+    hVideo->windowWidth = width;
+    hVideo->windowHeight = height;
 
-    if (selected < 0) {
-        BR_FATAL("Vulkan: No suitable physical device.");
-        goto cleanup_instance;
-    }
+    if (!CreateOffscreenTargets(hVideo))
+        goto cleanup;
+    if (!CreateSamplers(hVideo))
+        goto cleanup;
+    if (!CreateRings(hVideo))
+        goto cleanup;
+    if (!CreateOverlayQuad(hVideo))
+        goto cleanup;
+    if (!CreateDefaultTexture(hVideo))
+        goto cleanup;
 
-    VkPhysicalDeviceProperties props;
-    vkGetPhysicalDeviceProperties(hVideo->physicalDevice, &props);
-    BrLogPrintf("SDL3REND: Vulkan Device = %s\n", props.deviceName);
-    hVideo->maxUniformBufferRange = props.limits.maxUniformBufferRange;
-    hVideo->minUniformBufferOffsetAlignment = props.limits.minUniformBufferOffsetAlignment;
-    hVideo->maxVertexInputBindings = props.limits.maxVertexInputBindings;
-    hVideo->maxVertexInputAttributes = props.limits.maxVertexInputAttributes;
-
-    // Cache the host-visible+coherent memory type once. VBO/IBO and staging
-    // uploads are created repeatedly (model crush rebuilds, per-flush staging),
-    // and vkGetPhysicalDeviceMemoryProperties is a heavyweight driver query.
-    hVideo->hostMemType = VK_FindMemoryType(hVideo->physicalDevice, ~0u,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    float queuePriority = 1.0f;
-    uint32_t uniqueFamilies[2] = {hVideo->graphicsFamilyIndex, hVideo->presentFamilyIndex};
-    uint32_t uniqueCount = (hVideo->graphicsFamilyIndex == hVideo->presentFamilyIndex) ? 1 : 2;
-
-    VkDeviceQueueCreateInfo queueCis[2];
-    for (uint32_t i = 0; i < uniqueCount; i++) {
-        queueCis[i] = (VkDeviceQueueCreateInfo){VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-        queueCis[i].queueFamilyIndex = uniqueFamilies[i];
-        queueCis[i].queueCount = 1;
-        queueCis[i].pQueuePriorities = &queuePriority;
-    }
-
-    const char* deviceExts[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME};
-
-    VkPhysicalDeviceDynamicRenderingFeatures dynFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES};
-    dynFeatures.dynamicRendering = VK_TRUE;
-
-    VkPhysicalDeviceMaintenance4Features maintenance4Features = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES};
-    maintenance4Features.maintenance4 = VK_TRUE;
-
-    VkPhysicalDeviceMaintenance5Features maintenance5Features = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES};
-    maintenance5Features.maintenance5 = VK_TRUE;
-
-    dynFeatures.pNext = &maintenance4Features;
-    maintenance4Features.pNext = &maintenance5Features;
-
-    VkPhysicalDeviceFeatures devFeatures = {0};
-
-    VkDeviceCreateInfo devCi = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-    devCi.pNext = &dynFeatures;
-    devCi.queueCreateInfoCount = uniqueCount;
-    devCi.pQueueCreateInfos = queueCis;
-    devCi.enabledExtensionCount = 2;
-    devCi.ppEnabledExtensionNames = deviceExts;
-    devCi.pEnabledFeatures = &devFeatures;
-
-    res = vkCreateDevice(hVideo->physicalDevice, &devCi, NULL, &hVideo->device);
-    if (res != VK_SUCCESS) {
-        BR_FATAL("Vulkan: Failed to create logical device.");
-        goto cleanup_instance;
-    }
-
-    vkGetDeviceQueue(hVideo->device, hVideo->graphicsFamilyIndex, 0, &hVideo->graphicsQueue);
-    vkGetDeviceQueue(hVideo->device, hVideo->presentFamilyIndex, 0, &hVideo->presentQueue);
-
-    hVideo->pfnPushDescriptorSet = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(hVideo->device, "vkCmdPushDescriptorSetKHR");
-    if (!hVideo->pfnPushDescriptorSet) {
-        hVideo->pfnPushDescriptorSet = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(hVideo->device, "vkCmdPushDescriptorSet");
-    }
-
-    if (CreateSwapchain(hVideo, width, height) != VK_SUCCESS)
-        goto cleanup_device;
-
-    if (CreateImageViews(hVideo) != VK_SUCCESS)
-        goto cleanup_device;
-
-    if (CreateDepthResources(hVideo) != VK_SUCCESS)
-        goto cleanup_device;
-
-    if (CreateImGuiCompatRenderPass(hVideo) != VK_SUCCESS)
-        goto cleanup_device;
-
-    if (CreateCommandPool(hVideo) != VK_SUCCESS)
-        goto cleanup_device;
-
-    VkShaderModule vertModule = VK_CreateShaderModule(hVideo, vert_spv_data, vert_spv_size, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderModule fragModule = VK_CreateShaderModule(hVideo, frag_spv_data, frag_spv_size, VK_SHADER_STAGE_FRAGMENT_BIT);
-    if (!vertModule || !fragModule)
-        goto cleanup_device;
-
-    if (VK_CreateBrenderDescriptors(hVideo, width, height) != VK_SUCCESS)
+    hVideo->brenderVertShader = SDL3REND_CreateShader(hVideo, vertSpv, vertSpvSize, SDL_GPU_SHADERSTAGE_VERTEX);
+    hVideo->brenderFragShader = SDL3REND_CreateShader(hVideo, fragSpv, fragSpvSize, SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->overlayVertShader = SDL3REND_CreateShader(hVideo, ovVertSpv, ovVertSpvSize, SDL_GPU_SHADERSTAGE_VERTEX);
+    hVideo->overlayFragShader = SDL3REND_CreateShader(hVideo, ovFragSpv, ovFragSpvSize, SDL_GPU_SHADERSTAGE_FRAGMENT);
+    if (!hVideo->brenderVertShader || !hVideo->brenderFragShader ||
+        !hVideo->overlayVertShader || !hVideo->overlayFragShader)
         goto cleanup_shaders;
-
-    if (VK_CreateDynamicRings(hVideo) != VK_SUCCESS)
-        goto cleanup_shaders;
-
-    hVideo->brenderPipelineLayout = VK_CreatePipelineLayout(hVideo, &hVideo->brenderDescriptors.layout, 1);
-    if (!hVideo->brenderPipelineLayout)
-        goto cleanup_shaders;
-
-    VkVertexInputBindingDescription bindingDesc = {0};
-    bindingDesc.binding = 0;
-    bindingDesc.stride = sizeof(vk_vertex_f);
-    bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    VkVertexInputAttributeDescription attrDescs[4] = {0};
-    attrDescs[0].location = 0;
-    attrDescs[0].binding = 0;
-    attrDescs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attrDescs[0].offset = offsetof(vk_vertex_f, p);
-    attrDescs[1].location = 1;
-    attrDescs[1].binding = 0;
-    attrDescs[1].format = VK_FORMAT_R32G32_SFLOAT;
-    attrDescs[1].offset = offsetof(vk_vertex_f, map);
-    attrDescs[2].location = 2;
-    attrDescs[2].binding = 0;
-    attrDescs[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attrDescs[2].offset = offsetof(vk_vertex_f, n);
-    attrDescs[3].location = 3;
-    attrDescs[3].binding = 0;
-    attrDescs[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attrDescs[3].offset = offsetof(vk_vertex_f, c);
-
-    hVideo->brenderPipeline = VK_CreateGraphicsPipeline(hVideo, vertModule, fragModule,
-        hVideo->brenderPipelineLayout,
-        &bindingDesc, attrDescs, 4,
-        hVideo->swapchainExtent.width, hVideo->swapchainExtent.height, VK_FALSE, VK_TRUE, VK_TRUE);
-    if (!hVideo->brenderPipeline)
-        goto cleanup_shaders;
-
-    hVideo->brenderPipelineNoWrite = VK_CreateGraphicsPipeline(hVideo, vertModule, fragModule,
-        hVideo->brenderPipelineLayout,
-        &bindingDesc, attrDescs, 4,
-        hVideo->swapchainExtent.width, hVideo->swapchainExtent.height, VK_FALSE, VK_TRUE, VK_FALSE);
-    if (!hVideo->brenderPipelineNoWrite)
-        goto cleanup_shaders;
-
-    hVideo->brenderBlendPipeline = VK_CreateGraphicsPipeline(hVideo, vertModule, fragModule,
-        hVideo->brenderPipelineLayout,
-        &bindingDesc, attrDescs, 4,
-        hVideo->swapchainExtent.width, hVideo->swapchainExtent.height, VK_TRUE, VK_TRUE, VK_FALSE);
-    if (!hVideo->brenderBlendPipeline)
-        goto cleanup_shaders;
-
-    hVideo->brenderPipelineNoDepth = VK_CreateGraphicsPipeline(hVideo, vertModule, fragModule,
-        hVideo->brenderPipelineLayout,
-        &bindingDesc, attrDescs, 4,
-        hVideo->swapchainExtent.width, hVideo->swapchainExtent.height, VK_FALSE, VK_FALSE, VK_FALSE);
-    if (!hVideo->brenderPipelineNoDepth)
-        goto cleanup_shaders;
-
-    hVideo->brenderBlendPipelineNoDepth = VK_CreateGraphicsPipeline(hVideo, vertModule, fragModule,
-        hVideo->brenderPipelineLayout,
-        &bindingDesc, attrDescs, 4,
-        hVideo->swapchainExtent.width, hVideo->swapchainExtent.height, VK_TRUE, VK_FALSE, VK_FALSE);
-    if (!hVideo->brenderBlendPipelineNoDepth)
-        goto cleanup_shaders;
-
-    hVideo->defaultPipeline = hVideo->brenderPipeline;
-    hVideo->defaultPipelineLayout = hVideo->brenderPipelineLayout;
 
     {
-        VkDescriptorSetLayoutBinding overlayBindings[1] = {0};
-        overlayBindings[0].binding = 0;
-        overlayBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        overlayBindings[0].descriptorCount = 1;
-        overlayBindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        SDL_GPUVertexBufferDescription bindingDesc = {0};
+        bindingDesc.slot = 0;
+        bindingDesc.pitch = sizeof(sdl3_vertex_f);
+        bindingDesc.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        bindingDesc.instance_step_rate = 0;
 
-        VkDescriptorSetLayoutCreateInfo dslCi = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        dslCi.bindingCount = 1;
-        dslCi.pBindings = overlayBindings;
-        VkResult res = vkCreateDescriptorSetLayout(hVideo->device, &dslCi, NULL, &hVideo->overlayDescLayout);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-
-        VkDescriptorPoolSize poolSize = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
-        VkDescriptorPoolCreateInfo dpCi = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-        dpCi.maxSets = 1;
-        dpCi.poolSizeCount = 1;
-        dpCi.pPoolSizes = &poolSize;
-        res = vkCreateDescriptorPool(hVideo->device, &dpCi, NULL, &hVideo->overlayDescPool);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-
-        VkDescriptorSetAllocateInfo dsAi = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-        dsAi.descriptorPool = hVideo->overlayDescPool;
-        dsAi.descriptorSetCount = 1;
-        dsAi.pSetLayouts = &hVideo->overlayDescLayout;
-        res = vkAllocateDescriptorSets(hVideo->device, &dsAi, &hVideo->overlayDescSet);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-
-        hVideo->overlayPipelineLayout = VK_CreatePipelineLayout(hVideo, &hVideo->overlayDescLayout, 1);
-        if (!hVideo->overlayPipelineLayout) goto cleanup_shaders;
-
-        VkShaderModule overlayVert = VK_CreateShaderModule(hVideo, overlay_vert_spv, overlay_vert_spv_size, VK_SHADER_STAGE_VERTEX_BIT);
-        VkShaderModule overlayFrag = VK_CreateShaderModule(hVideo, overlay_frag_spv, overlay_frag_spv_size, VK_SHADER_STAGE_FRAGMENT_BIT);
-        if (!overlayVert || !overlayFrag) {
-            if (overlayVert) vkDestroyShaderModule(hVideo->device, overlayVert, NULL);
-            if (overlayFrag) vkDestroyShaderModule(hVideo->device, overlayFrag, NULL);
-            goto cleanup_shaders;
-        }
-
-        VkVertexInputBindingDescription bindingDesc = {0};
-        bindingDesc.binding = 0;
-        bindingDesc.stride = 4 * sizeof(float);
-        bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        VkVertexInputAttributeDescription attrDescs[2] = {0};
+        SDL_GPUVertexAttribute attrDescs[4] = {0};
         attrDescs[0].location = 0;
-        attrDescs[0].binding = 0;
-        attrDescs[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attrDescs[0].offset = 0;
-
+        attrDescs[0].buffer_slot = 0;
+        attrDescs[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+        attrDescs[0].offset = offsetof(sdl3_vertex_f, p);
         attrDescs[1].location = 1;
-        attrDescs[1].binding = 0;
-        attrDescs[1].format = VK_FORMAT_R32G32_SFLOAT;
+        attrDescs[1].buffer_slot = 0;
+        attrDescs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        attrDescs[1].offset = offsetof(sdl3_vertex_f, map);
+        attrDescs[2].location = 2;
+        attrDescs[2].buffer_slot = 0;
+        attrDescs[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+        attrDescs[2].offset = offsetof(sdl3_vertex_f, n);
+        attrDescs[3].location = 3;
+        attrDescs[3].buffer_slot = 0;
+        attrDescs[3].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
+        attrDescs[3].offset = offsetof(sdl3_vertex_f, c);
+
+        hVideo->brenderPipeline = SDL3REND_CreateGraphicsPipeline(hVideo,
+            hVideo->brenderVertShader, hVideo->brenderFragShader,
+            &bindingDesc, attrDescs, 4,
+            hVideo->windowWidth, hVideo->windowHeight, false, true, true);
+        if (!hVideo->brenderPipeline)
+            goto cleanup_shaders;
+
+        hVideo->brenderPipelineNoDepth = SDL3REND_CreateGraphicsPipeline(hVideo,
+            hVideo->brenderVertShader, hVideo->brenderFragShader,
+            &bindingDesc, attrDescs, 4,
+            hVideo->windowWidth, hVideo->windowHeight, false, false, false);
+        if (!hVideo->brenderPipelineNoDepth)
+            goto cleanup_shaders;
+
+        hVideo->brenderBlendPipeline = SDL3REND_CreateGraphicsPipeline(hVideo,
+            hVideo->brenderVertShader, hVideo->brenderFragShader,
+            &bindingDesc, attrDescs, 4,
+            hVideo->windowWidth, hVideo->windowHeight, true, true, false);
+        if (!hVideo->brenderBlendPipeline)
+            goto cleanup_shaders;
+
+        hVideo->brenderBlendPipelineNoDepth = SDL3REND_CreateGraphicsPipeline(hVideo,
+            hVideo->brenderVertShader, hVideo->brenderFragShader,
+            &bindingDesc, attrDescs, 4,
+            hVideo->windowWidth, hVideo->windowHeight, true, false, false);
+        if (!hVideo->brenderBlendPipelineNoDepth)
+            goto cleanup_shaders;
+    }
+
+    /* Default shaders/pipeline alias the brender ones when not provided. */
+    if (defVertSpv && defVertSpvSize)
+        hVideo->defaultVertShader = SDL3REND_CreateShader(hVideo, defVertSpv, defVertSpvSize, SDL_GPU_SHADERSTAGE_VERTEX);
+    if (defFragSpv && defFragSpvSize)
+        hVideo->defaultFragShader = SDL3REND_CreateShader(hVideo, defFragSpv, defFragSpvSize, SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->defaultPipeline = hVideo->brenderPipeline;
+
+    {
+        SDL_GPUVertexBufferDescription bindingDesc = {0};
+        bindingDesc.slot = 0;
+        bindingDesc.pitch = 4 * sizeof(float);
+        bindingDesc.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        bindingDesc.instance_step_rate = 0;
+
+        SDL_GPUVertexAttribute attrDescs[2] = {0};
+        attrDescs[0].location = 0;
+        attrDescs[0].buffer_slot = 0;
+        attrDescs[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        attrDescs[0].offset = 0;
+        attrDescs[1].location = 1;
+        attrDescs[1].buffer_slot = 0;
+        attrDescs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
         attrDescs[1].offset = 2 * sizeof(float);
 
-        hVideo->overlayPipeline = VK_CreateGraphicsPipeline(hVideo, overlayVert, overlayFrag,
-            hVideo->overlayPipelineLayout,
+        hVideo->overlayPipeline = SDL3REND_CreateGraphicsPipeline(hVideo,
+            hVideo->overlayVertShader, hVideo->overlayFragShader,
             &bindingDesc, attrDescs, 2,
-            hVideo->swapchainExtent.width, hVideo->swapchainExtent.height, VK_TRUE, VK_FALSE, VK_FALSE);
-
-        vkDestroyShaderModule(hVideo->device, overlayFrag, NULL);
-        vkDestroyShaderModule(hVideo->device, overlayVert, NULL);
-
-        if (!hVideo->overlayPipeline) goto cleanup_shaders;
-    }
-
-    {
-        float quad[] = {
-             1.0f, -1.0f,   1.0f, 1.0f,
-             1.0f,  1.0f,   1.0f, 0.0f,
-            -1.0f,  1.0f,   0.0f, 0.0f,
-            -1.0f, -1.0f,   0.0f, 1.0f,
-        };
-        uint16_t quadIdx[] = {0, 1, 3, 1, 2, 3};
-
-        VkBufferCreateInfo bi = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-        bi.size = sizeof(quad);
-        bi.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        VkResult res = vkCreateBuffer(hVideo->device, &bi, NULL, &hVideo->overlayQuadVbo);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-
-        VkMemoryRequirements memReq;
-        vkGetBufferMemoryRequirements(hVideo->device, hVideo->overlayQuadVbo, &memReq);
-
-        VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-        ai.allocationSize = memReq.size;
-
-        VkPhysicalDeviceMemoryProperties memProps;
-        vkGetPhysicalDeviceMemoryProperties(hVideo->physicalDevice, &memProps);
-        for (uint32_t i = 0; i < memProps.memoryTypeCount; i++) {
-            if ((memReq.memoryTypeBits & (1 << i)) &&
-                (memProps.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
-                (memProps.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-                ai.memoryTypeIndex = i;
-                break;
-            }
-        }
-
-        res = vkAllocateMemory(hVideo->device, &ai, NULL, &hVideo->overlayQuadVboMemory);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-        vkBindBufferMemory(hVideo->device, hVideo->overlayQuadVbo, hVideo->overlayQuadVboMemory, 0);
-
-        void* data;
-        vkMapMemory(hVideo->device, hVideo->overlayQuadVboMemory, 0, sizeof(quad), 0, &data);
-        memcpy(data, quad, sizeof(quad));
-        vkUnmapMemory(hVideo->device, hVideo->overlayQuadVboMemory);
-
-        bi.size = sizeof(quadIdx);
-        bi.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        res = vkCreateBuffer(hVideo->device, &bi, NULL, &hVideo->overlayQuadIbo);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-
-        vkGetBufferMemoryRequirements(hVideo->device, hVideo->overlayQuadIbo, &memReq);
-        ai.allocationSize = memReq.size;
-
-        for (uint32_t i = 0; i < memProps.memoryTypeCount; i++) {
-            if ((memReq.memoryTypeBits & (1 << i)) &&
-                (memProps.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) &&
-                (memProps.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-                ai.memoryTypeIndex = i;
-                break;
-            }
-        }
-
-        res = vkAllocateMemory(hVideo->device, &ai, NULL, &hVideo->overlayQuadIboMemory);
-        if (res != VK_SUCCESS) goto cleanup_shaders;
-        vkBindBufferMemory(hVideo->device, hVideo->overlayQuadIbo, hVideo->overlayQuadIboMemory, 0);
-
-        vkMapMemory(hVideo->device, hVideo->overlayQuadIboMemory, 0, sizeof(quadIdx), 0, &data);
-        memcpy(data, quadIdx, sizeof(quadIdx));
-        vkUnmapMemory(hVideo->device, hVideo->overlayQuadIboMemory);
-    }
-
-    {
-        VkSamplerCreateInfo sci = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-        sci.magFilter = VK_FILTER_NEAREST;
-        sci.minFilter = VK_FILTER_NEAREST;
-        sci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sci.maxAnisotropy = 1.0f;
-        if (vkCreateSampler(hVideo->device, &sci, NULL, &hVideo->overlaySampler) != VK_SUCCESS)
+            hVideo->windowWidth, hVideo->windowHeight, true, false, false);
+        if (!hVideo->overlayPipeline)
             goto cleanup_shaders;
     }
 
-    {
-        VkImageCreateInfo ii = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-        ii.imageType = VK_IMAGE_TYPE_2D;
-        ii.format = VK_FORMAT_B8G8R8A8_UNORM;
-        ii.extent.width = 1;
-        ii.extent.height = 1;
-        ii.extent.depth = 1;
-        ii.mipLevels = 1;
-        ii.arrayLayers = 1;
-        ii.samples = VK_SAMPLE_COUNT_1_BIT;
-        ii.tiling = VK_IMAGE_TILING_LINEAR;
-        ii.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-        ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        if (vkCreateImage(hVideo->device, &ii, NULL, &hVideo->defaultTextureImage) != VK_SUCCESS)
-            goto cleanup_shaders;
+    BrLogPrintf("SDL3GPU: GPU device initialized (framebuffer %dx%d)\n",
+        hVideo->windowWidth, hVideo->windowHeight);
 
-        VkMemoryRequirements memReq;
-        vkGetImageMemoryRequirements(hVideo->device, hVideo->defaultTextureImage, &memReq);
-
-        VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-        ai.allocationSize = memReq.size;
-        ai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, memReq.memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        if (ai.memoryTypeIndex == UINT32_MAX || vkAllocateMemory(hVideo->device, &ai, NULL, &hVideo->defaultTextureMemory) != VK_SUCCESS) {
-            vkDestroyImage(hVideo->device, hVideo->defaultTextureImage, NULL);
-            hVideo->defaultTextureImage = VK_NULL_HANDLE;
-            goto cleanup_shaders;
-        }
-        vkBindImageMemory(hVideo->device, hVideo->defaultTextureImage, hVideo->defaultTextureMemory, 0);
-
-        void* data;
-        vkMapMemory(hVideo->device, hVideo->defaultTextureMemory, 0, 4, 0, &data);
-        *(uint32_t*)data = 0xFFFFFFFF;
-        vkUnmapMemory(hVideo->device, hVideo->defaultTextureMemory);
-
-        VkImageViewCreateInfo ivi = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        ivi.image = hVideo->defaultTextureImage;
-        ivi.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivi.format = VK_FORMAT_B8G8R8A8_UNORM;
-        ivi.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        ivi.subresourceRange.baseMipLevel = 0;
-        ivi.subresourceRange.levelCount = 1;
-        ivi.subresourceRange.baseArrayLayer = 0;
-        ivi.subresourceRange.layerCount = 1;
-        if (vkCreateImageView(hVideo->device, &ivi, NULL, &hVideo->defaultTextureView) != VK_SUCCESS)
-            goto cleanup_shaders;
-
-        VkSamplerCreateInfo sci = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-        sci.magFilter = VK_FILTER_LINEAR;
-        sci.minFilter = VK_FILTER_LINEAR;
-        sci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sci.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        sci.maxAnisotropy = 1.0f;
-        if (vkCreateSampler(hVideo->device, &sci, NULL, &hVideo->defaultSampler) != VK_SUCCESS)
-            goto cleanup_shaders;
-    }
-
-    {
-        VkSamplerCreateInfo sci = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-        sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        sci.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        sci.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        sci.maxAnisotropy = 1.0f;
-        sci.maxLod = 0.0f;
-
-        sci.magFilter = VK_FILTER_LINEAR;
-        sci.minFilter = VK_FILTER_LINEAR;
-        sci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        if (vkCreateSampler(hVideo->device, &sci, NULL, &hVideo->samplerLinear) != VK_SUCCESS)
-            goto cleanup_shaders;
-
-        sci.magFilter = VK_FILTER_NEAREST;
-        sci.minFilter = VK_FILTER_NEAREST;
-        sci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        if (vkCreateSampler(hVideo->device, &sci, NULL, &hVideo->samplerNearest) != VK_SUCCESS)
-            goto cleanup_shaders;
-    }
-
-    hVideo->overlayDirty = 0;
-
-    vkDestroyShaderModule(hVideo->device, fragModule, NULL);
-    vkDestroyShaderModule(hVideo->device, vertModule, NULL);
-
-    CreateCommandBuffers(hVideo);
-    CreateSyncObjects(hVideo);
-
-    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        hVideo->frameStaging[i].buffer = VK_NULL_HANDLE;
-        hVideo->frameStaging[i].memory = VK_NULL_HANDLE;
-        hVideo->frameStaging[i].size = 0;
-        hVideo->frameStaging[i].offset = 0;
-        hVideo->frameStaging[i].mapped = NULL;
-
-        VkCommandPoolCreateInfo cpCi = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-        cpCi.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        cpCi.queueFamilyIndex = hVideo->graphicsFamilyIndex;
-        if (vkCreateCommandPool(hVideo->device, &cpCi, NULL, &hVideo->uploadPool[i]) != VK_SUCCESS)
-            return NULL;
-
-        VkCommandBufferAllocateInfo cbAi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-        cbAi.commandPool = hVideo->uploadPool[i];
-        cbAi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        cbAi.commandBufferCount = 1;
-        if (vkAllocateCommandBuffers(hVideo->device, &cbAi, &hVideo->uploadBuffer[i]) != VK_SUCCESS)
-            return NULL;
-
-        VkFenceCreateInfo fCi = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-        fCi.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-        if (vkCreateFence(hVideo->device, &fCi, NULL, &hVideo->uploadFence[i]) != VK_SUCCESS)
-            return NULL;
-    }
-
-    hVideo->isRecording = 0;
-
-    VK_CHECK_RESULT(VK_SUCCESS);
+    g_sdl3rend_video = hVideo;
     return hVideo;
 
 cleanup_shaders:
-    if (vertModule) vkDestroyShaderModule(hVideo->device, vertModule, NULL);
-    if (fragModule) vkDestroyShaderModule(hVideo->device, fragModule, NULL);
-cleanup_device:
-    vkDestroyDevice(hVideo->device, NULL);
-cleanup_instance:
-    vkDestroyInstance(hVideo->instance, NULL);
+    if (hVideo->overlayVertShader) SDL_ReleaseGPUShader(hVideo->device, hVideo->overlayVertShader);
+    if (hVideo->overlayFragShader) SDL_ReleaseGPUShader(hVideo->device, hVideo->overlayFragShader);
+    if (hVideo->brenderFragShader) SDL_ReleaseGPUShader(hVideo->device, hVideo->brenderFragShader);
+    if (hVideo->brenderVertShader) SDL_ReleaseGPUShader(hVideo->device, hVideo->brenderVertShader);
+cleanup:
+    ReleaseRings(hVideo);
+    if (hVideo->overlayQuadIbo) { SDL_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadIbo); hVideo->overlayQuadIbo = NULL; }
+    if (hVideo->overlayQuadVbo) { SDL_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadVbo); hVideo->overlayQuadVbo = NULL; }
+    if (hVideo->samplerNearest) { SDL_ReleaseGPUSampler(hVideo->device, hVideo->samplerNearest); hVideo->samplerNearest = NULL; }
+    if (hVideo->samplerLinear) { SDL_ReleaseGPUSampler(hVideo->device, hVideo->samplerLinear); hVideo->samplerLinear = NULL; }
+    if (hVideo->depthTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->depthTexture); hVideo->depthTexture = NULL; }
+    if (hVideo->transferTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->transferTexture); hVideo->transferTexture = NULL; }
+    if (hVideo->window) { SDL_ReleaseWindowFromGPUDevice(hVideo->device, hVideo->window); }
+    if (hVideo->device) { SDL_DestroyGPUDevice(hVideo->device); hVideo->device = NULL; }
+    hVideo->window = NULL;
     return NULL;
 }
 
-static void VK_DestroyDynamicRings(HVIDEO hVideo);
+void SDL3REND_VideoClose(HVIDEO hVideo) {
+    if (!hVideo || !hVideo->device) return;
 
-void VK_VideoClose(HVIDEO hVideo) {
-    if (!hVideo)
-        return;
-
-    vkDeviceWaitIdle(hVideo->device);
-
-    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VK_FrameStaging* st = &hVideo->frameStaging[i];
-        if (st->mapped) vkUnmapMemory(hVideo->device, st->memory);
-        if (st->buffer) vkDestroyBuffer(hVideo->device, st->buffer, NULL);
-        if (st->memory) vkFreeMemory(hVideo->device, st->memory, NULL);
-        st->buffer = VK_NULL_HANDLE;
-        st->memory = VK_NULL_HANDLE;
-        st->mapped = NULL;
-        st->size = 0;
-        st->offset = 0;
-
-        if (hVideo->uploadBuffer[i]) {
-            vkDestroyCommandPool(hVideo->device, hVideo->uploadPool[i], NULL);
-            hVideo->uploadPool[i] = VK_NULL_HANDLE;
-            hVideo->uploadBuffer[i] = VK_NULL_HANDLE;
-        }
-        if (hVideo->uploadFence[i]) {
-            vkDestroyFence(hVideo->device, hVideo->uploadFence[i], NULL);
-            hVideo->uploadFence[i] = VK_NULL_HANDLE;
-        }
+    for (uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
+        WaitFence(hVideo->device, hVideo->frameFence[f]);
+        hVideo->frameFence[f] = NULL;
+        WaitFence(hVideo->device, hVideo->ringUploadFence[f]);
+        hVideo->ringUploadFence[f] = NULL;
+        WaitFence(hVideo->device, hVideo->uploadFence[f]);
+        hVideo->uploadFence[f] = NULL;
     }
 
-    for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
-        for (uint32_t i = 0; i < hVideo->deferredImageFreeCount[f]; i++) {
-            if (hVideo->deferredImageFrees[f][i].sampler != VK_NULL_HANDLE)
-                vkDestroySampler(hVideo->device, hVideo->deferredImageFrees[f][i].sampler, NULL);
-            if (hVideo->deferredImageFrees[f][i].view != VK_NULL_HANDLE)
-                vkDestroyImageView(hVideo->device, hVideo->deferredImageFrees[f][i].view, NULL);
-            if (hVideo->deferredImageFrees[f][i].image != VK_NULL_HANDLE)
-                vkDestroyImage(hVideo->device, hVideo->deferredImageFrees[f][i].image, NULL);
-            if (hVideo->deferredImageFrees[f][i].memory != VK_NULL_HANDLE)
-                vkFreeMemory(hVideo->device, hVideo->deferredImageFrees[f][i].memory, NULL);
-        }
-        hVideo->deferredImageFreeCount[f] = 0;
-    }
+    ReleaseRings(hVideo);
 
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (hVideo->imageAvailableSemaphores[i]) vkDestroySemaphore(hVideo->device, hVideo->imageAvailableSemaphores[i], NULL);
-        if (hVideo->renderFinishedSemaphores[i]) vkDestroySemaphore(hVideo->device, hVideo->renderFinishedSemaphores[i], NULL);
-        if (hVideo->inFlightFences[i]) vkDestroyFence(hVideo->device, hVideo->inFlightFences[i], NULL);
-    }
+    if (hVideo->defaultFragShader && hVideo->defaultFragShader != hVideo->brenderFragShader)
+        SDL_ReleaseGPUShader(hVideo->device, hVideo->defaultFragShader);
+    if (hVideo->defaultVertShader && hVideo->defaultVertShader != hVideo->brenderVertShader)
+        SDL_ReleaseGPUShader(hVideo->device, hVideo->defaultVertShader);
+    if (hVideo->overlayPipeline) { SDL_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->overlayPipeline); hVideo->overlayPipeline = NULL; }
+    if (hVideo->brenderBlendPipelineNoDepth) { SDL_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->brenderBlendPipelineNoDepth); hVideo->brenderBlendPipelineNoDepth = NULL; }
+    if (hVideo->brenderBlendPipeline) { SDL_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->brenderBlendPipeline); hVideo->brenderBlendPipeline = NULL; }
+    if (hVideo->brenderPipelineNoDepth) { SDL_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->brenderPipelineNoDepth); hVideo->brenderPipelineNoDepth = NULL; }
+    if (hVideo->brenderPipeline) { SDL_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->brenderPipeline); hVideo->brenderPipeline = NULL; }
+    hVideo->defaultPipeline = NULL;
+    if (hVideo->overlayFragShader) { SDL_ReleaseGPUShader(hVideo->device, hVideo->overlayFragShader); hVideo->overlayFragShader = NULL; }
+    if (hVideo->overlayVertShader) { SDL_ReleaseGPUShader(hVideo->device, hVideo->overlayVertShader); hVideo->overlayVertShader = NULL; }
+    if (hVideo->brenderFragShader) { SDL_ReleaseGPUShader(hVideo->device, hVideo->brenderFragShader); hVideo->brenderFragShader = NULL; }
+    if (hVideo->brenderVertShader) { SDL_ReleaseGPUShader(hVideo->device, hVideo->brenderVertShader); hVideo->brenderVertShader = NULL; }
+    if (hVideo->overlayTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
+    if (hVideo->defaultTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->defaultTexture); hVideo->defaultTexture = NULL; }
+    if (hVideo->overlayQuadIbo) { SDL_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadIbo); hVideo->overlayQuadIbo = NULL; }
+    if (hVideo->overlayQuadVbo) { SDL_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadVbo); hVideo->overlayQuadVbo = NULL; }
+    if (hVideo->samplerNearest) { SDL_ReleaseGPUSampler(hVideo->device, hVideo->samplerNearest); hVideo->samplerNearest = NULL; }
+    if (hVideo->samplerLinear) { SDL_ReleaseGPUSampler(hVideo->device, hVideo->samplerLinear); hVideo->samplerLinear = NULL; }
+    if (hVideo->depthTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->depthTexture); hVideo->depthTexture = NULL; }
+    if (hVideo->transferTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->transferTexture); hVideo->transferTexture = NULL; }
 
-    if (hVideo->brenderDescriptors.layout) vkDestroyDescriptorSetLayout(hVideo->device, hVideo->brenderDescriptors.layout, NULL);
-    if (hVideo->brenderDescriptors.sceneBuffer) vkDestroyBuffer(hVideo->device, hVideo->brenderDescriptors.sceneBuffer, NULL);
-    if (hVideo->brenderDescriptors.sceneMapped) vkUnmapMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory);
-    if (hVideo->brenderDescriptors.sceneMemory) vkFreeMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory, NULL);
-    if (hVideo->brenderDescriptors.modelBuffer) vkDestroyBuffer(hVideo->device, hVideo->brenderDescriptors.modelBuffer, NULL);
-    if (hVideo->brenderDescriptors.modelMapped) vkUnmapMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory);
-    if (hVideo->brenderDescriptors.modelMemory) vkFreeMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory, NULL);
+    if (hVideo->window) SDL_ReleaseWindowFromGPUDevice(hVideo->device, hVideo->window);
+    SDL_DestroyGPUDevice(hVideo->device);
+    hVideo->device = NULL;
+    hVideo->window = NULL;
 
-    VK_DestroyDynamicRings(hVideo);
-
-    if (hVideo->commandPool) vkDestroyCommandPool(hVideo->device, hVideo->commandPool, NULL);
-
-    if (hVideo->defaultPipeline && hVideo->defaultPipeline != hVideo->brenderPipeline)
-        vkDestroyPipeline(hVideo->device, hVideo->defaultPipeline, NULL);
-    if (hVideo->overlayPipeline) vkDestroyPipeline(hVideo->device, hVideo->overlayPipeline, NULL);
-    if (hVideo->overlayPipelineLayout) vkDestroyPipelineLayout(hVideo->device, hVideo->overlayPipelineLayout, NULL);
-    if (hVideo->overlaySampler) vkDestroySampler(hVideo->device, hVideo->overlaySampler, NULL);
-    if (hVideo->defaultSampler) vkDestroySampler(hVideo->device, hVideo->defaultSampler, NULL);
-    if (hVideo->samplerLinear) vkDestroySampler(hVideo->device, hVideo->samplerLinear, NULL);
-    if (hVideo->samplerNearest) vkDestroySampler(hVideo->device, hVideo->samplerNearest, NULL);
-    if (hVideo->defaultTextureView) vkDestroyImageView(hVideo->device, hVideo->defaultTextureView, NULL);
-    if (hVideo->defaultTextureMemory) vkFreeMemory(hVideo->device, hVideo->defaultTextureMemory, NULL);
-    if (hVideo->defaultTextureImage) vkDestroyImage(hVideo->device, hVideo->defaultTextureImage, NULL);
-    if (hVideo->depthImageView) vkDestroyImageView(hVideo->device, hVideo->depthImageView, NULL);
-    if (hVideo->depthMemory) vkFreeMemory(hVideo->device, hVideo->depthMemory, NULL);
-    if (hVideo->depthImage) vkDestroyImage(hVideo->device, hVideo->depthImage, NULL);
-    if (hVideo->overlayDescPool) vkDestroyDescriptorPool(hVideo->device, hVideo->overlayDescPool, NULL);
-    if (hVideo->overlayDescLayout) vkDestroyDescriptorSetLayout(hVideo->device, hVideo->overlayDescLayout, NULL);
-    if (hVideo->overlayQuadIboMemory) vkFreeMemory(hVideo->device, hVideo->overlayQuadIboMemory, NULL);
-    if (hVideo->overlayQuadIbo) vkDestroyBuffer(hVideo->device, hVideo->overlayQuadIbo, NULL);
-    if (hVideo->overlayQuadVboMemory) vkFreeMemory(hVideo->device, hVideo->overlayQuadVboMemory, NULL);
-    if (hVideo->overlayQuadVbo) vkDestroyBuffer(hVideo->device, hVideo->overlayQuadVbo, NULL);
-
-    if (hVideo->brenderPipeline) vkDestroyPipeline(hVideo->device, hVideo->brenderPipeline, NULL);
-    if (hVideo->brenderPipelineNoWrite) vkDestroyPipeline(hVideo->device, hVideo->brenderPipelineNoWrite, NULL);
-    if (hVideo->brenderBlendPipeline) vkDestroyPipeline(hVideo->device, hVideo->brenderBlendPipeline, NULL);
-    if (hVideo->brenderPipelineNoDepth) vkDestroyPipeline(hVideo->device, hVideo->brenderPipelineNoDepth, NULL);
-    if (hVideo->brenderBlendPipelineNoDepth) vkDestroyPipeline(hVideo->device, hVideo->brenderBlendPipelineNoDepth, NULL);
-
-    if (hVideo->brenderPipelineLayout) vkDestroyPipelineLayout(hVideo->device, hVideo->brenderPipelineLayout, NULL);
-    if (hVideo->defaultPipelineLayout && hVideo->defaultPipelineLayout != hVideo->brenderPipelineLayout)
-        vkDestroyPipelineLayout(hVideo->device, hVideo->defaultPipelineLayout, NULL);
-
-    if (hVideo->imguiCompatRenderPass) vkDestroyRenderPass(hVideo->device, hVideo->imguiCompatRenderPass, NULL);
-
-    if (hVideo->swapchainImageViews) {
-        for (uint32_t i = 0; i < hVideo->swapchainImageCount; i++)
-            vkDestroyImageView(hVideo->device, hVideo->swapchainImageViews[i], NULL);
-    }
-
-    if (hVideo->swapchain) vkDestroySwapchainKHR(hVideo->device, hVideo->swapchain, NULL);
-    if (hVideo->device) vkDestroyDevice(hVideo->device, NULL);
-    if (hVideo->instance) vkDestroyInstance(hVideo->instance, NULL);
-
-    memset(hVideo, 0, sizeof(VIDEO));
+    if (g_sdl3rend_video == hVideo) g_sdl3rend_video = NULL;
 }
 
-void VK_VideoRecreateSwapchain(HVIDEO hVideo) {
-    vkDeviceWaitIdle(hVideo->device);
-
-    for (uint32_t i = 0; i < hVideo->swapchainImageCount; i++) {
-        vkDestroyImageView(hVideo->device, hVideo->swapchainImageViews[i], NULL);
+void SDL3REND_VideoResize(HVIDEO hVideo) {
+    int w = hVideo->windowWidth, h = hVideo->windowHeight;
+    if (hVideo->get_window_size) {
+        hVideo->get_window_size(&w, &h);
+    } else if (hVideo->window) {
+        SDL_GetWindowSizeInPixels(hVideo->window, &w, &h);
     }
+    if (w <= 0 || h <= 0) return;
 
-    if (hVideo->depthImageView) vkDestroyImageView(hVideo->device, hVideo->depthImageView, NULL);
-    if (hVideo->depthMemory) vkFreeMemory(hVideo->device, hVideo->depthMemory, NULL);
-    if (hVideo->depthImage) vkDestroyImage(hVideo->device, hVideo->depthImage, NULL);
-    hVideo->depthImageView = VK_NULL_HANDLE;
-    hVideo->depthMemory = VK_NULL_HANDLE;
-    hVideo->depthImage = VK_NULL_HANDLE;
+    if (hVideo->transferTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->transferTexture); hVideo->transferTexture = NULL; }
+    if (hVideo->depthTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->depthTexture); hVideo->depthTexture = NULL; }
 
-    VkSwapchainKHR oldSwapchain = hVideo->swapchain;
+    hVideo->windowWidth = w;
+    hVideo->windowHeight = h;
 
-    // Compute actual window size from the viewport callback
-    br_device_pixelmap* screen = (br_device_pixelmap*)hVideo->res;
-    int vp_x, vp_y;
-    float scale_x, scale_y;
-    DevicePixelmapVKGetViewport(screen, &vp_x, &vp_y, &scale_x, &scale_y);
-    int width = (int)(2 * vp_x + scale_x * screen->pm_width + 0.5f);
-    int height = (int)(2 * vp_y + scale_y * screen->pm_height + 0.5f);
-
-    CreateSwapchain(hVideo, width, height);
-
-    if (oldSwapchain) {
-        vkDestroySwapchainKHR(hVideo->device, oldSwapchain, NULL);
-    }
-
-    CreateImageViews(hVideo);
-    CreateDepthResources(hVideo);
-}
-
-static VkResult createBuffer(HVIDEO hVideo, VkDeviceSize size, VkBufferUsageFlags usage,
-    VkMemoryPropertyFlags props, VkBuffer* buffer, VkDeviceMemory* memory) {
-    VkBufferCreateInfo bi = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bi.size = size;
-    bi.usage = usage;
-    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult res = vkCreateBuffer(hVideo->device, &bi, NULL, buffer);
-    if (res != VK_SUCCESS) return res;
-
-    VkMemoryRequirements memReq;
-    vkGetBufferMemoryRequirements(hVideo->device, *buffer, &memReq);
-
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    ai.allocationSize = memReq.size;
-    ai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, memReq.memoryTypeBits, props);
-    if (ai.memoryTypeIndex == UINT32_MAX) {
-        vkDestroyBuffer(hVideo->device, *buffer, NULL);
-        return VK_ERROR_OUT_OF_DEVICE_MEMORY;
-    }
-
-    res = vkAllocateMemory(hVideo->device, &ai, NULL, memory);
-    if (res != VK_SUCCESS) {
-        vkDestroyBuffer(hVideo->device, *buffer, NULL);
-        *buffer = VK_NULL_HANDLE;
-        return res;
-    }
-
-    vkBindBufferMemory(hVideo->device, *buffer, *memory, 0);
-    return VK_SUCCESS;
-}
-
-#define VK_DYN_RING_CAPACITY (4u * 1024u * 1024u)
-
-VkResult VK_CreateDynamicRings(HVIDEO hVideo) {
-    for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
-        VkResult res = createBuffer(hVideo, VK_DYN_RING_CAPACITY, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &hVideo->dynVbo[f], &hVideo->dynVboMemory[f]);
-        if (res != VK_SUCCESS) return res;
-        res = vkMapMemory(hVideo->device, hVideo->dynVboMemory[f], 0, VK_DYN_RING_CAPACITY, 0,
-            &hVideo->dynVboMapped[f]);
-        if (res != VK_SUCCESS) return res;
-
-        res = createBuffer(hVideo, VK_DYN_RING_CAPACITY, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &hVideo->dynIbo[f], &hVideo->dynIboMemory[f]);
-        if (res != VK_SUCCESS) return res;
-        res = vkMapMemory(hVideo->device, hVideo->dynIboMemory[f], 0, VK_DYN_RING_CAPACITY, 0,
-            &hVideo->dynIboMapped[f]);
-        if (res != VK_SUCCESS) return res;
-
-        hVideo->dynVboOffset[f] = 0;
-        hVideo->dynIboOffset[f] = 0;
-    }
-    hVideo->dynVboCapacity = VK_DYN_RING_CAPACITY;
-    hVideo->dynIboCapacity = VK_DYN_RING_CAPACITY;
-    return VK_SUCCESS;
-}
-
-static void VK_DestroyDynamicRings(HVIDEO hVideo) {
-    for (int f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
-        if (hVideo->dynVboMapped[f]) vkUnmapMemory(hVideo->device, hVideo->dynVboMemory[f]);
-        if (hVideo->dynVbo[f]) vkDestroyBuffer(hVideo->device, hVideo->dynVbo[f], NULL);
-        if (hVideo->dynVboMemory[f]) vkFreeMemory(hVideo->device, hVideo->dynVboMemory[f], NULL);
-        if (hVideo->dynIboMapped[f]) vkUnmapMemory(hVideo->device, hVideo->dynIboMemory[f]);
-        if (hVideo->dynIbo[f]) vkDestroyBuffer(hVideo->device, hVideo->dynIbo[f], NULL);
-        if (hVideo->dynIboMemory[f]) vkFreeMemory(hVideo->device, hVideo->dynIboMemory[f], NULL);
+    if (!CreateOffscreenTargets(hVideo)) {
+        BR_FATAL("SDL3GPU: Failed to recreate offscreen targets after resize.");
     }
 }
 
-VkResult VK_CreateBrenderDescriptors(HVIDEO hVideo, uint32_t width, uint32_t height) {
-    (void)width;
-    (void)height;
-
-    VkDescriptorSetLayoutBinding bindings[3] = {0};
-    bindings[0].binding = 0;
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    bindings[0].descriptorCount = 1;
-    bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    bindings[1].binding = 1;
-    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    bindings[1].descriptorCount = 1;
-    bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    bindings[2].binding = 2;
-    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    bindings[2].descriptorCount = 1;
-    bindings[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutCreateInfo dslCi = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-    dslCi.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
-    dslCi.bindingCount = 3;
-    dslCi.pBindings = bindings;
-    VkResult res = vkCreateDescriptorSetLayout(hVideo->device, &dslCi, NULL, &hVideo->brenderDescriptors.layout);
-    if (res != VK_SUCCESS) return res;
-
-    VkDeviceSize sceneSlotSize = sizeof(shader_data_scene);
-    VkDeviceSize align = hVideo->minUniformBufferOffsetAlignment;
-    if (align > 0)
-        sceneSlotSize = (sceneSlotSize + align - 1) & ~(align - 1);
-    VkDeviceSize sceneSize = sceneSlotSize * 64;
-    VkDeviceSize modelSlotSize = sceneSlotSize + sizeof(shader_data_model);
-    VkDeviceSize modelDrawCapacity = 1024;
-    VkDeviceSize modelSize = modelSlotSize * modelDrawCapacity;
-
-    hVideo->sceneSlotSize = sceneSlotSize;
-    hVideo->modelSlotSize = modelSlotSize;
-    hVideo->modelBufferCapacity = modelSize;
-    hVideo->sceneBufferCapacity = sceneSize;
-
-    res = createBuffer(hVideo, sceneSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &hVideo->brenderDescriptors.sceneBuffer, &hVideo->brenderDescriptors.sceneMemory);
-    if (res != VK_SUCCESS) return res;
-
-    res = createBuffer(hVideo, modelSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &hVideo->brenderDescriptors.modelBuffer, &hVideo->brenderDescriptors.modelMemory);
-    if (res != VK_SUCCESS) return res;
-
-    // Persistently map both UBO buffers: per-group uploads become plain memcpys.
-    // vkMapMemory/vkUnmapMemory per group was a major CPU cost that grew linearly
-    // with scene group count (crash debris, ped gibs, many actors).
-    vkMapMemory(hVideo->device, hVideo->brenderDescriptors.sceneMemory, 0, sceneSize, 0,
-        &hVideo->brenderDescriptors.sceneMapped);
-    vkMapMemory(hVideo->device, hVideo->brenderDescriptors.modelMemory, 0, modelSize, 0,
-        &hVideo->brenderDescriptors.modelMapped);
-
-    return VK_SUCCESS;
+void SDL3REND_UpdateScene(HVIDEO hVideo, void* data, size_t size) {
+    if (size > sizeof(hVideo->sceneData)) size = sizeof(hVideo->sceneData);
+    if (data) memcpy(&hVideo->sceneData, data, size);
 }
 
-void VK_UpdateSceneUBO(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset) {
-    memcpy((char*)hVideo->brenderDescriptors.sceneMapped + offset, data, size);
+void SDL3REND_SceneBegin(HVIDEO hVideo) {
+    SDL3REND_EnsureRecording(hVideo);
+    if (!hVideo->commandBuffer) return;
+    SDL_PushGPUVertexUniformData(hVideo->commandBuffer, SDL3REND_SCENE_UNIFORM_SLOT,
+        &hVideo->sceneData, (Uint32)sizeof(hVideo->sceneData));
+    SDL_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3REND_SCENE_UNIFORM_SLOT,
+        &hVideo->sceneData, (Uint32)sizeof(hVideo->sceneData));
 }
 
-void VK_UpdateModelUBOAtOffset(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset) {
-    memcpy((char*)hVideo->brenderDescriptors.modelMapped + offset, data, size);
+void SDL3REND_PushModel(HVIDEO hVideo, const void* data, size_t size) {
+    if (!data || size == 0) return;
+    if (size > sizeof(hVideo->modelData)) size = sizeof(hVideo->modelData);
+    SDL3REND_EnsureRecording(hVideo);
+    if (!hVideo->commandBuffer) return;
+    SDL_PushGPUVertexUniformData(hVideo->commandBuffer, SDL3REND_MODEL_UNIFORM_SLOT,
+        data, (Uint32)size);
+    SDL_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3REND_MODEL_UNIFORM_SLOT,
+        data, (Uint32)size);
 }
 
-static void VK_BeginDynamicRenderingWithOps(HVIDEO hVideo, VkCommandBuffer cmd,
-    VkAttachmentLoadOp colorLoadOp, VkAttachmentLoadOp depthLoadOp) {
+void SDL3REND_EnsureRecording(HVIDEO hVideo) {
+    if (hVideo->isRecording) return;
 
-    VkRenderingAttachmentInfo colorAttachment = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
-    colorAttachment.imageView = hVideo->swapchainImageViews[hVideo->currentImageIndex];
-    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    colorAttachment.loadOp = colorLoadOp;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue.color.float32[0] = 0.0f;
-    colorAttachment.clearValue.color.float32[1] = 0.0f;
-    colorAttachment.clearValue.color.float32[2] = 0.0f;
-    colorAttachment.clearValue.color.float32[3] = 1.0f;
+    uint32_t f = hVideo->currentFrame;
 
-    VkRenderingAttachmentInfo depthAttachment = {VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
-    depthAttachment.imageView = hVideo->depthImageView;
-    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depthAttachment.loadOp = depthLoadOp;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.clearValue.depthStencil.depth = 1.0f;
-    depthAttachment.clearValue.depthStencil.stencil = 0;
+    if (hVideo->frameFence[f]) { WaitFence(hVideo->device, hVideo->frameFence[f]); hVideo->frameFence[f] = NULL; }
+    if (hVideo->ringUploadFence[f]) { WaitFence(hVideo->device, hVideo->ringUploadFence[f]); hVideo->ringUploadFence[f] = NULL; }
+    if (hVideo->uploadFence[f]) { WaitFence(hVideo->device, hVideo->uploadFence[f]); hVideo->uploadFence[f] = NULL; }
 
-    VkRenderingInfo renderInfo = {VK_STRUCTURE_TYPE_RENDERING_INFO};
-    renderInfo.renderArea.offset.x = 0;
-    renderInfo.renderArea.offset.y = 0;
-    renderInfo.renderArea.extent = hVideo->swapchainExtent;
-    renderInfo.layerCount = 1;
-    renderInfo.colorAttachmentCount = 1;
-    renderInfo.pColorAttachments = &colorAttachment;
-    renderInfo.pDepthAttachment = &depthAttachment;
+    /* Re-map the transfer buffers for this frame slot. */
+    if (hVideo->dynVboTransfer[f] && !hVideo->dynVboMapped[f])
+        hVideo->dynVboMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->dynVboTransfer[f], false);
+    if (hVideo->dynIboTransfer[f] && !hVideo->dynIboMapped[f])
+        hVideo->dynIboMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->dynIboTransfer[f], false);
+    if (hVideo->stagingTransfer[f] && !hVideo->stagingMapped[f])
+        hVideo->stagingMapped[f] = SDL_MapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f], false);
 
-    vkCmdBeginRendering(cmd, &renderInfo);
-}
+    hVideo->dynVboOffset[f] = 0;
+    hVideo->dynIboOffset[f] = 0;
+    hVideo->dynVboWritten[f] = 0;
+    hVideo->dynIboWritten[f] = 0;
+    hVideo->stagingOffset[f] = 0;
 
-/* Starts recording the current frame's command buffer exactly once. Called by
- * the first sceneBegin AND the first flush of a frame; idempotent via
- * hVideo->isRecording. renderingStarted is NOT set here — it is scene-scoped
- * (set in sceneBegin) so the pre-scene flush can still run the mainViewport
- * purge. */
-void VK_EnsureRecording(HVIDEO hVideo) {
-    hVideo->currentModelOffset = 0;
-    hVideo->sceneSlotIndex = 0;
+    hVideo->frameEpoch++;
+
     hVideo->dimAreaCount = 0;
     hVideo->clearAreaCount = 0;
     hVideo->pratcamAreaCount = 0;
-    hVideo->lastVbo = VK_NULL_HANDLE;
-    hVideo->lastIbo = VK_NULL_HANDLE;
-    hVideo->lastVboOffset = 0;
-    hVideo->lastIboOffset = 0;
-    hVideo->lastTextureView = VK_NULL_HANDLE;
-    hVideo->lastTextureSampler = VK_NULL_HANDLE;
-    hVideo->lastPipeline = VK_NULL_HANDLE;
 
-    uint32_t f = hVideo->currentFrame;
-    vkWaitForFences(hVideo->device, 1, &hVideo->inFlightFences[f], VK_TRUE, UINT64_MAX);
-    vkResetFences(hVideo->device, 1, &hVideo->inFlightFences[f]);
-
-    /* Reset the dynamic-ring cursors. The fence wait above guarantees the GPU is
-     * done with the previous command buffer submitted for this frame slot, so its
-     * ring data is no longer referenced and may be overwritten. Within a frame the
-     * cursor only advances (no wrap), so every small-model build gets its own slot
-     * even when the same model is rebuilt hundreds of times (electro ray). */
-    hVideo->dynVboOffset[f] = 0;
-    hVideo->dynIboOffset[f] = 0;
-    hVideo->frameEpoch++;
-
-    if (hVideo->deferredBufferFreeCount[f] > 0) {
-        for (uint32_t i = 0; i < hVideo->deferredBufferFreeCount[f]; i++) {
-            if (hVideo->deferredBufferFrees[f][i].buffer != VK_NULL_HANDLE)
-                vkDestroyBuffer(hVideo->device, hVideo->deferredBufferFrees[f][i].buffer, NULL);
-            if (hVideo->deferredBufferFrees[f][i].memory != VK_NULL_HANDLE)
-                vkFreeMemory(hVideo->device, hVideo->deferredBufferFrees[f][i].memory, NULL);
-        }
-        hVideo->deferredBufferFreeCount[f] = 0;
-    }
-
-    if (hVideo->deferredImageFreeCount[f] > 0) {
-        for (uint32_t i = 0; i < hVideo->deferredImageFreeCount[f]; i++) {
-            if (hVideo->deferredImageFrees[f][i].sampler != VK_NULL_HANDLE)
-                vkDestroySampler(hVideo->device, hVideo->deferredImageFrees[f][i].sampler, NULL);
-            if (hVideo->deferredImageFrees[f][i].view != VK_NULL_HANDLE)
-                vkDestroyImageView(hVideo->device, hVideo->deferredImageFrees[f][i].view, NULL);
-            if (hVideo->deferredImageFrees[f][i].image != VK_NULL_HANDLE)
-                vkDestroyImage(hVideo->device, hVideo->deferredImageFrees[f][i].image, NULL);
-            if (hVideo->deferredImageFrees[f][i].memory != VK_NULL_HANDLE)
-                vkFreeMemory(hVideo->device, hVideo->deferredImageFrees[f][i].memory, NULL);
-        }
-        hVideo->deferredImageFreeCount[f] = 0;
-    }
-
+    /* Resize detection. */
     {
-        int win_w = 0, win_h = 0;
-        VK_GetWindowSize(hVideo, &win_w, &win_h);
-        if (win_w > 0 && win_h > 0 &&
-            ((uint32_t)win_w != hVideo->swapchainExtent.width ||
-             (uint32_t)win_h != hVideo->swapchainExtent.height)) {
-            VK_VideoRecreateSwapchain(hVideo);
+        int w = hVideo->windowWidth, h = hVideo->windowHeight;
+        SDL3REND_GetWindowSize(hVideo, &w, &h);
+        if (w > 0 && h > 0 && (w != hVideo->windowWidth || h != hVideo->windowHeight)) {
+            SDL3REND_VideoResize(hVideo);
             hVideo->mainViewportW = 0;
         }
     }
 
-    VkResult res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
-        hVideo->imageAvailableSemaphores[hVideo->currentFrame], VK_NULL_HANDLE, &hVideo->currentImageIndex);
-    if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-        VK_VideoRecreateSwapchain(hVideo);
-        hVideo->mainViewportW = 0;
-        res = vkAcquireNextImageKHR(hVideo->device, hVideo->swapchain, UINT64_MAX,
-            hVideo->imageAvailableSemaphores[hVideo->currentFrame], VK_NULL_HANDLE, &hVideo->currentImageIndex);
-    }
-
-    VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-    vkResetCommandBuffer(cmd, 0);
-
-    VkCommandBufferBeginInfo begin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    begin.flags = 0;
-    vkBeginCommandBuffer(cmd, &begin);
-
-    hVideo->isRecording = 1;
-}
-
-void VK_BeginRenderPass(HVIDEO hVideo, VkCommandBuffer cmd) {
-    VkImageMemoryBarrier2 barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-
-    barrier.image = hVideo->swapchainImages[hVideo->currentImageIndex];
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    barrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-    barrier.srcAccessMask = VK_ACCESS_2_NONE;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-
-    VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-    depInfo.imageMemoryBarrierCount = 1;
-    depInfo.pImageMemoryBarriers = &barrier;
-    vkCmdPipelineBarrier2(cmd, &depInfo);
-
-    barrier.image = hVideo->depthImage;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    vkCmdPipelineBarrier2(cmd, &depInfo);
-
-    VK_BeginDynamicRenderingWithOps(hVideo, cmd, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR);
-}
-
-void VK_BeginOverlayRenderPass(HVIDEO hVideo, VkCommandBuffer cmd) {
-    VK_BeginDynamicRenderingWithOps(hVideo, cmd, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_LOAD_OP_LOAD);
-}
-
-void VK_EndRenderPass(HVIDEO hVideo, VkCommandBuffer cmd) {
-    (void)hVideo;
-    vkCmdEndRendering(cmd);
-}
-
-VkResult VK_Present(HVIDEO hVideo) {
-    uint32_t f = (hVideo->currentFrame + MAX_FRAMES_IN_FLIGHT - 1) % MAX_FRAMES_IN_FLIGHT;
-    VkPresentInfoKHR pi = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-    pi.waitSemaphoreCount = 1;
-    pi.pWaitSemaphores = &hVideo->renderFinishedSemaphores[f];
-    pi.swapchainCount = 1;
-    pi.pSwapchains = &hVideo->swapchain;
-    pi.pImageIndices = &hVideo->currentImageIndex;
-
-    return vkQueuePresentKHR(hVideo->presentQueue, &pi);
-}
-
-br_error VK_BrPixelmapGetTypeDetails(br_uint_8 pmType, VkFormat* format, VkImageTiling* tiling,
-    VkImageUsageFlags* usage, VkMemoryPropertyFlags* memProps) {
-    VkFormat fmt = VK_FORMAT_UNDEFINED;
-    VkImageTiling til = VK_IMAGE_TILING_OPTIMAL;
-    VkImageUsageFlags usg = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    VkMemoryPropertyFlags mem = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-    switch (pmType) {
-    case BR_PMT_RGB_555:
-        fmt = VK_FORMAT_B5G5R5A1_UNORM_PACK16;
-        break;
-    case BR_PMT_RGB_565:
-        fmt = VK_FORMAT_R5G6B5_UNORM_PACK16;
-        break;
-    case BR_PMT_INDEX_8:
-        fmt = VK_FORMAT_B8G8R8A8_UNORM;
-        break;
-    case BR_PMT_RGB_888:
-        fmt = VK_FORMAT_R8G8B8_UNORM;
-        break;
-    case BR_PMT_RGBX_888:
-    case BR_PMT_RGBA_8888:
-        fmt = VK_FORMAT_B8G8R8A8_UNORM;
-        break;
-    case BR_PMT_DEPTH_16:
-        fmt = VK_FORMAT_D16_UNORM;
-        usg = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        break;
-    default:
-        return BRE_FAIL;
-    }
-
-    if (format) *format = fmt;
-    if (tiling) *tiling = til;
-    if (usage) *usage = usg;
-    if (memProps) *memProps = mem;
-    return BRE_OK;
-}
-
-void VK_DeferFreeImage(HVIDEO hVideo, VkImage image, VkImageView view, VkSampler sampler, VkDeviceMemory memory) {
-    if (image == VK_NULL_HANDLE && view == VK_NULL_HANDLE && sampler == VK_NULL_HANDLE && memory == VK_NULL_HANDLE)
+    hVideo->commandBuffer = SDL_AcquireGPUCommandBuffer(hVideo->device);
+    if (!hVideo->commandBuffer) {
+        BR_FATAL("SDL3GPU: Failed to acquire command buffer.");
         return;
+    }
+    hVideo->isRecording = 1;
+    hVideo->renderPassActive = 0;
+    hVideo->currentPass = NULL;
+}
 
+void SDL3REND_BeginRenderPass(HVIDEO hVideo) {
+    if (hVideo->renderPassActive) return;
+    SDL3REND_EnsureRecording(hVideo);
+    if (!hVideo->commandBuffer) return;
+
+    SDL_GPUColorTargetInfo color = {0};
+    color.texture = hVideo->transferTexture;
+    color.clear_color = (SDL_FColor){0.0f, 0.0f, 0.0f, 1.0f};
+    color.load_op = SDL_GPU_LOADOP_CLEAR;
+    color.store_op = SDL_GPU_STOREOP_STORE;
+
+    SDL_GPUDepthStencilTargetInfo depth = {0};
+    depth.texture = hVideo->depthTexture;
+    depth.clear_depth = 1.0f;
+    depth.load_op = SDL_GPU_LOADOP_CLEAR;
+    depth.store_op = SDL_GPU_STOREOP_DONT_CARE;
+    depth.stencil_load_op = SDL_GPU_LOADOP_DONT_CARE;
+    depth.stencil_store_op = SDL_GPU_STOREOP_DONT_CARE;
+
+    hVideo->currentPass = SDL_BeginGPURenderPass(hVideo->commandBuffer, &color, 1, &depth);
+    if (!hVideo->currentPass) {
+        BR_FATAL("SDL3GPU: Failed to begin render pass.");
+        return;
+    }
+    hVideo->renderPassActive = 1;
+
+    /* SDL3 GPU resets all render state at every pass start. */
+    hVideo->lastPipeline = NULL;
+    hVideo->lastVbo = NULL;
+    hVideo->lastIbo = NULL;
+    hVideo->lastVboOffset = 0;
+    hVideo->lastIboOffset = 0;
+    hVideo->lastTexture = NULL;
+    hVideo->lastSampler = NULL;
+}
+
+void SDL3REND_EndRenderPass(HVIDEO hVideo) {
+    if (!hVideo->renderPassActive || !hVideo->currentPass) return;
+    SDL_EndGPURenderPass(hVideo->currentPass);
+    hVideo->currentPass = NULL;
+    hVideo->renderPassActive = 0;
+}
+
+int SDL3REND_Present(HVIDEO hVideo) {
     uint32_t f = hVideo->currentFrame;
-    if (hVideo->deferredImageFreeCount[f] + 1 > hVideo->deferredImageFreeCapacity[f]) {
-        uint32_t newCap = hVideo->deferredImageFreeCapacity[f] ? hVideo->deferredImageFreeCapacity[f] * 2 : 64;
-        size_t elemSize = sizeof(VK_DeferredImageFree);
-        VK_DeferredImageFree *newArray = BrResAllocate(hVideo->res, newCap * elemSize, BR_MEMORY_OBJECT_DATA);
-        if (hVideo->deferredImageFrees[f])
-            BrMemCpy(newArray, hVideo->deferredImageFrees[f], hVideo->deferredImageFreeCount[f] * elemSize);
-        hVideo->deferredImageFrees[f] = newArray;
-        hVideo->deferredImageFreeCapacity[f] = newCap;
+    SDL_GPUDevice* device = hVideo->device;
+
+    if (hVideo->renderPassActive)
+        SDL3REND_EndRenderPass(hVideo);
+
+    if (!hVideo->commandBuffer || !hVideo->isRecording) {
+        hVideo->currentFrame = (f + 1) % MAX_FRAMES_IN_FLIGHT;
+        return 0;
     }
 
-    hVideo->deferredImageFrees[f][hVideo->deferredImageFreeCount[f]].image = image;
-    hVideo->deferredImageFrees[f][hVideo->deferredImageFreeCount[f]].view = view;
-    hVideo->deferredImageFrees[f][hVideo->deferredImageFreeCount[f]].sampler = sampler;
-    hVideo->deferredImageFrees[f][hVideo->deferredImageFreeCount[f]].memory = memory;
-    hVideo->deferredImageFreeCount[f]++;
+    /* 1. Ring upload: unmap the transfer buffers and copy the written region
+     * into the GPU ring buffers. Submitted before the main submit; the queue
+     * is FIFO, so every draw in the main buffer sees this frame's ring data. */
+    if (hVideo->dynVboMapped[f]) {
+        SDL_UnmapGPUTransferBuffer(device, hVideo->dynVboTransfer[f]);
+        hVideo->dynVboMapped[f] = NULL;
+    }
+    if (hVideo->dynIboMapped[f]) {
+        SDL_UnmapGPUTransferBuffer(device, hVideo->dynIboTransfer[f]);
+        hVideo->dynIboMapped[f] = NULL;
+    }
+
+    if (hVideo->dynVboWritten[f] > 0 || hVideo->dynIboWritten[f] > 0) {
+        SDL_GPUCommandBuffer* upCmd = SDL_AcquireGPUCommandBuffer(device);
+        if (upCmd) {
+            SDL_GPUCopyPass* copy = SDL_BeginGPUCopyPass(upCmd);
+            if (hVideo->dynVboWritten[f] > 0) {
+                SDL_GPUTransferBufferLocation src = { hVideo->dynVboTransfer[f], 0 };
+                SDL_GPUBufferRegion dst = { hVideo->dynVbo[f], 0, (Uint32)hVideo->dynVboWritten[f] };
+                SDL_UploadToGPUBuffer(copy, &src, &dst, false);
+            }
+            if (hVideo->dynIboWritten[f] > 0) {
+                SDL_GPUTransferBufferLocation src = { hVideo->dynIboTransfer[f], 0 };
+                SDL_GPUBufferRegion dst = { hVideo->dynIbo[f], 0, (Uint32)hVideo->dynIboWritten[f] };
+                SDL_UploadToGPUBuffer(copy, &src, &dst, false);
+            }
+            SDL_EndGPUCopyPass(copy);
+            hVideo->ringUploadFence[f] = SDL_SubmitGPUCommandBufferAndAcquireFence(upCmd);
+            if (!hVideo->ringUploadFence[f])
+                BR_FATAL("SDL3GPU: Failed to submit ring upload.");
+        }
+    }
+
+    /* 2. Blit the offscreen frame into the swapchain and submit the main
+     * command buffer. */
+    SDL_GPUTexture* swapchainTexture = NULL;
+    Uint32 sw = 0, sh = 0;
+    if (SDL_AcquireGPUSwapchainTexture(hVideo->commandBuffer, hVideo->window, &swapchainTexture, &sw, &sh)) {
+        if (swapchainTexture) {
+            SDL_GPUBlitInfo blit = {0};
+            blit.source.texture = hVideo->transferTexture;
+            blit.source.w = hVideo->windowWidth;
+            blit.source.h = hVideo->windowHeight;
+            blit.destination.texture = swapchainTexture;
+            blit.destination.w = sw;
+            blit.destination.h = sh;
+            blit.load_op = SDL_GPU_LOADOP_DONT_CARE;
+            blit.filter = SDL_GPU_FILTER_LINEAR;
+            /* BRender's projection is GL-style (NDC y-up); SDL3-GPU NDC
+             * is y-down, so the rendered transfer texture is vertically
+             * mirrored. Flip it at present time to match the screen. */
+            blit.flip_mode = SDL_FLIP_VERTICAL;
+            SDL_BlitGPUTexture(hVideo->commandBuffer, &blit);
+        }
+    } else {
+        BrLogPrintf("SDL3GPU: AcquireGPUSwapchainTexture failed: %s\n", SDL_GetError());
+    }
+
+    if (g_sdl3rend_external_cb)
+        g_sdl3rend_external_cb(hVideo->commandBuffer, g_sdl3rend_external_ud);
+
+    hVideo->frameFence[f] = SDL_SubmitGPUCommandBufferAndAcquireFence(hVideo->commandBuffer);
+    if (!hVideo->frameFence[f])
+        BR_FATAL("SDL3GPU: Failed to submit frame command buffer.");
+
+    hVideo->commandBuffer = NULL;
+    hVideo->isRecording = 0;
+    hVideo->renderPassActive = 0;
+    hVideo->currentPass = NULL;
+
+    hVideo->currentFrame = (f + 1) % MAX_FRAMES_IN_FLIGHT;
+    return 0;
 }
 
-/* Grows (or lazily creates) the current frame slot's staging buffer to at least
- * `aligned` bytes. The caller has already waited the slot's uploadFence, so no
- * uploads reference the old buffer and it may be destroyed immediately. Returns 1
- * on success, 0 on allocation failure. */
-static int VK_GrowFrameStaging(HVIDEO hVideo, VK_FrameStaging* st, VkDeviceSize aligned) {
-    VkDeviceSize newSize = st->size > 0 ? st->size : 16u * 1024u * 1024u;
-    while (newSize < aligned)
-        newSize *= 2;
+void SDL3REND_OverlayDraw(HVIDEO hVideo) {
+    if (!hVideo->renderPassActive || !hVideo->currentPass) return;
+    if (!hVideo->overlayDirty) return;
+    if (!hVideo->overlayTexture || !hVideo->overlayPipeline) return;
 
-    VkBufferCreateInfo bi = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bi.size = newSize;
-    bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBuffer newBuffer;
-    if (vkCreateBuffer(hVideo->device, &bi, NULL, &newBuffer) != VK_SUCCESS)
-        return 0;
+    SDL_GPURenderPass* pass = hVideo->currentPass;
 
-    VkMemoryRequirements memReq;
-    vkGetBufferMemoryRequirements(hVideo->device, newBuffer, &memReq);
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    ai.allocationSize = memReq.size;
-    ai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, memReq.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkDeviceMemory newMemory;
-    if (ai.memoryTypeIndex == UINT32_MAX || vkAllocateMemory(hVideo->device, &ai, NULL, &newMemory) != VK_SUCCESS) {
-        vkDestroyBuffer(hVideo->device, newBuffer, NULL);
-        return 0;
-    }
-    vkBindBufferMemory(hVideo->device, newBuffer, newMemory, 0);
+    SDL_GPUViewport viewport = {0};
+    viewport.w = (float)hVideo->windowWidth;
+    viewport.h = (float)hVideo->windowHeight;
+    viewport.max_depth = 1.0f;
+    SDL_SetGPUViewport(pass, &viewport);
 
-    void* mapped;
-    if (vkMapMemory(hVideo->device, newMemory, 0, VK_WHOLE_SIZE, 0, &mapped) != VK_SUCCESS) {
-        vkDestroyBuffer(hVideo->device, newBuffer, NULL);
-        vkFreeMemory(hVideo->device, newMemory, NULL);
-        return 0;
+    SDL_Rect scissor = {0, 0, hVideo->windowWidth, hVideo->windowHeight};
+    SDL_SetGPUScissor(pass, &scissor);
+
+    if (hVideo->lastPipeline != hVideo->overlayPipeline) {
+        SDL_BindGPUGraphicsPipeline(pass, hVideo->overlayPipeline);
+        hVideo->lastPipeline = hVideo->overlayPipeline;
     }
 
-    if (st->buffer != VK_NULL_HANDLE) {
-        vkDestroyBuffer(hVideo->device, st->buffer, NULL);
-        vkFreeMemory(hVideo->device, st->memory, NULL);
+    SDL_GPUBufferBinding vbo = { hVideo->overlayQuadVbo, 0 };
+    if (hVideo->lastVbo != hVideo->overlayQuadVbo || hVideo->lastVboOffset != 0) {
+        SDL_BindGPUVertexBuffers(pass, 0, &vbo, 1);
+        hVideo->lastVbo = hVideo->overlayQuadVbo;
+        hVideo->lastVboOffset = 0;
     }
 
-    st->buffer = newBuffer;
-    st->memory = newMemory;
-    st->mapped = mapped;
-    st->size = newSize;
-    st->offset = 0;
-    return 1;
+    SDL_GPUBufferBinding ibo = { hVideo->overlayQuadIbo, 0 };
+    if (hVideo->lastIbo != hVideo->overlayQuadIbo || hVideo->lastIboOffset != 0) {
+        SDL_BindGPUIndexBuffer(pass, &ibo, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+        hVideo->lastIbo = hVideo->overlayQuadIbo;
+        hVideo->lastIboOffset = 0;
+    }
+
+    if (hVideo->lastTexture != hVideo->overlayTexture || hVideo->lastSampler != hVideo->overlaySampler) {
+        SDL_GPUTextureSamplerBinding tsb = { hVideo->overlayTexture, hVideo->overlaySampler };
+        SDL_BindGPUFragmentSamplers(pass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+        hVideo->lastTexture = hVideo->overlayTexture;
+        hVideo->lastSampler = hVideo->overlaySampler;
+    }
+
+    SDL_DrawGPUIndexedPrimitives(pass, SDL3REND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
+    hVideo->overlayDirty = 0;
 }
 
-VkResult VK_UploadBufferToImage(HVIDEO hVideo, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
-    uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY, VkImageAspectFlags aspectMask,
+int SDL3REND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
+    uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY,
     const void* hostData, size_t hostDataSize) {
 
+    if (!hostData || hostDataSize == 0) return -1;
+
     uint32_t f = hVideo->currentFrame;
-    VK_FrameStaging* st = &hVideo->frameStaging[f];
 
-    /* Wait for this slot's previous upload batch before reusing its staging buffer
-     * and command buffer. In the steady frame loop the slot is reused two frames
-     * later and the upload submit (a tiny copy, submitted before that frame's main
-     * command buffer) has long finished, so this is a cheap already-signaled check
-     * — never a full GPU drain. Because the wait precedes every reuse, uploads may
-     * be recorded from anywhere: the frame loop OR out-of-frame track/asset loading
-     * (BufferStoredVKUpdate during LoadTrack). */
-    vkWaitForFences(hVideo->device, 1, &hVideo->uploadFence[f], VK_TRUE, UINT64_MAX);
-    vkResetFences(hVideo->device, 1, &hVideo->uploadFence[f]);
-
-    st->offset = 0;
-    vkResetCommandBuffer(hVideo->uploadBuffer[f], 0);
-
-    VkCommandBufferBeginInfo begin = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    if (vkBeginCommandBuffer(hVideo->uploadBuffer[f], &begin) != VK_SUCCESS)
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-    VkDeviceSize aligned = (hostDataSize + 255u) & ~(VkDeviceSize)255u;
-    if (st->buffer == VK_NULL_HANDLE || st->offset + aligned > st->size) {
-        if (!VK_GrowFrameStaging(hVideo, st, aligned))
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
+    /* The slot is never reused while a copy it fed is still pending. */
+    if (hVideo->uploadFence[f]) {
+        WaitFence(hVideo->device, hVideo->uploadFence[f]);
+        hVideo->uploadFence[f] = NULL;
     }
 
-    memcpy((char*)st->mapped + st->offset, hostData, hostDataSize);
-    VkDeviceSize srcOffset = st->offset;
-    st->offset += aligned;
+    if (!hVideo->stagingMapped[f]) {
+        if (!EnsureStagingMapped(hVideo, f))
+            return -1;
+        hVideo->stagingOffset[f] = 0;
+    }
 
-    VkCommandBuffer cmd = hVideo->uploadBuffer[f];
+    if (hVideo->stagingOffset[f] + hostDataSize > hVideo->stagingSize) {
+        if (!EnsureStagingCapacity(hVideo, hostDataSize))
+            return -1;
+    }
+    if (!hVideo->stagingMapped[f])
+        return -1;
 
-    VkImageMemoryBarrier2 b = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
-    b.oldLayout = oldLayout;
-    b.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    b.image = image;
-    b.subresourceRange.aspectMask = aspectMask;
-    b.subresourceRange.baseMipLevel = 0;
-    b.subresourceRange.levelCount = 1;
-    b.subresourceRange.baseArrayLayer = 0;
-    b.subresourceRange.layerCount = 1;
-    b.srcStageMask = (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-        ? VK_PIPELINE_STAGE_2_NONE : VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-    b.srcAccessMask = (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
-        ? VK_ACCESS_2_NONE : VK_ACCESS_2_SHADER_READ_BIT;
-    b.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    b.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    memcpy((char*)hVideo->stagingMapped[f] + hVideo->stagingOffset[f], hostData, hostDataSize);
+    SDL_UnmapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f]);
+    hVideo->stagingMapped[f] = NULL;
 
-    VkDependencyInfo depInfo = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
-    depInfo.imageMemoryBarrierCount = 1;
-    depInfo.pImageMemoryBarriers = &b;
-    vkCmdPipelineBarrier2(cmd, &depInfo);
+    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(hVideo->device);
+    if (!cmd) {
+        BR_FATAL("SDL3GPU: Failed to acquire upload command buffer.");
+        return -1;
+    }
 
-    VkBufferImageCopy region = {0};
-    region.bufferOffset = srcOffset;
-    region.imageSubresource.aspectMask = aspectMask;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-    region.imageOffset.x = dstX;
-    region.imageOffset.y = dstY;
-    region.imageExtent.width = width;
-    region.imageExtent.height = height;
-    region.imageExtent.depth = 1;
-    vkCmdCopyBufferToImage(cmd, st->buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    SDL_GPUCopyPass* copy = SDL_BeginGPUCopyPass(cmd);
+    SDL_GPUTextureTransferInfo src = {0};
+    src.transfer_buffer = hVideo->stagingTransfer[f];
+    src.offset = (Uint32)hVideo->stagingOffset[f];
+    SDL_GPUTextureRegion dst = {0};
+    dst.texture = texture;
+    dst.w = width;
+    dst.h = height;
+    dst.d = 1;
+    dst.x = dstX;
+    dst.y = dstY;
+    SDL_UploadToGPUTexture(copy, &src, &dst, false);
+    SDL_EndGPUCopyPass(copy);
 
-    b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    b.newLayout = newLayout;
-    b.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    b.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    b.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-    b.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    vkCmdPipelineBarrier2(cmd, &depInfo);
+    SDL_GPUFence* fence = SDL_SubmitGPUCommandBufferAndAcquireFence(cmd);
+    if (!fence) {
+        BR_FATAL("SDL3GPU: Failed to submit upload command buffer.");
+        return -1;
+    }
+    hVideo->uploadFence[f] = fence;
+    hVideo->stagingOffset[f] += (Uint32)hostDataSize;
+    return 0;
+}
 
-    vkEndCommandBuffer(cmd);
+void SDL3REND_DeferFreeImage(HVIDEO hVideo, SDL_GPUTexture* texture, SDL_GPUSampler* sampler) {
+    if (texture) SDL_ReleaseGPUTexture(hVideo->device, texture);
+    if (sampler) SDL_ReleaseGPUSampler(hVideo->device, sampler);
+}
 
-    /* Submit immediately with the slot's own fence: the next call on this slot waits
-     * it before reusing the staging/command buffer, and the frame's main command
-     * buffer (submitted later, same queue) executes in-order after this copy. */
-    VkSubmitInfo si = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    si.commandBufferCount = 1;
-    si.pCommandBuffers = &cmd;
-    vkQueueSubmit(hVideo->graphicsQueue, 1, &si, hVideo->uploadFence[f]);
+void SDL3REND_DeferFreeBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer) {
+    if (buffer) SDL_ReleaseGPUBuffer(hVideo->device, buffer);
+}
 
-    return VK_SUCCESS;
+void SDL3REND_GetDeviceInfo(SDL3REND_DeviceInfo* info) {
+    if (!info) return;
+    memset(info, 0, sizeof(*info));
+    if (!g_sdl3rend_video) return;
+    info->gpu_device = g_sdl3rend_video->device;
+    info->window = g_sdl3rend_video->window;
+    info->swapchain_texture_format = (uint32_t)g_sdl3rend_video->swapchainTextureFormat;
+}
+
+void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud) {
+    g_sdl3rend_external_cb = cb;
+    g_sdl3rend_external_ud = ud;
 }

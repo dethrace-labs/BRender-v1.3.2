@@ -344,14 +344,14 @@ static br_boolean want_defer(const state_hidden* hidden) {
 }
 
 #else
-/* ------------------------------------------------------------------ VK --- */
+/* ------------------------------------------------------------ SDL3REND --- */
 
-#define VK_DYN_SMALL_MAX_VERTEX_BYTES (16u * 1024u)
-#define VK_DYN_SMALL_MAX_INDEX_BYTES (16u * 1024u)
+#define SDL3REND_DYN_SMALL_MAX_VERTEX_BYTES (16u * 1024u)
+#define SDL3REND_DYN_SMALL_MAX_INDEX_BYTES (16u * 1024u)
 
-static vk_vertex_f* GenerateVBOData(const struct v11model* model, size_t total_vertices) {
-    vk_vertex_f* vtx = BrScratchAllocate(total_vertices * sizeof(vk_vertex_f));
-    vk_vertex_f* next = vtx;
+static sdl3_vertex_f* GenerateVBOData(const struct v11model* model, size_t total_vertices) {
+    sdl3_vertex_f* vtx = BrScratchAllocate(total_vertices * sizeof(sdl3_vertex_f));
+    sdl3_vertex_f* next = vtx;
 
     for (br_uint_16 i = 0; i < model->ngroups; ++i) {
         const struct v11group* gp = model->groups + i;
@@ -368,7 +368,7 @@ static vk_vertex_f* GenerateVBOData(const struct v11model* model, size_t total_v
     return vtx;
 }
 
-static br_uint_16* GenerateIBOData(const struct v11model* model, size_t total_faces, br_size_t* out_size, vk_groupinfo* vk_groups) {
+static br_uint_16* GenerateIBOData(const struct v11model* model, size_t total_faces, br_size_t* out_size, sdl3_groupinfo* sdl3_groups) {
     br_uint_16* idx = BrScratchAllocate(total_faces * 3 * sizeof(br_uint_16));
     br_uint_16* next = idx;
     br_uint_16 offset = 0;
@@ -376,11 +376,11 @@ static br_uint_16* GenerateIBOData(const struct v11model* model, size_t total_fa
 
     for (br_uint_16 i = 0; i < model->ngroups; ++i) {
         const struct v11group* gp = model->groups + i;
-        if (vk_groups != NULL) {
-            vk_groups[i].count = gp->nfaces * 3;
-            vk_groups[i].offset = (uint32_t)(face_offset);
-            vk_groups[i].group = model->groups + i;
-            vk_groups[i].stored = NULL;
+        if (sdl3_groups != NULL) {
+            sdl3_groups[i].count = gp->nfaces * 3;
+            sdl3_groups[i].offset = (uint32_t)(face_offset);
+            sdl3_groups[i].group = model->groups + i;
+            sdl3_groups[i].stored = NULL;
         }
 
         for (br_uint_16 f = 0; f < gp->nfaces; ++f) {
@@ -398,79 +398,56 @@ static br_uint_16* GenerateIBOData(const struct v11model* model, size_t total_fa
     return idx;
 }
 
-static void UploadVBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const vk_vertex_f* vtx, VkDeviceSize size) {
+static void UploadVBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const sdl3_vertex_f* vtx, size_t size) {
     self->inDynamicRing = 0;
     self->vboOffset = 0;
 
-    VkBufferCreateInfo bi = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bi.size = size;
-    bi.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkCreateBuffer(hVideo->device, &bi, NULL, &self->vbo);
-
-    VkMemoryRequirements memReq;
-    vkGetBufferMemoryRequirements(hVideo->device, self->vbo, &memReq);
-
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    ai.allocationSize = memReq.size;
-    ai.memoryTypeIndex = hVideo->hostMemType;
-
-    vkAllocateMemory(hVideo->device, &ai, NULL, &self->vboMemory);
-    vkBindBufferMemory(hVideo->device, self->vbo, self->vboMemory, 0);
-
-    void* data;
-    vkMapMemory(hVideo->device, self->vboMemory, 0, size, 0, &data);
-    memcpy(data, vtx, size);
-    vkUnmapMemory(hVideo->device, self->vboMemory);
+    SDL_GPUBufferCreateInfo bi = {0};
+    bi.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+    bi.size = (Uint32)size;
+    self->vbo = SDL_CreateGPUBuffer(hVideo->device, &bi);
+    if (!self->vbo) {
+        BR_FATAL("SDL3GPU: Failed to create dedicated VBO.");
+        return;
+    }
+    SDL3REND_UploadBufferToBuffer(hVideo, self->vbo, vtx, size);
 }
 
-static void UploadIBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const br_uint_16* idx, VkDeviceSize size) {
+static void UploadIBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const br_uint_16* idx, size_t size) {
     self->iboOffset = 0;
 
-    VkBufferCreateInfo bi = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bi.size = size;
-    bi.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    vkCreateBuffer(hVideo->device, &bi, NULL, &self->ibo);
-
-    VkMemoryRequirements memReq;
-    vkGetBufferMemoryRequirements(hVideo->device, self->ibo, &memReq);
-
-    VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    ai.allocationSize = memReq.size;
-    ai.memoryTypeIndex = hVideo->hostMemType;
-
-    vkAllocateMemory(hVideo->device, &ai, NULL, &self->iboMemory);
-    vkBindBufferMemory(hVideo->device, self->ibo, self->iboMemory, 0);
-
-    void* data;
-    vkMapMemory(hVideo->device, self->iboMemory, 0, size, 0, &data);
-    memcpy(data, idx, size);
-    vkUnmapMemory(hVideo->device, self->iboMemory);
+    SDL_GPUBufferCreateInfo bi = {0};
+    bi.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+    bi.size = (Uint32)size;
+    self->ibo = SDL_CreateGPUBuffer(hVideo->device, &bi);
+    if (!self->ibo) {
+        BR_FATAL("SDL3GPU: Failed to create dedicated IBO.");
+        return;
+    }
+    SDL3REND_UploadBufferToBuffer(hVideo, self->ibo, idx, size);
 }
 
 static void build_vbo(HVIDEO hVideo, br_geometry_stored* self, const struct v11model* model, size_t total_vertices) {
-    vk_vertex_f* vtx = GenerateVBOData(model, total_vertices);
+    sdl3_vertex_f* vtx = GenerateVBOData(model, total_vertices);
 
-    VkDeviceSize size = total_vertices * sizeof(vk_vertex_f);
+    size_t size = total_vertices * sizeof(sdl3_vertex_f);
     int f = hVideo->currentFrame;
 
     /* Small models rebuilt during frame recording (electro-ray segments, sparks,
      * dim quads, pratcam quad) are sub-allocated from the persistent ring: a plain
-     * memcpy, no vkCreateBuffer/vkAllocateMemory/vkBindBufferMemory per rebuild.
-     * The ring cursor only advances within a frame (no wrap), so every build gets
-     * its own slot; it resets next frame after the fence wait. Models built
-     * outside recording (load time) and oversized models keep dedicated buffers.
-     * Ring data is only valid until the next frame's reset, so ringEpoch stamps
-     * the frame and a stale model is re-uploaded at render time. */
+     * memcpy, no SDL_CreateGPUBuffer/upload per rebuild. The ring cursor only
+     * advances within a frame (no wrap), so every build gets its own slot; it
+     * resets next frame after the fence wait. Models built outside recording
+     * (load time) and oversized models keep dedicated buffers. Ring data is only
+     * valid until the next frame's reset, so ringEpoch stamps the frame and a
+     * stale model is re-uploaded at render time. */
     if (hVideo->isRecording && hVideo->dynVboMapped[f] != NULL &&
-        size <= VK_DYN_SMALL_MAX_VERTEX_BYTES &&
+        size <= SDL3REND_DYN_SMALL_MAX_VERTEX_BYTES &&
         hVideo->dynVboOffset[f] + size <= hVideo->dynVboCapacity) {
         memcpy((char*)hVideo->dynVboMapped[f] + hVideo->dynVboOffset[f], vtx, size);
         self->vbo = hVideo->dynVbo[f];
-        self->vboMemory = VK_NULL_HANDLE;
-        self->vboOffset = hVideo->dynVboOffset[f];
         self->inDynamicRing = 1;
+        self->vboOffset = hVideo->dynVboOffset[f];
         self->ringEpoch = hVideo->frameEpoch;
         hVideo->dynVboOffset[f] += size;
     } else {
@@ -482,17 +459,16 @@ static void build_vbo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
 
 static void build_ibo(HVIDEO hVideo, br_geometry_stored* self, const struct v11model* model, size_t total_faces) {
     br_size_t size = 0;
-    br_uint_16* idx = GenerateIBOData(model, total_faces, &size, self->vk_groups);
+    br_uint_16* idx = GenerateIBOData(model, total_faces, &size, self->sdl3_groups);
     int f = hVideo->currentFrame;
 
     if (hVideo->isRecording && hVideo->dynIboMapped[f] != NULL &&
-        size <= VK_DYN_SMALL_MAX_INDEX_BYTES &&
+        size <= SDL3REND_DYN_SMALL_MAX_INDEX_BYTES &&
         hVideo->dynIboOffset[f] + size <= hVideo->dynIboCapacity) {
         memcpy((char*)hVideo->dynIboMapped[f] + hVideo->dynIboOffset[f], idx, size);
         self->ibo = hVideo->dynIbo[f];
-        self->iboMemory = VK_NULL_HANDLE;
-        self->iboOffset = hVideo->dynIboOffset[f];
         self->inDynamicRing = 1;
+        self->iboOffset = hVideo->dynIboOffset[f];
         self->ringEpoch = hVideo->frameEpoch;
         hVideo->dynIboOffset[f] += size;
     } else {
@@ -503,16 +479,17 @@ static void build_ibo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
 }
 
 /* Re-uploads a stale ring sub-allocation into the current frame's ring slot.
- * The ring cursors are reset every frame in VK_EnsureRecording, so any ring
- * model that is not rebuilt this frame (built during a previous frame's
+ * The ring cursors are reset every frame in SDL3REND_EnsureRecording, so any
+ * ring model that is not rebuilt this frame (built during a previous frame's
  * recording and persisted) references clobbered data. This regenerates the
  * vertex/index data from the v11model and copies it into the current slot,
  * updating the bind offsets. Falls back to a dedicated buffer if the ring is
  * full, permanently graduating the model out of the ring. Only the components
- * actually in the ring (vboMemory/iboMemory == NULL) are refreshed; a mixed
+ * actually in the ring (inDynamicRing) are refreshed; a mixed
  * vbo-in-ring/ibo-dedicated model keeps its dedicated component. */
-void VK_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
+void SDL3REND_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
     int f = hVideo->currentFrame;
+    int wasInRing = self->inDynamicRing;
 
     size_t total_vertices = 0, total_faces = 0;
     for (br_uint_16 i = 0; i < self->model->ngroups; ++i) {
@@ -520,9 +497,9 @@ void VK_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
         total_faces += self->model->groups[i].nfaces;
     }
 
-    if (self->vboMemory == VK_NULL_HANDLE) {
-        vk_vertex_f* vtx = GenerateVBOData(self->model, total_vertices);
-        VkDeviceSize size = total_vertices * sizeof(vk_vertex_f);
+    if (wasInRing) {
+        sdl3_vertex_f* vtx = GenerateVBOData(self->model, total_vertices);
+        size_t size = total_vertices * sizeof(sdl3_vertex_f);
         if (hVideo->dynVboMapped[f] != NULL &&
             hVideo->dynVboOffset[f] + size <= hVideo->dynVboCapacity) {
             memcpy((char*)hVideo->dynVboMapped[f] + hVideo->dynVboOffset[f], vtx, size);
@@ -535,7 +512,7 @@ void VK_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
         BrScratchFree(vtx);
     }
 
-    if (self->iboMemory == VK_NULL_HANDLE) {
+    if (wasInRing) {
         br_size_t size = 0;
         br_uint_16* idx = GenerateIBOData(self->model, total_faces, &size, NULL);
         if (hVideo->dynIboMapped[f] != NULL &&
@@ -553,7 +530,7 @@ void VK_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
     self->ringEpoch = hVideo->frameEpoch;
 }
 
-#endif /* BREND_DRIVER_GL / VK */
+#endif /* BREND_DRIVER_GL / SDL3REND */
 
 /* --------------------------------------------------------- Allocate --- */
 
@@ -599,7 +576,7 @@ br_geometry_stored* BREND_FN(GeometryStored, Allocate)(br_geometry_v1_model* gv1
         self->hVideo = hVideo;
 
         self->num_groups = model->ngroups;
-        self->vk_groups = BrResAllocate(gv1model, sizeof(vk_groupinfo) * model->ngroups, BR_MEMORY_OBJECT_DATA);
+        self->sdl3_groups = BrResAllocate(gv1model, sizeof(sdl3_groupinfo) * model->ngroups, BR_MEMORY_OBJECT_DATA);
 
         build_vbo(hVideo, self, model, total_vertices);
         build_ibo(hVideo, self, model, total_faces);
@@ -629,41 +606,17 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_stored), free)(br_object*
 
     ObjectContainerRemove(self->gv1model->renderer_facility, (br_object*)self);
 
-    // Defer buffer destruction to next frame's sceneBegin (after fence wait).
-    // BrModelRemove can be called while command buffers still reference these buffers
-    // (e.g. shadow rendering: BrModelAdd → render → BrModelRemove within same frame).
-    // VK's vkDestroyBuffer is immediate (unlike GL's glDeleteBuffers which is deferred),
-    // so we must wait until the GPU is done with the command buffer before destroying.
-    // Ring sub-allocations are detected by their NULL memory handle: they share the
-    // video context's ring buffers (freed with the frame-slot reset) and are not
-    // owned here, so they are skipped. Each buffer is handled independently because
-    // build_vbo/build_ibo decide ring membership separately.
+    /* SDL3 GPU resources are reference-counted: SDL_ReleaseGPUBuffer schedules
+     * the safe destruction, so freeing a buffer that may still be referenced by
+     * in-flight command buffers is handled by the backend. Ring sub-allocations
+     * (inDynamicRing) share the video context's ring buffers (owned by the video
+     * context, released in ReleaseRings) and must not be released here. */
     HVIDEO hVideo = self->hVideo;
-    if (hVideo != NULL) {
-        uint32_t f = hVideo->currentFrame;
-        for (int i = 0; i < 2; i++) {
-            VkBuffer buffer = i == 0 ? self->vbo : self->ibo;
-            VkDeviceMemory memory = i == 0 ? self->vboMemory : self->iboMemory;
-            if (memory == VK_NULL_HANDLE)
-                continue;
-            if (hVideo->deferredBufferFreeCount[f] + 1 > hVideo->deferredBufferFreeCapacity[f]) {
-                uint32_t newCap = hVideo->deferredBufferFreeCapacity[f] ? hVideo->deferredBufferFreeCapacity[f] * 2 : 64;
-                hVideo->deferredBufferFrees[f] = BrResAllocate(hVideo->res, newCap * sizeof(VK_DeferredBufferFree), BR_MEMORY_OBJECT_DATA);
-                hVideo->deferredBufferFreeCapacity[f] = newCap;
-            }
-            hVideo->deferredBufferFrees[f][hVideo->deferredBufferFreeCount[f]].buffer = buffer;
-            hVideo->deferredBufferFrees[f][hVideo->deferredBufferFreeCount[f]].memory = memory;
-            hVideo->deferredBufferFreeCount[f]++;
-        }
-        self->vbo = VK_NULL_HANDLE;
-        self->vboMemory = VK_NULL_HANDLE;
-        self->ibo = VK_NULL_HANDLE;
-        self->iboMemory = VK_NULL_HANDLE;
-    } else if (self->deviceHandle != VK_NULL_HANDLE) {
-        if (self->vboMemory != VK_NULL_HANDLE) vkDestroyBuffer(self->deviceHandle, self->vbo, NULL);
-        if (self->vboMemory != VK_NULL_HANDLE) vkFreeMemory(self->deviceHandle, self->vboMemory, NULL);
-        if (self->iboMemory != VK_NULL_HANDLE) vkDestroyBuffer(self->deviceHandle, self->ibo, NULL);
-        if (self->iboMemory != VK_NULL_HANDLE) vkFreeMemory(self->deviceHandle, self->iboMemory, NULL);
+    if (hVideo != NULL && !self->inDynamicRing) {
+        if (self->vbo) SDL3REND_DeferFreeBuffer(hVideo, self->vbo);
+        if (self->ibo) SDL3REND_DeferFreeBuffer(hVideo, self->ibo);
+        self->vbo = NULL;
+        self->ibo = NULL;
     }
 
     BrResFreeNoCallback(self);
@@ -728,7 +681,7 @@ static br_error V1Model_RenderStored(br_geometry_stored* self, br_renderer* rend
 #if defined(BREND_DRIVER_GL)
         gl_groupinfo* groupinfo = self->groups + i;
 #else
-        vk_groupinfo* groupinfo = self->vk_groups + i;
+        sdl3_groupinfo* groupinfo = self->sdl3_groups + i;
 #endif
         br_renderer_state_stored* stored = (br_renderer_state_stored*)group->stored;
 
@@ -767,7 +720,7 @@ static br_error V1Model_RenderStored(br_geometry_stored* self, br_renderer* rend
             StoredGLRenderGroup(self, renderer, groupinfo);
         }
 #else
-        StoredVKRenderGroup(self, renderer, groupinfo);
+        StoredSDL3RENDRenderGroup(self, renderer, groupinfo);
 #endif
     }
     renderer->frame_stats.model_count++;

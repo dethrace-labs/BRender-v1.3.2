@@ -20,8 +20,8 @@ extern "C" {
 
 #if defined(BREND_DRIVER_GL)
 #include "glad/glad.h"
-#else
-#include <vulkan/vulkan.h>
+#elif defined(BREND_DRIVER_SDL3REND)
+#include <SDL3/SDL_gpu.h>
 #endif
 
 #define BR_DEVICE_PRIVATE
@@ -65,7 +65,7 @@ extern "C" {
 #include "gv1buckt.h"
 #include "glassert.h"
 #else
-#include "vkassert.h"
+/* SDL3 GPU has no assert helpers yet. */
 #endif
 #include "devclut.h"
 /* clang-format on */

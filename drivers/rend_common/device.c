@@ -10,9 +10,9 @@
 #define DEVICE_CREATOR "Zane van Iperen"
 #define DEVICE_PRODUCT "OpenGL"
 #else
-#define DEVICE_TITLE "Vulkan v1.3"
+#define DEVICE_TITLE "SDL3 GPU"
 #define DEVICE_CREATOR "dethrace"
-#define DEVICE_PRODUCT "Vulkan"
+#define DEVICE_PRODUCT "SDL3 GPU"
 #endif
 #define DEVICE_VERSION BR_VERSION(1, 0, 0)
 
@@ -79,7 +79,7 @@ static const br_token insignificantMatchTokens[] = {
     BRT_OPENGL_VERTEX_SHADER_STR,
     BRT_OPENGL_FRAGMENT_SHADER_STR,
 #else
-    BRT_VULKAN_CALLBACKS_P,
+    BRT_SDL3_CALLBACKS_P,
 #endif
     BR_NULL_TOKEN,
 };

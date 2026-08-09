@@ -37,7 +37,7 @@ static struct br_tv_template_entry outputFacilityTemplateEntries[] = {
     { BRT(OPENGL_VERTEX_SHADER_STR), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
     { BRT(OPENGL_FRAGMENT_SHADER_STR), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
 #else
-    { BRT(VULKAN_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
+    { BRT(SDL3_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
 #endif
     { BRT_CLUT_MAX_I32, 0, 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT, 0 },
 };
@@ -52,7 +52,7 @@ br_output_facility* BREND_FN(OutputFacility, Init)(br_device* dev, br_renderer_f
 #if defined(BREND_DRIVER_GL)
     self->identifier = "OpenGL";
 #else
-    self->identifier = "Vulkan";
+    self->identifier = "SDL3 GPU";
 #endif
     self->dispatch = &outputFacilityDispatch;
     self->device = dev;

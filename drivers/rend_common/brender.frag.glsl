@@ -1,4 +1,4 @@
-##ifdef VK
+##ifdef SDL3GPU
 #version 450
 ##endif
 ##ifdef GL_ES
@@ -36,8 +36,8 @@ struct br_light
     vec2 spot_angles; /* (inner, outer), if (0.0, 0.0), then this is a point light. */
 };
 
-##ifdef VK
-layout(std140, binding = 1) uniform br_scene_state
+##ifdef SDL3GPU
+layout(std140, set = 3, binding = 1) uniform br_scene_state
 ##else
 layout(std140) uniform br_scene_state
 ##endif
@@ -53,8 +53,8 @@ layout(std140) uniform br_scene_state
     float yon_z;
 };
 
-##ifdef VK
-layout(std140, binding = 2) uniform br_model_state
+##ifdef SDL3GPU
+layout(std140, set = 3, binding = 0) uniform br_model_state
 ##else
 layout(std140) uniform br_model_state
 ##endif
@@ -86,7 +86,7 @@ layout(std140) uniform br_model_state
     uint prelit;
 };
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec4 normal;
@@ -98,7 +98,7 @@ in vec4 normal;
 in vec4 colour;
 ##endif
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 4) in vec3 rawPosition;
 layout(location = 5) in vec3 rawNormal;
 ##else
@@ -106,7 +106,7 @@ in vec3 rawPosition;
 in vec3 rawNormal;
 ##endif
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 6) in vec3 v_frag_pos;
 layout(location = 7) in float v_view_z;
 ##else
@@ -114,14 +114,14 @@ in vec3 v_frag_pos;
 in float v_view_z;
 ##endif
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 0) out vec4 fragColour;
 ##else
 out vec4 fragColour;
 ##endif
 
-##ifdef VK
-layout(binding = 0) uniform sampler2D main_texture;
+##ifdef SDL3GPU
+layout(set = 2, binding = 0) uniform sampler2D main_texture;
 ##else
 uniform sampler2D main_texture;
 ##endif

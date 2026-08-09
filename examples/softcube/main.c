@@ -37,7 +37,7 @@ static struct {
 
 // vulkan renderer
 static struct {
-    br_device_vk_callback_procs vk_callbacks;
+    br_device_sdl3_callback_procs sdl3_callbacks;
 } vulkan_props;
 
 static enum {
@@ -207,11 +207,11 @@ static void BR_CALLBACK vk_get_viewport(int* x, int* y, float* width_multiplier,
     *height_multiplier = 1;
 }
 
-static void BR_CALLBACK vk_get_window_size(int* width, int* height) {
+static void BR_CALLBACK sdl3_get_window_size(int* width, int* height) {
     SDL_GetWindowSize(window, width, height);
 }
 
-static int BR_CALLBACK vk_get_map_mode(void) {
+static int BR_CALLBACK sdl3_get_map_mode(void) {
     return 0;
 }
 
@@ -222,23 +222,23 @@ static int init_vulkan_renderer() {
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
 
     if (window == NULL) {
-        printf("Failed to create Vulkan window: %s\n", SDL_GetError());
+        printf("Failed to create SDL3-GPU window: %s\n", SDL_GetError());
         exit(1);
     }
 
-    vulkan_props.vk_callbacks.get_proc_address = NULL;
-    vulkan_props.vk_callbacks.get_viewport = vk_get_viewport;
-    vulkan_props.vk_callbacks.swap_buffers = vk_swap_buffers;
-    vulkan_props.vk_callbacks.free = NULL;
-    vulkan_props.vk_callbacks.create_surface = vk_create_surface;
-    vulkan_props.vk_callbacks.get_instance_extensions = vk_get_instance_extensions;
-    vulkan_props.vk_callbacks.get_map_mode = vk_get_map_mode;
-    vulkan_props.vk_callbacks.get_window_size = vk_get_window_size;
+    vulkan_props.sdl3_callbacks.get_proc_address = NULL;
+    vulkan_props.sdl3_callbacks.get_viewport = vk_get_viewport;
+    vulkan_props.sdl3_callbacks.swap_buffers = vk_swap_buffers;
+    vulkan_props.sdl3_callbacks.free = NULL;
+    vulkan_props.sdl3_callbacks.create_surface = vk_create_surface;
+    vulkan_props.sdl3_callbacks.get_instance_extensions = vk_get_instance_extensions;
+    vulkan_props.sdl3_callbacks.get_map_mode = sdl3_get_map_mode;
+    vulkan_props.sdl3_callbacks.get_window_size = sdl3_get_window_size;
 
     BrDevBeginVar(&screen, "sdl3rend",
         BRT_WIDTH_I32, width,
         BRT_HEIGHT_I32, height,
-        BRT_VULKAN_CALLBACKS_P, &vulkan_props.vk_callbacks,
+        BRT_SDL3_CALLBACKS_P, &vulkan_props.sdl3_callbacks,
         BRT_PIXEL_TYPE_U8, BR_PMT_RGB_565,
         BR_NULL_TOKEN);
 

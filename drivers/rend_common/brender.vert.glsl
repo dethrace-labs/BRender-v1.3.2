@@ -1,4 +1,4 @@
-##ifdef VK
+##ifdef SDL3GPU
 #version 450
 ##endif
 ##ifdef GL_ES
@@ -36,8 +36,8 @@ struct br_light
     vec2 spot_angles; /* (inner, outer), if (0.0, 0.0), then this is a point light. */
 };
 
-##ifdef VK
-layout(std140, binding = 1) uniform br_scene_state
+##ifdef SDL3GPU
+layout(std140, set = 1, binding = 1) uniform br_scene_state
 ##else
 layout(std140) uniform br_scene_state
 ##endif
@@ -53,8 +53,8 @@ layout(std140) uniform br_scene_state
     float yon_z;
 };
 
-##ifdef VK
-layout(std140, binding = 2) uniform br_model_state
+##ifdef SDL3GPU
+layout(std140, set = 1, binding = 0) uniform br_model_state
 ##else
 layout(std140) uniform br_model_state
 ##endif
@@ -86,7 +86,7 @@ layout(std140) uniform br_model_state
     uint prelit;
 };
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec2 aUV;
 layout(location = 2) in vec3 aNormal;
@@ -98,7 +98,7 @@ in vec3 aNormal;
 in vec4 aColour;
 ##endif
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 0) out vec4 position;
 layout(location = 1) out vec2 uv;
 layout(location = 2) out vec4 normal;
@@ -110,7 +110,7 @@ out vec2 uv;
 out vec4 colour;
 ##endif
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 4) out vec3 rawPosition;
 layout(location = 5) out vec3 rawNormal;
 ##else
@@ -118,7 +118,7 @@ out vec3 rawPosition;
 out vec3 rawNormal;
 ##endif
 
-##ifdef VK
+##ifdef SDL3GPU
 layout(location = 6) out vec3 v_frag_pos;
 layout(location = 7) out float v_view_z;
 ##else
@@ -367,11 +367,9 @@ void main()
     pos = projection * model_view * pos;
 #endif
 
-##ifdef VK
-    // Match GL depth mapping: GL maps NDC z [-1,1] → depth [0,1] via (ndc+1)/2.
-    // After negate_z_column near→+1 far→-1, so GL depth near→1 far→0.
-    // VK has no depthRange remap, so we replicate it here:
-    // depth_vk = (clip_z/clip_w + 1)/2 = (clip_z + clip_w) / (2*clip_w)
+##ifdef SDL3GPU
+    // SDL3 GPU NDC has Z in [0, 1] (near=0) like D3D/Vulkan, but BRender's
+    // projection is GL-style (NDC z [-1,1]). Replicate the GL depthRange remap:
     pos.z = (pos.z + pos.w) * 0.5;
 ##endif
 

@@ -5,38 +5,23 @@
 extern "C" {
 #endif
 
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_gpu.h>
+
 struct br_device_pixelmap;
 
 #define BR_STATIC_ASSERT(cond, msg) _Static_assert((cond), msg)
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
-typedef struct VK_DeferredBufferFree {
-    VkBuffer buffer;
-    VkDeviceMemory memory;
-} VK_DeferredBufferFree;
+/* Uniform slot / sampler slot mapping (matches the shared GLSL bindings). */
+#define SDL3REND_MODEL_UNIFORM_SLOT     0
+#define SDL3REND_SCENE_UNIFORM_SLOT     1
+#define SDL3REND_FRAGMENT_SAMPLER_SLOT  0
 
-typedef struct VK_DeferredImageFree {
-    VkImage image;
-    VkImageView view;
-    VkSampler sampler;
-    VkDeviceMemory memory;
-} VK_DeferredImageFree;
-
-/* Per-frame CPU->GPU upload staging. Each VK_UploadBufferToImage writes the data
- * into the current frame slot's staging buffer, records barrier+copy+barrier into
- * the slot's upload command buffer, and submits it immediately with the slot's own
- * uploadFence. The slot is never reused until that fence signals, so uploads are
- * safe to record from anywhere (frame loop or out-of-frame track/asset loading)
- * with no vkQueueWaitIdle and no full GPU drain. */
-typedef struct VK_FrameStaging {
-    VkBuffer buffer;
-    VkDeviceMemory memory;
-    VkDeviceSize size;
-    VkDeviceSize offset;
-    void* mapped;
-} VK_FrameStaging;
-
+/* Byte-identical to the glrend/sdl3rend shader_data_* structs: the GLSL
+ * shaders are shared (drivers/rend_common/*.glsl), so the CPU payload must
+ * match their std140 layout on every backend. */
 #pragma pack(push, 16)
 typedef struct shader_data_light {
     alignas(16) br_vector4 position;
@@ -89,96 +74,152 @@ typedef struct shader_data_model {
 } shader_data_model;
 #pragma pack(pop)
 
+/*
+ * SDL3 GPU uniform slot mapping (matches the shared GLSL bindings):
+ *
+ *   set1 binding0 = shader_data_model  (vertex)  -> vertex   uniform slot 0
+ *   set1 binding1 = shader_data_scene  (vertex)  -> vertex   uniform slot 1
+ *   set2 binding0 = main_texture       (fragment)-> fragment sampler slot 0
+ *   set3 binding0 = shader_data_model  (fragment)-> fragment uniform slot 0
+ *   set3 binding1 = shader_data_scene  (fragment)-> fragment uniform slot 1
+ *
+ * Uniform data is pushed with SDL_PushGPUVertexUniformData /
+ * SDL_PushGPUFragmentUniformData (max 32KB/slot/draw — the scene struct is
+ * ~1.4KB, the model struct ~3KB, both well within limits). No UBO buffers,
+ * no descriptor sets, no per-draw bind changes.
+ *
+ * The scene is pushed once per sceneBegin (slots 1); the model is pushed per
+ * draw (slots 0) by modelrender.c. Uniform slot data is stored on the command
+ * buffer, so pushes done outside a render pass persist for the whole frame.
+ */
+
 typedef struct _VIDEO {
     void* res;
-    VkInstance instance;
-    VkPhysicalDevice physicalDevice;
-    VkDevice device;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-    uint32_t graphicsFamilyIndex;
-    uint32_t presentFamilyIndex;
 
-    VkSurfaceKHR surface;
-    VkSwapchainKHR swapchain;
-    VkFormat swapchainImageFormat;
-    VkExtent2D swapchainExtent;
+    SDL_GPUDevice* device;
+    SDL_Window* window;
+    SDL_GPUTextureFormat swapchainTextureFormat;
+    SDL_GPUTextureFormat depthFormat;
     int windowWidth;
     int windowHeight;
-    VkImage* swapchainImages;
-    VkImageView* swapchainImageViews;
-    uint32_t swapchainImageCount;
 
-    VkRenderPass imguiCompatRenderPass;
-    VkPipelineLayout defaultPipelineLayout;
-    VkPipelineLayout brenderPipelineLayout;
-    VkPipeline defaultPipeline;
-    VkPipeline brenderPipeline;
-    VkPipeline brenderPipelineNoWrite;
-    VkPipeline brenderBlendPipeline;
-    VkPipeline brenderPipelineNoDepth;
-    VkPipeline brenderBlendPipelineNoDepth;
+    /* Offscreen render target (isle-portable pattern). Every render pass
+     * targets transferTexture + depthTexture, so there is exactly one depth
+     * attachment for the whole frame and the pipelines are created once
+     * against a fixed format. At present the frame is blitted to the
+     * swapchain texture (SDL_BlitGPUTexture), decoupling rendering from the
+     * swapchain lifecycle entirely. */
+    SDL_GPUTexture* transferTexture;
+    SDL_GPUTexture* depthTexture;
 
-    VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
-    VkCommandBuffer* drawCommandBuffers;
+    /* Shaders (SPIR-V from drivers/rend_common/*.glsl, embedded via
+     * sdl3_shaders.c) and pipelines. Pipelines render into transferTexture's
+     * format, so they never need rebuilding on swapchain recreation. */
+    SDL_GPUShader* brenderVertShader;
+    SDL_GPUShader* brenderFragShader;
+    SDL_GPUShader* overlayVertShader;
+    SDL_GPUShader* overlayFragShader;
+    SDL_GPUShader* defaultVertShader;
+    SDL_GPUShader* defaultFragShader;
 
-    VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
-    VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
-    VkFence inFlightFences[MAX_FRAMES_IN_FLIGHT];
-    uint32_t currentFrame;
+    SDL_GPUGraphicsPipeline* brenderPipeline;
+    SDL_GPUGraphicsPipeline* brenderPipelineNoDepth;
+    SDL_GPUGraphicsPipeline* brenderBlendPipeline;
+    SDL_GPUGraphicsPipeline* brenderBlendPipelineNoDepth;
+    SDL_GPUGraphicsPipeline* defaultPipeline;
+    SDL_GPUGraphicsPipeline* overlayPipeline;
 
-    uint32_t currentImageIndex;
+    /* Command recording: one SDL_GPUCommandBuffer per frame, alternating copy
+     * passes and render passes (SDL3 GPU forbids nesting but allows
+     * interleaving). renderPassActive tracks whether a render pass is open. */
+    SDL_GPUCommandBuffer* commandBuffer;
+    SDL_GPURenderPass* currentPass;
     int isRecording;
     int renderPassActive;
     int sceneCount;
-    uint32_t maxUniformBufferRange;
-    uint32_t minUniformBufferOffsetAlignment;
-    uint32_t maxVertexInputBindings;
-    uint32_t maxVertexInputAttributes;
-    uint32_t hostMemType;
+    uint32_t currentFrame;
+    int frameFlushed;
+    int renderingStarted;
 
-    struct {
-        VkDescriptorSetLayout layout;
-        VkBuffer sceneBuffer;
-        VkDeviceMemory sceneMemory;
-        void* sceneMapped;
-        VkBuffer modelBuffer;
-        VkDeviceMemory modelMemory;
-        void* modelMapped;
-    } brenderDescriptors;
+    /* Fences per frame slot. frameFence signals the main submit; ringUploadFence
+     * signals the ring upload submit. The queue is FIFO so waiting frameFence
+     * also implies the ring upload completed, but both are waited before the
+     * slot's transfer buffers are reused in SDL3REND_EnsureRecording. */
+    SDL_GPUFence* frameFence[MAX_FRAMES_IN_FLIGHT];
+    SDL_GPUFence* ringUploadFence[MAX_FRAMES_IN_FLIGHT];
 
-    PFN_vkCmdPushDescriptorSetKHR pfnPushDescriptorSet;
-    VkDeviceSize currentModelOffset;
-    VkDeviceSize modelBufferCapacity;
-    VkDeviceSize currentSceneOffset;
-    VkDeviceSize sceneBufferCapacity;
-    VkDeviceSize sceneSlotSize;
-    VkDeviceSize modelSlotSize;
-    int sceneSlotIndex;
+    /* Per-frame CPU->GPU staging for texture uploads. SDL3REND_UploadBufferToImage
+     * memcpy's into the current slot's mapped transfer buffer, then records a
+     * copy pass into the slot's own upload command buffer and submits it
+     * immediately with uploadFence. The slot is never reused until that fence
+     * signals, so uploads are safe to record from anywhere (frame loop or
+     * out-of-frame asset loading). No manual barriers — SDL3 GPU inserts them. */
+    SDL_GPUTransferBuffer* stagingTransfer[MAX_FRAMES_IN_FLIGHT];
+    void* stagingMapped[MAX_FRAMES_IN_FLIGHT];
+    size_t stagingOffset[MAX_FRAMES_IN_FLIGHT];
+    size_t stagingSize;
+    SDL_GPUFence* uploadFence[MAX_FRAMES_IN_FLIGHT];
 
-    VkPipelineLayout overlayPipelineLayout;
-    VkPipeline overlayPipeline;
-    VkDescriptorSetLayout overlayDescLayout;
-    VkDescriptorPool overlayDescPool;
-    VkDescriptorSet overlayDescSet;
-    VkSampler overlaySampler;
-    VkBuffer overlayQuadVbo;
-    VkDeviceMemory overlayQuadVboMemory;
-    VkBuffer overlayQuadIbo;
-    VkDeviceMemory overlayQuadIboMemory;
+    /* Shared persistent dynamic VBO/IBO rings for small models (electro-ray
+     * segments, sparks, dim quads, pratcam quad), mirroring the sdl3rend
+     * driver. SDL3 GPU cannot bind host-visible memory as vertex/index buffers,
+     * so the ring is split in two halves:
+     *
+     *   dyn*Transfer (mapped SDL_GPUTransferBuffer)  — written by memcpy during
+     *       frame recording (build_vbo/build_ibo/SDL3REND_RefreshRingStored).
+     *   dynVbo/dynIbo (SDL_GPUBuffer, VERTEX/INDEX usage) — bound by draws.
+     *
+     * The cursors only advance within a frame. At present, before the main
+     * submit, a ring-upload command buffer copies the written region
+     * [0, dyn*Written) from the transfer buffer into the GPU ring. Because it
+     * is submitted first and the queue is FIFO, every draw in the main buffer
+     * sees the ring data regardless of where in the frame it was written —
+     * RefreshRingStored mid-render-pass works exactly like the VK driver.
+     * The per-slot ring data is never reused while the GPU may still reference
+     * it (cursors reset only after the fence waits in EnsureRecording).
+     * Ring usage is gated on isRecording (models built at load time keep
+     * dedicated buffers). */
+    SDL_GPUTransferBuffer* dynVboTransfer[MAX_FRAMES_IN_FLIGHT];
+    void* dynVboMapped[MAX_FRAMES_IN_FLIGHT];
+    SDL_GPUBuffer* dynVbo[MAX_FRAMES_IN_FLIGHT];
+    size_t dynVboOffset[MAX_FRAMES_IN_FLIGHT];
+    size_t dynVboWritten[MAX_FRAMES_IN_FLIGHT];
+    size_t dynVboCapacity;
+    SDL_GPUTransferBuffer* dynIboTransfer[MAX_FRAMES_IN_FLIGHT];
+    void* dynIboMapped[MAX_FRAMES_IN_FLIGHT];
+    SDL_GPUBuffer* dynIbo[MAX_FRAMES_IN_FLIGHT];
+    size_t dynIboOffset[MAX_FRAMES_IN_FLIGHT];
+    size_t dynIboWritten[MAX_FRAMES_IN_FLIGHT];
+    size_t dynIboCapacity;
+    /* Monotonic counter bumped once per frame (in SDL3REND_EnsureRecording after
+     * the ring cursors reset). Stored geometries that sub-allocate from the ring
+     * stamp ringEpoch with this value; a mismatch at render time means the ring
+     * slot was reset since the model was built, so its geometry is stale and
+     * must be re-uploaded. */
+    uint32_t frameEpoch;
+
+    /* Overlay / 3DFX 2D composite state (unchanged semantics from sdl3rend).
+     * lockedPixels holds the CPU 2D surface; dirty regions are uploaded into
+     * overlayTexture; the overlay quad (overlayPipeline) is drawn inside the
+     * scene's render pass so the 2D content composites on top of the 3D. */
+    SDL_GPUSampler* overlaySampler;
+    SDL_GPUBuffer* overlayQuadVbo;
+    SDL_GPUBuffer* overlayQuadIbo;
     int overlayDirty;
-    VkImage overlayImage;
+    SDL_GPUTexture* overlayTexture;
     int dimAreaCount;
     br_rectangle dimAreas[8];
-    VkDeviceMemory overlayMemory;
-    VkImageView overlayImageView;
+    int clearAreaCount;
+    br_rectangle clearAreas[4];
+    int pratcamAreaCount;
+    br_rectangle pratcamArea;
     void* lockedPixels;
     int pm_type;
     int pm_width;
     int pm_height;
     int pm_row_bytes;
     struct br_device_pixelmap* primaryColourTarget;
+
     int viewportX;
     int viewportY;
     int viewportW;
@@ -187,92 +228,38 @@ typedef struct _VIDEO {
     int mainViewportY;
     int mainViewportW;
     int mainViewportH;
-    int frameFlushed;
-    int renderingStarted;
-    int clearAreaCount;
-    br_rectangle clearAreas[4];
-    int pratcamAreaCount;
-    br_rectangle pratcamArea;
 
-    VkBuffer lastVbo;
-    VkBuffer lastIbo;
-    VkDeviceSize lastVboOffset;
-    VkDeviceSize lastIboOffset;
-    VkImageView lastTextureView;
-    VkSampler lastTextureSampler;
-    VkPipeline lastPipeline;
+    /* Draw-state caching to avoid redundant binds. */
+    SDL_GPUBuffer* lastVbo;
+    SDL_GPUBuffer* lastIbo;
+    size_t lastVboOffset;
+    size_t lastIboOffset;
+    SDL_GPUTexture* lastTexture;
+    SDL_GPUSampler* lastSampler;
+    SDL_GPUGraphicsPipeline* lastPipeline;
 
-    /* Shared persistent dynamic VBO/IBO rings for small models. Models rebuilt
-     * per frame (electro-ray segments, sparks, dim quads, pratcam quad) get
-     * sub-allocated from these rings via a plain memcpy instead of a full
-     * vkCreateBuffer/vkAllocateMemory/vkBindBufferMemory per rebuild, which is
-     * ~10x slower than GL's glBufferData and tanked FPS to single digits. Each
-     * frame slot has its own ring pair: the cursor is reset in VK_EnsureRecording
-     * only after the per-slot fence wait, so a slot's ring data is never reused
-     * while the GPU may still reference it. Ring usage is gated on isRecording
-     * (models built at load time keep dedicated buffers). */
-    VkBuffer dynVbo[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory dynVboMemory[MAX_FRAMES_IN_FLIGHT];
-    void* dynVboMapped[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceSize dynVboOffset[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceSize dynVboCapacity;
-    VkBuffer dynIbo[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory dynIboMemory[MAX_FRAMES_IN_FLIGHT];
-    void* dynIboMapped[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceSize dynIboOffset[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceSize dynIboCapacity;
-    /* Monotonic counter bumped once per frame (in VK_EnsureRecording after the
-     * ring cursors reset). Stored geometries that sub-allocate from the ring
-     * stamp ringEpoch with this value; a mismatch at render time means the
-     * ring slot was reset since the model was built, so its geometry is stale
-     * and must be re-uploaded. */
-    uint32_t frameEpoch;
-
-    VkImage defaultTextureImage;
-    VkDeviceMemory defaultTextureMemory;
-    VkImageView defaultTextureView;
-    VkSampler defaultSampler;
-    VkSampler samplerLinear;
-    VkSampler samplerNearest;
-
-    VkImage depthImage;
-    VkDeviceMemory depthMemory;
-    VkImageView depthImageView;
-    VkFormat depthFormat;
+    /* Default / fallback resources. */
+    SDL_GPUTexture* defaultTexture;
+    SDL_GPUSampler* samplerLinear;
+    SDL_GPUSampler* samplerNearest;
 
     shader_data_scene sceneData;
     shader_data_model modelData;
     shader_data_light lightData;
 
-    VK_DeferredBufferFree* deferredBufferFrees[MAX_FRAMES_IN_FLIGHT];
-    uint32_t deferredBufferFreeCount[MAX_FRAMES_IN_FLIGHT];
-    uint32_t deferredBufferFreeCapacity[MAX_FRAMES_IN_FLIGHT];
-
-    VK_DeferredImageFree* deferredImageFrees[MAX_FRAMES_IN_FLIGHT];
-    uint32_t deferredImageFreeCount[MAX_FRAMES_IN_FLIGHT];
-    uint32_t deferredImageFreeCapacity[MAX_FRAMES_IN_FLIGHT];
-
-    VK_FrameStaging frameStaging[MAX_FRAMES_IN_FLIGHT];
-    VkCommandPool uploadPool[MAX_FRAMES_IN_FLIGHT];
-    VkCommandBuffer uploadBuffer[MAX_FRAMES_IN_FLIGHT];
-    /* Per-slot fence signalling completion of the slot's upload command buffer and
-     * staging data. Every VK_UploadBufferToImage waits this fence before reusing
-     * the slot, so uploads may be recorded from anywhere (frame loop or out-of-frame
-     * track/asset loading) — the slot is simply unavailable until the GPU is done. */
-    VkFence uploadFence[MAX_FRAMES_IN_FLIGHT];
-
-    /* Host-side hooks copied from br_device_vk_callback_procs at VK_VideoOpen.
-     * Optional — the driver tolerates NULL (no map mode, no resize detection),
-     * which is what keeps the driver buildable/runnable outside dethrace. */
-    br_device_vk_get_map_mode_cbfn      *get_map_mode;
-    br_device_vk_get_window_size_cbfn   *get_window_size;
+    /* Host-side hooks copied from br_device_sdl3_callback_procs at
+     * SDL3REND_VideoOpen. Optional — the driver tolerates NULL (no map mode,
+     * no resize detection), which is what keeps the driver buildable/runnable
+     * outside dethrace. */
+    br_device_sdl3_get_map_mode_cbfn      *get_map_mode;
+    br_device_sdl3_get_window_size_cbfn   *get_window_size;
 } VIDEO, *HVIDEO;
 
-static inline int VK_IsMapMode(HVIDEO hVideo) {
+static inline int SDL3REND_IsMapMode(HVIDEO hVideo) {
     return hVideo->get_map_mode ? hVideo->get_map_mode() : 0;
 }
 
-static inline void VK_GetWindowSize(HVIDEO hVideo, int* width, int* height) {
+static inline void SDL3REND_GetWindowSize(HVIDEO hVideo, int* width, int* height) {
     if (hVideo->get_window_size) {
         hVideo->get_window_size(width, height);
     } else {
@@ -281,80 +268,89 @@ static inline void VK_GetWindowSize(HVIDEO hVideo, int* width, int* height) {
     }
 }
 
-HVIDEO VK_VideoOpen(HVIDEO hVideo, void* parent, const char* vert_spv_data, size_t vert_spv_size,
-    const char* frag_spv_data, size_t frag_spv_size,
-    br_device_vk_callback_procs* callbacks, int width, int height);
+HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
+    const char* brender_vert_spv, size_t brender_vert_size,
+    const char* brender_frag_spv, size_t brender_frag_size,
+    const char* overlay_vert_spv, size_t overlay_vert_size,
+    const char* overlay_frag_spv, size_t overlay_frag_size,
+    const char* default_vert_spv, size_t default_vert_size,
+    const char* default_frag_spv, size_t default_frag_size,
+    br_device_sdl3_callback_procs* callbacks, int width, int height);
 
-void VK_VideoClose(HVIDEO hVideo);
+void SDL3REND_VideoClose(HVIDEO hVideo);
 
-void VK_VideoRecreateSwapchain(HVIDEO hVideo);
+void SDL3REND_VideoResize(HVIDEO hVideo);
 
-VkShaderModule VK_CreateShaderModule(HVIDEO hVideo, const char* code, size_t code_size, VkShaderStageFlagBits stage);
+SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const char* code, size_t code_size, SDL_GPUShaderStage stage);
 
-VkPipeline VK_CreateGraphicsPipeline(HVIDEO hVideo, VkShaderModule vertModule, VkShaderModule fragModule,
-    VkPipelineLayout layout,
-    VkVertexInputBindingDescription* bindingDesc,
-    VkVertexInputAttributeDescription* attrDescs, uint32_t attrCount,
-    uint32_t width, uint32_t height, VkBool32 blendEnable, VkBool32 depthTestEnable, VkBool32 depthWriteEnable);
+SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
+    SDL_GPUShader* vertModule, SDL_GPUShader* fragModule,
+    const SDL_GPUVertexBufferDescription* bindingDesc,
+    const SDL_GPUVertexAttribute* attrDescs, uint32_t attrCount,
+    uint32_t width, uint32_t height, bool blendEnable,
+    bool depthTestEnable, bool depthWriteEnable);
 
-VkPipelineLayout VK_CreatePipelineLayout(HVIDEO hVideo, VkDescriptorSetLayout* descLayout, uint32_t descLayoutCount);
+/* Copies the scene UBO payload into hVideo->sceneData. The actual push to the
+ * GPU happens in SDL3REND_SceneBegin (uniform slot 1 on both stages), so the
+ * scene only needs one push per pass, not one per draw. */
+void SDL3REND_UpdateScene(HVIDEO hVideo, void* data, size_t size);
 
-VkResult VK_CreateBrenderDescriptors(HVIDEO hVideo, uint32_t width, uint32_t height);
+/* Pushes the current scene UBO (hVideo->sceneData) to uniform slot 1 on both
+ * stages. Called once per scene before the first model draw. */
+void SDL3REND_SceneBegin(HVIDEO hVideo);
 
-VkResult VK_CreateDynamicRings(HVIDEO hVideo);
+/* Pushes the per-draw model payload to uniform slot 0 on both stages. Called
+ * by modelrender.c immediately before the draw. */
+void SDL3REND_PushModel(HVIDEO hVideo, const void* data, size_t size);
 
-void VK_UpdateSceneUBO(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset);
+void SDL3REND_BeginRenderPass(HVIDEO hVideo);
 
-void VK_UpdateModelUBOAtOffset(HVIDEO hVideo, void* data, size_t size, VkDeviceSize offset);
+void SDL3REND_EndRenderPass(HVIDEO hVideo);
 
-void VK_BeginRenderPass(HVIDEO hVideo, VkCommandBuffer cmd);
+void SDL3REND_EnsureRecording(HVIDEO hVideo);
 
-void VK_BeginOverlayRenderPass(HVIDEO hVideo, VkCommandBuffer cmd);
-
-void VK_EndRenderPass(HVIDEO hVideo, VkCommandBuffer cmd);
-
-void VK_EnsureRecording(HVIDEO hVideo);
+/* Uploads the current render pass's framebuffer contents to the swapchain and
+ * submits the frame. First submits the ring upload (copy ring transfer buffer
+ * -> ring GPU buffer) so the main submit's draws see this frame's ring data,
+ * then submits the main command buffer. Returns nonzero on error. */
+int SDL3REND_Present(HVIDEO hVideo);
 
 struct br_geometry_stored;
-void VK_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
+void SDL3REND_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
 
-void VK_DrawOverlay(HVIDEO hVideo, VkCommandBuffer cmd, struct br_device_pixelmap* screen);
+/* Draws the overlay quad (samples overlayTexture) into the currently active
+ * render pass. */
+void SDL3REND_OverlayDraw(HVIDEO hVideo);
 
-void VK_OverlayDraw(HVIDEO hVideo, VkCommandBuffer cmd);
-
-VkResult VK_Present(HVIDEO hVideo);
-
-br_error VK_BrPixelmapGetTypeDetails(br_uint_8 pmType, VkFormat* format, VkImageTiling* tiling,
-    VkImageUsageFlags* usage, VkMemoryPropertyFlags* memProps);
-
-void VK_DeferFreeImage(HVIDEO hVideo, VkImage image, VkImageView view, VkSampler sampler, VkDeviceMemory memory);
-
-/* Uploads `hostDataSize` bytes from host memory into `image` (width x height at
- * dstX,dstY) through the current frame slot's staging buffer. The data is memcpy'd
- * into the staging buffer synchronously, then barrier+copy+barrier is recorded and
- * the slot's upload command buffer is submitted IMMEDIATELY with the slot's own
- * uploadFence. The next call on this slot (two frames later in the steady frame
- * loop) waits that fence before resetting the buffer and staging, so uploads are
- * safe to record from anywhere — frame loop OR out-of-frame track/asset loading —
- * and the wait is on the tiny copy's fence, never a full GPU drain. The image is
- * transitioned oldLayout -> TRANSFER_DST -> newLayout. */
-VkResult VK_UploadBufferToImage(HVIDEO hVideo, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
-    uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY, VkImageAspectFlags aspectMask,
+/* Uploads `hostDataSize` bytes of host memory into `texture` (width x height
+ * at dstX,dstY) through the current frame slot's staging transfer buffer. The
+ * data is memcpy'd synchronously, then a copy pass is recorded into the slot's
+ * upload command buffer and submitted immediately with the slot's uploadFence.
+ * The next call on this slot waits that fence before reusing the staging, so
+ * uploads are safe from the frame loop or out-of-frame track/asset loading.
+ * SDL3 GPU handles the layout transitions. Returns 0 on success, nonzero on
+ * failure. */
+int SDL3REND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
+    uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY,
     const void* hostData, size_t hostDataSize);
 
-static inline uint32_t VK_FindMemoryType(VkPhysicalDevice phys, uint32_t typeFilter, VkMemoryPropertyFlags props) {
-    VkPhysicalDeviceMemoryProperties memProps;
-    vkGetPhysicalDeviceMemoryProperties(phys, &memProps);
-    for (uint32_t i = 0; i < memProps.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProps.memoryTypes[i].propertyFlags & props) == props)
-            return i;
-    }
-    return UINT32_MAX;
-}
+/* Uploads host memory into a GPU-local buffer (vertex/index/any) through the
+ * current frame slot's staging transfer buffer. Same lifecycle as
+ * SDL3REND_UploadBufferToImage; safe from the frame loop or out-of-frame
+ * asset loading. Returns 0 on success, nonzero on failure. */
+int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer,
+    const void* hostData, size_t hostDataSize);
+
+/* Releases a texture/sampler/buffer/pipeline that may still be in use by the
+ * GPU. SDL3 GPU resources are reference-counted and SDL_ReleaseGPU* schedules
+ * the safe destruction, so this is just a direct release — no deferred-free
+ * lists needed (unlike the VK driver's manual memory management). */
+void SDL3REND_DeferFreeImage(HVIDEO hVideo, SDL_GPUTexture* texture, SDL_GPUSampler* sampler);
+void SDL3REND_DeferFreeBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer);
 
 /* Fills a screen-space rectangle in the CPU locked buffer with the transparent
  * magenta sentinel so it isn't composited over GPU-rendered content. */
-static inline void VK_PurgeRect(int bpp, br_uint_32 magenta, void* pixels,
+static inline void SDL3REND_PurgeRect(int bpp, br_uint_32 magenta, void* pixels,
     int pm_width, int pm_height, int pm_row_bytes,
     int x, int y, int w, int h) {
     int row_w = pm_row_bytes / bpp;

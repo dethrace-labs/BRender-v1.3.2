@@ -2,7 +2,7 @@
 
 br_device *BR_EXPORT BrDrv1SDL3RendBegin(const char *arguments)
 {
-    br_device *dev = DeviceVKAllocate("sdl3rend", arguments);
+    br_device *dev = DeviceSDL3RENDAllocate("sdl3rend", arguments);
     if(!dev)
         return NULL;
 

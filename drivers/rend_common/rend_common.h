@@ -4,10 +4,10 @@
 /*
  * Shared scaffolding for the glrend/sdl3rend renderer drivers.
  *
- * This file is compiled twice — once per GL driver, once per VK driver:
- *   -DBREND_DRIVER_GL            (glrend)  or -DBREND_DRIVER_VK (sdl3rend)
- *   -DBREND_DRIVER_SUFFIX_UPPER=GL  or =VK
- *   -DBREND_DRIVER_SUFFIX_LOWER=gl  or =vk
+ * This file is compiled twice — once per GL driver, once per SDL3-GPU driver:
+ *   -DBREND_DRIVER_GL            (glrend)  or -DBREND_DRIVER_SDL3REND (sdl3rend)
+ *   -DBREND_DRIVER_SUFFIX_UPPER=GL  or =SDL3
+ *   -DBREND_DRIVER_SUFFIX_LOWER=gl  or =sdl3
  *
  * The suffix is threaded through every symbol so that both drivers keep
  * unique names when they are linked into the same binary.
@@ -16,7 +16,7 @@
 #define BREND_CAT_(a, b) a##b
 #define BREND_CAT(a, b) BREND_CAT_(a, b)
 
-/* BR_CMETHOD class names: br_device_clut_gl / br_device_clut_vk */
+/* BR_CMETHOD class names: br_device_clut_gl / br_device_clut_sdl3 */
 #define BREND_CLASS(prefix) BREND_CAT(prefix, BREND_DRIVER_SUFFIX_LOWER)
 
 /* Plain function names: OutputFacility + GL + Init */

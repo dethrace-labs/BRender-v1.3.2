@@ -1,25 +1,25 @@
-# Filters ##ifdef blocks out of a shared GLSL source for a specific backend.
+# Filters ##ifdef blocks out of a shared GLSL source for the SDL3GPU backend.
 #
 # Usage:
-#   cmake -DINPUT=in.glsl -DOUTPUT=out.glsl -DKEEP=VK -P FilterShader.cmake
+#   cmake -DINPUT=in.glsl -DOUTPUT=out.glsl -DKEEP=SDL3GPU -P FilterShader.cmake
 #
 # The shared shaders in drivers/rend_common/ mark per-backend sections with
-# ##ifdef VK / ##ifdef GL_ES / ##ifdef GL_CORE / ##else / ##endif markers
+# ##ifdef SDL3GPU / ##ifdef GL_ES / ##ifdef GL_CORE / ##else / ##endif markers
 # (double-hash so that neither the GLSL compiler nor glslang ever sees them).
 # The GL driver strips these in C (glrend/video.c preprocessShader); this
-# script does the same for the Vulkan driver so glslang only receives a plain
+# script does the same for the SDL3GPU driver so glslang only receives a plain
 # shader with a literal-first #version line.
 #
-# KEEP is the block to retain ("VK"). Blocks for other backends are dropped.
-# Lines with no ##ifdef block (state "none") always pass through, so shaders
-# without markers are filtered unchanged.
+# KEEP is the block to retain ("SDL3GPU"). Blocks for other backends are
+# dropped. Lines with no ##ifdef block (state "none") always pass through, so
+# shaders without markers are filtered unchanged.
 #
 # The line loop uses a string marker + while() rather than CMake lists, because
 # list conversion mangles trailing backslashes (GLSL macro continuations) and
 # semicolons.
 
 if(NOT DEFINED INPUT OR NOT DEFINED OUTPUT OR NOT DEFINED KEEP)
-    message(FATAL_ERROR "Usage: cmake -DINPUT=in.glsl -DOUTPUT=out.glsl -DKEEP=VK -P FilterShader.cmake")
+    message(FATAL_ERROR "Usage: cmake -DINPUT=in.glsl -DOUTPUT=out.glsl -DKEEP=SDL3 -P FilterShader.cmake")
 endif()
 
 file(READ "${INPUT}" raw)
@@ -41,15 +41,15 @@ while(work)
         string(SUBSTRING "${work}" ${next} -1 work)
     endif()
 
-    if(line STREQUAL "##ifdef VK")
-        set(state "VK")
+    if(line STREQUAL "##ifdef SDL3GPU")
+        set(state "SDL3GPU")
     elseif(line STREQUAL "##ifdef GL_ES")
         set(state "GL")
     elseif(line STREQUAL "##ifdef GL_CORE")
         set(state "GL")
     elseif(line STREQUAL "##else")
-        if(state STREQUAL "VK")
-            set(state "VK_ELSE")
+        if(state STREQUAL "SDL3GPU")
+            set(state "SDL3GPU_ELSE")
         else()
             set(state "GL")
         endif()
@@ -58,7 +58,7 @@ while(work)
     else()
         if(state STREQUAL "none")
             string(APPEND out "${line}\n")
-        elseif(state STREQUAL "VK" AND KEEP STREQUAL "VK")
+        elseif(KEEP STREQUAL state)
             string(APPEND out "${line}\n")
         endif()
     endif()

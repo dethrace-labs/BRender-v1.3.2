@@ -136,22 +136,17 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 #else
     {
         /* Whether this is the FIRST scene of the frame. renderingStarted is 0 at
-         * frame start (reset by doubleBuffer) and set to 1 by the first sceneBegin.
-         * The mainViewport purge below must only run for that first scene: the dim
-         * quads (DimRectangle -> BrZbSceneRender) call sceneBegin mid-frame with a
-         * full-screen target, and purging there would erase the post-scene 2D (headup
-         * text, damage meter, cockpit dashboard) already written into lockedPixels. */
+         * frame start (reset by SDL3REND_EnsureRecording) and set to 1 by the first
+         * sceneBegin. The mainViewport purge below must only run for that first
+         * scene: the dim quads (DimRectangle -> BrZbSceneRender) call sceneBegin
+         * mid-frame with a full-screen target, and purging there would erase the
+         * post-scene 2D (headup text, damage meter, cockpit dashboard) already
+         * written into lockedPixels. */
         int firstScene = !hVideo->renderingStarted;
-
-        hVideo->currentSceneOffset = hVideo->sceneSlotIndex * hVideo->sceneSlotSize;
-        hVideo->sceneSlotIndex++;
-        if (hVideo->sceneSlotIndex * hVideo->sceneSlotSize >= hVideo->sceneBufferCapacity)
-            hVideo->sceneSlotIndex = 0;
-        VK_UpdateSceneUBO(hVideo, &self->state.cache.scene, sizeof(self->state.cache.scene), hVideo->currentSceneOffset);
 
         if (hVideo->sceneCount == 0) {
             if (!hVideo->isRecording) {
-                VK_EnsureRecording(hVideo);
+                SDL3REND_EnsureRecording(hVideo);
             }
             hVideo->renderingStarted = 1;
 
@@ -160,23 +155,46 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                 colour_target->pm_height >= screen->pm_height)
                 hVideo->primaryColourTarget = colour_target;
 
-            VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
             if (!hVideo->renderPassActive) {
-                VK_BeginRenderPass(hVideo, cmd);
+                SDL3REND_BeginRenderPass(hVideo);
                 hVideo->renderPassActive = 1;
             }
         }
 
         hVideo->sceneCount++;
 
+        SDL3REND_UpdateScene(hVideo, &self->state.cache.scene, sizeof(self->state.cache.scene));
+        SDL3REND_SceneBegin(hVideo);
+
         {
-            VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
             int x = 0, y = 0;
             float rx = 1.0f, ry = 1.0f;
             float vp_x, vp_y, vp_w, vp_h;
+            int win_w = hVideo->windowWidth, win_h = hVideo->windowHeight;
 
             if (colour_target != NULL) {
-                DevicePixelmapVKGetViewport(colour_target->screen, &x, &y, &rx, &ry);
+                /* Replicate the harness letterbox viewport (calculate_viewport in
+                 * sdl3.c) from the window size + screen pixelmap size. In map mode
+                 * the scene is scaled aspect-preserving and centered; otherwise it
+                 * stretches to fill the window. The offscreen transfer texture is
+                 * window-sized, so the viewport is in window pixels. */
+                if (SDL3REND_IsMapMode(hVideo) && screen->pm_height > 0 && win_h > 0) {
+                    float aspect = (float)win_w / (float)win_h;
+                    float target = (float)screen->pm_width / (float)screen->pm_height;
+                    int vp_width = win_w, vp_height = win_h;
+                    if (aspect > target) {
+                        vp_width = (int)((float)win_h * target + 0.5f);
+                    } else {
+                        vp_height = (int)((float)win_w / target + 0.5f);
+                    }
+                    x = (win_w - vp_width) / 2;
+                    y = (win_h - vp_height) / 2;
+                    rx = (float)vp_width / (float)screen->pm_width;
+                    ry = (float)vp_height / (float)screen->pm_height;
+                } else {
+                    rx = (float)win_w / (float)screen->pm_width;
+                    ry = (float)win_h / (float)screen->pm_height;
+                }
                 vp_x = (float)colour_target->pm_base_x * rx + (float)x;
                 vp_y = (float)colour_target->pm_base_y * ry + (float)y;
                 vp_w = (float)colour_target->pm_width * rx;
@@ -184,18 +202,18 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             } else {
                 vp_x = 0;
                 vp_y = 0;
-                vp_w = (float)hVideo->swapchainExtent.width;
-                vp_h = (float)hVideo->swapchainExtent.height;
+                vp_w = (float)win_w;
+                vp_h = (float)win_h;
             }
 
-            VkViewport viewport = {vp_x, vp_y, vp_w, vp_h, 0.0f, 1.0f};
-            vkCmdSetViewport(cmd, 0, 1, &viewport);
+            SDL_GPUViewport gpu_viewport = {vp_x, vp_y, vp_w, vp_h, 0.0f, 1.0f};
+            SDL_SetGPUViewport(hVideo->currentPass, &gpu_viewport);
             int32_t sc_x = (int32_t)floorf(vp_x);
             int32_t sc_y = (int32_t)floorf(vp_y);
-            VkRect2D scissor = {{sc_x, sc_y},
-                {(uint32_t)((int32_t)ceilf(vp_x + vp_w) - sc_x),
-                 (uint32_t)((int32_t)ceilf(vp_y + vp_h) - sc_y)}};
-            vkCmdSetScissor(cmd, 0, 1, &scissor);
+            SDL_Rect scissor = {sc_x, sc_y,
+                (int)((int32_t)ceilf(vp_x + vp_w) - sc_x),
+                (int)((int32_t)ceilf(vp_y + vp_h) - sc_y)};
+            SDL_SetGPUScissor(hVideo->currentPass, &scissor);
 
             hVideo->viewportX = (int)vp_x;
             hVideo->viewportY = (int)vp_y;
@@ -205,7 +223,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             if (colour_target != NULL &&
                 colour_target->pm_width >= screen->pm_width &&
                 colour_target->pm_height >= screen->pm_height &&
-                !VK_IsMapMode(hVideo)) {
+                !SDL3REND_IsMapMode(hVideo)) {
                 hVideo->mainViewportX = (int)((vp_x - (float)x) / rx);
                 hVideo->mainViewportY = (int)((vp_y - (float)y) / ry);
                 hVideo->mainViewportW = (int)(vp_w / rx);
@@ -223,7 +241,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                 if (firstScene && hVideo->lockedPixels != NULL && hVideo->mainViewportW > 0 && hVideo->mainViewportH > 0) {
                     int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
                     br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                    VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                    SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
                         hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
                         hVideo->mainViewportX, hVideo->mainViewportY,
                         hVideo->mainViewportW, hVideo->mainViewportH);
@@ -282,7 +300,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneEnd)(br_renderer* 
                     if (hVideo->lockedPixels != NULL && hVideo->pm_width > 0) {
                         int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
                         br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                        VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                        SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
                             hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
                             hVideo->clearAreas[idx].x, hVideo->clearAreas[idx].y,
                             hVideo->clearAreas[idx].w, hVideo->clearAreas[idx].h);
@@ -373,7 +391,7 @@ static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), bufferStoredNew)(br
 #if defined(BREND_DRIVER_GL)
     if ((sm = BufferStoredGLAllocate(self, use, pm, tv)) == NULL)
 #else
-    if ((sm = BufferStoredVKAllocate(self, use, pm, tv)) == NULL)
+    if ((sm = BufferStoredSDL3RENDAllocate(self, use, pm, tv)) == NULL)
 #endif
         return BRE_FAIL;
 

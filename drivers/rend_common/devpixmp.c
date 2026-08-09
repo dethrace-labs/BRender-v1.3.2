@@ -44,7 +44,7 @@ static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_s
 static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_size, void* block, struct br_tv_template_entry* tep) {
     const br_device_pixelmap* self = block;
 
-    if (tep->token == BRT_VULKAN_CALLBACKS_P) {
+    if (tep->token == BRT_SDL3_CALLBACKS_P) {
         if (self->use_type == BRT_OFFSCREEN)
             pvalue->p = (void*)&self->asBack;
         else if (self->use_type == BRT_DEPTH)
@@ -80,7 +80,7 @@ static struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
 #if defined(BREND_DRIVER_GL)
     { DEV(OPENGL_TEXTURE_U32), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
 #else
-    { BRT(VULKAN_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
+    { BRT(SDL3_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
 #endif
 };
 #undef F
@@ -105,23 +105,18 @@ static void delete_gl_resources(br_device_pixelmap* self) {
     }
 }
 #else
-static void delete_vk_resources(br_device_pixelmap* self) {
+static void delete_sdl3_resources(br_device_pixelmap* self) {
     HVIDEO hVideo = &self->screen->asFront.video;
-    if (hVideo->device == VK_NULL_HANDLE)
+    if (hVideo->device == NULL)
         return;
 
     if (self->use_type == BRT_DEPTH) {
-        if (self->asDepth.vkDepthView) vkDestroyImageView(hVideo->device, self->asDepth.vkDepthView, NULL);
-        if (self->asDepth.vkDepthMemory) vkFreeMemory(hVideo->device, self->asDepth.vkDepthMemory, NULL);
-        if (self->asDepth.vkDepth) vkDestroyImage(hVideo->device, self->asDepth.vkDepth, NULL);
+        /* Depth pixelmaps share the single frame depthTexture; nothing to free. */
     } else if (self->use_type == BRT_OFFSCREEN) {
-        if (self->asBack.vkFramebuffer) vkDestroyFramebuffer(hVideo->device, self->asBack.vkFramebuffer, NULL);
-        if (self->asBack.vkImageView) vkDestroyImageView(hVideo->device, self->asBack.vkImageView, NULL);
-        if (self->asBack.vkMemory) vkFreeMemory(hVideo->device, self->asBack.vkMemory, NULL);
-        if (self->asBack.vkImage) vkDestroyImage(hVideo->device, self->asBack.vkImage, NULL);
-        if (hVideo->overlayImageView) { vkDestroyImageView(hVideo->device, hVideo->overlayImageView, NULL); hVideo->overlayImageView = VK_NULL_HANDLE; }
-        if (hVideo->overlayMemory) { vkFreeMemory(hVideo->device, hVideo->overlayMemory, NULL); hVideo->overlayMemory = VK_NULL_HANDLE; }
-        if (hVideo->overlayImage) { vkDestroyImage(hVideo->device, hVideo->overlayImage, NULL); hVideo->overlayImage = VK_NULL_HANDLE; }
+        /* Offscreen pixelmaps are CPU locked buffers only (no per-pixelmap GPU
+         * texture); their content reaches the GPU through the shared overlay
+         * texture at flush time. */
+        if (hVideo->overlayTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
         if (hVideo->lockedPixels) { BrMemFree(hVideo->lockedPixels); hVideo->lockedPixels = NULL; }
     }
 }
@@ -145,7 +140,7 @@ void BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), free)(br_object* _self
 
     // BrResFreeNoCallback(self);
 #else
-    delete_vk_resources(self);
+    delete_sdl3_resources(self);
 #endif
 }
 
@@ -221,13 +216,8 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), match)(br_device_p
     GLint gl_internal_format;
     GLenum gl_format, gl_type;
     GLsizeiptr gl_elem_bytes;
-#else
-    VkFormat vkFormat;
-    VkImageTiling tiling;
-    VkImageUsageFlags usage;
-    VkMemoryPropertyFlags memProps;
-#endif
     HVIDEO hVideo;
+#endif
     struct pixelmapMatchTokens mt = {
         .width = self->pm_width,
         .height = self->pm_height,
@@ -238,7 +228,9 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), match)(br_device_p
     };
     char tmp[80];
 
+#if defined(BREND_DRIVER_GL)
     hVideo = &self->screen->asFront.video;
+#endif
 
     if (self->device->templates.pixelmapMatchTemplate == NULL) {
         self->device->templates.pixelmapMatchTemplate = BrTVTemplateAllocate(self->device, pixelmapMatchTemplateEntries,
@@ -302,10 +294,10 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), match)(br_device_p
     else if (mt.msaa_samples > hVideo->maxSamples)
         mt.msaa_samples = hVideo->maxSamples;
 #else
-    err = VK_BrPixelmapGetTypeDetails(mt.type, &vkFormat, &tiling, &usage, &memProps);
-    if (err != BRE_OK)
-        return err;
-
+    /* Offscreen pixelmaps are CPU locked buffers in the SDL3 GPU driver: they
+     * are 2D scene targets (sub-areas of the front screen) whose content is
+     * composited through the shared overlay texture at flush. No GPU resource
+     * is created here. */
     if (mt.msaa_samples < 0)
         mt.msaa_samples = 0;
 #endif
@@ -316,7 +308,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), match)(br_device_p
 #if defined(BREND_DRIVER_GL)
     BrSprintfN(tmp, sizeof(tmp) - 1, "OpenGL:%s:%dx%d", typestring, mt.width, mt.height);
 #else
-    BrSprintfN(tmp, sizeof(tmp) - 1, "Vulkan:%s:%dx%d", typestring, mt.width, mt.height);
+    BrSprintfN(tmp, sizeof(tmp) - 1, "SDL3 GPU:%s:%dx%d", typestring, mt.width, mt.height);
 #endif
     pm->pm_identifier = BrResStrDup(self, tmp);
     pm->device = self->device;
@@ -366,48 +358,8 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), match)(br_device_p
         // pm->asBack.depthbuffer = NULL;
         // glGenFramebuffers(1, &pm->asBack.glFbo);
 #else
-        VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-        ici.imageType = VK_IMAGE_TYPE_2D;
-        ici.format = vkFormat;
-        ici.extent.width = mt.width;
-        ici.extent.height = mt.height;
-        ici.extent.depth = 1;
-        ici.mipLevels = 1;
-        ici.arrayLayers = 1;
-        ici.samples = VK_SAMPLE_COUNT_1_BIT;
-        ici.tiling = tiling;
-        ici.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        ici.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        if (vkCreateImage(hVideo->device, &ici, NULL, &pm->asBack.vkImage) != VK_SUCCESS)
-            return BRE_FAIL;
-
-        VkMemoryRequirements mr;
-        vkGetImageMemoryRequirements(hVideo->device, pm->asBack.vkImage, &mr);
-
-        VkMemoryAllocateInfo mai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-        mai.allocationSize = mr.size;
-        mai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        if (mai.memoryTypeIndex == UINT32_MAX ||
-            vkAllocateMemory(hVideo->device, &mai, NULL, &pm->asBack.vkMemory) != VK_SUCCESS) {
-            vkDestroyImage(hVideo->device, pm->asBack.vkImage, NULL);
-            return BRE_FAIL;
-        }
-        vkBindImageMemory(hVideo->device, pm->asBack.vkImage, pm->asBack.vkMemory, 0);
-
-        VkImageViewCreateInfo ivci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        ivci.image = pm->asBack.vkImage;
-        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.format = vkFormat;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        ivci.subresourceRange.levelCount = 1;
-        ivci.subresourceRange.layerCount = 1;
-        if (vkCreateImageView(hVideo->device, &ivci, NULL, &pm->asBack.vkImageView) != VK_SUCCESS) {
-            vkDestroyImage(hVideo->device, pm->asBack.vkImage, NULL);
-            vkFreeMemory(hVideo->device, pm->asBack.vkMemory, NULL);
-            return BRE_FAIL;
-        }
+        /* No GPU resource — the offscreen buffer's pixels live in the shared
+         * CPU locked buffer (hVideo->lockedPixels) once directLocked. */
 #endif
     } else {
         ASSERT(mt.use_type == BRT_DEPTH);
@@ -420,7 +372,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), match)(br_device_p
 #if defined(BREND_DRIVER_GL)
         delete_gl_resources(pm);
 #else
-        delete_vk_resources(pm);
+        delete_sdl3_resources(pm);
 #endif
         BrResFreeNoCallback(pm);
         return BRE_FAIL;
@@ -526,17 +478,10 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleFill)(br_
         //glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.depthbuffer->asBack.glFbo);
         glClear(GL_DEPTH_BUFFER_BIT);
 #else
-        if (self->screen != NULL) {
-            HVIDEO hVideo = &self->screen->asFront.video;
-            if (hVideo->renderPassActive && hVideo->isRecording) {
-                VkClearAttachment ca = {0};
-                ca.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                ca.clearValue.depthStencil.depth = 1.0f;
-                VkClearRect cr = {{{0, 0}, {hVideo->swapchainExtent.width, hVideo->swapchainExtent.height}}, 0, 1};
-                VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-                vkCmdClearAttachments(cmd, 1, &ca, 1, &cr);
-            }
-        }
+        /* SDL3 GPU has no mid-pass depth clear; the depth attachment is cleared
+         * at every render pass start (SDL3REND_BeginRenderPass), which is the
+         * only depth lifecycle the game relies on. */
+        (void)self;
 #endif
     } else {
         return BRE_UNSUPPORTED;
@@ -548,7 +493,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleFill)(br_
     return BRE_OK;
 }
 
-#if defined(BREND_DRIVER_VK)
+#if defined(BREND_DRIVER_SDL3REND)
 br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), fill)(br_device_pixelmap* self, br_uint_32 colour) {
     br_rectangle r;
     r.x = 0;
@@ -626,69 +571,71 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleCopyTo)(b
     sr->x = -src->pm_origin_x;
     sr->y = -src->pm_origin_y;
 
-    if (src->pm_pixels == NULL && src->pm_type == BR_PMT_INDEX_8)
+    if (src->pm_pixels == NULL)
         return BRE_FAIL;
+
+    /* SDL3 GPU offscreen pixelmaps have no GPU texture of their own: the copy
+     * goes into the shared CPU locked buffer, which reaches the screen through
+     * the overlay composite at flush time. */
+    if (self->use_type != BRT_OFFSCREEN)
+        return BRE_UNSUPPORTED;
 
     HVIDEO hVideo = &self->screen->asFront.video;
-    VkImage dstImage = self->asBack.vkImage;
-    if (dstImage == VK_NULL_HANDLE)
+    if (hVideo->lockedPixels == NULL)
         return BRE_FAIL;
 
-    uint32_t bytesPerPixel;
-    switch (src->pm_type) {
+    int bpp;
+    switch (self->pm_type) {
     case BR_PMT_RGB_565:
-        bytesPerPixel = 2;
+    case BR_PMT_RGB_555:
+        bpp = 2;
         break;
-    case BR_PMT_INDEX_8:
     case BR_PMT_RGBA_8888:
     case BR_PMT_RGBX_888:
-        bytesPerPixel = 4;
+    case BR_PMT_INDEX_8:
+        bpp = 4;
         break;
     default:
         return BRE_UNSUPPORTED;
     }
 
-    VkDeviceSize pixelDataSize = (VkDeviceSize)sr->w * sr->h * bytesPerPixel;
+    int dx = self->pm_base_x + p->x;
+    int dy = self->pm_base_y + p->y;
+    int srcStride = src->pm_row_bytes;
+    int dstStride = self->pm_row_bytes;
 
-    if (src->pm_pixels) {
-        uint8_t* scratch = BrScratchAllocate((size_t)pixelDataSize);
-        if (scratch == NULL)
-            return BRE_FAIL;
-
-        if (src->pm_type == BR_PMT_INDEX_8) {
-            br_uint_8* src8 = src->pm_pixels;
-            uint8_t* dst8 = scratch;
-            int srcStride = src->pm_row_bytes;
-            for (int y = 0; y < sr->h; y++) {
-                for (int x = 0; x < sr->w; x++) {
-                    br_uint_8 idx = src8[(y + sr->y) * srcStride + (x + sr->x)];
-                    br_colour c = self->screen->clut->entries[idx];
-                    uint8_t* d = &dst8[(y * sr->w + x) * 4];
-                    d[0] = BR_BLU(c);
-                    d[1] = BR_GRN(c);
-                    d[2] = BR_RED(c);
-                    d[3] = BR_ALPHA(c);
-                }
+    if (src->pm_type == BR_PMT_INDEX_8 && bpp == 4) {
+        for (int y = 0; y < sr->h; y++) {
+            for (int x = 0; x < sr->w; x++) {
+                int sx = sr->x + x, sy = sr->y + y;
+                if (sx < 0 || sy < 0 || sx >= src->pm_width || sy >= src->pm_height) continue;
+                br_uint_8 idx = ((const br_uint_8*)src->pm_pixels)[sy * srcStride + sx];
+                br_colour c = self->screen->clut->entries[idx];
+                uint8_t* d = (uint8_t*)hVideo->lockedPixels + (dy + y) * dstStride + (dx + x) * bpp;
+                d[0] = (uint8_t)BR_RED(c);
+                d[1] = (uint8_t)BR_GRN(c);
+                d[2] = (uint8_t)BR_BLU(c);
+                d[3] = 0xFF;
             }
-        } else {
-            int srcStride = src->pm_row_bytes;
-            int srcBpp = bytesPerPixel;
-            for (int y = 0; y < sr->h; y++)
-                memcpy((char*)scratch + y * sr->w * srcBpp,
-                       src->pm_pixels + (y + sr->y) * srcStride + sr->x * srcBpp,
-                       sr->w * srcBpp);
         }
-
-        if (VK_UploadBufferToImage(hVideo, dstImage,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                sr->w, sr->h, self->pm_base_x + p->x, self->pm_base_y + p->y,
-                VK_IMAGE_ASPECT_COLOR_BIT, scratch, (size_t)pixelDataSize) != VK_SUCCESS) {
-            BrScratchFree(scratch);
-            return BRE_FAIL;
+    } else if (src->pm_type == self->pm_type) {
+        for (int y = 0; y < sr->h; y++) {
+            int sy = sr->y + y, yy = dy + y;
+            if (sy < 0 || yy < 0 || sy >= src->pm_height || yy >= self->pm_height) continue;
+            int sx = sr->x;
+            if (sx < 0) sx = 0;
+            int cw = sr->w;
+            if (sx + cw > src->pm_width) cw = src->pm_width - sx;
+            if (cw <= 0) continue;
+            memcpy((char*)hVideo->lockedPixels + yy * dstStride + dx * bpp,
+                src->pm_pixels + sy * srcStride + sx * bpp,
+                (size_t)cw * bpp);
         }
-        BrScratchFree(scratch);
+    } else {
+        return BRE_UNSUPPORTED;
     }
 
+    self->asBack.possiblyDirty = 1;
     return BRE_OK;
 #endif
 }
@@ -782,17 +729,17 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), allocateSub)(br_de
     return BRE_OK;
 }
 
-#if defined(BREND_DRIVER_VK)
+#if defined(BREND_DRIVER_SDL3REND)
 /* Single entry point for all CPU locked-buffer region processing at flush time:
  * the map-mode dimArea dimming (565 only), the clearArea/pratcam/mainViewport
  * purges to transparent magenta, and the counter resets. Runs BEFORE the upload
  * so the overlay image is uploaded with the purged regions. */
-static void VK_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
+static void SDL3REND_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
     int bpp = (self->pm_type == BR_PMT_RGB_565 || self->pm_type == BR_PMT_RGB_555) ? 2 : 4;
     br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
 
     if (bpp == 2) {
-        if (VK_IsMapMode(hVideo)) {
+        if (SDL3REND_IsMapMode(hVideo)) {
             int row_w = self->pm_row_bytes / 2;
             for (int i = 0; i < hVideo->dimAreaCount; i++) {
                 int ax = hVideo->dimAreas[i].x, ay = hVideo->dimAreas[i].y;
@@ -817,7 +764,7 @@ static void VK_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
     }
 
     for (int i = 0; i < hVideo->clearAreaCount; i++) {
-        VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+        SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
             self->pm_width, self->pm_height, self->pm_row_bytes,
             hVideo->clearAreas[i].x, hVideo->clearAreas[i].y,
             hVideo->clearAreas[i].w, hVideo->clearAreas[i].h);
@@ -825,7 +772,7 @@ static void VK_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
     hVideo->clearAreaCount = 0;
 
     if (bpp == 2 && hVideo->pratcamAreaCount) {
-        VK_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+        SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
             self->pm_width, self->pm_height, self->pm_row_bytes,
             hVideo->pratcamArea.x, hVideo->pratcamArea.y,
             hVideo->pratcamArea.w, hVideo->pratcamArea.h);
@@ -888,132 +835,37 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
         return BRE_OK;
     }
 
-    if (!hVideo->isRecording) {
-        VK_EnsureRecording(hVideo);
-        VkCommandBuffer setup_cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-        if (!hVideo->renderPassActive) {
-            VK_BeginRenderPass(hVideo, setup_cmd);
-            hVideo->renderPassActive = 1;
-        }
-    }
-
     if (hVideo->lockedPixels != NULL) {
-        size_t pixelSize = (self->pm_type == BR_PMT_RGB_565) ? 2 : 4;
-        int usePacked565 = (self->pm_type == BR_PMT_RGB_565);
-        int useRgbaOverlay = (self->pm_type == BR_PMT_RGB_555);
-        VkDeviceSize imageSize;
-        VkFormat overlayVkFormat;
-        if (usePacked565) {
-            overlayVkFormat = VK_FORMAT_R5G6B5_UNORM_PACK16;
-            imageSize = self->pm_width * self->pm_height * 2;
-        } else if (useRgbaOverlay) {
-            overlayVkFormat = VK_FORMAT_B8G8R8A8_UNORM;
-            imageSize = self->pm_width * self->pm_height * 4;
-        } else {
-            overlayVkFormat = VK_FORMAT_UNDEFINED;
-            imageSize = self->pm_width * self->pm_height * pixelSize;
+        /* Ensure the overlay texture exists (BGRA8888 — universally supported).
+         * The overlay is uploaded from the CPU locked buffer each frame and
+         * composited on top of the 3D content in SDL3REND_Present. */
+        if (hVideo->overlayTexture == NULL) {
+            SDL_GPUTextureCreateInfo ti = {0};
+            ti.type = SDL_GPU_TEXTURETYPE_2D;
+            ti.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
+            ti.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+            ti.width = self->pm_width;
+            ti.height = self->pm_height;
+            ti.layer_count_or_depth = 1;
+            ti.num_levels = 1;
+            ti.sample_count = SDL_GPU_SAMPLECOUNT_1;
+            hVideo->overlayTexture = SDL_CreateGPUTexture(hVideo->device, &ti);
+            if (!hVideo->overlayTexture)
+                return BRE_FAIL;
         }
 
-        if (hVideo->overlayImage == VK_NULL_HANDLE) {
-            VkFormat vkFormat;
-            VkImageTiling tiling;
-            VkImageUsageFlags usage;
-            VkMemoryPropertyFlags memProps;
+        size_t srcOffset = self->pm_base_y * self->pm_row_bytes + self->pm_base_x * 2;
 
-            if (usePacked565 || useRgbaOverlay) {
-                vkFormat = overlayVkFormat;
-                tiling = VK_IMAGE_TILING_LINEAR;
-                usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-                memProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            } else {
-                VK_BrPixelmapGetTypeDetails(self->pm_type, &vkFormat, &tiling, &usage, &memProps);
-            }
+        SDL3REND_PurgeLockedRegions(hVideo, self);
 
-            VkImageCreateInfo ii = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-            ii.imageType = VK_IMAGE_TYPE_2D;
-            ii.format = vkFormat;
-            ii.extent.width = self->pm_width;
-            ii.extent.height = self->pm_height;
-            ii.extent.depth = 1;
-            ii.mipLevels = 1;
-            ii.arrayLayers = 1;
-            ii.samples = VK_SAMPLE_COUNT_1_BIT;
-            ii.tiling = VK_IMAGE_TILING_LINEAR;
-            ii.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-            ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-            if (vkCreateImage(hVideo->device, &ii, NULL, &hVideo->overlayImage) != VK_SUCCESS)
-                return BRE_FAIL;
-
-            VkMemoryRequirements memReq;
-            vkGetImageMemoryRequirements(hVideo->device, hVideo->overlayImage, &memReq);
-
-            VkMemoryAllocateInfo ai = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-            ai.allocationSize = memReq.size;
-            ai.memoryTypeIndex = VK_FindMemoryType(hVideo->physicalDevice, memReq.memoryTypeBits,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            if (ai.memoryTypeIndex == UINT32_MAX) {
-                vkDestroyImage(hVideo->device, hVideo->overlayImage, NULL);
-                hVideo->overlayImage = VK_NULL_HANDLE;
-                return BRE_FAIL;
-            }
-
-            if (vkAllocateMemory(hVideo->device, &ai, NULL, &hVideo->overlayMemory) != VK_SUCCESS) {
-                vkDestroyImage(hVideo->device, hVideo->overlayImage, NULL);
-                hVideo->overlayImage = VK_NULL_HANDLE;
-                return BRE_FAIL;
-            }
-            vkBindImageMemory(hVideo->device, hVideo->overlayImage, hVideo->overlayMemory, 0);
-
-            VkImageViewCreateInfo ivi = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-            ivi.image = hVideo->overlayImage;
-            ivi.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            ivi.format = vkFormat;
-            ivi.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            ivi.subresourceRange.baseMipLevel = 0;
-            ivi.subresourceRange.levelCount = 1;
-            ivi.subresourceRange.baseArrayLayer = 0;
-            ivi.subresourceRange.layerCount = 1;
-            if (vkCreateImageView(hVideo->device, &ivi, NULL, &hVideo->overlayImageView) != VK_SUCCESS) {
-                vkFreeMemory(hVideo->device, hVideo->overlayMemory, NULL);
-                vkDestroyImage(hVideo->device, hVideo->overlayImage, NULL);
-                hVideo->overlayImage = VK_NULL_HANDLE;
-                hVideo->overlayMemory = VK_NULL_HANDLE;
-                hVideo->overlayImageView = VK_NULL_HANDLE;
-                return BRE_FAIL;
-            }
-        }
-
-        size_t srcOffset = self->pm_base_y * self->pm_row_bytes + self->pm_base_x * pixelSize;
-
-        VK_PurgeLockedRegions(hVideo, self);
-
-        if (usePacked565) {
-            /* Raw 565 rows, packed — no CPU colour conversion. The transparent
-             * magenta sentinel (0xF81F) stays untouched: sampled UNORM from the
-             * R5G6B5 overlay it reads back as (1,0,1), which the overlay frag
-             * shader discards exactly like the BGRA path. NEAREST filtering
-             * (overlaySampler) keeps magenta texels from bleeding, so nothing
-             * needs pre-clearing. Rows are copied per-row to honour
-             * pm_row_bytes. Half the upload bytes of the old BGRA path. */
-            br_uint_16* packed = BrScratchAllocate((size_t)self->pm_width * self->pm_height * 2);
-            if (packed == NULL)
-                return BRE_FAIL;
-            const br_uint_16* src565 = (const br_uint_16*)((char*)hVideo->lockedPixels + srcOffset);
-            size_t srcPitch = self->pm_row_bytes / 2;
-            for (int y = 0; y < self->pm_height; y++) {
-                memcpy((char*)packed + y * self->pm_width * 2, src565 + y * srcPitch,
-                    (size_t)self->pm_width * 2);
-            }
-            if (VK_UploadBufferToImage(hVideo, hVideo->overlayImage,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-                    self->pm_width, self->pm_height, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
-                    packed, (size_t)imageSize) != VK_SUCCESS) {
-                BrScratchFree(packed);
-                return BRE_FAIL;
-            }
-            BrScratchFree(packed);
-        } else if (useRgbaOverlay) {
+        if (self->pm_type == BR_PMT_RGB_565 || self->pm_type == BR_PMT_RGB_555) {
+            /* 565/555 -> BGRA8888. The transparent magenta sentinel (0xF81F)
+             * becomes fully transparent so the blended overlay composite hides
+             * it; overlay.frag also discards rgb==(1,0,1). */
+            int rShift = (self->pm_type == BR_PMT_RGB_565) ? 11 : 10;
+            int gShift = (self->pm_type == BR_PMT_RGB_565) ? 5 : 5;
+            int gMask = (self->pm_type == BR_PMT_RGB_565) ? 0x3F : 0x1F;
+            int gDiv = (self->pm_type == BR_PMT_RGB_565) ? 63 : 31;
             br_uint_32* rgba = BrScratchAllocate((size_t)self->pm_width * self->pm_height * 4);
             if (rgba == NULL)
                 return BRE_FAIL;
@@ -1024,38 +876,33 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
                     if (p == BR_COLOUR_565(31, 0, 31)) {
                         rgba[y * self->pm_width + x] = 0;  // transparent
                     } else {
-                        int r5 = (p >> 11) & 0x1F;
-                        int g6 = (p >> 5) & 0x3F;
+                        int r5 = (p >> rShift) & 0x1F;
+                        int g = (p >> gShift) & gMask;
                         int b5 = p & 0x1F;
                         rgba[y * self->pm_width + x] = (b5 * 255 / 31)
-                            | ((g6 * 255 / 63) << 8)
+                            | ((g * 255 / gDiv) << 8)
                             | ((r5 * 255 / 31) << 16)
                             | (0xFF << 24);
                     }
                 }
             }
-            if (VK_UploadBufferToImage(hVideo, hVideo->overlayImage,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-                    self->pm_width, self->pm_height, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
-                    rgba, (size_t)imageSize) != VK_SUCCESS) {
+            if (SDL3REND_UploadBufferToImage(hVideo, hVideo->overlayTexture,
+                    self->pm_width, self->pm_height, 0, 0,
+                    rgba, (size_t)self->pm_width * self->pm_height * 4) != 0) {
                 BrScratchFree(rgba);
                 return BRE_FAIL;
             }
             BrScratchFree(rgba);
         } else {
-            if (VK_UploadBufferToImage(hVideo, hVideo->overlayImage,
-                    VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-                    self->pm_width, self->pm_height, 0, 0, VK_IMAGE_ASPECT_COLOR_BIT,
-                    (const char*)hVideo->lockedPixels + srcOffset, (size_t)imageSize) != VK_SUCCESS)
+            /* 4 bytes/pixel raw copy (RGBA_8888 / RGBX_888). */
+            if (SDL3REND_UploadBufferToImage(hVideo, hVideo->overlayTexture,
+                    self->pm_width, self->pm_height, 0, 0,
+                    (const char*)hVideo->lockedPixels + srcOffset,
+                    (size_t)self->pm_width * self->pm_height * 4) != 0)
                 return BRE_FAIL;
         }
 
         hVideo->overlayDirty = 1;
-    }
-
-    if (hVideo->overlayDirty) {
-        VkCommandBuffer cmd = hVideo->drawCommandBuffers[hVideo->currentImageIndex];
-        VK_DrawOverlay(hVideo, cmd, self->screen);
     }
 
     self->asBack.possiblyDirty = 0;

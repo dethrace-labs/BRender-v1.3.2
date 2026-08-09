@@ -1,5 +1,5 @@
-#ifndef vk_shaders_h
-#define vk_shaders_h
+#ifndef sdl3_shaders_h
+#define sdl3_shaders_h
 
 #include <stddef.h>
 

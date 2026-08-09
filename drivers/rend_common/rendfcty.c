@@ -30,7 +30,7 @@ br_renderer_facility* BREND_FN(RendererFacility, Init)(br_device* device) {
 #if defined(BREND_DRIVER_GL)
     self->identifier = "OpenGL Renderer facility";
 #else
-    self->identifier = "Vulkan Renderer facility";
+    self->identifier = "SDL3 GPU Renderer facility";
 #endif
     self->device = device;
     self->object_list = BrObjectListAllocate(self);
@@ -40,7 +40,7 @@ br_renderer_facility* BREND_FN(RendererFacility, Init)(br_device* device) {
 #if defined(BREND_DRIVER_GL)
         BR_ERROR("GLREND: Error creating geometry objects.");
 #else
-        BR_ERROR("SDL3REND: Error creating geometry objects.");
+        BR_ERROR("SDL3GPU: Error creating geometry objects.");
 #endif
         BrResFree(self);
         return NULL;

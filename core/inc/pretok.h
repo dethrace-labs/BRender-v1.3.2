@@ -519,7 +519,7 @@ typedef enum {
 	BRT_VIEW_TO_SCREEN_M4_F        =      368,
 	BRT_VIEW_TO_SCREEN_M4_X        =      369,
 	BRT_VIRTUALFB_CALLBACKS_P      =      485,
-	BRT_VULKAN_CALLBACKS_P         =      541,
+	BRT_SDL3_CALLBACKS_P           =      541,
 	BRT_WIDTH_I32                  =       78,
 	BRT_WIDTH_MAX_I32              =       80,
 	BRT_WIDTH_MIN_I32              =       79,
@@ -1063,7 +1063,7 @@ typedef enum {
 #define BRT_VIEW_TO_SCREEN_M4_F             368
 #define BRT_VIEW_TO_SCREEN_M4_X             369
 #define BRT_VIRTUALFB_CALLBACKS_P           485
-#define BRT_VULKAN_CALLBACKS_P              541
+#define BRT_SDL3_CALLBACKS_P                541
 #define BRT_WIDTH_I32                        78
 #define BRT_WIDTH_MAX_I32                    80
 #define BRT_WIDTH_MIN_I32                    79

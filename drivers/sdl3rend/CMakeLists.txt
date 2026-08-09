@@ -1,7 +1,13 @@
 project(sdl3rend C)
 
-find_package(VulkanHeaders REQUIRED)
-find_package(VulkanLoader REQUIRED)
+# NOTE: This driver is not yet wired into the top-level build (drivers/CMakeLists.txt).
+# This file is the target manifest, mirroring sdl3rend (the Vulkan driver this one
+# replaces). Files listed below are created incrementally during the port.
+
+# SDL3 dependency. When this driver is wired into the build, the BRender top-level
+# CMake must locate SDL3 (find_package(SDL3 CONFIG), as dethrace does) and expose it
+# to this subdirectory.
+find_package(SDL3 CONFIG QUIET)
 
 find_program(GLSL_COMPILER NAMES glslangValidator glslc)
 if(GLSL_COMPILER)
@@ -9,8 +15,10 @@ if(GLSL_COMPILER)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
-# Shared shaders live in drivers/rend_common with ##ifdef VK/GL_ES/GL_CORE markers.
-# Filter them for Vulkan (plain GLSL, literal-first #version 450) before compiling.
+# Shared shaders live in drivers/rend_common with ##ifdef SDL3GPU/GL_ES/GL_CORE
+# markers. Filter for SPIR-V (plain GLSL, literal-first #version 450) before
+# compiling; the SDL3GPU marker keeps the set-1/2/3 binding layout that the
+# SDL3-GPU pipeline layout uses.
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
 
 set(SPV_GENERATED)
@@ -30,9 +38,9 @@ foreach(spv_file
         set(spv_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_file}")
         add_custom_command(
             OUTPUT ${glsl_filtered}
-            COMMAND ${CMAKE_COMMAND} "-DINPUT=${glsl_src}" "-DOUTPUT=${glsl_filtered}" "-DKEEP=VK" -P "${BRender_SOURCE_DIR}/cmake/FilterShader.cmake"
+            COMMAND ${CMAKE_COMMAND} "-DINPUT=${glsl_src}" "-DOUTPUT=${glsl_filtered}" "-DKEEP=SDL3GPU" -P "${BRender_SOURCE_DIR}/cmake/FilterShader.cmake"
             DEPENDS ${glsl_src}
-            COMMENT "Filtering ${glsl_file} for Vulkan"
+            COMMENT "Filtering ${glsl_file} for SPIR-V"
         )
         if(GLSL_COMPILER_NAME STREQUAL "glslangValidator")
             set(compile_cmd ${GLSL_COMPILER} -V -o ${spv_path} ${glsl_filtered})
@@ -64,7 +72,7 @@ endforeach()
 
 set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
 
-set(VKSTATE_FILES
+set(SDL3REND_STATE_FILES
         ${REND_COMMON_DIR}/cache.c
         ${REND_COMMON_DIR}/modeldata.c
         ${REND_COMMON_DIR}/modelrender.c
@@ -80,10 +88,10 @@ set(VKSTATE_FILES
         ${REND_COMMON_DIR}/state_primitive.c
         ${REND_COMMON_DIR}/state_surface.c
         )
-source_group("STATE" FILES ${VKSTATE_FILES})
+source_group("STATE" FILES ${SDL3REND_STATE_FILES})
 
 set(VIDEO_FILES
-        vk_shaders.c
+        sdl3_shaders.c
         video.c
         video.h
         )
@@ -127,15 +135,12 @@ set(SDL3REND_FILES
 
         ${REND_COMMON_DIR}/devpixmp.c
         devpixmp.h
-        devpmvkf.c
+        devpmgpu.c
 
         ${REND_COMMON_DIR}/devclut.c
         ${REND_COMMON_DIR}/devclut.h
 
         ${REND_COMMON_DIR}/template.h
-
-        vkassert.c
-        vkassert.h
         )
 
 set(INC_FILES
@@ -156,7 +161,7 @@ target_include_directories(sdl3rend-headers INTERFACE
         )
 
 set_target_properties(sdl3rend-headers PROPERTIES
-        EXPORT_NAME "Drivers::SDL3Rend::Headers"
+        EXPORT_NAME "Drivers::SDL3REND::Headers"
         FOLDER "BRender/Drivers"
         )
 
@@ -164,7 +169,7 @@ add_library(sdl3rend
         ${SDL3REND_FILES}
         ${RENDERER_FILES}
         ${VIDEO_FILES}
-        ${VKSTATE_FILES}
+        ${SDL3REND_STATE_FILES}
         ${INC_FILES}
         ${SPV_GENERATED}
         )
@@ -175,9 +180,9 @@ if(target_type STREQUAL SHARED_LIBRARY)
 endif()
 
 target_compile_definitions(sdl3rend PRIVATE
-        BREND_DRIVER_VK
-        BREND_DRIVER_SUFFIX_UPPER=VK
-        BREND_DRIVER_SUFFIX_LOWER=vk
+        BREND_DRIVER_SDL3REND
+        BREND_DRIVER_SUFFIX_UPPER=SDL3REND
+        BREND_DRIVER_SUFFIX_LOWER=sdl3rend
         )
 
 target_include_directories(sdl3rend PRIVATE
@@ -186,13 +191,17 @@ target_include_directories(sdl3rend PRIVATE
         ${REND_COMMON_DIR}
         )
 
-target_link_libraries(sdl3rend PRIVATE BRender::DDI Vulkan::Loader Vulkan::Headers)
+if(SDL3_FOUND)
+    target_link_libraries(sdl3rend PRIVATE BRender::DDI SDL3::SDL3)
+else()
+    target_link_libraries(sdl3rend PRIVATE BRender::DDI)
+endif()
 target_link_libraries(sdl3rend PUBLIC sdl3rend-headers)
 
 set_target_properties(sdl3rend PROPERTIES
         C_STANDARD 11
         C_STANDARD_REQUIRED TRUE
-        EXPORT_NAME "Drivers::SDL3Rend"
+        EXPORT_NAME "Drivers::SDL3REND"
         FOLDER "BRender/Drivers"
         )
 
@@ -206,5 +215,5 @@ if(BRENDER_ASAN_ENABLED)
     )
 endif()
 
-add_library(BRender::Drivers::SDL3Rend::Headers ALIAS sdl3rend-headers)
-add_library(BRender::Drivers::SDL3Rend ALIAS sdl3rend)
+add_library(BRender::Drivers::SDL3REND::Headers ALIAS sdl3rend-headers)
+add_library(BRender::Drivers::SDL3REND ALIAS sdl3rend)

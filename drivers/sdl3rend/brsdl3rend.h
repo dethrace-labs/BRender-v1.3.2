@@ -9,19 +9,25 @@
 extern "C" {
 #endif
 
+/*
+ * SDL3 GPU device info. Pointers refer to SDL3 objects:
+ *   gpu_device               -> SDL_GPUDevice*
+ *   window                   -> SDL_Window*
+ *   swapchain_texture_format -> SDL_GPUTextureFormat (swapchain format)
+ */
 typedef struct SDL3REND_DeviceInfo {
-    void* instance;
-    void* physical_device;
-    void* device;
-    void* graphics_queue;
-    uint32_t graphics_queue_family;
-    void* render_pass;
-    uint32_t min_image_count;
-    uint32_t image_count;
+    void* gpu_device;
+    void* window;
+    uint32_t swapchain_texture_format;
 } SDL3REND_DeviceInfo;
 
 void SDL3REND_GetDeviceInfo(SDL3REND_DeviceInfo* info);
 
+/*
+ * External render callback, invoked inside the driver's frame while a
+ * command buffer is active. The first argument is the active
+ * SDL_GPUCommandBuffer*; the second is the opaque user pointer.
+ */
 void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud);
 
 #ifdef __cplusplus
@@ -32,7 +38,7 @@ void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* u
  * Main entry point for device.
  */
 #ifndef _NO_PROTOTYPES
-struct br_device *BR_EXPORT BrDrv1SDL3RendBegin(const char *arguments);
+struct br_device *BR_EXPORT BrDrv1SDL3RENDBegin(const char *arguments);
 #endif /* _NO_PROTOTYPES */
 
 #endif /* _BRSDL3REND_H_ */
