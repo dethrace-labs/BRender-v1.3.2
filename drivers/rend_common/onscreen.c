@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 #include "shortcut.h"
 
 /*
@@ -42,9 +43,8 @@
              ((eqn.v[Y] > 0) ? (bounds->max.v[Y]) : (bounds->min.v[Y])), eqn.v[Z],           \
              ((eqn.v[Z] > 0) ? (bounds->max.v[Z]) : (bounds->min.v[Z]))) < eqn.v[W])
 
-br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, const br_bounds3_f *bounds)
-{
-    int        accept = 1;
+br_token BREND_FNPREFIX(OnScreenCheck)(br_renderer* self, const br_matrix4* model_to_screen, const br_bounds3_f* bounds) {
+    int accept = 1;
     br_vector4 eqn;
     int c;
 
@@ -53,10 +53,10 @@ br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, c
      */
     MAKE_EQN(+, 0);
 
-    if(TEST_OUT)
+    if (TEST_OUT)
         return BRT_REJECT;
 
-    if(TEST_NOT_IN)
+    if (TEST_NOT_IN)
         accept = 0;
 
     /*
@@ -64,10 +64,10 @@ br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, c
      */
     MAKE_EQN(-, 0);
 
-    if(TEST_OUT)
+    if (TEST_OUT)
         return BRT_REJECT;
 
-    if(accept && TEST_NOT_IN)
+    if (accept && TEST_NOT_IN)
         accept = 0;
 
     /*
@@ -75,10 +75,10 @@ br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, c
      */
     MAKE_EQN(+, 1);
 
-    if(TEST_OUT)
+    if (TEST_OUT)
         return BRT_REJECT;
 
-    if(accept && TEST_NOT_IN)
+    if (accept && TEST_NOT_IN)
         accept = 0;
 
     /*
@@ -86,10 +86,10 @@ br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, c
      */
     MAKE_EQN(-, 1);
 
-    if(TEST_OUT)
+    if (TEST_OUT)
         return BRT_REJECT;
 
-    if(accept && TEST_NOT_IN)
+    if (accept && TEST_NOT_IN)
         accept = 0;
 
     /*
@@ -97,10 +97,10 @@ br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, c
      */
     MAKE_EQN(+, 2);
 
-    if(TEST_OUT)
+    if (TEST_OUT)
         return BRT_REJECT;
 
-    if(accept && TEST_NOT_IN)
+    if (accept && TEST_NOT_IN)
         accept = 0;
 
     /*
@@ -108,28 +108,26 @@ br_token VKOnScreenCheck(br_renderer *self, const br_matrix4 *model_to_screen, c
      */
     MAKE_EQN(-, 2);
 
-    if(TEST_OUT)
+    if (TEST_OUT)
         return BRT_REJECT;
 
-    if(accept && TEST_NOT_IN)
+    if (accept && TEST_NOT_IN)
         accept = 0;
 
-    for(c = 0; c < MAX_STATE_CLIP_PLANES; c++) {
+    for (c = 0; c < MAX_STATE_CLIP_PLANES; c++) {
 
-			if(self->state.current->clip[c].type != BRT_PLANE)
-				continue;
+        if (self->state.current->clip[c].type != BRT_PLANE)
+            continue;
 
-			BrMatrix4TApply(&eqn,
-					 &self->state.current->clip[c].plane,
-					 model_to_screen);
-			eqn.v[W] = -eqn.v[W];
+        BrMatrix4TApply(&eqn, &self->state.current->clip[c].plane, model_to_screen);
+        eqn.v[W] = -eqn.v[W];
 
-			if(TEST_OUT)
-				return BRT_REJECT;
+        if (TEST_OUT)
+            return BRT_REJECT;
 
-			if(accept && TEST_NOT_IN)
-				accept = 0;
-		}
+        if (accept && TEST_NOT_IN)
+            accept = 0;
+    }
 
     return accept ? BRT_ACCEPT : BRT_PARTIAL;
 }

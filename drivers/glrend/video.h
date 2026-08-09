@@ -111,7 +111,7 @@ typedef struct shader_data_model {
     alignas(4) uint32_t disable_colour_key;
     alignas(4) uint32_t disable_texture;
     alignas(4) uint32_t fog_enabled;
-    alignas(16) br_vector3 fog_colour;
+    alignas(16) br_vector4 fog_colour;
     alignas(4) float fog_min;
     alignas(4) float fog_max;
     alignas(4) float alpha;

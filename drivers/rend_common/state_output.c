@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 
 #define S    BRTV_SET
 #define Q    BRTV_QUERY
@@ -19,8 +20,7 @@ static const state_output default_state = {
     .depth  = NULL,
 };
 
-void StateGLInitOutput(state_all *state)
-{
+void BREND_FN(State, InitOutput)(state_all* state) {
     state->templates.output = BrTVTemplateAllocate(state->res, template_entries, BR_ASIZE(template_entries));
 
     state->default_.output = default_state;

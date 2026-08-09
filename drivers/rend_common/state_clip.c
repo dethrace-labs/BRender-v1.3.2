@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 
 #define S    BRTV_SET
 #define Q    BRTV_QUERY
@@ -22,17 +23,16 @@ static const state_clip default_state = {
 
 static br_tv_template_entry clip_states[MAX_STATE_CLIP_PLANES][BR_ASIZE(template_entries)];
 
-void StateGLInitClip(state_all *state)
-{
+void BREND_FN(State, InitClip)(state_all* state) {
     /* Create a different template list for each clipping plane. */
-    for(int i = 0; i < MAX_STATE_CLIP_PLANES; ++i) {
+    for (int i = 0; i < MAX_STATE_CLIP_PLANES; ++i) {
         BrMemCpy(&clip_states[i], template_entries, sizeof(template_entries));
 
-        for(int j = 0; j < BR_ASIZE(template_entries); ++j)
+        for (int j = 0; j < BR_ASIZE(template_entries); ++j)
             clip_states[i][j].offset += sizeof(state_clip) * i;
 
         state->templates.clip[i] = BrTVTemplateAllocate(state->res, clip_states[i], BR_ASIZE(clip_states[i]));
-        state->default_.clip[i]  = default_state;
+        state->default_.clip[i] = default_state;
     }
 
     state->default_.valid |= MASK_STATE_CLIP;

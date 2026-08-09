@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 
 /*
  * Shortcuts for template flags
@@ -54,8 +55,7 @@ static state_matrix default_state = {
     .view_to_screen_hint = BRT_PARALLEL,
 };
 
-void StateGLInitMatrix(state_all *state)
-{
+void BREND_FN(State, InitMatrix)(state_all* state) {
     state->templates.matrix = BrTVTemplateAllocate(state->res, template_entries, BR_ASIZE(template_entries));
 
     state->default_.matrix = default_state;

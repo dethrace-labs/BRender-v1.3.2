@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 
 #define S    BRTV_SET
 #define Q    BRTV_QUERY
@@ -33,8 +34,7 @@ static const state_hidden default_state = {
     .insert_arg3 = NULL,
 };
 
-void StateVKInitHidden(state_all *state)
-{
+void BREND_FN(State, InitHidden)(state_all* state) {
     state->templates.hidden = BrTVTemplateAllocate(state->res, template_entries, BR_ASIZE(template_entries));
 
     state->default_.hidden = default_state;

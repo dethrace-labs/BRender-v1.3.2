@@ -16,7 +16,11 @@ extern "C" {
 
 #include <assert.h>
 
+#if defined(BREND_DRIVER_GL)
 #include "glad/glad.h"
+#else
+#include <vulkan/vulkan.h>
+#endif
 
 #define BR_DEVICE_PRIVATE
 #define BR_OUTPUT_FACILITY_PRIVATE
@@ -24,20 +28,26 @@ extern "C" {
 #define BR_RENDERER_FACILITY_PRIVATE
 #define BR_BUFFER_STORED_PRIVATE
 #define BR_GEOMETRY_V1_MODEL_PRIVATE
-#define BR_GEOMETRY_V1_BUCKETS_PRIVATE
 #define BR_GEOMETRY_STORED_PRIVATE
 #define BR_RENDERER_STATE_STORED_PRIVATE
 #define BR_RENDERER_PRIVATE
 #define BR_DEVICE_CLUT_PRIVATE
 
+#if defined(BREND_DRIVER_GL)
+#define BR_GEOMETRY_V1_BUCKETS_PRIVATE
+#endif
 
- #include "brddi.h"
- #include "brglrend.h"
+#include "brddi.h"
+#if defined(BREND_DRIVER_GL)
+#include "brglrend.h"
+#else
+#include "brvkrend.h"
+#endif
 
- #include "formats.h"
- #include "pm.h"
+#include "formats.h"
+#include "pm.h"
 #include "video.h"
- #include "state.h"
+#include "state.h"
 
 #include "template.h"
 #include "device.h"
@@ -49,9 +59,13 @@ extern "C" {
 #include "sbuffer.h"
 #include "gstored.h"
 #include "gv1model.h"
+#if defined(BREND_DRIVER_GL)
 #include "gv1buckt.h"
-#include "devclut.h"
 #include "glassert.h"
+#else
+#include "vkassert.h"
+#endif
+#include "devclut.h"
 /* clang-format on */
 /*
  * Macros that expand to the first two arguments of a template entry

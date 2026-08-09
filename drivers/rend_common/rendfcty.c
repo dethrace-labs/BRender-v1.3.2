@@ -2,6 +2,7 @@
  * Renderer type methods
  */
 #include "drv.h"
+#include "rend_common.h"
 #include <stddef.h>
 
 /*
@@ -21,18 +22,26 @@ static struct br_tv_template_entry rendererFacilityTemplateEntries[] = {
 
 #undef F
 
-br_renderer_facility* RendererFacilityGLInit(br_device* device) {
+br_renderer_facility* BREND_FN(RendererFacility, Init)(br_device* device) {
     br_renderer_facility* self;
 
     self = BrResAllocate(device, sizeof(*self), BR_MEMORY_OBJECT);
     self->dispatch = &rendererFacilityDispatch;
+#if defined(BREND_DRIVER_GL)
     self->identifier = "OpenGL Renderer facility";
+#else
+    self->identifier = "Vulkan Renderer facility";
+#endif
     self->device = device;
     self->object_list = BrObjectListAllocate(self);
 
     /* Create geometry objects */
-    if (/*GeometryV1BucketsGLAllocate(self, "V1Buckets") == NULL || */ GeometryPrimitivesNullAllocate(self, "Primitives") == NULL || GeometryLightingNullAllocate(self, "Lighting") == NULL || GeometryV1ModelGLAllocate(self, "V1Model") == NULL) {
+    if (GeometryPrimitivesNullAllocate(self, "Primitives") == NULL || GeometryLightingNullAllocate(self, "Lighting") == NULL || BREND_FN(GeometryV1Model, Allocate)(self, "V1Model") == NULL) {
+#if defined(BREND_DRIVER_GL)
         BR_ERROR("GLREND: Error creating geometry objects.");
+#else
+        BR_ERROR("VKREND: Error creating geometry objects.");
+#endif
         BrResFree(self);
         return NULL;
     }
@@ -41,7 +50,7 @@ br_renderer_facility* RendererFacilityGLInit(br_device* device) {
     return (br_renderer_facility*)self;
 }
 
-static void BR_CMETHOD_DECL(br_renderer_facility_gl, free)(br_object* _self) {
+static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), free)(br_object* _self) {
     br_renderer_facility* self = (br_renderer_facility*)_self;
 
     /*
@@ -57,30 +66,30 @@ static void BR_CMETHOD_DECL(br_renderer_facility_gl, free)(br_object* _self) {
     BrResFreeNoCallback(self);
 }
 
-static const char* BR_CMETHOD_DECL(br_renderer_facility_gl, identifier)(br_object* self) {
+static const char* BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), identifier)(br_object* self) {
     return ((br_renderer_facility*)self)->identifier;
 }
 
-static br_token BR_CMETHOD_DECL(br_renderer_facility_gl, type)(br_object* self) {
+static br_token BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), type)(br_object* self) {
     (void)self;
     return BRT_RENDERER_FACILITY;
 }
 
-static br_boolean BR_CMETHOD_DECL(br_renderer_facility_gl, isType)(br_object* self, br_token t) {
+static br_boolean BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), isType)(br_object* self, br_token t) {
     (void)self;
     return (t == BRT_RENDERER_FACILITY) || (t == BRT_OBJECT_CONTAINER) || (t == BRT_OBJECT);
 }
 
-static struct br_device* BR_CMETHOD_DECL(br_renderer_facility_gl, device)(br_object* self) {
+static struct br_device* BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), device)(br_object* self) {
     return ((br_renderer_facility*)self)->device;
 }
 
-static br_size_t BR_CMETHOD_DECL(br_renderer_facility_gl, space)(br_object* self) {
+static br_size_t BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), space)(br_object* self) {
     (void)self;
     return sizeof(br_renderer_facility);
 }
 
-static struct br_tv_template* BR_CMETHOD_DECL(br_renderer_facility_gl, templateQuery)(br_object* _self) {
+static struct br_tv_template* BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), templateQuery)(br_object* _self) {
     br_renderer_facility* self = (br_renderer_facility*)_self;
 
     if (self->device->templates.rendererFacilityTemplate == NULL) {
@@ -91,7 +100,7 @@ static struct br_tv_template* BR_CMETHOD_DECL(br_renderer_facility_gl, templateQ
     return self->device->templates.rendererFacilityTemplate;
 }
 
-static br_error BR_CMETHOD_DECL(br_renderer_facility_gl, validDestination)(br_renderer_facility* self, br_boolean* bp,
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), validDestination)(br_renderer_facility* self, br_boolean* bp,
     br_object* h) {
     (void)self;
     (void)bp;
@@ -118,7 +127,7 @@ static struct br_tv_template_entry rendererNewTemplateEntries[] = {
 /*
  * Create a new renderer
  */
-static br_error BR_CMETHOD_DECL(br_renderer_facility_gl, rendererNew)(br_renderer_facility* self,
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), rendererNew)(br_renderer_facility* self,
     struct br_renderer** prenderer, br_token_value* tv) {
     struct newRendererTokens rt = { NULL };
     br_int_32 count;
@@ -143,7 +152,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_facility_gl, rendererNew)(br_rendere
     /*
      * Create Renderer
      */
-    renderer = RendererGLAllocate(self->device, self, (br_device_pixelmap*)rt.dest);
+    renderer = BREND_FN(Renderer, Allocate)(self->device, self, (br_device_pixelmap*)rt.dest);
 
     if (renderer == NULL)
         return BRE_FAIL;
@@ -152,7 +161,7 @@ static br_error BR_CMETHOD_DECL(br_renderer_facility_gl, rendererNew)(br_rendere
     return BRE_OK;
 }
 
-static void* BR_CMETHOD_DECL(br_renderer_facility_gl, listQuery)(br_object_container* self) {
+static void* BREND_CMETHOD_DECL(BREND_CLASS(br_renderer_facility_), listQuery)(br_object_container* self) {
     return ((br_renderer_facility*)self)->object_list;
 }
 
@@ -164,14 +173,14 @@ static const struct br_renderer_facility_dispatch rendererFacilityDispatch = {
     .__reserved1 = NULL,
     .__reserved2 = NULL,
     .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_renderer_facility_gl, free),
-    ._identifier = BR_CMETHOD_REF(br_renderer_facility_gl, identifier),
-    ._type = BR_CMETHOD_REF(br_renderer_facility_gl, type),
-    ._isType = BR_CMETHOD_REF(br_renderer_facility_gl, isType),
-    ._device = BR_CMETHOD_REF(br_renderer_facility_gl, device),
-    ._space = BR_CMETHOD_REF(br_renderer_facility_gl, space),
+    ._free = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), free),
+    ._identifier = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), identifier),
+    ._type = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), type),
+    ._isType = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), isType),
+    ._device = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), device),
+    ._space = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), space),
 
-    ._templateQuery = BR_CMETHOD_REF(br_renderer_facility_gl, templateQuery),
+    ._templateQuery = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), templateQuery),
     ._query = BR_CMETHOD_REF(br_object, query),
     ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
     ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
@@ -179,7 +188,7 @@ static const struct br_renderer_facility_dispatch rendererFacilityDispatch = {
     ._queryAll = BR_CMETHOD_REF(br_object, queryAll),
     ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
 
-    ._listQuery = BR_CMETHOD_REF(br_renderer_facility_gl, listQuery),
+    ._listQuery = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), listQuery),
     ._tokensMatchBegin = BR_CMETHOD_REF(br_object_container, tokensMatchBegin),
     ._tokensMatch = BR_CMETHOD_REF(br_object_container, tokensMatch),
     ._tokensMatchEnd = BR_CMETHOD_REF(br_object_container, tokensMatchEnd),
@@ -190,7 +199,7 @@ static const struct br_renderer_facility_dispatch rendererFacilityDispatch = {
     ._findMany = BR_CMETHOD_REF(br_object_container, findMany),
     ._count = BR_CMETHOD_REF(br_object_container, count),
 
-    ._validDestination = BR_CMETHOD_REF(br_renderer_facility_gl, validDestination),
+    ._validDestination = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), validDestination),
 
-    ._rendererNew = BR_CMETHOD_REF(br_renderer_facility_gl, rendererNew),
+    ._rendererNew = BREND_CMETHOD_REF(BREND_CLASS(br_renderer_facility_), rendererNew),
 };

@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 
 #define S    BRTV_SET
 #define Q    BRTV_QUERY
@@ -19,8 +20,7 @@ static const state_cull default_state = {
     .space = BRT_MODEL,
 };
 
-void StateVKInitCull(state_all *state)
-{
+void BREND_FN(State, InitCull)(state_all* state) {
     state->templates.cull = BrTVTemplateAllocate(state->res, template_entries, BR_ASIZE(template_entries));
 
     state->default_.cull = default_state;

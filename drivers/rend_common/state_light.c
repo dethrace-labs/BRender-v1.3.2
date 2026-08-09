@@ -1,5 +1,6 @@
 #include <string.h>
 #include "drv.h"
+#include "rend_common.h"
 
 #define S    BRTV_SET
 #define Q    BRTV_QUERY
@@ -46,13 +47,12 @@ static const state_light default_state = {
 
 static br_tv_template_entry light_states[MAX_STATE_LIGHTS][BR_ASIZE(template_entries)];
 
-void StateGLInitLight(state_all *state)
-{
+void BREND_FN(State, InitLight)(state_all* state) {
     /* Create a different template list for each light. */
-    for(int i = 0; i < MAX_STATE_LIGHTS; ++i) {
+    for (int i = 0; i < MAX_STATE_LIGHTS; ++i) {
         memcpy(&light_states[i], template_entries, sizeof(template_entries));
 
-        for(int j = 0; j < BR_ASIZE(template_entries); ++j)
+        for (int j = 0; j < BR_ASIZE(template_entries); ++j)
             light_states[i][j].offset += sizeof(state_light) * i;
 
         state->templates.light[i] = BrTVTemplateAllocate(state->res, light_states[i], BR_ASIZE(light_states[i]));

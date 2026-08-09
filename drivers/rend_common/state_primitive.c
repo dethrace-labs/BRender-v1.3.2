@@ -1,4 +1,5 @@
 #include "drv.h"
+#include "rend_common.h"
 
 #define S BRTV_SET
 #define Q BRTV_QUERY
@@ -70,7 +71,7 @@ static const state_primitive default_state = {
     .alpha_val = 1,
 };
 
-void StateGLInitPrimitive(state_all* state) {
+void BREND_FN(State, InitPrimitive)(state_all* state) {
     state->templates.prim = BrTVTemplateAllocate(state->res, template_entries, BR_ASIZE(template_entries));
 
     state->default_.prim = default_state;

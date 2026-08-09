@@ -330,23 +330,31 @@ br_error BR_CMETHOD_DECL(br_device_pixelmap_gl, rectangleFill)(br_device_pixelma
     if (self->use_type == BRT_OFFSCREEN) {
         if (self->pm_pixels != NULL) {
             switch (self->pm_type) {
-            case BR_PMT_INDEX_8:
+            case BR_PMT_INDEX_8: {
+                int stride = self->pm_row_bytes;
+                int base_y = self->pm_base_y;
+                int base_x = self->pm_base_x;
                 px8 = self->pm_pixels;
                 for (int y = rect->y; y < rect->y + rect->h; y++) {
                     for (int x = rect->x; x < rect->x + rect->w; x++) {
-                        px8[y * self->pm_width + x] = BR_ALPHA(colour);
+                        px8[(y + base_y) * stride + (x + base_x)] = BR_ALPHA(colour);
                     }
                 }
                 break;
+            }
 
-            case BR_PMT_RGB_565:
+            case BR_PMT_RGB_565: {
+                int stride = self->pm_row_bytes / 2;
+                int base_y = self->pm_base_y;
+                int base_x = self->pm_base_x;
                 px16 = self->pm_pixels;
                 for (int y = rect->y; y < rect->y + rect->h; y++) {
                     for (int x = rect->x; x < rect->x + rect->w; x++) {
-                        px16[y * self->pm_width + x] = colour & 0xffff;
+                        px16[(y + base_y) * stride + (x + base_x)] = colour & 0xffff;
                     }
                 }
                 break;
+            }
 
             default:
                 return BRE_UNSUPPORTED;

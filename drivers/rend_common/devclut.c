@@ -8,6 +8,7 @@
 
 #include "brassert.h"
 #include "drv.h"
+#include "rend_common.h"
 #include "shortcut.h"
 
 /*
@@ -34,7 +35,7 @@ static struct br_tv_template_entry deviceClutTemplateEntries[] = {
 /*
  * Create a new device CLUT
  */
-br_device_clut* DeviceClutGLAllocate(br_device* dev, char* identifier) {
+br_device_clut* BREND_FN(DeviceClut, Allocate)(br_device* dev, char* identifier) {
     br_device_clut* self;
     int i;
 
@@ -55,25 +56,25 @@ br_device_clut* DeviceClutGLAllocate(br_device* dev, char* identifier) {
     return self;
 }
 
-static void BR_CMETHOD_DECL(br_device_clut_gl, free)(br_device_clut* self) {
+static void BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), free)(br_device_clut* self) {
     ObjectContainerRemove(ObjectDevice(self), (br_object*)self);
 
     BrResFreeNoCallback(self);
 }
 
-static br_token BR_CMETHOD_DECL(br_device_clut_gl, type)(br_device_clut* self) {
+static br_token BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), type)(br_device_clut* self) {
     return BRT_DEVICE_CLUT;
 }
 
-static br_boolean BR_CMETHOD_DECL(br_device_clut_gl, isType)(br_device_clut* self, br_token t) {
+static br_boolean BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), isType)(br_device_clut* self, br_token t) {
     return (t == BRT_DEVICE_CLUT) || (t == BRT_OBJECT);
 }
 
-static br_int_32 BR_CMETHOD_DECL(br_device_clut_gl, space)(br_device_clut* self) {
+static br_int_32 BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), space)(br_device_clut* self) {
     return sizeof(br_device_clut);
 }
 
-static struct br_tv_template* BR_CMETHOD_DECL(br_device_clut_gl, queryTemplate)(br_device_clut* self) {
+static struct br_tv_template* BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), queryTemplate)(br_device_clut* self) {
     if (self->device->templates.deviceClutTemplate == NULL)
         self->device->templates.deviceClutTemplate = BrTVTemplateAllocate(self->device,
             deviceClutTemplateEntries,
@@ -82,7 +83,7 @@ static struct br_tv_template* BR_CMETHOD_DECL(br_device_clut_gl, queryTemplate)(
     return self->device->templates.deviceClutTemplate;
 }
 
-static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySet)(br_device_clut* self, br_int_32 index, br_colour entry) {
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), entrySet)(br_device_clut* self, br_int_32 index, br_colour entry) {
     if (index < 0 || index >= CLUT_SIZE)
         return BRE_OVERFLOW;
 
@@ -94,7 +95,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySet)(br_device_clut* sel
     return BRE_OK;
 }
 
-static br_error BR_CMETHOD_DECL(br_device_clut_gl, entryQuery)(br_device_clut* self, br_colour* entry, br_int_32 index) {
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), entryQuery)(br_device_clut* self, br_colour* entry, br_int_32 index) {
     if (index < 0 || index >= CLUT_SIZE)
         return BRE_OVERFLOW;
 
@@ -103,7 +104,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entryQuery)(br_device_clut* s
     return BRE_OK;
 }
 
-static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySetMany)(br_device_clut* self, br_int_32 index, br_int_32 count, br_colour* entries) {
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), entrySetMany)(br_device_clut* self, br_int_32 index, br_int_32 count, br_colour* entries) {
     int i;
     int changed = 0;
 
@@ -127,7 +128,7 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entrySetMany)(br_device_clut*
     return BRE_OK;
 }
 
-static br_error BR_CMETHOD_DECL(br_device_clut_gl, entryQueryMany)(br_device_clut* self, br_colour* entries, br_int_32 index, br_int_32 count) {
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), entryQueryMany)(br_device_clut* self, br_colour* entries, br_int_32 index, br_int_32 count) {
     int i;
 
     if (index < 0 || index >= CLUT_SIZE)
@@ -142,11 +143,11 @@ static br_error BR_CMETHOD_DECL(br_device_clut_gl, entryQueryMany)(br_device_clu
     return BRE_OK;
 }
 
-static const char* BR_CMETHOD_DECL(br_device_clut_gl, identifier)(br_object* self) {
+static const char* BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), identifier)(br_object* self) {
     return ((br_device_clut*)self)->identifier;
 }
 
-br_device* BR_CMETHOD_DECL(br_device_clut_gl, device)(br_object* self) {
+br_device* BREND_CMETHOD_DECL(BREND_CLASS(br_device_clut_), device)(br_object* self) {
     return ((br_device_clut*)self)->device;
 }
 
@@ -158,14 +159,14 @@ static struct br_device_clut_dispatch deviceClutDispatch = {
     NULL,
     NULL,
     NULL,
-    BR_CMETHOD_REF(br_device_clut_gl, free),
-    BR_CMETHOD_REF(br_device_clut_gl, identifier),
-    BR_CMETHOD_REF(br_device_clut_gl, type),
-    BR_CMETHOD_REF(br_device_clut_gl, isType),
-    BR_CMETHOD_REF(br_device_clut_gl, device),
-    BR_CMETHOD_REF(br_device_clut_gl, space),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), free),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), identifier),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), type),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), isType),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), device),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), space),
 
-    BR_CMETHOD_REF(br_device_clut_gl, queryTemplate),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), queryTemplate),
     BR_CMETHOD_REF(br_object, query),
     BR_CMETHOD_REF(br_object, queryBuffer),
     BR_CMETHOD_REF(br_object, queryMany),
@@ -173,8 +174,8 @@ static struct br_device_clut_dispatch deviceClutDispatch = {
     BR_CMETHOD_REF(br_object, queryAll),
     BR_CMETHOD_REF(br_object, queryAllSize),
 
-    BR_CMETHOD_REF(br_device_clut_gl, entrySet),
-    BR_CMETHOD_REF(br_device_clut_gl, entryQuery),
-    BR_CMETHOD_REF(br_device_clut_gl, entrySetMany),
-    BR_CMETHOD_REF(br_device_clut_gl, entryQueryMany),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), entrySet),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), entryQuery),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), entrySetMany),
+    BREND_CMETHOD_REF(BREND_CLASS(br_device_clut_), entryQueryMany),
 };

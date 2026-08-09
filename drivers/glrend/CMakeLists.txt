@@ -25,18 +25,20 @@ add_custom_command(
 )
 
 
+set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
+
 set(GLSTATE_FILES
         cache.c
-        state.c
-        state.h
-        state_clip.c
-        state_cull.c
-        state_hidden.c
-        state_light.c
-        state_matrix.c
-        state_output.c
-        state_primitive.c
-        state_surface.c
+        ${REND_COMMON_DIR}/state.c
+        ${REND_COMMON_DIR}/state.h
+        ${REND_COMMON_DIR}/state_clip.c
+        ${REND_COMMON_DIR}/state_cull.c
+        ${REND_COMMON_DIR}/state_hidden.c
+        ${REND_COMMON_DIR}/state_light.c
+        ${REND_COMMON_DIR}/state_matrix.c
+        ${REND_COMMON_DIR}/state_output.c
+        ${REND_COMMON_DIR}/state_primitive.c
+        ${REND_COMMON_DIR}/state_surface.c
         )
 source_group("STATE" FILES ${GLSTATE_FILES})
 
@@ -61,7 +63,7 @@ set(RENDERER_FILES
         gstored.h
         v1model.c
 
-        onscreen.c
+        ${REND_COMMON_DIR}/onscreen.c
 
         renderer.c
         renderer.h
@@ -69,36 +71,35 @@ set(RENDERER_FILES
         sbuffer.h
         sbuffer.c
 
-        sstate.c
-        sstate.h
+        ${REND_COMMON_DIR}/sstate.c
+        ${REND_COMMON_DIR}/sstate.h
         )
 source_group("Renderer" FILES ${RENDERER_FILES})
 
 set(GLREND_FILES
-        drv.h
         drv_ip.h
 
         driver.c
 
-        outfcty.c
-        outfcty.h
+        ${REND_COMMON_DIR}/outfcty.c
+        ${REND_COMMON_DIR}/outfcty.h
 
         ext_procs.c
 
-        rendfcty.c
-        rendfcty.h
+        ${REND_COMMON_DIR}/rendfcty.c
+        ${REND_COMMON_DIR}/rendfcty.h
 
-        device.c
-        device.h
+        ${REND_COMMON_DIR}/device.c
+        ${REND_COMMON_DIR}/device.h
 
         devpixmp.c
         devpixmp.h
         devpmglf.c
 
-        devclut.c
-        devclut.h
+        ${REND_COMMON_DIR}/devclut.c
+        ${REND_COMMON_DIR}/devclut.h
 
-        template.h
+        ${REND_COMMON_DIR}/template.h
 
         quad.c
         util.c
@@ -153,7 +154,17 @@ if(target_type STREQUAL SHARED_LIBRARY)
     target_compile_definitions(glrend PRIVATE -DDEFINE_BR_ENTRY_POINT)
 endif()
 
-target_include_directories(glrend PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_compile_definitions(glrend PRIVATE
+        BREND_DRIVER_GL
+        BREND_DRIVER_SUFFIX_UPPER=GL
+        BREND_DRIVER_SUFFIX_LOWER=gl
+        )
+
+target_include_directories(glrend PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${REND_COMMON_DIR}
+        )
 
 target_link_libraries(glrend PRIVATE BRender::DDI)
 target_link_libraries(glrend PUBLIC glrend-headers)

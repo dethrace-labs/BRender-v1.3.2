@@ -217,7 +217,9 @@ typedef struct state_stack {
 } state_stack;
 
 typedef struct {
+#if defined(BREND_DRIVER_GL)
     GLuint fbo;
+#endif
 
     alignas(16) shader_data_scene scene;
 

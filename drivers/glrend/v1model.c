@@ -281,7 +281,7 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
         }
 
         model->fog_enabled = state->prim.fog_enabled;
-        BrVector3Set(&model->fog_colour, BR_RED(state->prim.fog_colour) / 255.0f, BR_GRN(state->prim.fog_colour) / 255.0f, BR_BLU(state->prim.fog_colour) / 255.0f);
+        BrVector4Set(&model->fog_colour, BR_RED(state->prim.fog_colour) / 255.0f, BR_GRN(state->prim.fog_colour) / 255.0f, BR_BLU(state->prim.fog_colour) / 255.0f, 0.0f);
         model->fog_min = state->prim.fog_min;
         model->fog_max = state->prim.fog_max;
     }
@@ -295,7 +295,7 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
     HVIDEO hVideo = &screen->asFront.video;
     br_renderer_state_stored* stored = groupinfo->stored;
     br_boolean unlit;
-    shader_data_model model;
+    shader_data_model model = {0};
 
     /* Update the per-model cache (matrices and lights) */
     StateGLUpdateModel(cache, &renderer->state.current->matrix);
@@ -348,8 +348,7 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
         apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE /*| MASK_STATE_CULL */, &model, default_tex);
     }
 
-    BrVector4Set(&model.clear_colour, renderer->pixelmap->asBack.clearColour[0], renderer->pixelmap->asBack.clearColour[1],
-        renderer->pixelmap->asBack.clearColour[2], renderer->pixelmap->asBack.clearColour[3]);
+    BrVector4Set(&model.clear_colour, 0.0f, 0.0f, 0.0f, 0.0f);
 
     glBufferData(GL_UNIFORM_BUFFER, sizeof(model), &model, GL_STATIC_DRAW);
     glDrawElements(GL_TRIANGLES, groupinfo->count, GL_UNSIGNED_SHORT, groupinfo->offset);
