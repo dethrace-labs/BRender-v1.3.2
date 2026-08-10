@@ -910,12 +910,35 @@ void SDL3REND_OverlayDraw(HVIDEO hVideo) {
     SDL_GPURenderPass* pass = hVideo->currentPass;
 
     SDL_GPUViewport viewport = {0};
-    viewport.w = (float)hVideo->windowWidth;
-    viewport.h = (float)hVideo->windowHeight;
     viewport.max_depth = 1.0f;
-    SDL_SetGPUViewport(pass, &viewport);
-
     SDL_Rect scissor = {0, 0, hVideo->windowWidth, hVideo->windowHeight};
+    if (hVideo->pm_height > 0 && hVideo->windowHeight > 0) {
+        /* Same letterbox math as the scene viewport (renderer.c sceneBegin):
+         * centre the 4:3 overlay in the window and scale it aspect-preserving,
+         * matching glrend. The overlay texture is the game-screen size. */
+        float aspect = (float)hVideo->windowWidth / (float)hVideo->windowHeight;
+        float target = (float)hVideo->pm_width / (float)hVideo->pm_height;
+        int vp_width = hVideo->windowWidth, vp_height = hVideo->windowHeight;
+        if (aspect > target) {
+            vp_width = (int)((float)hVideo->windowHeight * target + 0.5f);
+        } else {
+            vp_height = (int)((float)hVideo->windowWidth / target + 0.5f);
+        }
+        int vp_x = (hVideo->windowWidth - vp_width) / 2;
+        int vp_y = (hVideo->windowHeight - vp_height) / 2;
+        viewport.x = (float)vp_x;
+        viewport.y = (float)vp_y;
+        viewport.w = (float)vp_width;
+        viewport.h = (float)vp_height;
+        scissor.x = vp_x;
+        scissor.y = vp_y;
+        scissor.w = vp_width;
+        scissor.h = vp_height;
+    } else {
+        viewport.w = (float)hVideo->windowWidth;
+        viewport.h = (float)hVideo->windowHeight;
+    }
+    SDL_SetGPUViewport(pass, &viewport);
     SDL_SetGPUScissor(pass, &scissor);
 
     if (hVideo->lastPipeline != hVideo->overlayPipeline) {

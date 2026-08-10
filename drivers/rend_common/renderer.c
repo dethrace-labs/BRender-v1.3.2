@@ -174,11 +174,12 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 
             if (colour_target != NULL) {
                 /* Replicate the harness letterbox viewport (calculate_viewport in
-                 * sdl3.c) from the window size + screen pixelmap size. In map mode
-                 * the scene is scaled aspect-preserving and centered; otherwise it
-                 * stretches to fill the window. The offscreen transfer texture is
-                 * window-sized, so the viewport is in window pixels. */
-                if (SDL3REND_IsMapMode(hVideo) && screen->pm_height > 0 && win_h > 0) {
+                 * sdl3.c) from the window size + screen pixelmap size so the 4:3
+                 * content is scaled aspect-preserving and centered (matching
+                 * glrend), with black pillarbox/letterbox bars when the window
+                 * shape differs. The offscreen transfer texture is window-sized,
+                 * so the viewport is in window pixels. */
+                if (screen->pm_height > 0 && win_h > 0) {
                     float aspect = (float)win_w / (float)win_h;
                     float target = (float)screen->pm_width / (float)screen->pm_height;
                     int vp_width = win_w, vp_height = win_h;
@@ -191,9 +192,6 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                     y = (win_h - vp_height) / 2;
                     rx = (float)vp_width / (float)screen->pm_width;
                     ry = (float)vp_height / (float)screen->pm_height;
-                } else {
-                    rx = (float)win_w / (float)screen->pm_width;
-                    ry = (float)win_h / (float)screen->pm_height;
                 }
                 vp_x = (float)colour_target->pm_base_x * rx + (float)x;
                 vp_y = (float)colour_target->pm_base_y * ry + (float)y;
