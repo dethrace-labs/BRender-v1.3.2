@@ -211,7 +211,6 @@ void BREND_FN(State, UpdateScene)(state_cache* cache, state_stack* state) {
     ProcessSceneLights(cache, state->light);
     ProcessClipPlanes(cache, state->clip);
 
-    cache->scene.hither_z = state->matrix.hither_z;
     cache->scene.yon_z = state->matrix.yon_z;
 }
 

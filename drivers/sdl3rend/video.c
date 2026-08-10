@@ -69,8 +69,8 @@ static int CreateSamplers(HVIDEO hVideo) {
     si.min_filter = SDL_GPU_FILTER_LINEAR;
     si.mag_filter = SDL_GPU_FILTER_LINEAR;
     si.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
-    si.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-    si.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    si.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+    si.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
     si.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
     si.compare_op = SDL_GPU_COMPAREOP_INVALID;
     si.max_anisotropy = 0.0f;

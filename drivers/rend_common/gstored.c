@@ -450,6 +450,7 @@ static void build_vbo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
         self->vboOffset = hVideo->dynVboOffset[f];
         self->ringEpoch = hVideo->frameEpoch;
         hVideo->dynVboOffset[f] += size;
+        hVideo->dynVboWritten[f] = hVideo->dynVboOffset[f];
     } else {
         UploadVBOToDedicated(hVideo, self, vtx, size);
     }
@@ -471,6 +472,7 @@ static void build_ibo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
         self->iboOffset = hVideo->dynIboOffset[f];
         self->ringEpoch = hVideo->frameEpoch;
         hVideo->dynIboOffset[f] += size;
+        hVideo->dynIboWritten[f] = hVideo->dynIboOffset[f];
     } else {
         UploadIBOToDedicated(hVideo, self, idx, size);
     }
@@ -506,6 +508,7 @@ void SDL3REND_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
             self->vbo = hVideo->dynVbo[f];
             self->vboOffset = hVideo->dynVboOffset[f];
             hVideo->dynVboOffset[f] += size;
+            hVideo->dynVboWritten[f] = hVideo->dynVboOffset[f];
         } else {
             UploadVBOToDedicated(hVideo, self, vtx, size);
         }
@@ -521,6 +524,7 @@ void SDL3REND_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
             self->ibo = hVideo->dynIbo[f];
             self->iboOffset = hVideo->dynIboOffset[f];
             hVideo->dynIboOffset[f] += size;
+            hVideo->dynIboWritten[f] = hVideo->dynIboOffset[f];
         } else {
             UploadIBOToDedicated(hVideo, self, idx, size);
         }

@@ -43,14 +43,17 @@ layout(std140) uniform br_scene_state
 ##endif
 {
     vec4 eye_view; /* Eye position in view-space */
-    br_light lights[MAX_LIGHTS];
-    uint num_lights;
 
+    /* Field order matters: SDL3 GPU clips each uniform slot at 4096 bytes, so
+     * everything read below lives at the front. The 4608-byte lights array
+     * sits at the tail (vertex lighting is disabled by DEBUG_DISABLE_LIGHTS). */
     vec4 clip_planes[MAX_CLIP_PLANES];
     uint num_clip_planes;
 
-    float hither_z;
     float yon_z;
+    uint num_lights;
+
+    br_light lights[MAX_LIGHTS];
 };
 
 ##ifdef SDL3GPU

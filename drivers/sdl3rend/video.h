@@ -34,14 +34,19 @@ typedef struct shader_data_light {
 } shader_data_light;
 BR_STATIC_ASSERT(sizeof(shader_data_light) % 16 == 0, "shader_data_light is not aligned");
 
+/* NOTE on field order: SDL3 GPU's per-slot uniform data window is capped at
+ * 4096 bytes (MAX_UBO_SECTION_SIZE in the backends), so every field the
+ * shaders actually read must sit within the first 4096 bytes of the block.
+ * The lights array (96 * 48 = 4608 bytes) therefore goes LAST: it is dead
+ * weight today (vertex lighting is compiled out by DEBUG_DISABLE_LIGHTS and
+ * the fragment shader never references it), and its tail is clipped by SDL3. */
 typedef struct shader_data_scene {
     alignas(16) br_vector4 eye_view;
-    alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
-    alignas(4) uint32_t num_lights;
     alignas(16) br_vector4 clip_planes[BR_MAX_CLIP_PLANES];
     alignas(4) uint32_t num_clip_planes;
-    alignas(4) float hither_z;
     alignas(4) float yon_z;
+    alignas(4) uint32_t num_lights;
+    alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
 } shader_data_scene;
 BR_STATIC_ASSERT(sizeof(((shader_data_scene*)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,
     "std::array<shader_data_light> fucked up");
@@ -84,9 +89,12 @@ typedef struct shader_data_model {
  *   set3 binding1 = shader_data_scene  (fragment)-> fragment uniform slot 1
  *
  * Uniform data is pushed with SDL_PushGPUVertexUniformData /
- * SDL_PushGPUFragmentUniformData (max 32KB/slot/draw — the scene struct is
- * ~1.4KB, the model struct ~3KB, both well within limits). No UBO buffers,
- * no descriptor sets, no per-draw bind changes.
+ * SDL_PushGPUFragmentUniformData. NOTE: each SDL3 GPU backend caps the
+ * readable window of a pushed uniform slot at 4096 bytes
+ * (MAX_UBO_SECTION_SIZE in SDL3's backends) even though the push itself can
+ * be larger, so everything a shader reads must live within the first 4096
+ * bytes of its block (see the field order comment on shader_data_scene).
+ * No UBO buffers, no descriptor sets, no per-draw bind changes.
  *
  * The scene is pushed once per sceneBegin (slots 1); the model is pushed per
  * draw (slots 0) by modelrender.c. Uniform slot data is stored on the command

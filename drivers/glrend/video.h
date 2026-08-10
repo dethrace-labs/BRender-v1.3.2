@@ -77,15 +77,17 @@ typedef struct shader_data_light {
 } shader_data_light;
 BR_STATIC_ASSERT(sizeof(shader_data_light) % 16 == 0, "shader_data_light is not aligned");
 
+/* NOTE on field order: matches the shared GLSL block (drivers/rend_common).
+ * The lights array must stay LAST so it doesn't push the read fields (clip
+ * planes, yon_z, num_lights) beyond SDL3 GPU's 4096-byte per-slot uniform
+ * window. */
 typedef struct shader_data_scene {
     alignas(16) br_vector4 eye_view;
-    alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
-    alignas(4) uint32_t num_lights;
-
     alignas(16) br_vector4 clip_planes[BR_MAX_CLIP_PLANES];
     alignas(4) uint32_t num_clip_planes;
-    alignas(4) float hither_z;
     alignas(4) float yon_z;
+    alignas(4) uint32_t num_lights;
+    alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
 
 } shader_data_scene;
 BR_STATIC_ASSERT(sizeof(((shader_data_scene*)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,

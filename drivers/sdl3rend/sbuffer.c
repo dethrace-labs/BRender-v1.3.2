@@ -34,9 +34,9 @@ static void expandIndex8ToRGBA(const br_uint_8* src, int width, int height, int 
             int idx = src[y * srcStride + x];
             br_uint_32 entry = palette[idx];
             uint8_t* d = (uint8_t*)&dst[y * width + x];
-            d[0] = (uint8_t)BR_BLU(entry);
+            d[0] = (uint8_t)BR_RED(entry);
             d[1] = (uint8_t)BR_GRN(entry);
-            d[2] = (uint8_t)BR_RED(entry);
+            d[2] = (uint8_t)BR_BLU(entry);
             d[3] = 0xFF;
         }
     }
