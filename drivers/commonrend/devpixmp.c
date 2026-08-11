@@ -628,7 +628,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleCopyTo)(b
             if (sx + cw > src->pm_width) cw = src->pm_width - sx;
             if (cw <= 0) continue;
             memcpy((char*)hVideo->lockedPixels + yy * dstStride + dx * bpp,
-                src->pm_pixels + sy * srcStride + sx * bpp,
+                (const char*)src->pm_pixels + sy * srcStride + sx * bpp,
                 (size_t)cw * bpp);
         }
     } else {
