@@ -874,6 +874,42 @@ void SDL3REND_EndRenderPass(HVIDEO hVideo) {
     hVideo->renderPassActive = 0;
 }
 
+void SDL3REND_ClearDepthAttachment(HVIDEO hVideo) {
+    if (!hVideo->renderPassActive || !hVideo->currentPass || !hVideo->commandBuffer)
+        return;
+
+    SDL3REND_EndRenderPass(hVideo);
+
+    SDL_GPUColorTargetInfo color = {0};
+    color.texture = hVideo->transferTexture;
+    color.load_op = SDL_GPU_LOADOP_LOAD; /* preserve the frame so far */
+    color.store_op = SDL_GPU_STOREOP_STORE;
+
+    SDL_GPUDepthStencilTargetInfo depth = {0};
+    depth.texture = hVideo->depthTexture;
+    depth.clear_depth = 1.0f;
+    depth.load_op = SDL_GPU_LOADOP_CLEAR;
+    depth.store_op = SDL_GPU_STOREOP_DONT_CARE;
+    depth.stencil_load_op = SDL_GPU_LOADOP_DONT_CARE;
+    depth.stencil_store_op = SDL_GPU_STOREOP_DONT_CARE;
+
+    hVideo->currentPass = SDL3_BeginGPURenderPass(hVideo->commandBuffer, &color, 1, &depth);
+    if (!hVideo->currentPass) {
+        BR_FATAL("SDL3GPU: Failed to begin render pass after depth clear.");
+        return;
+    }
+    hVideo->renderPassActive = 1;
+
+    /* SDL3 GPU resets all render state at every pass start. */
+    hVideo->lastPipeline = NULL;
+    hVideo->lastVbo = NULL;
+    hVideo->lastIbo = NULL;
+    hVideo->lastVboOffset = 0;
+    hVideo->lastIboOffset = 0;
+    hVideo->lastTexture = NULL;
+    hVideo->lastSampler = NULL;
+}
+
 int SDL3REND_Present(HVIDEO hVideo) {
     uint32_t f = hVideo->currentFrame;
     SDL_GPUDevice* device = hVideo->device;

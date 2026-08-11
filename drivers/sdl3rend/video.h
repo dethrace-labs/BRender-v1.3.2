@@ -259,6 +259,16 @@ void SDL3REND_BeginRenderPass(HVIDEO hVideo);
 
 void SDL3REND_EndRenderPass(HVIDEO hVideo);
 
+/* Clears the frame's shared depth attachment to 1.0 mid-frame. SDL3 GPU has no
+ * in-pass clear (unlike VK's vkCmdClearAttachments), so this ends the current
+ * render pass and begins a new one against the same transferTexture with the
+ * color target LOADed (frame so far preserved) and depth LOADOP_CLEAR'd. Used
+ * by BrPixelmapFill on BRT_DEPTH pixelmaps: the game clears a depth buffer
+ * before every z-buffered scene (rear-view mirror, wreck summary), and all
+ * scenes share the one depth texture, so without this the mirror/wreck scenes
+ * would depth-test against stale main-view depth. */
+void SDL3REND_ClearDepthAttachment(HVIDEO hVideo);
+
 void SDL3REND_EnsureRecording(HVIDEO hVideo);
 
 /* Uploads the current render pass's framebuffer contents to the swapchain and

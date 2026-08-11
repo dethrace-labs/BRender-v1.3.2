@@ -478,10 +478,17 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleFill)(br_
         //glBindFramebuffer(GL_FRAMEBUFFER, self->asBack.depthbuffer->asBack.glFbo);
         glClear(GL_DEPTH_BUFFER_BIT);
 #else
-        /* SDL3 GPU has no mid-pass depth clear; the depth attachment is cleared
-         * at every render pass start (SDL3REND_BeginRenderPass), which is the
-         * only depth lifecycle the game relies on. */
-        (void)self;
+        /* SDL3 GPU has no in-pass clear, and the whole frame shares one depth
+         * attachment (cleared only at the frame's first render pass). The game
+         * clears a depth buffer before every z-buffered scene (rear-view
+         * mirror, wreck summary), so restart the pass with depth LOADOP_CLEAR
+         * (color preserved via LOADOP_LOAD) to avoid those scenes testing
+         * against the main view's stale depth. */
+        if (self->screen != NULL) {
+            HVIDEO hVideo = &self->screen->asFront.video;
+            if (hVideo->renderPassActive && hVideo->commandBuffer != NULL)
+                SDL3REND_ClearDepthAttachment(hVideo);
+        }
 #endif
     } else {
         return BRE_UNSUPPORTED;
