@@ -1,12 +1,11 @@
 project(sdl3rend C)
 
-# NOTE: This driver is not yet wired into the top-level build (drivers/CMakeLists.txt).
-# This file is the target manifest, mirroring sdl3rend (the Vulkan driver this one
-# replaces). Files listed below are created incrementally during the port.
+# This file is the target manifest for the sdl3rend driver. It is wired into the
+# top-level build via drivers/CMakeLists.txt. Files listed below were created
+# incrementally during the port.
 
-# SDL3 dependency. When this driver is wired into the build, the BRender top-level
-# CMake must locate SDL3 (find_package(SDL3 CONFIG), as dethrace does) and expose it
-# to this subdirectory.
+# SDL3 dependency. Located via find_package(SDL3 CONFIG), as dethrace does, and
+# exposed to this subdirectory by the BRender top-level CMake.
 find_package(SDL3 CONFIG QUIET)
 
 # Also accept the unified `glslang` tool (the modern glslangValidator
