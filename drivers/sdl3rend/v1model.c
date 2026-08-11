@@ -60,22 +60,24 @@ void StoredSDL3RENDApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t s
     SDL_GPUTexture** texture, SDL_GPUSampler** sampler) {
     (void)default_texture;
 
+    br_buffer_stored* colour_map;
+    br_boolean filter_linear;
+    br_boolean palette_dirty;
+    const br_uint_32* palette_entries;
+
     /* Only use the states we want (if valid). */
     states = state->valid & states;
 
     BREND_FN(State, FillModel)(state, states, model);
+    BREND_FN(State, FillModelTexture)(state, states, model, &colour_map, &filter_linear, &palette_dirty, &palette_entries);
+    (void)palette_dirty;
+    (void)palette_entries;
 
-    model->alpha = state->prim.alpha_val / 255.0f;
-
-    br_buffer_stored* colour_map = state->prim.colour_map;
     if (colour_map) {
         BufferStoredSDL3RENDReupload(colour_map);
         if (colour_map->image != NULL && colour_map->sampler != NULL) {
-            model->disable_texture = 0;
-            model->disable_colour_key = !(state->prim.flags & PRIMF_COLOUR_KEY);
-
             *texture = colour_map->image;
-            *sampler = (state->prim.filter == BRT_NONE) ? hVideo->samplerNearest : hVideo->samplerLinear;
+            *sampler = filter_linear ? hVideo->samplerLinear : hVideo->samplerNearest;
         } else {
             model->disable_texture = 1;
             model->disable_colour_key = 1;
@@ -84,9 +86,6 @@ void StoredSDL3RENDApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t s
             *sampler = hVideo->samplerLinear;
         }
     } else {
-        model->disable_texture = 1;
-        model->disable_colour_key = 1;
-
         *texture = hVideo->defaultTexture;
         *sampler = hVideo->samplerLinear;
     }

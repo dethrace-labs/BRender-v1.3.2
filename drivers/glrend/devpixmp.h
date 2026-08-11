@@ -23,54 +23,14 @@ typedef struct br_device_pixelmap_gl_quad {
 
 #ifdef BR_DEVICE_PIXELMAP_PRIVATE
 
+#include "devpixmp_base.h"
+
 /*
  * Private state of device pixelmap
  */
 typedef struct br_device_pixelmap {
 
-    /*
-     * Dispatch table
-     */
-    const struct br_device_pixelmap_dispatch* dispatch;
-
-    /*
-     * Standard handle identifier
-     */
-    const char* pm_identifier;
-
-    /** Standard pixelmap members (not including identifier) **/
-
-    BR_PIXELMAP_MEMBERS
-
-    /** End of br_pixelmap fields **/
-
-    struct br_device* device;
-    struct br_output_facility* output_facility;
-
-    /*
-     * Type of buffer (when matched)
-     */
-    br_token use_type;
-
-    /*
-     * No. MSAA samples
-     */
-    br_int_32 msaa_samples;
-
-    /*
-     * Pointer to renderer currently opened on this pixelmap (N.B. This is only set on the screen
-     * pixelmap)
-     */
-    struct br_renderer* renderer;
-
-    /*
-     * Current screen pixelmap. Valid on ALL types. The screen points to itself.
-     * NB: This is mainly used to retrieve the context-level OpenGL state.
-     */
-    struct br_device_pixelmap* screen;
-
-    br_uint_16 parent_height;
-    br_boolean sub_pixelmap;
+    BR_DEVICE_PIXELMAP_BASE;
 
     /* OpenGL crap */
     union {
@@ -127,6 +87,8 @@ typedef struct br_device_pixelmap {
     };
     struct br_device_clut* clut;
 } br_device_pixelmap;
+
+BR_DEVICE_PIXELMAP_COMMON_DECLS;
 
 void RenderFullScreenTextureToFrameBuffer(br_device_pixelmap* self, GLuint textureId, GLuint fb, int flipVertically, int discardPurplePixels);
 

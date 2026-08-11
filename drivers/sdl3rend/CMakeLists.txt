@@ -214,24 +214,8 @@ foreach(spv_file
 endforeach()
 
 set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
-
-set(SDL3REND_STATE_FILES
-        ${REND_COMMON_DIR}/cache.c
-        ${REND_COMMON_DIR}/modeldata.c
-        ${REND_COMMON_DIR}/modelrender.c
-        ${REND_COMMON_DIR}/gstored.c
-        ${REND_COMMON_DIR}/state.c
-        ${REND_COMMON_DIR}/state.h
-        ${REND_COMMON_DIR}/state_clip.c
-        ${REND_COMMON_DIR}/state_cull.c
-        ${REND_COMMON_DIR}/state_hidden.c
-        ${REND_COMMON_DIR}/state_light.c
-        ${REND_COMMON_DIR}/state_matrix.c
-        ${REND_COMMON_DIR}/state_output.c
-        ${REND_COMMON_DIR}/state_primitive.c
-        ${REND_COMMON_DIR}/state_surface.c
-        )
-source_group("STATE" FILES ${SDL3REND_STATE_FILES})
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/commonrend.cmake)
+brender_common_sources(${REND_COMMON_DIR})
 
 set(VIDEO_FILES
         sdl3_shaders.c
@@ -245,49 +229,22 @@ set(VIDEO_FILES
 source_group("VIDEO" FILES ${VIDEO_FILES})
 
 set(RENDERER_FILES
-        ${REND_COMMON_DIR}/gv1model.c
-        ${REND_COMMON_DIR}/gv1model.h
+        ${BR_COMMON_RENDERER_FILES}
 
         gstored.h
         v1model.c
 
-        ${REND_COMMON_DIR}/onscreen.c
-
-        ${REND_COMMON_DIR}/renderer.c
-        ${REND_COMMON_DIR}/renderer.h
-
         sbuffer.h
         sbuffer.c
-
-        ${REND_COMMON_DIR}/sstate.c
-        ${REND_COMMON_DIR}/sstate.h
         )
 source_group("Renderer" FILES ${RENDERER_FILES})
 
 set(SDL3REND_FILES
+        ${BR_COMMON_OBJ_FILES}
+
         drv_ip.h
-
-        driver.c
-
-        ${REND_COMMON_DIR}/outfcty.c
-        ${REND_COMMON_DIR}/outfcty.h
-
-        ${REND_COMMON_DIR}/ext_procs.c
-
-        ${REND_COMMON_DIR}/rendfcty.c
-        ${REND_COMMON_DIR}/rendfcty.h
-
-        ${REND_COMMON_DIR}/device.c
-        ${REND_COMMON_DIR}/device.h
-
-        ${REND_COMMON_DIR}/devpixmp.c
         devpixmp.h
         devpmgpu.c
-
-        ${REND_COMMON_DIR}/devclut.c
-        ${REND_COMMON_DIR}/devclut.h
-
-        ${REND_COMMON_DIR}/template.h
         )
 
 set(INC_FILES
@@ -316,29 +273,14 @@ add_library(sdl3rend
         ${SDL3REND_FILES}
         ${RENDERER_FILES}
         ${VIDEO_FILES}
-        ${SDL3REND_STATE_FILES}
+        ${BR_COMMON_STATE_FILES}
         ${INC_FILES}
         ${SPV_GENERATED}
         ${MSL_GENERATED}
         ${DXIL_GENERATED}
         )
 
-get_target_property(target_type sdl3rend TYPE)
-if(target_type STREQUAL SHARED_LIBRARY)
-    target_compile_definitions(sdl3rend PRIVATE -DDEFINE_BR_ENTRY_POINT)
-endif()
-
-target_compile_definitions(sdl3rend PRIVATE
-        BREND_DRIVER_SDL3REND
-        BREND_DRIVER_SUFFIX_UPPER=SDL3REND
-        BREND_DRIVER_SUFFIX_LOWER=sdl3rend
-        )
-
-target_include_directories(sdl3rend PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${REND_COMMON_DIR}
-        )
+brender_common_target_setup(sdl3rend BREND_DRIVER_SDL3REND SDL3REND sdl3rend "sdl3rend")
 
 if(SDL3_FOUND)
     if(BRENDER_SDL3REND_DYNAMIC)
@@ -350,10 +292,10 @@ if(SDL3_FOUND)
         target_compile_definitions(sdl3rend PRIVATE SDL3REND_SDL_DYNAMIC)
         target_include_directories(sdl3rend PRIVATE
                 $<TARGET_PROPERTY:SDL3::SDL3,INTERFACE_INCLUDE_DIRECTORIES>)
-        target_link_libraries(sdl3rend PRIVATE BRender::DDI ${CMAKE_DL_LIBS})
+        target_link_libraries(sdl3rend PRIVATE ${CMAKE_DL_LIBS})
     else()
         message(STATUS "sdl3rend: linked against SDL3")
-        target_link_libraries(sdl3rend PRIVATE BRender::DDI SDL3::SDL3)
+        target_link_libraries(sdl3rend PRIVATE SDL3::SDL3)
     endif()
 else()
     if(BRENDER_SDL3REND_DYNAMIC)
@@ -361,7 +303,6 @@ else()
             "BRENDER_SDL3REND_DYNAMIC requires SDL3 headers; run with SDL3 "
             "available to find_package(SDL3)")
     endif()
-    target_link_libraries(sdl3rend PRIVATE BRender::DDI)
 endif()
 target_link_libraries(sdl3rend PUBLIC sdl3rend-headers)
 

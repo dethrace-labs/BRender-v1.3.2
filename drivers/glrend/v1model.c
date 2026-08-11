@@ -4,6 +4,7 @@
 #include "brassert.h"
 #include "drv.h"
 #include "commonrend.h"
+#include "pixconv.h"
 #include <string.h>
 
 static void apply_blend_mode(state_stack* self) {
@@ -111,21 +112,11 @@ static void apply_depth_properties(state_stack* state, uint32_t states) {
 }
 
 // take a pixelmap and palette and convert 8 bit to 32 bit just in time
-static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
+static void update_paletted_texture(br_pixelmap *src, const br_uint_32 *palette) {
     uint32_t* buffer = BrScratchAllocate(sizeof(uint32_t) * src->width * src->height);
-    uint8_t* buffer_ptr = (uint8_t*)buffer;
-    br_uint_8* src_px = src->pixels;
-
-    for (int y = 0; y < src->height; y++) {
-        for (int x = 0; x < src->width; x++) {
-            int index = src_px[y * src->row_bytes + x];
-            br_uint_32 entry = palette[index];
-            buffer_ptr[0] = BR_RED(entry);
-            buffer_ptr[1] = BR_GRN(entry);
-            buffer_ptr[2] = BR_BLU(entry);
-            buffer_ptr[3] = 0xff;
-            buffer_ptr += 4;
-        }
+    if (BREND_FN(Pixelmap, ExpandToRGBA8888)(src->pixels, src->width, src->height, src->row_bytes, BR_PMT_INDEX_8, buffer, palette) != BRE_OK) {
+        BrScratchFree(buffer);
+        return;
     }
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, src->width, src->height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -135,11 +126,16 @@ static void update_paletted_texture(br_pixelmap *src, br_uint_32 *palette) {
 
 void StoredGLApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states, shader_data_model* model, GLuint tex_default) {
     br_boolean blending_on;
+    br_buffer_stored* colour_map;
+    br_boolean filter_linear;
+    br_boolean palette_dirty;
+    const br_uint_32* palette_entries;
 
     /* Only use the states we want (if valid). */
     states = state->valid & states;
 
     BREND_FN(State, FillModel)(state, states, model);
+    BREND_FN(State, FillModelTexture)(state, states, model, &colour_map, &filter_linear, &palette_dirty, &palette_entries);
 
     if (states & MASK_STATE_CULL) {
         /*
@@ -183,48 +179,37 @@ void StoredGLApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states,
         else
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-        if (state->prim.colour_map) {
-            model->disable_colour_key = !(state->prim.flags & PRIMF_COLOUR_KEY);
+        if (colour_map) {
 
-            glBindTexture(GL_TEXTURE_2D, BufferStoredGLGetTexture(state->prim.colour_map));
+            glBindTexture(GL_TEXTURE_2D, BufferStoredGLGetTexture(colour_map));
 
-            // has the 8 bit color source changed?
-            if (state->prim.colour_map->paletted_source_dirty == BR_TRUE) {
-                update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
-                state->prim.colour_map->paletted_source_dirty = BR_FALSE;
-                state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
+            // has the 8 bit color source or palette changed?
+            if (palette_dirty) {
+                update_paletted_texture(colour_map->source, palette_entries);
+                colour_map->paletted_source_dirty = BR_FALSE;
+                colour_map->palette_revision = colour_map->palette_pointer->revision;
             }
-            // or has the palette changed?
-            else if (state->prim.colour_map->palette_pointer != NULL && state->prim.colour_map->palette_revision != state->prim.colour_map->palette_pointer->revision) {
-                update_paletted_texture(state->prim.colour_map->source, state->prim.colour_map->palette_pointer->entries);
-                state->prim.colour_map->palette_revision = state->prim.colour_map->palette_pointer->revision;
-            }
-
-            model->disable_texture = 0;
 
         } else {
 
-            // todo?
-            model->disable_colour_key = 0;
             glBindTexture(GL_TEXTURE_2D, tex_default);
-            model->disable_texture = 1;
         }
 
         GLenum minFilter, magFilter;
         GLfloat maxAnisotropy;
-        if (state->prim.filter == BRT_LINEAR && state->prim.mip_filter == BRT_LINEAR) {
+        if (filter_linear && state->prim.mip_filter == BRT_LINEAR) {
             minFilter = GL_LINEAR_MIPMAP_LINEAR;
             magFilter = GL_LINEAR;
             maxAnisotropy = hVideo->maxAnisotropy;
-        } else if (state->prim.filter == BRT_LINEAR && state->prim.mip_filter == BRT_NONE) {
+        } else if (filter_linear && state->prim.mip_filter == BRT_NONE) {
             minFilter = GL_LINEAR;
             magFilter = GL_LINEAR;
             maxAnisotropy = 1.0f;
-        } else if (state->prim.filter == BRT_NONE && state->prim.mip_filter == BRT_LINEAR) {
+        } else if (!filter_linear && state->prim.mip_filter == BRT_LINEAR) {
             minFilter = GL_NEAREST_MIPMAP_NEAREST;
             magFilter = GL_NEAREST;
             maxAnisotropy = hVideo->maxAnisotropy;
-        } else if (state->prim.filter == BRT_NONE && state->prim.mip_filter == BRT_NONE) {
+        } else if (!filter_linear && state->prim.mip_filter == BRT_NONE) {
             minFilter = GL_NEAREST;
             magFilter = GL_NEAREST;
             maxAnisotropy = 1.0f;
@@ -238,10 +223,9 @@ void StoredGLApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states,
         if (GLAD_GL_EXT_texture_filter_anisotropic)
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 
-        blending_on = (state->prim.flags & PRIMF_BLEND) || (state->prim.colour_map != NULL && state->prim.colour_map->blended);
+        blending_on = (state->prim.flags & PRIMF_BLEND) || (colour_map != NULL && colour_map->blended);
         if (blending_on) {
             glEnable(GL_BLEND);
-            model->alpha = state->prim.alpha_val / 255.0f;
             apply_blend_mode(state);
         } else {
             glDisable(GL_BLEND);

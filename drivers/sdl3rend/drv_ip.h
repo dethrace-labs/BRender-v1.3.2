@@ -64,6 +64,9 @@ void StateSDL3RENDDefault(state_all* state, uint32_t mask);
 void StateSDL3RENDUpdateScene(state_cache* cache, state_stack* state);
 void StateSDL3RENDUpdateModel(state_cache* cache, state_matrix* matrix);
 void StateSDL3RENDFillModel(state_stack* state, uint32_t states, shader_data_model* model);
+void StateSDL3RENDFillModelTexture(state_stack* state, uint32_t states, shader_data_model* model,
+    struct br_buffer_stored** colour_map, br_boolean* filter_linear, br_boolean* palette_dirty,
+    const br_uint_32** palette_entries);
 void StateSDL3RENDCopy(state_stack* dst, state_stack* src, uint32_t mask);
 
 /*

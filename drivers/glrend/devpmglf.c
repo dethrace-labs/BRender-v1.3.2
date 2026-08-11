@@ -274,30 +274,6 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_glf, free)(br_object* _self) {
     BrResFreeNoCallback(self);
 }
 
-const char* BR_CMETHOD_DECL(br_device_pixelmap_glf, identifier)(br_object* self) {
-    return ((br_device_pixelmap*)self)->pm_identifier;
-}
-
-br_token BR_CMETHOD_DECL(br_device_pixelmap_glf, type)(br_object* self) {
-    (void)self;
-    return BRT_DEVICE_PIXELMAP;
-}
-
-br_boolean BR_CMETHOD_DECL(br_device_pixelmap_glf, isType)(br_object* self, br_token t) {
-    (void)self;
-    return (t == BRT_DEVICE_PIXELMAP) || (t == BRT_OBJECT);
-}
-
-br_device* BR_CMETHOD_DECL(br_device_pixelmap_glf, device)(br_object* self) {
-    (void)self;
-    return ((br_device_pixelmap*)self)->device;
-}
-
-br_size_t BR_CMETHOD_DECL(br_device_pixelmap_glf, space)(br_object* self) {
-    (void)self;
-    return sizeof(br_device_pixelmap);
-}
-
 struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_glf, templateQuery)(br_object* _self) {
     br_device_pixelmap* self = (br_device_pixelmap*)_self;
 
@@ -306,14 +282,6 @@ struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_glf, templateQuery)(br
             self->device, devicePixelmapFrontTemplateEntries, BR_ASIZE(devicePixelmapFrontTemplateEntries));
 
     return self->device->templates.devicePixelmapFrontTemplate;
-}
-
-br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, resize)(br_device_pixelmap* self, br_int_32 width, br_int_32 height) {
-    br_error err;
-
-    self->pm_width = width;
-    self->pm_height = height;
-    return BRE_OK;
 }
 
 br_error BR_CMETHOD_DECL(br_device_pixelmap_glf, doubleBuffer)(br_device_pixelmap* self, br_device_pixelmap* src) {
@@ -354,11 +322,11 @@ static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch = {
     .__reserved2 = NULL,
     .__reserved3 = NULL,
     ._free = BR_CMETHOD_REF(br_device_pixelmap_glf, free),
-    ._identifier = BR_CMETHOD_REF(br_device_pixelmap_glf, identifier),
-    ._type = BR_CMETHOD_REF(br_device_pixelmap_glf, type),
-    ._isType = BR_CMETHOD_REF(br_device_pixelmap_glf, isType),
-    ._device = BR_CMETHOD_REF(br_device_pixelmap_glf, device),
-    ._space = BR_CMETHOD_REF(br_device_pixelmap_glf, space),
+    ._identifier = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), identifier),
+    ._type = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), type),
+    ._isType = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), isType),
+    ._device = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), device),
+    ._space = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), space),
 
     ._templateQuery = BR_CMETHOD_REF(br_device_pixelmap_glf, templateQuery),
     ._query = BR_CMETHOD_REF(br_object, query),
@@ -369,8 +337,8 @@ static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch = {
     ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
 
     ._validSource = BR_CMETHOD_REF(br_device_pixelmap_mem, validSource),
-    ._resize = BR_CMETHOD_REF(br_device_pixelmap_glf, resize),
-    ._match = BR_CMETHOD_REF(br_device_pixelmap_gl, match),
+    ._resize = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), resize),
+    ._match = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), match),
     ._allocateSub = BR_CMETHOD_REF(br_device_pixelmap_fail, allocateSub),
 
     ._copy = BR_CMETHOD_REF(br_device_pixelmap_fail, copy),

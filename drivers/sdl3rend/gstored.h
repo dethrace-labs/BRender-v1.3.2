@@ -27,15 +27,10 @@ typedef struct sdl3_groupinfo {
 
 #ifdef BR_GEOMETRY_STORED_PRIVATE
 
+#include "gstored_base.h"
+
 typedef struct br_geometry_stored {
-    const struct br_geometry_stored_dispatch* dispatch;
-    const char* identifier;
-    struct br_device* device;
-
-    struct br_geometry_v1_model* gv1model;
-
-    br_boolean shared;
-    struct v11model* model;
+    BR_GEOMETRY_STORED_BASE;
 
     SDL_GPUBuffer* vbo;
     SDL_GPUBuffer* ibo;

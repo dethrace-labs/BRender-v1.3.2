@@ -17,29 +17,16 @@
 
 #include "brassert.h"
 #include "drv.h"
+#include "pixconv.h"
 
-static struct br_buffer_stored_dispatch bufferStoredDispatch;
-
-#define F(f) offsetof(struct br_buffer_stored, f)
-
-static struct br_tv_template_entry bufferStoredTemplateEntries[] = {
-    { BRT(IDENTIFIER_CSTR), F(identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
-};
-#undef F
-
-static void expandIndex8ToRGBA(const br_uint_8* src, int width, int height, int srcStride,
-    uint32_t* dst, const br_uint_32* palette) {
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int idx = src[y * srcStride + x];
-            br_uint_32 entry = palette[idx];
-            uint8_t* d = (uint8_t*)&dst[y * width + x];
-            d[0] = (uint8_t)BR_RED(entry);
-            d[1] = (uint8_t)BR_GRN(entry);
-            d[2] = (uint8_t)BR_BLU(entry);
-            d[3] = 0xFF;
-        }
-    }
+/* Backend-specific init for the fields written by BufferStoredSDL3RENDUpdate
+ * (see commonrend/sbuffer_common.c allocate). */
+void BufferStoredSDL3RENDInitFields(struct br_buffer_stored* self) {
+    self->image = NULL;
+    self->sampler = NULL;
+    self->width = 0;
+    self->height = 0;
+    self->pixel_type = 0;
 }
 
 /* Expands the region of the shared CPU locked buffer that backs an offscreen
@@ -63,28 +50,8 @@ static void lockedRegionToRGBA(br_device_pixelmap* pm, const void* lockedPixels,
 
     const char* base = (const char*)lockedPixels + pm->pm_base_y * pm->pm_row_bytes + pm->pm_base_x * bpp;
 
-    for (int y = 0; y < h; y++) {
-        const char* row = base + y * pm->pm_row_bytes;
-        if (bpp == 2) {
-            const br_uint_16* s = (const br_uint_16*)row;
-            for (int x = 0; x < w; x++) {
-                br_uint_16 p = s[x];
-                uint8_t* d = (uint8_t*)&dst[y * w + x];
-                if (pm->pm_type == BR_PMT_RGB_565) {
-                    d[0] = (uint8_t)(((p >> 11) & 0x1F) << 3);
-                    d[1] = (uint8_t)(((p >> 5) & 0x3F) << 2);
-                    d[2] = (uint8_t)((p & 0x1F) << 3);
-                } else {
-                    d[0] = (uint8_t)(((p >> 10) & 0x1F) << 3);
-                    d[1] = (uint8_t)(((p >> 5) & 0x1F) << 3);
-                    d[2] = (uint8_t)((p & 0x1F) << 3);
-                }
-                d[3] = 0xFF;
-            }
-        } else {
-            memcpy(dst + y * w, row, (size_t)w * 4);
-        }
-    }
+    br_uint_8 type = (bpp == 2) ? pm->pm_type : BR_PMT_RGBA_8888;
+    BREND_FN(Pixelmap, ExpandToRGBA8888)(base, w, h, pm->pm_row_bytes, type, dst, NULL);
 }
 
 static HVIDEO BufferStoredVideo(struct br_buffer_stored* self) {
@@ -144,6 +111,7 @@ static br_error updateMemory(struct br_buffer_stored* self, br_pixelmap* pm) {
 
     br_uint_32* rgba = BrScratchAllocate(rgbaSize);
 
+    br_uint_32* palette = NULL;
     if (pm->type == BR_PMT_INDEX_8) {
         br_device* dev_obj = ObjectDevice(self);
         if (dev_obj && dev_obj->clut) {
@@ -154,52 +122,15 @@ static br_error updateMemory(struct br_buffer_stored* self, br_pixelmap* pm) {
             self->palette_revision = 0;
         }
 
-        br_uint_32* palette = NULL;
         if (dev_obj && dev_obj->clut && dev_obj->clut->entries)
             palette = dev_obj->clut->entries;
         else if (pm->map && pm->map->pixels)
             palette = (br_uint_32*)pm->map->pixels;
+    }
 
-        if (!palette) {
-            BrScratchFree(rgba);
-            return BRE_FAIL;
-        }
-
-        expandIndex8ToRGBA((const br_uint_8*)pm->pixels, w, h, pm->row_bytes, rgba, palette);
-    } else if (pm->type == BR_PMT_RGB_565 || pm->type == BR_PMT_RGB_555) {
-        const br_uint_16* src = (const br_uint_16*)pm->pixels;
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                br_uint_16 p = src[y * (pm->row_bytes / 2) + x];
-                uint8_t* d = (uint8_t*)&rgba[y * w + x];
-                if (pm->type == BR_PMT_RGB_565) {
-                    d[0] = (uint8_t)(((p >> 11) & 0x1F) << 3);
-                    d[1] = (uint8_t)(((p >> 5) & 0x3F) << 2);
-                    d[2] = (uint8_t)((p & 0x1F) << 3);
-                } else {
-                    d[0] = (uint8_t)(((p >> 10) & 0x1F) << 3);
-                    d[1] = (uint8_t)(((p >> 5) & 0x1F) << 3);
-                    d[2] = (uint8_t)((p & 0x1F) << 3);
-                }
-                d[3] = 0xFF;
-            }
-        }
-    } else {
-        int sbpp = (pm->type == BR_PMT_RGBA_8888 || pm->type == BR_PMT_RGBX_888) ? 4 : 3;
-        for (int y = 0; y < h; y++) {
-            const char* s = (const char*)pm->pixels + y * pm->row_bytes;
-            uint8_t* d = (uint8_t*)rgba + (size_t)y * w * 4;
-            if (sbpp == 3) {
-                for (int x = 0; x < w; x++) {
-                    d[x * 4 + 0] = s[x * 3 + 0];
-                    d[x * 4 + 1] = s[x * 3 + 1];
-                    d[x * 4 + 2] = s[x * 3 + 2];
-                    d[x * 4 + 3] = 0xFF;
-                }
-            } else {
-                memcpy(d, s, (size_t)w * 4);
-            }
-        }
+    if (BREND_FN(Pixelmap, ExpandToRGBA8888)(pm->pixels, w, h, pm->row_bytes, pm->type, rgba, palette) != BRE_OK) {
+        BrScratchFree(rgba);
+        return BRE_FAIL;
     }
 
     br_error r = uploadRGBA(self, hVideo, rgba, w, h);
@@ -307,7 +238,10 @@ br_boolean BufferStoredSDL3RENDReupload(struct br_buffer_stored* self) {
     int h = self->height;
 
     br_uint_32* rgba = BrScratchAllocate((size_t)w * h * 4);
-    expandIndex8ToRGBA((const br_uint_8*)pm->pixels, w, h, pm->row_bytes, rgba, palette);
+    if (BREND_FN(Pixelmap, ExpandToRGBA8888)(pm->pixels, w, h, pm->row_bytes, pm->type, rgba, palette) != BRE_OK) {
+        BrScratchFree(rgba);
+        return BR_FALSE;
+    }
 
     br_error r = uploadRGBA(self, hVideo, rgba, w, h);
 
@@ -323,12 +257,12 @@ br_boolean BufferStoredSDL3RENDReupload(struct br_buffer_stored* self) {
     return BR_TRUE;
 }
 
-static br_error BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, update)(struct br_buffer_stored* self,
+br_error BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), update)(struct br_buffer_stored* self,
     struct br_device_pixelmap* pm, br_token_value* tv) {
     return BufferStoredSDL3RENDUpdate(self, pm, tv);
 }
 
-static void BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, free)(br_object* _self) {
+void BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), free)(br_object* _self) {
     br_buffer_stored* self = (br_buffer_stored*)_self;
 
     ObjectContainerRemove(self->renderer, (br_object*)self);
@@ -342,96 +276,3 @@ static void BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, free)(br_object* _self) {
     BrResFreeNoCallback(self);
 }
 
-static const char* BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, identifier)(br_object* self) {
-    return ((br_buffer_stored*)self)->identifier;
-}
-
-static br_token BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, type)(br_object* self) {
-    (void)self;
-    return BRT_BUFFER_STORED;
-}
-
-static br_boolean BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, isType)(br_object* self, br_token t) {
-    (void)self;
-    return (t == BRT_BUFFER_STORED) || (t == BRT_OBJECT);
-}
-
-static br_device* BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, device)(br_object* self) {
-    return ((br_buffer_stored*)self)->device;
-}
-
-static br_size_t BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, space)(br_object* self) {
-    return BrResSizeTotal(self);
-}
-
-static struct br_tv_template* BR_CMETHOD_DECL(br_buffer_stored_sdl3rend, templateQuery)(br_object* _self) {
-    return ((br_buffer_stored*)_self)->templates;
-}
-
-struct br_buffer_stored* BufferStoredSDL3RENDAllocate(br_renderer* renderer, br_token use, struct br_device_pixelmap* pm,
-    br_token_value* tv) {
-    struct br_buffer_stored* self;
-    char* ident;
-
-    switch (use) {
-
-    case BRT_TEXTURE_O:
-    case BRT_COLOUR_MAP_O:
-        ident = "Colour-Map";
-        break;
-
-    default:
-        return NULL;
-    }
-
-    self = BrResAllocate(renderer, sizeof(*self), BR_MEMORY_OBJECT);
-    if (self == NULL)
-        return NULL;
-
-    self->dispatch = &bufferStoredDispatch;
-    self->identifier = ident;
-    self->device = ObjectDevice(renderer);
-    self->renderer = renderer;
-    self->image = NULL;
-    self->sampler = NULL;
-    self->width = 0;
-    self->height = 0;
-    self->pixel_type = 0;
-    self->templates = BrTVTemplateAllocate(self, (br_tv_template_entry*)bufferStoredTemplateEntries,
-        BR_ASIZE(bufferStoredTemplateEntries));
-
-    if (BufferStoredSDL3RENDUpdate(self, pm, tv) != BRE_OK) {
-        BrResFreeNoCallback(self);
-        return NULL;
-    }
-
-    ObjectContainerAddFront(renderer, (br_object*)self);
-
-    return self;
-}
-
-/*
- * Default dispatch table for device
- */
-static struct br_buffer_stored_dispatch bufferStoredDispatch = {
-    .__reserved0 = NULL,
-    .__reserved1 = NULL,
-    .__reserved2 = NULL,
-    .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, free),
-    ._identifier = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, identifier),
-    ._type = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, type),
-    ._isType = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, isType),
-    ._device = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, device),
-    ._space = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, space),
-
-    ._templateQuery = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, templateQuery),
-    ._query = BR_CMETHOD_REF(br_object, query),
-    ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
-    ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
-    ._queryManySize = BR_CMETHOD_REF(br_object, queryManySize),
-    ._queryAll = BR_CMETHOD_REF(br_object, queryAll),
-    ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
-
-    ._update = BR_CMETHOD_REF(br_buffer_stored_sdl3rend, update),
-};

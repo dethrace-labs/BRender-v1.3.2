@@ -29,10 +29,6 @@ br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo);
 
 br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, const char* fragPath);
 
-GLuint VIDEO_BrPixelmapToGLTexture(br_pixelmap* pm);
-
-br_error VIDEOI_BrPixelmapToExistingTexture(GLuint tex, br_pixelmap* pm);
-
 br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat, GLenum* format, GLenum* type,
     GLsizeiptr* elemBytes, br_boolean* blended);
 
@@ -132,6 +128,9 @@ void StateGLDefault(state_all* state, uint32_t mask);
 void StateGLUpdateScene(state_cache* cache, state_stack* state);
 void StateGLUpdateModel(state_cache* cache, state_matrix* matrix);
 void StateGLFillModel(state_stack* state, uint32_t states, shader_data_model* model);
+void StateGLFillModelTexture(state_stack* state, uint32_t states, shader_data_model* model,
+    struct br_buffer_stored** colour_map, br_boolean* filter_linear, br_boolean* palette_dirty,
+    const br_uint_32** palette_entries);
 void StateGLCopy(state_stack* dst, state_stack* src, uint32_t mask);
 /*
  * v1model.c

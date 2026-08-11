@@ -26,24 +26,8 @@ add_custom_command(
 
 
 set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
-
-set(GLSTATE_FILES
-        ${REND_COMMON_DIR}/cache.c
-        ${REND_COMMON_DIR}/modeldata.c
-        ${REND_COMMON_DIR}/modelrender.c
-        ${REND_COMMON_DIR}/gstored.c
-        ${REND_COMMON_DIR}/state.c
-        ${REND_COMMON_DIR}/state.h
-        ${REND_COMMON_DIR}/state_clip.c
-        ${REND_COMMON_DIR}/state_cull.c
-        ${REND_COMMON_DIR}/state_hidden.c
-        ${REND_COMMON_DIR}/state_light.c
-        ${REND_COMMON_DIR}/state_matrix.c
-        ${REND_COMMON_DIR}/state_output.c
-        ${REND_COMMON_DIR}/state_primitive.c
-        ${REND_COMMON_DIR}/state_surface.c
-        )
-source_group("STATE" FILES ${GLSTATE_FILES})
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/commonrend.cmake)
+brender_common_sources(${REND_COMMON_DIR})
 
 set(VIDEO_FILES
         checkboard64.c
@@ -57,52 +41,25 @@ set(VIDEO_FILES
 source_group("VIDEO" FILES ${VIDEO_FILES})
 
 set(RENDERER_FILES
+        ${BR_COMMON_RENDERER_FILES}
+
         gv1buckt.c
         gv1buckt.h
-
-        ${REND_COMMON_DIR}/gv1model.c
-        ${REND_COMMON_DIR}/gv1model.h
 
         gstored.h
         v1model.c
 
-        ${REND_COMMON_DIR}/onscreen.c
-
-        ${REND_COMMON_DIR}/renderer.c
-        ${REND_COMMON_DIR}/renderer.h
-
         sbuffer.h
         sbuffer.c
-
-        ${REND_COMMON_DIR}/sstate.c
-        ${REND_COMMON_DIR}/sstate.h
         )
 source_group("Renderer" FILES ${RENDERER_FILES})
 
 set(GLREND_FILES
+        ${BR_COMMON_OBJ_FILES}
+
         drv_ip.h
-
-        driver.c
-
-        ${REND_COMMON_DIR}/outfcty.c
-        ${REND_COMMON_DIR}/outfcty.h
-
-        ${REND_COMMON_DIR}/ext_procs.c
-
-        ${REND_COMMON_DIR}/rendfcty.c
-        ${REND_COMMON_DIR}/rendfcty.h
-
-        ${REND_COMMON_DIR}/device.c
-        ${REND_COMMON_DIR}/device.h
-
-        ${REND_COMMON_DIR}/devpixmp.c
         devpixmp.h
         devpmglf.c
-
-        ${REND_COMMON_DIR}/devclut.c
-        ${REND_COMMON_DIR}/devclut.h
-
-        ${REND_COMMON_DIR}/template.h
 
         quad.c
         util.c
@@ -143,7 +100,7 @@ add_library(glrend
         ${GLREND_FILES}
         ${RENDERER_FILES}
         ${VIDEO_FILES}
-        ${GLSTATE_FILES}
+        ${BR_COMMON_STATE_FILES}
         ${INC_FILES}
 
         "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
@@ -152,24 +109,7 @@ add_library(glrend
         "${CMAKE_CURRENT_BINARY_DIR}/brender.frag.glsl.h"
         )
 
-get_target_property(target_type glrend TYPE)
-if(target_type STREQUAL SHARED_LIBRARY)
-    target_compile_definitions(glrend PRIVATE -DDEFINE_BR_ENTRY_POINT)
-endif()
-
-target_compile_definitions(glrend PRIVATE
-        BREND_DRIVER_GL
-        BREND_DRIVER_SUFFIX_UPPER=GL
-        BREND_DRIVER_SUFFIX_LOWER=gl
-        )
-
-target_include_directories(glrend PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${REND_COMMON_DIR}
-        )
-
-target_link_libraries(glrend PRIVATE BRender::DDI)
+brender_common_target_setup(glrend BREND_DRIVER_GL GL gl "glrend")
 target_link_libraries(glrend PUBLIC glrend-headers)
 
 set_target_properties(glrend PROPERTIES

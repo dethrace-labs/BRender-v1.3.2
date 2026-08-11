@@ -54,29 +54,13 @@ typedef struct gl_groupinfo {
 
 #ifdef BR_GEOMETRY_STORED_PRIVATE
 
+#include "gstored_base.h"
+
 /*
  * Private state of geometry format
  */
 typedef struct br_geometry_stored {
-    /*
-     * Dispatch table
-     */
-    const struct br_geometry_stored_dispatch* dispatch;
-
-    /*
-     * Standard object identifier
-     */
-    const char* identifier;
-
-    /*
-     * Pointer to owning device
-     */
-    struct br_device* device;
-
-    struct br_geometry_v1_model* gv1model;
-
-    br_boolean shared;
-    struct v11model* model;
+    BR_GEOMETRY_STORED_BASE;
 
     GLuint gl_vao;
     GLuint gl_vbo_posn;

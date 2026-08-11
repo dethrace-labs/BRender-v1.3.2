@@ -7,82 +7,10 @@
 #include "drv.h"
 
 /*
- * Default dispatch table for primitive state (defined at end of file)
- */
-static struct br_buffer_stored_dispatch bufferStoredDispatch;
-
-/*
- * Primitive state info. template
- */
-#define F(f) offsetof(struct br_buffer_stored, f)
-
-static struct br_tv_template_entry bufferStoredTemplateEntries[] = {
-    { BRT(IDENTIFIER_CSTR), F(identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY },
-    { DEV(OPENGL_TEXTURE_U32), F(gl_tex), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY }
-};
-
-#undef F
-
-/*
  * Set up a static device object
  */
-struct br_buffer_stored* BufferStoredGLAllocate(br_renderer* renderer, br_token use, struct br_device_pixelmap* pm,
-    br_token_value* tv) {
-    struct br_buffer_stored* self;
-    char* ident;
-
-    switch (use) {
-
-    case BRT_TEXTURE_O:
-    case BRT_COLOUR_MAP_O:
-        ident = "Colour-Map";
-        break;
-
-        // case BRT_INDEX_SHADE_O:
-        //     ident = "Shade-Table";
-        //     break;
-
-        // case BRT_INDEX_BLEND_O:
-        //     ident = "Blend-Table";
-        //     break;
-
-        // case BRT_SCREEN_DOOR_O:
-        //     ident = "Screendoor-Table";
-        //     break;
-
-        // case BRT_INDEX_LIGHT_O:
-        //     ident = "Lighting-Table";
-        //     break;
-
-        // case BRT_BUMP_O:
-        //     ident = "Bump-Map";
-        //     break;
-
-        // case BRT_UNKNOWN:
-        //     ident = "Unknown";
-        //     break;
-
-    default:
-        return NULL;
-    }
-
-    self = BrResAllocate(renderer, sizeof(*self), BR_MEMORY_OBJECT);
-    if (self == NULL)
-        return NULL;
-
-    self->dispatch = &bufferStoredDispatch;
-    self->identifier = ident;
-    self->device = ObjectDevice(renderer);
-    self->renderer = renderer;
+void BufferStoredGLInitFields(struct br_buffer_stored* self) {
     self->gl_tex = 0;
-    self->templates = BrTVTemplateAllocate(self, (br_tv_template_entry*)bufferStoredTemplateEntries,
-        BR_ASIZE(bufferStoredTemplateEntries));
-
-    BufferStoredUpdate(self, pm, tv);
-
-    ObjectContainerAddFront(renderer, (br_object*)self);
-
-    return self;
 }
 
 static br_boolean is_compatible(br_buffer_stored* self, br_pixelmap* pm, GLenum internal_format) {
@@ -209,7 +137,7 @@ static br_error updateMemory(br_buffer_stored* self, br_pixelmap* pm) {
     return BRE_OK;
 }
 
-static br_error BR_CMETHOD_DECL(br_buffer_stored_gl, update)(struct br_buffer_stored* self,
+br_error BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), update)(struct br_buffer_stored* self,
     struct br_device_pixelmap* pm, br_token_value* tv) {
     br_device* pm_device;
     (void)tv;
@@ -238,39 +166,13 @@ static br_error BR_CMETHOD_DECL(br_buffer_stored_gl, update)(struct br_buffer_st
     }
 }
 
-static void BR_CMETHOD_DECL(br_buffer_stored_gl, free)(br_object* _self) {
+void BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), free)(br_object* _self) {
     br_buffer_stored* self = (br_buffer_stored*)_self;
 
     glDeleteTextures(1, &self->gl_tex);
     self->gl_tex = 0;
 
     ObjectContainerRemove(self->renderer, (br_object*)self);
-}
-
-static const char* BR_CMETHOD_DECL(br_buffer_stored_gl, identifier)(br_object* self) {
-    return ((br_buffer_stored*)self)->identifier;
-}
-
-static br_token BR_CMETHOD_DECL(br_buffer_stored_gl, type)(br_object* self) {
-    (void)self;
-    return BRT_BUFFER_STORED;
-}
-
-static br_boolean BR_CMETHOD_DECL(br_buffer_stored_gl, isType)(br_object* self, br_token t) {
-    (void)self;
-    return (t == BRT_BUFFER_STORED) || (t == BRT_OBJECT);
-}
-
-static br_device* BR_CMETHOD_DECL(br_buffer_stored_gl, device)(br_object* self) {
-    return ((br_buffer_stored*)self)->device;
-}
-
-static br_size_t BR_CMETHOD_DECL(br_buffer_stored_gl, space)(br_object* self) {
-    return BrResSizeTotal(self);
-}
-
-static struct br_tv_template* BR_CMETHOD_DECL(br_buffer_stored_gl, templateQuery)(br_object* _self) {
-    return ((br_buffer_stored*)_self)->templates;
 }
 
 GLuint BufferStoredGLGetTexture(br_buffer_stored* self) {
@@ -294,29 +196,3 @@ GLuint BufferStoredGLGetTexture(br_buffer_stored* self) {
 
     return self->gl_tex;
 }
-
-/*
- * Default dispatch table for device
- */
-static struct br_buffer_stored_dispatch bufferStoredDispatch = {
-    .__reserved0 = NULL,
-    .__reserved1 = NULL,
-    .__reserved2 = NULL,
-    .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_buffer_stored_gl, free),
-    ._identifier = BR_CMETHOD_REF(br_buffer_stored_gl, identifier),
-    ._type = BR_CMETHOD_REF(br_buffer_stored_gl, type),
-    ._isType = BR_CMETHOD_REF(br_buffer_stored_gl, isType),
-    ._device = BR_CMETHOD_REF(br_buffer_stored_gl, device),
-    ._space = BR_CMETHOD_REF(br_buffer_stored_gl, space),
-
-    ._templateQuery = BR_CMETHOD_REF(br_buffer_stored_gl, templateQuery),
-    ._query = BR_CMETHOD_REF(br_object, query),
-    ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
-    ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
-    ._queryManySize = BR_CMETHOD_REF(br_object, queryManySize),
-    ._queryAll = BR_CMETHOD_REF(br_object, queryAll),
-    ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
-
-    ._update = BR_CMETHOD_REF(br_buffer_stored_gl, update),
-};
