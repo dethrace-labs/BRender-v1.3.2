@@ -36,8 +36,6 @@ typedef void BR_CALLBACK br_device_sdl3_swapbuffers_cbfn(br_pixelmap* pm);
 typedef void* BR_CALLBACK br_device_sdl3_getprocaddress_cbfn(const char* name);
 typedef void BR_CALLBACK br_device_sdl3_free_cbfn(br_pixelmap* pm, void* user);
 typedef void BR_CALLBACK br_device_sdl3_getviewport_cbfn(int *x, int *y, float *width_multiplier, float *height_multiplier);
-typedef void* BR_CALLBACK br_device_sdl3_create_surface_cbfn(void* instance);
-typedef const char** BR_CALLBACK br_device_sdl3_get_instance_extensions_cbfn(uint32_t* count);
 typedef int BR_CALLBACK br_device_sdl3_get_map_mode_cbfn(void);
 typedef void BR_CALLBACK br_device_sdl3_get_window_size_cbfn(int *width, int *height);
 // For use with `sdl3gpu` device: returns the SDL_Window* the driver should
@@ -49,8 +47,6 @@ typedef struct br_device_sdl3_callback_procs {
     br_device_sdl3_getviewport_cbfn                *get_viewport;
     br_device_sdl3_swapbuffers_cbfn                *swap_buffers;
     br_device_sdl3_free_cbfn                       *free;
-    br_device_sdl3_create_surface_cbfn             *create_surface;
-    br_device_sdl3_get_instance_extensions_cbfn    *get_instance_extensions;
     br_device_sdl3_get_map_mode_cbfn               *get_map_mode;
     br_device_sdl3_get_window_size_cbfn            *get_window_size;
     br_device_sdl3_get_window_cbfn                 *get_window;

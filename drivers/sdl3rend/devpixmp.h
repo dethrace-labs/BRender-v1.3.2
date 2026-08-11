@@ -61,7 +61,7 @@ typedef struct br_device_pixelmap {
 } br_device_pixelmap;
 
 /* Forward declarations for br_device_pixelmap_sdl3rend methods defined in
- * rend_common/devpixmp.c (shared with the front dispatch in devpmgpu.c). */
+ * commonrend/devpixmp.c (shared with the front dispatch in devpmgpu.c). */
 extern void BR_CMETHOD_DECL(br_device_pixelmap_sdl3rend, free)(br_object* _self);
 extern const char* BR_CMETHOD_DECL(br_device_pixelmap_sdl3rend, identifier)(br_object* self);
 extern br_token BR_CMETHOD_DECL(br_device_pixelmap_sdl3rend, type)(br_object* self);

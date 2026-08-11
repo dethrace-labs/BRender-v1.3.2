@@ -26,7 +26,7 @@ int glContextIsOpenGLES() {
 // Wrap SDL3GPU only lines with ##ifdef SDL3GPU ... ##endif
 // ##else selects the complementary branch of the enclosing block.
 // Note the double "##" to avoid collision with the standard glsl preprocessor
-char* preprocessShader(char* shader, size_t size) {
+char* preprocessShader(const char* shader, size_t size) {
     int i;
     char *processed;
     int line_i;
@@ -365,7 +365,8 @@ GLuint VIDEO_BrPixelmapToGLTexture(br_pixelmap* pm) {
 
 void VIDEOI_BrRectToGL(const br_pixelmap* pm, br_rectangle* r) {
     br_rectangle out;
-    PixelmapRectangleClip(&out, r, pm);
+    /* PixelmapRectangleClip only reads pm; the const cast is safe. */
+    PixelmapRectangleClip(&out, r, (br_pixelmap *)pm);
 
     /* Flip the rect upside down to use (0, 0) at bottom-left. */
     *r = out;

@@ -4,7 +4,7 @@
 #include "brassert.h"
 #include "drv.h"
 #include "formats.h"
-#include "rend_common.h"
+#include "commonrend.h"
 #include "state.h"
 #include "video.h"
 #include "sbuffer.h"

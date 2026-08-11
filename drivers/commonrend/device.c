@@ -3,7 +3,7 @@
  */
 #include "drv.h"
 #include "brassert.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 #if defined(BREND_DRIVER_GL)
 #define DEVICE_TITLE "OpenGL v3.2"
@@ -230,7 +230,9 @@ br_boolean BREND_CMETHOD_DECL(BREND_CLASS(br_device_), tokensMatch)(struct br_ob
     /*
      * Compare the two token lists
      */
-    return BrTokenValueComparePartial(tm->original, tm->query, insignificantMatchTokens);
+    /* BrTokenValueComparePartial reads (never writes) the insignificant list,
+     * so the const cast is safe. */
+    return BrTokenValueComparePartial(tm->original, tm->query, (br_token *)insignificantMatchTokens);
 }
 
 void BREND_CMETHOD_DECL(BREND_CLASS(br_device_), tokensMatchEnd)(struct br_object_container* self, void* arg) {

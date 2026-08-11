@@ -1,5 +1,5 @@
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 #include "shortcut.h"
 
 /*
@@ -119,7 +119,8 @@ br_token BREND_FNPREFIX(OnScreenCheck)(br_renderer* self, const br_matrix4* mode
         if (self->state.current->clip[c].type != BRT_PLANE)
             continue;
 
-        BrMatrix4TApply(&eqn, &self->state.current->clip[c].plane, model_to_screen);
+        /* BrMatrix4TApply reads model_to_screen only; the const cast is safe. */
+        BrMatrix4TApply(&eqn, &self->state.current->clip[c].plane, (br_matrix4 *)model_to_screen);
         eqn.v[W] = -eqn.v[W];
 
         if (TEST_OUT)

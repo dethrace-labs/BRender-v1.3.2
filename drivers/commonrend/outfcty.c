@@ -2,7 +2,7 @@
  * Output type methods
  */
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 /*
  * Default dispatch table for device (defined at end of file)

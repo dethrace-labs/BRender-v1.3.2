@@ -16,7 +16,7 @@ extern "C" {
 
 #include <assert.h>
 
-#include "rend_common.h"
+#include "commonrend.h"
 
 #if defined(BREND_DRIVER_GL)
 #include "glad/glad.h"

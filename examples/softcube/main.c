@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
             brender_renderer = eRenderer_software;
         } else if (BrStrCmp(argv[i + 1], "opengl") == 0) {
             brender_renderer = eRenderer_opengl;
-        } else if (BrStrCmp(argv[i + 1], "sdl3gpu") == 0 || BrStrCmp(argv[i + 1], "vulkan") == 0) {
+        } else if (BrStrCmp(argv[i + 1], "sdl3gpu") == 0) {
             brender_renderer = eRenderer_sdl3gpu;
         } else {
                 fprintf(stderr, "Unsupported renderer: %s\n", argv[i + 1]);

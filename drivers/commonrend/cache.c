@@ -1,7 +1,7 @@
 #include "brassert.h"
 
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 #include "shortcut.h"
 

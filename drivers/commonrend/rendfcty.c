@@ -2,7 +2,7 @@
  * Renderer type methods
  */
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 #include <stddef.h>
 
 /*

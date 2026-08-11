@@ -8,9 +8,9 @@ extern "C" {
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 
-struct br_device_pixelmap;
+#include "shader_data.h"
 
-#define BR_STATIC_ASSERT(cond, msg) _Static_assert((cond), msg)
+struct br_device_pixelmap;
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
@@ -18,66 +18,6 @@ struct br_device_pixelmap;
 #define SDL3REND_MODEL_UNIFORM_SLOT     0
 #define SDL3REND_SCENE_UNIFORM_SLOT     1
 #define SDL3REND_FRAGMENT_SAMPLER_SLOT  0
-
-/* Byte-identical to the glrend/sdl3rend shader_data_* structs: the GLSL
- * shaders are shared (drivers/rend_common/*.glsl), so the CPU payload must
- * match their std140 layout on every backend. */
-#pragma pack(push, 16)
-typedef struct shader_data_light {
-    alignas(16) br_vector4 position;
-    alignas(16) br_vector4 direction;
-    alignas(16) br_vector4 half;
-    alignas(16) br_vector4 colour;
-    alignas(16) br_vector4 iclq;
-    alignas(16) br_vector2 spot_angles;
-    alignas(4) float _pad0, _pad1;
-} shader_data_light;
-BR_STATIC_ASSERT(sizeof(shader_data_light) % 16 == 0, "shader_data_light is not aligned");
-
-/* NOTE on field order: SDL3 GPU's per-slot uniform data window is capped at
- * 4096 bytes (MAX_UBO_SECTION_SIZE in the backends), so every field the
- * shaders actually read must sit within the first 4096 bytes of the block.
- * The lights array (96 * 48 = 4608 bytes) therefore goes LAST: it is dead
- * weight today (vertex lighting is compiled out by DEBUG_DISABLE_LIGHTS and
- * the fragment shader never references it), and its tail is clipped by SDL3. */
-typedef struct shader_data_scene {
-    alignas(16) br_vector4 eye_view;
-    alignas(16) br_vector4 clip_planes[BR_MAX_CLIP_PLANES];
-    alignas(4) uint32_t num_clip_planes;
-    alignas(4) float yon_z;
-    alignas(4) uint32_t num_lights;
-    alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
-} shader_data_scene;
-BR_STATIC_ASSERT(sizeof(((shader_data_scene*)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,
-    "std::array<shader_data_light> fucked up");
-
-typedef struct shader_data_model {
-    alignas(16) br_matrix4 model_view;
-    alignas(16) br_matrix4 projection;
-    alignas(16) br_matrix4 projection_brender;
-    alignas(16) br_matrix4 mvp;
-    alignas(16) br_matrix4 normal_matrix;
-    alignas(16) br_matrix4 environment_matrix;
-    alignas(16) br_matrix4 map_transform;
-    alignas(16) br_vector4 surface_colour;
-    alignas(16) br_vector4 clear_colour;
-    alignas(16) br_vector4 eye_m;
-    alignas(4) float ka;
-    alignas(4) float ks;
-    alignas(4) float kd;
-    alignas(4) float power;
-    alignas(4) uint32_t lighting;
-    alignas(4) uint32_t uv_source;
-    alignas(4) uint32_t disable_colour_key;
-    alignas(4) uint32_t disable_texture;
-    alignas(4) uint32_t fog_enabled;
-    alignas(16) br_vector4 fog_colour;
-    alignas(4) float fog_min;
-    alignas(4) float fog_max;
-    alignas(4) float alpha;
-    alignas(4) uint32_t prelit;
-} shader_data_model;
-#pragma pack(pop)
 
 /*
  * SDL3 GPU uniform slot mapping (matches the shared GLSL bindings):
@@ -120,7 +60,7 @@ typedef struct _VIDEO {
     SDL_GPUTexture* transferTexture;
     SDL_GPUTexture* depthTexture;
 
-    /* Shaders (SPIR-V from drivers/rend_common/*.glsl, embedded via
+    /* Shaders (SPIR-V from drivers/commonrend/*.glsl, embedded via
      * sdl3_shaders.c) and pipelines. Pipelines render into transferTexture's
      * format, so they never need rebuilding on swapchain recreation. */
     SDL_GPUShader* brenderVertShader;

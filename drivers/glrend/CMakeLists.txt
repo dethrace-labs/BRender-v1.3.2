@@ -1,7 +1,7 @@
 ﻿project(glrend C)
 
-# Embed shared shaders (drivers/rend_common)
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
+# Embed shared shaders (drivers/commonrend)
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
@@ -25,7 +25,7 @@ add_custom_command(
 )
 
 
-set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
+set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
 
 set(GLSTATE_FILES
         ${REND_COMMON_DIR}/cache.c
@@ -52,6 +52,7 @@ set(VIDEO_FILES
         # shader_text.c
         video.c
         video.h
+        ${REND_COMMON_DIR}/shader_data.h
         )
 source_group("VIDEO" FILES ${VIDEO_FILES})
 
@@ -59,8 +60,8 @@ set(RENDERER_FILES
         gv1buckt.c
         gv1buckt.h
 
-        gv1model.c
-        gv1model.h
+        ${REND_COMMON_DIR}/gv1model.c
+        ${REND_COMMON_DIR}/gv1model.h
 
         gstored.h
         v1model.c
@@ -68,7 +69,7 @@ set(RENDERER_FILES
         ${REND_COMMON_DIR}/onscreen.c
 
         ${REND_COMMON_DIR}/renderer.c
-        renderer.h
+        ${REND_COMMON_DIR}/renderer.h
 
         sbuffer.h
         sbuffer.c
@@ -86,7 +87,7 @@ set(GLREND_FILES
         ${REND_COMMON_DIR}/outfcty.c
         ${REND_COMMON_DIR}/outfcty.h
 
-        ext_procs.c
+        ${REND_COMMON_DIR}/ext_procs.c
 
         ${REND_COMMON_DIR}/rendfcty.c
         ${REND_COMMON_DIR}/rendfcty.h

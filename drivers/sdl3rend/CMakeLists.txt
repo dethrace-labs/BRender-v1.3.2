@@ -15,11 +15,11 @@ if(GLSL_COMPILER)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
-# Shared shaders live in drivers/rend_common with ##ifdef SDL3GPU/GL_ES/GL_CORE
+# Shared shaders live in drivers/commonrend with ##ifdef SDL3GPU/GL_ES/GL_CORE
 # markers. Filter for SPIR-V (plain GLSL, literal-first #version 450) before
 # compiling; the SDL3GPU marker keeps the set-1/2/3 binding layout that the
 # SDL3-GPU pipeline layout uses.
-set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
 
 set(SPV_GENERATED)
 foreach(spv_file
@@ -70,7 +70,7 @@ foreach(spv_file
     list(APPEND SPV_GENERATED ${h_path})
 endforeach()
 
-set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rend_common")
+set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
 
 set(SDL3REND_STATE_FILES
         ${REND_COMMON_DIR}/cache.c
@@ -94,12 +94,13 @@ set(VIDEO_FILES
         sdl3_shaders.c
         video.c
         video.h
+        ${REND_COMMON_DIR}/shader_data.h
         )
 source_group("VIDEO" FILES ${VIDEO_FILES})
 
 set(RENDERER_FILES
-        gv1model.c
-        gv1model.h
+        ${REND_COMMON_DIR}/gv1model.c
+        ${REND_COMMON_DIR}/gv1model.h
 
         gstored.h
         v1model.c
@@ -107,7 +108,7 @@ set(RENDERER_FILES
         ${REND_COMMON_DIR}/onscreen.c
 
         ${REND_COMMON_DIR}/renderer.c
-        renderer.h
+        ${REND_COMMON_DIR}/renderer.h
 
         sbuffer.h
         sbuffer.c
@@ -125,7 +126,7 @@ set(SDL3REND_FILES
         ${REND_COMMON_DIR}/outfcty.c
         ${REND_COMMON_DIR}/outfcty.h
 
-        ext_procs.c
+        ${REND_COMMON_DIR}/ext_procs.c
 
         ${REND_COMMON_DIR}/rendfcty.c
         ${REND_COMMON_DIR}/rendfcty.h

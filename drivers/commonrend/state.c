@@ -1,5 +1,5 @@
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 void BREND_FN(State, Init)(state_all* state, void* res) {
     state->res = res;

@@ -10,7 +10,7 @@
  * SDL3REND_BeginRenderPass / SDL3REND_OverlayDraw / SDL3REND_Present); this
  * file only owns the front's BRender object model, its template, and the
  * dispatch that routes most methods to the shared sdl3rend implementations
- * in rend_common/devpixmp.c.
+ * in commonrend/devpixmp.c.
  */
 
 static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch;
@@ -66,10 +66,6 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
     { BRT(SDL3_CALLBACKS_P), F(callbacks), BRTV_SET, BRTV_CONV_COPY },
 };
 #undef F
-
-void DevicePixelmapSDL3RENDGetViewport(br_device_pixelmap* self, int *x, int *y, float *wm, float *hm) {
-    self->asFront.callbacks.get_viewport(x, y, wm, hm);
-}
 
 /*
  * Frame end: flush the offscreen 2D content, composite the overlay inside the

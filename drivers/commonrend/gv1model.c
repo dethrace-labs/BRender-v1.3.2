@@ -3,6 +3,7 @@
  */
 #include "brassert.h"
 #include "drv.h"
+#include "commonrend.h"
 
 /*
  * Default dispatch table for renderer type (defined at and of file)
@@ -27,10 +28,13 @@ static struct br_tv_template_entry geometryV1ModelTemplateEntries[] = {
 /*
  * Allocate a geometry format
  */
-br_geometry_v1_model* GeometryV1ModelGLAllocate(br_renderer_facility* type, const char* id) {
+br_geometry_v1_model* BREND_FN(GeometryV1Model, Allocate)(br_renderer_facility* type, const char* id) {
     br_geometry_v1_model* self;
 
     self = BrResAllocate(type, sizeof(*self), BR_MEMORY_OBJECT);
+    if (self == NULL)
+        return NULL;
+
     self->dispatch = &geometryV1ModelDispatch;
     self->identifier = id;
     self->device = type->device;
@@ -40,7 +44,7 @@ br_geometry_v1_model* GeometryV1ModelGLAllocate(br_renderer_facility* type, cons
     return self;
 }
 
-static void BR_CMETHOD_DECL(br_geometry_v1_model_gl, free)(br_object* _self) {
+static void BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), free)(br_object* _self) {
     br_geometry_v1_model* self = (br_geometry_v1_model*)_self;
 
     ObjectContainerRemove(self->renderer_facility, (br_object*)self);
@@ -48,28 +52,30 @@ static void BR_CMETHOD_DECL(br_geometry_v1_model_gl, free)(br_object* _self) {
     BrResFreeNoCallback(self);
 }
 
-static const char* BR_CMETHOD_DECL(br_geometry_v1_model_gl, identifier)(br_object* self) {
+static const char* BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), identifier)(br_object* self) {
     return ((br_geometry_v1_model*)self)->identifier;
 }
 
-static br_token BR_CMETHOD_DECL(br_geometry_v1_model_gl, type)(br_object* self) {
+static br_token BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), type)(br_object* self) {
+    (void)self;
     return BRT_GEOMETRY_V1_MODEL;
 }
 
-static br_boolean BR_CMETHOD_DECL(br_geometry_v1_model_gl, isType)(br_object* self, br_token t) {
+static br_boolean BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), isType)(br_object* self, br_token t) {
+    (void)self;
     return (t == BRT_GEOMETRY_V1_MODEL) || (t == BRT_GEOMETRY) || (t == BRT_OBJECT);
 }
 
-static br_device* BR_CMETHOD_DECL(br_geometry_v1_model_gl, device)(br_object* self) {
+static br_device* BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), device)(br_object* self) {
     return ((br_geometry_v1_model*)self)->device;
 }
 
-static br_size_t BR_CMETHOD_DECL(br_geometry_v1_model_gl, space)(br_object* self) {
+static br_size_t BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), space)(br_object* self) {
     (void)self;
     return sizeof(br_geometry_v1_model);
 }
 
-static struct br_tv_template* BR_CMETHOD_DECL(br_geometry_v1_model_gl, templateQuery)(br_object* _self) {
+static struct br_tv_template* BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), templateQuery)(br_object* _self) {
     br_geometry_v1_model* self = (br_geometry_v1_model*)_self;
 
     if (self->device->templates.geometryV1ModelTemplate == NULL) {
@@ -80,36 +86,42 @@ static struct br_tv_template* BR_CMETHOD_DECL(br_geometry_v1_model_gl, templateQ
     return self->device->templates.geometryV1ModelTemplate;
 }
 
-static br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl, storedAvail)(struct br_geometry_v1_model* self,
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), storedAvail)(struct br_geometry_v1_model* self,
     br_int_32* psize, br_token_value* tv) {
+    (void)self;
+    (void)psize;
+    (void)tv;
     return BRE_FAIL;
 }
 
-static br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl,
+static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_),
     storedNew)(struct br_geometry_v1_model* self, struct br_renderer* renderer,
     struct br_geometry_stored** psg, struct v11model_f* model, br_token type,
     br_token_value* tv) {
+    (void)tv;
     ASSERT(type == BRT_TRIANGLE);
 
-    if ((*psg = GeometryStoredGLAllocate(self, "MODEL", renderer, (struct v11model*)model)) == NULL)
+    if ((*psg = BREND_FN(GeometryStored, Allocate)(self, "MODEL", renderer, (struct v11model*)model)) == NULL)
         return BRE_FAIL;
 
     return BRE_OK;
 }
 
-br_error BR_CMETHOD_DECL(br_geometry_v1_model_gl, render)(struct br_geometry_v1_model* self,
+br_error BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_v1_model_), render)(struct br_geometry_v1_model* self,
     struct br_renderer* renderer, struct v11model_f* model,
     struct br_renderer_state_stored* default_state, br_token type) {
     static br_boolean warned_imm = BR_FALSE;
 
+    (void)self;
+    (void)renderer;
+    (void)model;
+    (void)default_state;
+    (void)type;
+
     if (warned_imm != BR_TRUE) {
-        BR_FATAL0("GLREND: Immediate-mode rendering is not supported.");
+        BR_FATAL0("Immediate-mode rendering is not supported.");
         warned_imm = BR_TRUE;
     }
-
-    // self->
-
-    //     return V1Model_RenderStored(self, renderer, BR_FALSE);
 
     return BRE_FAIL;
 }
@@ -122,14 +134,14 @@ static const struct br_geometry_v1_model_dispatch geometryV1ModelDispatch = {
     .__reserved1 = NULL,
     .__reserved2 = NULL,
     .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_geometry_v1_model_gl, free),
-    ._identifier = BR_CMETHOD_REF(br_geometry_v1_model_gl, identifier),
-    ._type = BR_CMETHOD_REF(br_geometry_v1_model_gl, type),
-    ._isType = BR_CMETHOD_REF(br_geometry_v1_model_gl, isType),
-    ._device = BR_CMETHOD_REF(br_geometry_v1_model_gl, device),
-    ._space = BR_CMETHOD_REF(br_geometry_v1_model_gl, space),
+    ._free = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), free),
+    ._identifier = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), identifier),
+    ._type = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), type),
+    ._isType = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), isType),
+    ._device = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), device),
+    ._space = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), space),
 
-    ._templateQuery = BR_CMETHOD_REF(br_geometry_v1_model_gl, templateQuery),
+    ._templateQuery = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), templateQuery),
     ._query = BR_CMETHOD_REF(br_object, query),
     ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
     ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
@@ -137,9 +149,9 @@ static const struct br_geometry_v1_model_dispatch geometryV1ModelDispatch = {
     ._queryAll = BR_CMETHOD_REF(br_object, queryAll),
     ._queryAllSize = BR_CMETHOD_REF(br_object, queryAllSize),
 
-    ._renderF = BR_CMETHOD_REF(br_geometry_v1_model_gl, render),
-    ._renderOnScreenF = BR_CMETHOD_REF(br_geometry_v1_model_gl, render),
-    ._storedNewF = BR_CMETHOD_REF(br_geometry_v1_model_gl, storedNew),
+    ._renderF = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), render),
+    ._renderOnScreenF = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), render),
+    ._storedNewF = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), storedNew),
 
-    ._storedAvail = BR_CMETHOD_REF(br_geometry_v1_model_gl, storedAvail),
+    ._storedAvail = BREND_CMETHOD_REF(BREND_CLASS(br_geometry_v1_model_), storedAvail),
 };

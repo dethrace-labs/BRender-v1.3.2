@@ -8,7 +8,7 @@
  */
 #include "brassert.h"
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 #include <string.h>
 #include <math.h>
 
@@ -121,7 +121,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             }
         }
 
-        DevicePixelmapGLGetViewport(colour_target->screen, &x, &y, &rx, &ry);
+        BREND_FN(DevicePixelmap, GetViewport)(colour_target->screen, &x, &y, &rx, &ry);
         glViewport(colour_target->pm_base_x * rx + x, base_y * ry + y, colour_target->pm_width * rx, colour_target->pm_height * ry);
 
         /* Bind the model UBO here, it's faster than doing it for each model group */
@@ -193,8 +193,24 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                     rx = (float)vp_width / (float)screen->pm_width;
                     ry = (float)vp_height / (float)screen->pm_height;
                 }
+                /* The present blit (SDL3REND_Present) flips the whole transfer
+                 * vertically, so a sub-area scene must render into the mirrored
+                 * transfer rows to land at its game rect on screen. This mirrors
+                 * the GL driver's base_y flip above: the full-screen scene has
+                 * pm_base_y == 0 and is unaffected; sub-areas (rear-view mirror,
+                 * 3D PIP, cockpit render window) shift so the on-screen position
+                 * matches their pm_base_y in game coordinates. The CPU-side purge
+                 * (sceneEnd) stays in game coordinates and needs no change. */
+                int32_t vp_base_y = colour_target->pm_base_y;
+                if (colour_target->pm_base_y != 0) {
+                    if (colour_target->sub_pixelmap) {
+                        vp_base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
+                    } else {
+                        vp_base_y = screen->pm_height - colour_target->pm_height - colour_target->pm_base_y;
+                    }
+                }
                 vp_x = (float)colour_target->pm_base_x * rx + (float)x;
-                vp_y = (float)colour_target->pm_base_y * ry + (float)y;
+                vp_y = (float)vp_base_y * ry + (float)y;
                 vp_w = (float)colour_target->pm_width * rx;
                 vp_h = (float)colour_target->pm_height * ry;
             } else {

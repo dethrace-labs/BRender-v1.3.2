@@ -2,7 +2,7 @@
  * Stored renderer state
  */
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 /*
  * Default dispatch table for renderer type (defined at and of file)

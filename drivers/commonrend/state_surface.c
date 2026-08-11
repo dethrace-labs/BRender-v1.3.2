@@ -1,5 +1,5 @@
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 #define S BRTV_SET
 #define Q BRTV_QUERY

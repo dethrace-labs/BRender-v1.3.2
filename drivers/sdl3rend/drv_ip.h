@@ -1,6 +1,8 @@
 #ifndef _DRV_IP_H_
 #define _DRV_IP_H_
 
+#include "commonrend.h"
+
 #ifndef NO_PROTOTYPES
 
 #ifdef __cplusplus
@@ -98,13 +100,13 @@ br_token SDL3RENDOnScreenCheck(br_renderer* self, const br_matrix4* model_to_scr
 /*
  * ext_procs.c
  */
-void* DevicePixelmapSDL3RENDGetGetProcAddress(br_device_pixelmap* self);
+void* BREND_FN(DevicePixelmap, GetGetProcAddress)(br_device_pixelmap* self);
 
-void DevicePixelmapSDL3RENDGetViewport(br_device_pixelmap* self, int *x, int *y, float *width_multiplier, float *height_multiplier);
+void BREND_FN(DevicePixelmap, GetViewport)(br_device_pixelmap* self, int *x, int *y, float *width_multiplier, float *height_multiplier);
 
-void DevicePixelmapSDL3RENDSwapBuffers(br_device_pixelmap* self);
+void BREND_FN(DevicePixelmap, SwapBuffers)(br_device_pixelmap* self);
 
-void DevicePixelmapSDL3RENDFree(br_device_pixelmap* self);
+void BREND_FN(DevicePixelmap, Free)(br_device_pixelmap* self);
 
 /*
  * devclut.c
@@ -116,7 +118,7 @@ struct br_device_clut* DeviceClutSDL3RENDAllocate(br_device* dev, char* identifi
  */
 br_geometry_lighting* GeometryLightingNullAllocate(br_renderer_facility* type, const char* id);
 br_geometry_primitives* GeometryPrimitivesNullAllocate(br_renderer_facility* type, const char* id);
-br_geometry_v1_model* GeometryV1ModelSDL3RENDAllocate(br_renderer_facility* type, const char* id);
+br_geometry_v1_model* BREND_FN(GeometryV1Model, Allocate)(br_renderer_facility* type, const char* id);
 
 #ifdef __cplusplus
 };

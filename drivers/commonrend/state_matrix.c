@@ -1,5 +1,5 @@
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 /*
  * Shortcuts for template flags

@@ -1,5 +1,5 @@
 #include "drv.h"
-#include "rend_common.h"
+#include "commonrend.h"
 
 /*
  * Fill the backend-agnostic shader_data_model material fields from the
