@@ -115,7 +115,7 @@ void StoredSDL3RENDRenderGroup(br_geometry_stored* self, br_renderer* renderer, 
             ? (depth_off ? hVideo->brenderBlendPipelineNoDepth : hVideo->brenderBlendPipeline)
             : (depth_off ? hVideo->brenderPipelineNoDepth : hVideo->brenderPipeline);
         if (pipeline != hVideo->lastPipeline) {
-            SDL_BindGPUGraphicsPipeline(hVideo->currentPass, pipeline);
+            SDL3_BindGPUGraphicsPipeline(hVideo->currentPass, pipeline);
             hVideo->lastPipeline = pipeline;
         }
 
@@ -132,9 +132,9 @@ void StoredSDL3RENDRenderGroup(br_geometry_stored* self, br_renderer* renderer, 
         if (self->vbo != hVideo->lastVbo || self->vboOffset != hVideo->lastVboOffset ||
             self->ibo != hVideo->lastIbo || self->iboOffset != hVideo->lastIboOffset) {
             SDL_GPUBufferBinding vb = { self->vbo, (Uint32)self->vboOffset };
-            SDL_BindGPUVertexBuffers(hVideo->currentPass, 0, &vb, 1);
+            SDL3_BindGPUVertexBuffers(hVideo->currentPass, 0, &vb, 1);
             SDL_GPUBufferBinding ib = { self->ibo, (Uint32)self->iboOffset };
-            SDL_BindGPUIndexBuffer(hVideo->currentPass, &ib, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+            SDL3_BindGPUIndexBuffer(hVideo->currentPass, &ib, SDL_GPU_INDEXELEMENTSIZE_16BIT);
             hVideo->lastVbo = self->vbo;
             hVideo->lastVboOffset = self->vboOffset;
             hVideo->lastIbo = self->ibo;
@@ -144,7 +144,7 @@ void StoredSDL3RENDRenderGroup(br_geometry_stored* self, br_renderer* renderer, 
         if (texture != NULL) {
             if (texture != hVideo->lastTexture || sampler != hVideo->lastSampler) {
                 SDL_GPUTextureSamplerBinding tsb = { texture, sampler };
-                SDL_BindGPUFragmentSamplers(hVideo->currentPass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+                SDL3_BindGPUFragmentSamplers(hVideo->currentPass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
                 hVideo->lastTexture = texture;
                 hVideo->lastSampler = sampler;
             }
@@ -152,7 +152,7 @@ void StoredSDL3RENDRenderGroup(br_geometry_stored* self, br_renderer* renderer, 
 
         SDL3REND_PushModel(hVideo, &model, sizeof(model));
 
-        SDL_DrawGPUIndexedPrimitives(hVideo->currentPass, groupinfo->count, 1,
+        SDL3_DrawGPUIndexedPrimitives(hVideo->currentPass, groupinfo->count, 1,
             groupinfo->offset / sizeof(br_uint_16), 0, 0);
 
         /* Dim quad detection and screen-space AABB tracking for overlay compositing. */

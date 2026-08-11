@@ -50,6 +50,11 @@ typedef struct br_device_sdl3_callback_procs {
     br_device_sdl3_get_map_mode_cbfn               *get_map_mode;
     br_device_sdl3_get_window_size_cbfn            *get_window_size;
     br_device_sdl3_get_window_cbfn                 *get_window;
+    // Handle to the already-loaded SDL3 library, used by the sdl3rend driver
+    // to resolve its SDL3 function pointers at runtime (dethrace
+    // single-executable builds). May be NULL: the driver then loads SDL3
+    // itself, and linked builds ignore it entirely.
+    void                                       *sdl3_handle;
 } br_device_sdl3_callback_procs;
 
 #endif

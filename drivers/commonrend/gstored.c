@@ -405,7 +405,7 @@ static void UploadVBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const 
     SDL_GPUBufferCreateInfo bi = {0};
     bi.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
     bi.size = (Uint32)size;
-    self->vbo = SDL_CreateGPUBuffer(hVideo->device, &bi);
+    self->vbo = SDL3_CreateGPUBuffer(hVideo->device, &bi);
     if (!self->vbo) {
         BR_FATAL("SDL3GPU: Failed to create dedicated VBO.");
         return;
@@ -419,7 +419,7 @@ static void UploadIBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const 
     SDL_GPUBufferCreateInfo bi = {0};
     bi.usage = SDL_GPU_BUFFERUSAGE_INDEX;
     bi.size = (Uint32)size;
-    self->ibo = SDL_CreateGPUBuffer(hVideo->device, &bi);
+    self->ibo = SDL3_CreateGPUBuffer(hVideo->device, &bi);
     if (!self->ibo) {
         BR_FATAL("SDL3GPU: Failed to create dedicated IBO.");
         return;

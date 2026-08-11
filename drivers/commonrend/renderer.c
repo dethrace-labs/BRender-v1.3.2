@@ -218,13 +218,13 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             }
 
             SDL_GPUViewport gpu_viewport = {vp_x, vp_y, vp_w, vp_h, 0.0f, 1.0f};
-            SDL_SetGPUViewport(hVideo->currentPass, &gpu_viewport);
+            SDL3_SetGPUViewport(hVideo->currentPass, &gpu_viewport);
             int32_t sc_x = (int32_t)floorf(vp_x);
             int32_t sc_y = (int32_t)floorf(vp_y);
             SDL_Rect scissor = {sc_x, sc_y,
                 (int)((int32_t)ceilf(vp_x + vp_w) - sc_x),
                 (int)((int32_t)ceilf(vp_y + vp_h) - sc_y)};
-            SDL_SetGPUScissor(hVideo->currentPass, &scissor);
+            SDL3_SetGPUScissor(hVideo->currentPass, &scissor);
 
             hVideo->viewportX = (int)vp_x;
             hVideo->viewportY = (int)vp_y;

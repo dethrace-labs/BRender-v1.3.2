@@ -10,6 +10,7 @@ extern "C" {
 
 #include "shader_data.h"
 #include "sdl3_shaders.h"
+#include "sdl3_dyn.h"
 
 struct br_device_pixelmap;
 

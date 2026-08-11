@@ -4,6 +4,14 @@ project(sdl3rend C)
 # top-level build via drivers/CMakeLists.txt. Files listed below were created
 # incrementally during the port.
 
+# Resolve SDL3 at runtime (via the sdl3_handle passed in the device callbacks,
+# falling back to loading the SDL3 library) instead of linking against it. Used
+# by dethrace's single-executable builds, where SDL3 symbols live in the
+# harness. Set this option BEFORE add_subdirectory(BRender), e.g.:
+#     set(BRENDER_SDL3REND_DYNAMIC ON CACHE BOOL "" FORCE)
+option(BRENDER_SDL3REND_DYNAMIC
+    "Resolve SDL3 at runtime (sdl3_dyn.c) instead of linking against SDL3" OFF)
+
 # SDL3 dependency. Located via find_package(SDL3 CONFIG), as dethrace does, and
 # exposed to this subdirectory by the BRender top-level CMake.
 find_package(SDL3 CONFIG QUIET)
@@ -227,6 +235,9 @@ source_group("STATE" FILES ${SDL3REND_STATE_FILES})
 
 set(VIDEO_FILES
         sdl3_shaders.c
+        sdl3_dyn.c
+        sdl3_dyn.h
+        sdl3_syms.h
         video.c
         video.h
         ${REND_COMMON_DIR}/shader_data.h
@@ -330,8 +341,26 @@ target_include_directories(sdl3rend PRIVATE
         )
 
 if(SDL3_FOUND)
-    target_link_libraries(sdl3rend PRIVATE BRender::DDI SDL3::SDL3)
+    if(BRENDER_SDL3REND_DYNAMIC)
+        # dethrace single-executable build: the harness resolves SDL3 at runtime
+        # and hands the driver a library handle via br_device_sdl3_callback_procs.
+        # We only need the SDL3 headers here (the GPU enums/structs still come
+        # from SDL3/SDL_gpu.h), not the library itself.
+        message(STATUS "sdl3rend: SDL3 resolved at runtime (no SDL3 link)")
+        target_compile_definitions(sdl3rend PRIVATE SDL3REND_SDL_DYNAMIC)
+        target_include_directories(sdl3rend PRIVATE
+                $<TARGET_PROPERTY:SDL3::SDL3,INTERFACE_INCLUDE_DIRECTORIES>)
+        target_link_libraries(sdl3rend PRIVATE BRender::DDI ${CMAKE_DL_LIBS})
+    else()
+        message(STATUS "sdl3rend: linked against SDL3")
+        target_link_libraries(sdl3rend PRIVATE BRender::DDI SDL3::SDL3)
+    endif()
 else()
+    if(BRENDER_SDL3REND_DYNAMIC)
+        message(FATAL_ERROR
+            "BRENDER_SDL3REND_DYNAMIC requires SDL3 headers; run with SDL3 "
+            "available to find_package(SDL3)")
+    endif()
     target_link_libraries(sdl3rend PRIVATE BRender::DDI)
 endif()
 target_link_libraries(sdl3rend PUBLIC sdl3rend-headers)

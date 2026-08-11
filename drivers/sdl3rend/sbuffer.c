@@ -109,7 +109,7 @@ static br_error uploadRGBA(struct br_buffer_stored* self, HVIDEO hVideo, const v
     ti.num_levels = 1;
     ti.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
 
-    self->image = SDL_CreateGPUTexture(hVideo->device, &ti);
+    self->image = SDL3_CreateGPUTexture(hVideo->device, &ti);
     if (!self->image)
         return BRE_FAIL;
 
@@ -124,7 +124,7 @@ static br_error uploadRGBA(struct br_buffer_stored* self, HVIDEO hVideo, const v
     si.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
     si.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
 
-    self->sampler = SDL_CreateGPUSampler(hVideo->device, &si);
+    self->sampler = SDL3_CreateGPUSampler(hVideo->device, &si);
     if (!self->sampler)
         return BRE_FAIL;
 

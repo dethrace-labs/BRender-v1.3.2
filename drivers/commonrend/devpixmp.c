@@ -116,7 +116,7 @@ static void delete_sdl3_resources(br_device_pixelmap* self) {
         /* Offscreen pixelmaps are CPU locked buffers only (no per-pixelmap GPU
          * texture); their content reaches the GPU through the shared overlay
          * texture at flush time. */
-        if (hVideo->overlayTexture) { SDL_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
+        if (hVideo->overlayTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
         if (hVideo->lockedPixels) { BrMemFree(hVideo->lockedPixels); hVideo->lockedPixels = NULL; }
     }
 }
@@ -849,7 +849,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
             ti.layer_count_or_depth = 1;
             ti.num_levels = 1;
             ti.sample_count = SDL_GPU_SAMPLECOUNT_1;
-            hVideo->overlayTexture = SDL_CreateGPUTexture(hVideo->device, &ti);
+            hVideo->overlayTexture = SDL3_CreateGPUTexture(hVideo->device, &ti);
             if (!hVideo->overlayTexture)
                 return BRE_FAIL;
         }
