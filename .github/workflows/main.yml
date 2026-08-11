@@ -38,11 +38,18 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl-dev ${{ matrix.platform.apt-packages }}
+          sudo apt-get install -y libgl-dev glslang-tools ${{ matrix.platform.apt-packages }}
       - name: Install macOS dependencies
         if: ${{ runner.os == 'macOS' }}
         run: |
           brew install glslang
+      - name: Install glslang (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/KhronosGroup/glslang/releases/download/main-tot/glslang-main-windows-x86_64-release.zip -OutFile glslang.zip
+          Expand-Archive glslang.zip -DestinationPath glslang
+          echo "$((Resolve-Path glslang/bin).Path)" >> $env:GITHUB_PATH
       - name: 'Configure (CMake)'
         id: configure
         run: |

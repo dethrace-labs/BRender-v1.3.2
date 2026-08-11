@@ -9,7 +9,10 @@ project(sdl3rend C)
 # to this subdirectory.
 find_package(SDL3 CONFIG QUIET)
 
-find_program(GLSL_COMPILER NAMES glslangValidator glslc)
+# Also accept the unified `glslang` tool (the modern glslangValidator
+# replacement, and the only binary shipped in the Windows SDK zip) — it shares
+# glslangValidator's `-V -o` CLI.
+find_program(GLSL_COMPILER NAMES glslangValidator glslang glslc)
 if(GLSL_COMPILER)
     get_filename_component(GLSL_COMPILER_NAME ${GLSL_COMPILER} NAME)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
@@ -42,7 +45,7 @@ foreach(spv_file
             DEPENDS ${glsl_src}
             COMMENT "Filtering ${glsl_file} for SPIR-V"
         )
-        if(GLSL_COMPILER_NAME STREQUAL "glslangValidator")
+        if(GLSL_COMPILER_NAME STREQUAL "glslangValidator" OR GLSL_COMPILER_NAME STREQUAL "glslang")
             set(compile_cmd ${GLSL_COMPILER} -V -o ${spv_path} ${glsl_filtered})
         else()
             set(compile_cmd ${GLSL_COMPILER} -o ${spv_path} ${glsl_filtered})
