@@ -99,12 +99,11 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 
 #if defined(BREND_DRIVER_GL)
     {
-        extern int g_wireframe_mode;
         br_uint_16 base_y = 0;
         int x, y;
         float rx, ry;
 
-        glPolygonMode(GL_FRONT_AND_BACK, g_wireframe_mode ? GL_LINE : GL_FILL);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glUseProgram(hVideo->brenderProgram.program);
         glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
