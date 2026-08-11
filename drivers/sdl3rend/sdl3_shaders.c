@@ -21,62 +21,42 @@
 #include "overlay.frag.dxil.h"
 #endif
 
-static const SDL3REND_ShaderSource brender_vert = {
-    BRENDER_VERT_SPV, sizeof(BRENDER_VERT_SPV),
+/* The msl/dxil members of SDL3REND_ShaderSource for a data-array prefix (e.g.
+ * BRENDER_VERT), or NULL/0 when that format was not produced in this build. */
 #if SDL3REND_SHADERFORMAT_MSL_AVAILABLE
-    BRENDER_VERT_METAL, sizeof(BRENDER_VERT_METAL),
+#define SDL3REND_MSL(name) name##_METAL, sizeof(name##_METAL),
 #else
-    NULL, 0,
+#define SDL3REND_MSL(name) NULL, 0,
 #endif
+
 #if SDL3REND_SHADERFORMAT_DXIL_AVAILABLE
-    BRENDER_VERT_DXIL, sizeof(BRENDER_VERT_DXIL),
+#define SDL3REND_DXIL(name) name##_DXIL, sizeof(name##_DXIL),
 #else
-    NULL, 0,
+#define SDL3REND_DXIL(name) NULL, 0,
 #endif
+
+/* Expands to a complete SDL3REND_ShaderSource initializer for a shader stage
+ * data-array prefix (e.g. BRENDER_VERT). Initializers are inlined (instead of
+ * referencing static struct objects) so the arrays are valid MSVC C11: MSVC
+ * rejects static initializers that refer to non-constant objects (C2099). */
+#define SDL3REND_SOURCE(name)                          \
+    {                                                  \
+        name##_SPV, sizeof(name##_SPV),                \
+        SDL3REND_MSL(name) SDL3REND_DXIL(name)         \
+    }
+
+const SDL3REND_ShaderSource brender_shaders[2] = {
+    SDL3REND_SOURCE(BRENDER_VERT),
+    SDL3REND_SOURCE(BRENDER_FRAG),
 };
 
-static const SDL3REND_ShaderSource brender_frag = {
-    BRENDER_FRAG_SPV, sizeof(BRENDER_FRAG_SPV),
-#if SDL3REND_SHADERFORMAT_MSL_AVAILABLE
-    BRENDER_FRAG_METAL, sizeof(BRENDER_FRAG_METAL),
-#else
-    NULL, 0,
-#endif
-#if SDL3REND_SHADERFORMAT_DXIL_AVAILABLE
-    BRENDER_FRAG_DXIL, sizeof(BRENDER_FRAG_DXIL),
-#else
-    NULL, 0,
-#endif
+const SDL3REND_ShaderSource overlay_shaders[2] = {
+    SDL3REND_SOURCE(OVERLAY_VERT),
+    SDL3REND_SOURCE(OVERLAY_FRAG),
 };
 
-static const SDL3REND_ShaderSource overlay_vert = {
-    OVERLAY_VERT_SPV, sizeof(OVERLAY_VERT_SPV),
-#if SDL3REND_SHADERFORMAT_MSL_AVAILABLE
-    OVERLAY_VERT_METAL, sizeof(OVERLAY_VERT_METAL),
-#else
-    NULL, 0,
-#endif
-#if SDL3REND_SHADERFORMAT_DXIL_AVAILABLE
-    OVERLAY_VERT_DXIL, sizeof(OVERLAY_VERT_DXIL),
-#else
-    NULL, 0,
-#endif
+/* The driver's 2D content uses the same vertex/fragment pair. */
+const SDL3REND_ShaderSource default_shaders[2] = {
+    SDL3REND_SOURCE(BRENDER_VERT),
+    SDL3REND_SOURCE(BRENDER_FRAG),
 };
-
-static const SDL3REND_ShaderSource overlay_frag = {
-    OVERLAY_FRAG_SPV, sizeof(OVERLAY_FRAG_SPV),
-#if SDL3REND_SHADERFORMAT_MSL_AVAILABLE
-    OVERLAY_FRAG_METAL, sizeof(OVERLAY_FRAG_METAL),
-#else
-    NULL, 0,
-#endif
-#if SDL3REND_SHADERFORMAT_DXIL_AVAILABLE
-    OVERLAY_FRAG_DXIL, sizeof(OVERLAY_FRAG_DXIL),
-#else
-    NULL, 0,
-#endif
-};
-
-const SDL3REND_ShaderSource brender_shaders[2] = { brender_vert, brender_frag };
-const SDL3REND_ShaderSource overlay_shaders[2] = { overlay_vert, overlay_frag };
-const SDL3REND_ShaderSource default_shaders[2] = { brender_vert, brender_frag };
