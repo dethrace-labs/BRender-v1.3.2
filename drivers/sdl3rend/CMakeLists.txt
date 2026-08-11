@@ -14,7 +14,7 @@ find_package(SDL3 CONFIG QUIET)
 # glslangValidator's `-V -o` CLI.
 find_program(GLSL_COMPILER NAMES glslangValidator glslang glslc)
 if(GLSL_COMPILER)
-    get_filename_component(GLSL_COMPILER_NAME ${GLSL_COMPILER} NAME)
+    get_filename_component(GLSL_COMPILER_NAME ${GLSL_COMPILER} NAME_WE)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
