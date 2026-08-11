@@ -183,7 +183,7 @@ br_device_pixelmap* DevicePixelmapSDL3RENDAllocateFront(br_device* dev, br_outpu
     self->asFront.callbacks = *pt.callbacks;
 
     if (SDL3REND_VideoOpen(&self->asFront.video, self,
-            NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, 0,
+            NULL, NULL, NULL,
             &self->asFront.callbacks, pt.width, pt.height) == NULL) {
         BrResFree(self);
         return NULL;

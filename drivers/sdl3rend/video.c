@@ -15,6 +15,7 @@
 #include "brsdl3rend.h"
 #include "gstored.h"
 #include "sdl3_shaders.h"
+#include "sdl3rend_shader_formats.h"
 #include "video.h"
 
 #define SDL3REND_DEFAULT_RING_VBO_CAPACITY (512 * 1024)
@@ -343,14 +344,38 @@ static void ReleaseRings(HVIDEO hVideo) {
     }
 }
 
-SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const char* code, size_t code_size, SDL_GPUShaderStage stage) {
-    if (!code || code_size == 0) return NULL;
-
+SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const SDL3REND_ShaderSource* source, SDL_GPUShaderStage stage) {
     SDL_GPUShaderCreateInfo ci = {0};
-    ci.code = (const Uint8*)code;
-    ci.code_size = code_size;
-    ci.entrypoint = "main";
-    ci.format = SDL_GPU_SHADERFORMAT_SPIRV;
+
+    /* Select the source for the device's backend. The Metal backend always
+     * takes MSL source (the format mask is MSL | METALLIB); the D3D12 and
+     * Vulkan backends take DXIL and SPIR-V respectively. */
+    if (hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_SPIRV) {
+        ci.format = SDL_GPU_SHADERFORMAT_SPIRV;
+        ci.code = (const Uint8*)source->spirv;
+        ci.code_size = source->spirv_size;
+        ci.entrypoint = "main";
+    } else if (hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_MSL) {
+        ci.format = SDL_GPU_SHADERFORMAT_MSL;
+        ci.code = (const Uint8*)source->msl;
+        ci.code_size = source->msl_size;
+        ci.entrypoint = "main0";
+    } else if (hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_DXIL) {
+        ci.format = SDL_GPU_SHADERFORMAT_DXIL;
+        ci.code = (const Uint8*)source->dxil;
+        ci.code_size = source->dxil_size;
+        ci.entrypoint = "main";
+    } else {
+        BR_FATAL1("SDL3GPU: Unsupported device shader format 0x%x.", hVideo->shaderFormat);
+        return NULL;
+    }
+
+    if (!ci.code || ci.code_size == 0) {
+        BR_FATAL2("SDL3GPU: No %s shader source for device format 0x%x (not built into this binary).",
+            stage == SDL_GPU_SHADERSTAGE_VERTEX ? "vertex" : "fragment", ci.format);
+        return NULL;
+    }
+
     ci.stage = stage;
     ci.num_samplers = 0;
     ci.num_storage_textures = 0;
@@ -449,13 +474,17 @@ SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
     return pipeline;
 }
 
+static const char* SDL3REND_ShaderFormatName(SDL_GPUShaderFormat format) {
+    if (format & SDL_GPU_SHADERFORMAT_SPIRV) return "Vulkan (SPIR-V)";
+    if (format & SDL_GPU_SHADERFORMAT_MSL) return "Metal (MSL)";
+    if (format & SDL_GPU_SHADERFORMAT_DXIL) return "D3D12 (DXIL)";
+    return "unknown";
+}
+
 HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
-    const char* vertSpv, size_t vertSpvSize,
-    const char* fragSpv, size_t fragSpvSize,
-    const char* ovVertSpv, size_t ovVertSpvSize,
-    const char* ovFragSpv, size_t ovFragSpvSize,
-    const char* defVertSpv, size_t defVertSpvSize,
-    const char* defFragSpv, size_t defFragSpvSize,
+    const SDL3REND_ShaderSource brender[2],
+    const SDL3REND_ShaderSource overlay[2],
+    const SDL3REND_ShaderSource defaultShaders[2],
     br_device_sdl3_callback_procs* callbacks, int width, int height) {
 
     if (hVideo == NULL) {
@@ -471,12 +500,11 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
         hVideo->get_window_size = callbacks->get_window_size;
     }
 
-    /* Fall back to the embedded SPIR-V (sdl3_shaders.c) when the caller does
-     * not supply a shader. The caller may still override via the arguments. */
-    if (!vertSpv) { vertSpv = brender_vert_spv; vertSpvSize = brender_vert_spv_size; }
-    if (!fragSpv) { fragSpv = brender_frag_spv; fragSpvSize = brender_frag_spv_size; }
-    if (!ovVertSpv) { ovVertSpv = overlay_vert_spv; ovVertSpvSize = overlay_vert_spv_size; }
-    if (!ovFragSpv) { ovFragSpv = overlay_frag_spv; ovFragSpvSize = overlay_frag_spv_size; }
+    /* Fall back to the embedded sources (sdl3_shaders.c) when the caller does
+     * not supply shaders. */
+    if (!brender) brender = brender_shaders;
+    if (!overlay) overlay = overlay_shaders;
+    if (!defaultShaders) defaultShaders = brender_shaders;
 
     hVideo->window = callbacks && callbacks->get_window ? (SDL_Window*)callbacks->get_window() : NULL;
     if (hVideo->window == NULL) {
@@ -484,9 +512,29 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
         return NULL;
     }
 
-    hVideo->device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
+    /* Request every shader format this build embeds, so whichever backend SDL3
+     * GPU picks, its shader format is supported. On Metal the returned mask is
+     * MSL | METALLIB; we create MSL shaders (SDL3 accepts MSL source whenever
+     * the MSL bit is set). */
+    SDL_GPUShaderFormat shaderFormats = SDL_GPU_SHADERFORMAT_SPIRV;
+#if SDL3REND_SHADERFORMAT_MSL_AVAILABLE
+    shaderFormats |= SDL_GPU_SHADERFORMAT_MSL;
+#endif
+#if SDL3REND_SHADERFORMAT_DXIL_AVAILABLE
+    shaderFormats |= SDL_GPU_SHADERFORMAT_DXIL;
+#endif
+
+    hVideo->device = SDL_CreateGPUDevice(shaderFormats, true, NULL);
     if (!hVideo->device) {
         BR_FATAL("SDL3GPU: Failed to create GPU device.");
+        return NULL;
+    }
+    hVideo->shaderFormat = SDL_GetGPUShaderFormats(hVideo->device);
+    if ((hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_SPIRV) == 0 &&
+        (hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_MSL) == 0 &&
+        (hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_DXIL) == 0) {
+        BR_FATAL1("SDL3GPU: Device backend needs shader format 0x%x, which this build does not provide.",
+            hVideo->shaderFormat);
         return NULL;
     }
 
@@ -515,10 +563,10 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
     if (!CreateDefaultTexture(hVideo))
         goto cleanup;
 
-    hVideo->brenderVertShader = SDL3REND_CreateShader(hVideo, vertSpv, vertSpvSize, SDL_GPU_SHADERSTAGE_VERTEX);
-    hVideo->brenderFragShader = SDL3REND_CreateShader(hVideo, fragSpv, fragSpvSize, SDL_GPU_SHADERSTAGE_FRAGMENT);
-    hVideo->overlayVertShader = SDL3REND_CreateShader(hVideo, ovVertSpv, ovVertSpvSize, SDL_GPU_SHADERSTAGE_VERTEX);
-    hVideo->overlayFragShader = SDL3REND_CreateShader(hVideo, ovFragSpv, ovFragSpvSize, SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->brenderVertShader = SDL3REND_CreateShader(hVideo, &brender[SDL3REND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
+    hVideo->brenderFragShader = SDL3REND_CreateShader(hVideo, &brender[SDL3REND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->overlayVertShader = SDL3REND_CreateShader(hVideo, &overlay[SDL3REND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
+    hVideo->overlayFragShader = SDL3REND_CreateShader(hVideo, &overlay[SDL3REND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
     if (!hVideo->brenderVertShader || !hVideo->brenderFragShader ||
         !hVideo->overlayVertShader || !hVideo->overlayFragShader)
         goto cleanup_shaders;
@@ -577,11 +625,12 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
             goto cleanup_shaders;
     }
 
-    /* Default shaders/pipeline alias the brender ones when not provided. */
-    if (defVertSpv && defVertSpvSize)
-        hVideo->defaultVertShader = SDL3REND_CreateShader(hVideo, defVertSpv, defVertSpvSize, SDL_GPU_SHADERSTAGE_VERTEX);
-    if (defFragSpv && defFragSpvSize)
-        hVideo->defaultFragShader = SDL3REND_CreateShader(hVideo, defFragSpv, defFragSpvSize, SDL_GPU_SHADERSTAGE_FRAGMENT);
+    /* Default shaders/pipeline alias the brender ones unless the caller
+     * supplied a distinct pair. */
+    if (defaultShaders != brender_shaders) {
+        hVideo->defaultVertShader = SDL3REND_CreateShader(hVideo, &defaultShaders[SDL3REND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
+        hVideo->defaultFragShader = SDL3REND_CreateShader(hVideo, &defaultShaders[SDL3REND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+    }
     hVideo->defaultPipeline = hVideo->brenderPipeline;
 
     {
@@ -609,7 +658,8 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
             goto cleanup_shaders;
     }
 
-    BrLogPrintf("SDL3GPU: GPU device initialized (framebuffer %dx%d)\n",
+    BrLogPrintf("SDL3GPU: GPU device initialized (%s, framebuffer %dx%d)\n",
+        SDL3REND_ShaderFormatName(hVideo->shaderFormat),
         hVideo->windowWidth, hVideo->windowHeight);
 
     g_sdl3rend_video = hVideo;

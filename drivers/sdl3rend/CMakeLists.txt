@@ -17,6 +17,72 @@ if(GLSL_COMPILER)
     message(STATUS "Found GLSL compiler: ${GLSL_COMPILER} (auto-compile .glsl -> .spv)")
 endif()
 
+# --- Shader toolchain ---------------------------------------------------------
+#
+# The driver renders with SDL3 GPU, whose backends each require a different
+# shader format:
+#   - Vulkan:  SPIR-V, produced by glslangValidator/glslang/glslc (-V) from the
+#              filtered commonrend GLSL (existing pipeline).
+#   - Metal:   MSL, cross-compiled from the SPIR-V with spirv-cross
+#              (--msl --msl-decoration-binding so the [[buffer(N)]] /
+#              [[texture(N)]] indices land on the SDL3-GPU slots: model=0,
+#              scene=1, texture/sampler=0).
+#   - D3D12:   DXIL, cross-compiled from the SPIR-V with spirv-cross
+#              (--hlsl --shader-model 60) and compiled to DXIL with dxc.
+# Every available format is embedded at build time; video.c requests exactly
+# the formats this build produced and selects the matching source per device
+# (see sdl3rend_shader_formats.h and SDL3REND_CreateShader).
+#
+# MSL is mandatory on Apple: SDL3 GPU picks the Metal backend there, and a
+# build that can only produce SPIR-V would not run without MoltenVK. Fail at
+# configure time instead of at runtime.
+find_program(SPIRV_CROSS_COMPILER NAMES spirv-cross)
+if(SPIRV_CROSS_COMPILER)
+    message(STATUS "Found spirv-cross: ${SPIRV_CROSS_COMPILER} (SPIR-V -> MSL / HLSL)")
+endif()
+
+find_program(DXC_COMPILER NAMES dxc)
+if(DXC_COMPILER)
+    message(STATUS "Found dxc: ${DXC_COMPILER} (HLSL -> DXIL for D3D12)")
+endif()
+
+if(APPLE AND NOT SPIRV_CROSS_COMPILER)
+    message(FATAL_ERROR
+        "spirv-cross is required to build the sdl3rend driver on Apple "
+        "(MSL shaders for the Metal backend). Install it with: "
+        "brew install spirv-cross")
+endif()
+
+if(WIN32 AND NOT (SPIRV_CROSS_COMPILER AND DXC_COMPILER))
+    message(WARNING
+        "spirv-cross and/or dxc not found; the sdl3rend driver will fall back "
+        "to the Vulkan backend on Windows. Install spirv-cross and dxc to "
+        "enable the D3D12 (DXIL) backend.")
+endif()
+
+# Which shader formats does this build embed? Drives the device-create mask in
+# video.c (via sdl3rend_shader_formats.h). SPIR-V is always available: it is
+# either compiled here or embedded from the source tree.
+set(SDL3REND_SHADERFORMAT_MSL_AVAILABLE 0)
+set(SDL3REND_SHADERFORMAT_DXIL_AVAILABLE 0)
+if(GLSL_COMPILER AND SPIRV_CROSS_COMPILER)
+    set(SDL3REND_SHADERFORMAT_MSL_AVAILABLE 1)
+    if(DXC_COMPILER)
+        set(SDL3REND_SHADERFORMAT_DXIL_AVAILABLE 1)
+    endif()
+endif()
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sdl3rend_shader_formats.h"
+    "#ifndef SDL3REND_SHADER_FORMATS_H_\n"
+    "#define SDL3REND_SHADER_FORMATS_H_\n"
+    "\n"
+    "/* Auto-generated; describes which shader formats this build embeds. */\n"
+    "#define SDL3REND_SHADERFORMAT_SPIRV_AVAILABLE 1\n"
+    "#define SDL3REND_SHADERFORMAT_MSL_AVAILABLE ${SDL3REND_SHADERFORMAT_MSL_AVAILABLE}\n"
+    "#define SDL3REND_SHADERFORMAT_DXIL_AVAILABLE ${SDL3REND_SHADERFORMAT_DXIL_AVAILABLE}\n"
+    "\n"
+    "#endif\n")
+
 # Shared shaders live in drivers/commonrend with ##ifdef SDL3GPU/GL_ES/GL_CORE
 # markers. Filter for SPIR-V (plain GLSL, literal-first #version 450) before
 # compiling; the SDL3GPU marker keeps the set-1/2/3 binding layout that the
@@ -24,15 +90,24 @@ endif()
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
 
 set(SPV_GENERATED)
+set(MSL_GENERATED)
+set(DXIL_GENERATED)
 foreach(spv_file
     brender.vert.spv
     brender.frag.spv
     overlay.vert.spv
     overlay.frag.spv
 )
-    get_filename_component(spv_base ${spv_file} NAME_WE)
+    get_filename_component(spv_base ${spv_file} NAME)
+    string(REPLACE ".spv" "" spv_base ${spv_base})
     string(REPLACE ".spv" ".glsl" glsl_file ${spv_file})
     set(h_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_file}.h")
+
+    if(spv_base MATCHES "vert$")
+        set(shader_stage vert)
+    else()
+        set(shader_stage frag)
+    endif()
 
     if(GLSL_COMPILER)
         set(glsl_src "${SHADER_DIR}/${glsl_file}")
@@ -57,6 +132,64 @@ foreach(spv_file
         )
         set(embed_source_dir "${CMAKE_CURRENT_BINARY_DIR}")
         set(embed_depends ${spv_path})
+
+        if(SPIRV_CROSS_COMPILER)
+            # Metal: MSL source, compiled by Metal at runtime.
+            # --msl-decoration-binding maps the SPIR-V binding numbers onto the
+            # MSL indices, which for these shaders are exactly the SDL3-GPU
+            # uniform/sampler slots (model=0, scene=1, texture/sampler=0).
+            # The Metal backend also treats the shader as MSL at all times
+            # (even when METALLIB is the format bit), so this source is
+            # embedded as bytes regardless.
+            set(metal_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.metal")
+            add_custom_command(
+                OUTPUT ${metal_path}
+                COMMAND ${SPIRV_CROSS_COMPILER} ${spv_path} --msl --msl-decoration-binding --rename-entry-point main main0 ${shader_stage} --output ${metal_path}
+                DEPENDS ${spv_path}
+                COMMENT "Cross-compiling ${spv_base} → MSL"
+            )
+            set(metal_h "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.metal.h")
+            add_custom_command(
+                OUTPUT ${metal_h}
+                COMMAND ${CMAKE_COMMAND} "-DSOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}" "-DFILE=${spv_base}.metal" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+                DEPENDS ${metal_path}
+                COMMENT "Embedding ${spv_base}.metal"
+            )
+            list(APPEND MSL_GENERATED ${metal_h})
+
+            # HLSL (SM6.0) then DXIL. spirv-cross already emits the register
+            # spaces SDL3's D3D12 backend expects (vertex: b[0..1] space1;
+            # fragment: t/s space2, b[0..1] space3).
+            set(hlsl_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.hlsl")
+            add_custom_command(
+                OUTPUT ${hlsl_path}
+                COMMAND ${SPIRV_CROSS_COMPILER} ${spv_path} --hlsl --shader-model 60 --output ${hlsl_path}
+                DEPENDS ${spv_path}
+                COMMENT "Cross-compiling ${spv_base} → HLSL"
+            )
+            if(DXC_COMPILER)
+                if(shader_stage STREQUAL "vert")
+                    set(dxil_profile vs_6_0)
+                else()
+                    set(dxil_profile ps_6_0)
+                endif()
+                set(dxil_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.dxil")
+                add_custom_command(
+                    OUTPUT ${dxil_path}
+                    COMMAND ${DXC_COMPILER} -T ${dxil_profile} -E main -Fo ${dxil_path} ${hlsl_path}
+                    DEPENDS ${hlsl_path}
+                    COMMENT "Compiling ${spv_base} → DXIL (${dxil_profile})"
+                )
+                set(dxil_h "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.dxil.h")
+                add_custom_command(
+                    OUTPUT ${dxil_h}
+                    COMMAND ${CMAKE_COMMAND} "-DSOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}" "-DFILE=${spv_base}.dxil" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+                    DEPENDS ${dxil_path}
+                    COMMENT "Embedding ${spv_base}.dxil"
+                )
+                list(APPEND DXIL_GENERATED ${dxil_h})
+            endif()
+        endif()
     else()
         set(embed_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
         set(embed_depends ${CMAKE_CURRENT_SOURCE_DIR}/${spv_file})
@@ -175,6 +308,8 @@ add_library(sdl3rend
         ${SDL3REND_STATE_FILES}
         ${INC_FILES}
         ${SPV_GENERATED}
+        ${MSL_GENERATED}
+        ${DXIL_GENERATED}
         )
 
 get_target_property(target_type sdl3rend TYPE)

@@ -40,11 +40,11 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl-dev glslang-tools libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev ${{ matrix.platform.apt-packages }}
+          sudo apt-get install -y libgl-dev glslang-tools spirv-cross libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev ${{ matrix.platform.apt-packages }}
       - name: Install macOS dependencies
         if: ${{ runner.os == 'macOS' }}
         run: |
-          brew install glslang
+          brew install glslang spirv-cross
       - name: Install glslang (Windows)
         if: ${{ runner.os == 'Windows' }}
         shell: pwsh
@@ -52,6 +52,21 @@ jobs:
           Invoke-WebRequest -Uri https://github.com/KhronosGroup/glslang/releases/download/main-tot/glslang-main-windows-x86_64-release.zip -OutFile glslang.zip
           Expand-Archive glslang.zip -DestinationPath glslang
           echo "$((Resolve-Path glslang/bin).Path)" >> $env:GITHUB_PATH
+      - name: Build spirv-cross (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch vulkan-sdk-1.4.357.0 https://github.com/KhronosGroup/SPIRV-Cross.git
+          cmake -S SPIRV-Cross -B SPIRV-Cross/build -GNinja -DCMAKE_BUILD_TYPE=Release -DSPIRV_CROSS_SHARED=OFF -DSPIRV_CROSS_CLI=ON
+          cmake --build SPIRV-Cross/build --target spirv-cross
+          echo "$((Resolve-Path SPIRV-Cross/build).Path)" >> $env:GITHUB_PATH
+      - name: Install dxc (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2607/dxc_2026_07_29.zip -OutFile dxc.zip
+          Expand-Archive dxc.zip -DestinationPath dxc
+          echo "$((Resolve-Path dxc/bin/x64).Path)" >> $env:GITHUB_PATH
       - name: Build SDL3 from source
         shell: bash
         env:

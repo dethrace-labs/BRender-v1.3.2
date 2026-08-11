@@ -9,6 +9,7 @@ extern "C" {
 #include <SDL3/SDL_gpu.h>
 
 #include "shader_data.h"
+#include "sdl3_shaders.h"
 
 struct br_device_pixelmap;
 
@@ -45,6 +46,7 @@ typedef struct _VIDEO {
     void* res;
 
     SDL_GPUDevice* device;
+    SDL_GPUShaderFormat shaderFormat;
     SDL_Window* window;
     SDL_GPUTextureFormat swapchainTextureFormat;
     SDL_GPUTextureFormat depthFormat;
@@ -60,8 +62,9 @@ typedef struct _VIDEO {
     SDL_GPUTexture* transferTexture;
     SDL_GPUTexture* depthTexture;
 
-    /* Shaders (SPIR-V from drivers/commonrend/*.glsl, embedded via
-     * sdl3_shaders.c) and pipelines. Pipelines render into transferTexture's
+    /* Shaders (per-format sources from drivers/commonrend/*.glsl, embedded via
+     * sdl3_shaders.c and selected by the device's shader format — SPIR-V /
+     * MSL / DXIL) and pipelines. Pipelines render into transferTexture's
      * format, so they never need rebuilding on swapchain recreation. */
     SDL_GPUShader* brenderVertShader;
     SDL_GPUShader* brenderFragShader;
@@ -217,19 +220,19 @@ static inline void SDL3REND_GetWindowSize(HVIDEO hVideo, int* width, int* height
 }
 
 HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
-    const char* brender_vert_spv, size_t brender_vert_size,
-    const char* brender_frag_spv, size_t brender_frag_size,
-    const char* overlay_vert_spv, size_t overlay_vert_size,
-    const char* overlay_frag_spv, size_t overlay_frag_size,
-    const char* default_vert_spv, size_t default_vert_size,
-    const char* default_frag_spv, size_t default_frag_size,
+    const SDL3REND_ShaderSource* brender,
+    const SDL3REND_ShaderSource* overlay,
+    const SDL3REND_ShaderSource* defaultShaders,
     br_device_sdl3_callback_procs* callbacks, int width, int height);
 
 void SDL3REND_VideoClose(HVIDEO hVideo);
 
 void SDL3REND_VideoResize(HVIDEO hVideo);
 
-SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const char* code, size_t code_size, SDL_GPUShaderStage stage);
+/* Creates a shader for the device's backend. Picks the matching format from
+ * `source` (SPIR-V / MSL / DXIL) and fails with BR_FATAL if the format the
+ * device needs was not produced by this build. */
+SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const SDL3REND_ShaderSource* source, SDL_GPUShaderStage stage);
 
 SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
     SDL_GPUShader* vertModule, SDL_GPUShader* fragModule,
