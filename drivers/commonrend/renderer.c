@@ -231,6 +231,23 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             hVideo->viewportW = (int)vp_w;
             hVideo->viewportH = (int)vp_h;
 
+            /* Sub-area scenes (rear-view mirror, wreck summary, 3D PIP) draw
+             * CPU pre-scene content (grey fills, grid lines) into lockedPixels
+             * that must persist UNDER the 3D. Snapshot that content into a
+             * background texture and draw it here, before the 3D, so it shows
+             * through where the 3D does not cover the rect. The sceneEnd purge
+             * erases the same content from the composite so it does not also
+             * appear on top of the 3D. Full-screen scenes are skipped — their
+             * pre-scene 2D is purged at firstScene and the 3D covers them. */
+            if (colour_target != NULL &&
+                (colour_target->pm_width < screen->pm_width ||
+                 colour_target->pm_height < screen->pm_height) &&
+                !SDL3REND_IsMapMode(hVideo)) {
+                SDL3REND_DrawSceneBackground(hVideo,
+                    colour_target->pm_base_x, colour_target->pm_base_y,
+                    colour_target->pm_width, colour_target->pm_height);
+            }
+
             if (colour_target != NULL &&
                 colour_target->pm_width >= screen->pm_width &&
                 colour_target->pm_height >= screen->pm_height &&

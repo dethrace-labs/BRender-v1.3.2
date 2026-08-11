@@ -16,6 +16,15 @@ struct br_device_pixelmap;
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
+/* Sub-area scenes (rear-view mirror, wreck summary, 3D PIP) draw CPU
+ * pre-scene content (grey fills, grid lines) into lockedPixels that must
+ * persist under the 3D. That content is uploaded into a pooled BGRA texture
+ * at sceneBegin and drawn as an opaque quad under the 3D. A pool is required
+ * because the uploads happen mid-frame while every draw of the main command
+ * buffer executes at present — a single texture would be clobbered by the
+ * next scene's upload before the earlier scene's draws sample it. */
+#define SDL3REND_BG_POOL 4
+
 /* Uniform slot / sampler slot mapping (matches the shared GLSL bindings). */
 #define SDL3REND_MODEL_UNIFORM_SLOT     0
 #define SDL3REND_SCENE_UNIFORM_SLOT     1
@@ -159,6 +168,11 @@ typedef struct _VIDEO {
     SDL_GPUBuffer* overlayQuadIbo;
     int overlayDirty;
     SDL_GPUTexture* overlayTexture;
+    /* Background texture pool for sub-area scenes (see SDL3REND_BG_POOL).
+     * Created lazily at game-screen size when a sub-area scene first needs
+     * one; see SDL3REND_DrawSceneBackground. */
+    SDL_GPUTexture* bgTexture[SDL3REND_BG_POOL];
+    int bgSceneIndex;
     int dimAreaCount;
     br_rectangle dimAreas[8];
     int clearAreaCount;
@@ -283,6 +297,14 @@ void SDL3REND_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
 /* Draws the overlay quad (samples overlayTexture) into the currently active
  * render pass. */
 void SDL3REND_OverlayDraw(HVIDEO hVideo);
+
+/* Snapshot the colour_target rect (gx,gy,gw,gh) of the CPU locked buffer
+ * (lockedPixels) into a pooled BGRA texture and draw it as an opaque quad
+ * mapped to the scene viewport, UNDER the 3D. Call from sceneBegin after the
+ * viewport is set, before the first model draw. The sceneEnd purge erases the
+ * same rect from the 2D composite, so the content only appears behind the 3D.
+ * No-op when there is nothing to draw or the pool is exhausted. */
+void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh);
 
 /* Uploads `hostDataSize` bytes of host memory into `texture` (width x height
  * at dstX,dstY) through the current frame slot's staging transfer buffer. The

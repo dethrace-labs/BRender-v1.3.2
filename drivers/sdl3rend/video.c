@@ -721,6 +721,9 @@ void SDL3REND_VideoClose(HVIDEO hVideo) {
     if (hVideo->brenderFragShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->brenderFragShader); hVideo->brenderFragShader = NULL; }
     if (hVideo->brenderVertShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->brenderVertShader); hVideo->brenderVertShader = NULL; }
     if (hVideo->overlayTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
+    for (int i = 0; i < SDL3REND_BG_POOL; i++) {
+        if (hVideo->bgTexture[i]) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->bgTexture[i]); hVideo->bgTexture[i] = NULL; }
+    }
     if (hVideo->defaultTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->defaultTexture); hVideo->defaultTexture = NULL; }
     if (hVideo->overlayQuadIbo) { SDL3_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadIbo); hVideo->overlayQuadIbo = NULL; }
     if (hVideo->overlayQuadVbo) { SDL3_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadVbo); hVideo->overlayQuadVbo = NULL; }
@@ -810,6 +813,7 @@ void SDL3REND_EnsureRecording(HVIDEO hVideo) {
     hVideo->dimAreaCount = 0;
     hVideo->clearAreaCount = 0;
     hVideo->pratcamAreaCount = 0;
+    hVideo->bgSceneIndex = 0;
 
     /* Resize detection. */
     {
@@ -1063,6 +1067,146 @@ void SDL3REND_OverlayDraw(HVIDEO hVideo) {
 
     SDL3_DrawGPUIndexedPrimitives(pass, SDL3REND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
     hVideo->overlayDirty = 0;
+}
+
+void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh) {
+    if (!hVideo->renderPassActive || !hVideo->currentPass) return;
+    if (!hVideo->lockedPixels || gw <= 0 || gh <= 0) return;
+    if (!hVideo->overlayPipeline || !hVideo->overlaySampler) return;
+    if (hVideo->pm_width <= 0 || hVideo->pm_height <= 0) return;
+    if (hVideo->windowWidth <= 0 || hVideo->windowHeight <= 0) return;
+
+    int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
+
+    int slot = hVideo->bgSceneIndex;
+    hVideo->bgSceneIndex = (hVideo->bgSceneIndex + 1) % SDL3REND_BG_POOL;
+
+    SDL_GPUTexture* tex = hVideo->bgTexture[slot];
+    if (!tex) {
+        SDL_GPUTextureCreateInfo ti = {0};
+        ti.type = SDL_GPU_TEXTURETYPE_2D;
+        ti.format = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
+        ti.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+        ti.width = (Uint32)hVideo->pm_width;
+        ti.height = (Uint32)hVideo->pm_height;
+        ti.layer_count_or_depth = 1;
+        ti.num_levels = 1;
+        ti.sample_count = SDL_GPU_SAMPLECOUNT_1;
+        hVideo->bgTexture[slot] = SDL3_CreateGPUTexture(hVideo->device, &ti);
+        if (!hVideo->bgTexture[slot])
+            return;
+        tex = hVideo->bgTexture[slot];
+    }
+
+    /* Snapshot the scene rect's CPU pre-scene content as BGRA8888 (the magenta
+     * sentinel becomes transparent so the blended quad does not tint it). This
+     * runs at sceneBegin, before the 3D draws; the sceneEnd purge later wipes
+     * the rect from lockedPixels so the composite will not re-draw it on top. */
+    br_uint_32* bgra = BrScratchAllocate((size_t)gw * gh * 4);
+    if (!bgra)
+        return;
+
+    if (bpp == 2) {
+        int rShift = (hVideo->pm_type == BR_PMT_RGB_565) ? 11 : 10;
+        int gShift = (hVideo->pm_type == BR_PMT_RGB_565) ? 5 : 5;
+        int gMask = (hVideo->pm_type == BR_PMT_RGB_565) ? 0x3F : 0x1F;
+        int gDiv = (hVideo->pm_type == BR_PMT_RGB_565) ? 63 : 31;
+        int row_w = hVideo->pm_row_bytes / 2;
+        const br_uint_16* src = (const br_uint_16*)hVideo->lockedPixels;
+        for (int y = 0; y < gh; y++) {
+            for (int x = 0; x < gw; x++) {
+                br_uint_16 p = src[(gy + y) * row_w + (gx + x)];
+                if (p == BR_COLOUR_565(31, 0, 31)) {
+                    bgra[y * gw + x] = 0;
+                } else {
+                    int r5 = (p >> rShift) & 0x1F;
+                    int g = (p >> gShift) & gMask;
+                    int b5 = p & 0x1F;
+                    bgra[y * gw + x] = (b5 * 255 / 31)
+                        | ((g * 255 / gDiv) << 8)
+                        | ((r5 * 255 / 31) << 16)
+                        | (0xFF << 24);
+                }
+            }
+        }
+    } else {
+        /* 4 bpp: raw copy; the magenta sentinel samples as rgb==(1,0,1) and is
+         * discarded by overlay.frag. */
+        int row_w = hVideo->pm_row_bytes / 4;
+        const br_uint_32* src = (const br_uint_32*)hVideo->lockedPixels;
+        for (int y = 0; y < gh; y++)
+            memcpy(&bgra[y * gw], &src[(gy + y) * row_w + gx], (size_t)gw * 4);
+    }
+
+    if (SDL3REND_UploadBufferToImage(hVideo, tex, (uint32_t)gw, (uint32_t)gh,
+            (uint32_t)gx, (uint32_t)gy, bgra, (size_t)gw * gh * 4) != 0) {
+        BrScratchFree(bgra);
+        return;
+    }
+    BrScratchFree(bgra);
+
+    /* The quad fills the whole scene viewport with NDC +-1: the viewport set
+     * in sceneBegin already confines it to the scene rect's on-screen area
+     * (and the scissor clips to it), so this matches the full-screen overlay
+     * quad. overlay.vert flips v (1.0 - v), so the viewport TOP vertex (NDC
+     * +1) must carry uv.y = 1 - v1 (rect bottom row) and the BOTTOM vertex
+     * (NDC -1) uv.y = 1 - v0 (rect top row) — the rect then lands upright at
+     * its on-screen position after the present flip, exactly like the 3D of
+     * the same scene and the full-screen overlay quad. */
+    float u0 = (float)gx / (float)hVideo->pm_width;
+    float u1 = (float)(gx + gw) / (float)hVideo->pm_width;
+    float v0 = (float)gy / (float)hVideo->pm_height;
+    float v1 = (float)(gy + gh) / (float)hVideo->pm_height;
+
+    float quad[4][4] = {
+        { -1.0f,  1.0f, u0, 1.0f - v1 },
+        { -1.0f, -1.0f, u0, 1.0f - v0 },
+        {  1.0f, -1.0f, u1, 1.0f - v0 },
+        {  1.0f,  1.0f, u1, 1.0f - v1 },
+    };
+
+    /* Sub-allocate the 4 verts from the ring VBO (same pattern as small model
+     * rebuilds); the ring upload at present makes them visible to this draw. */
+    int f = hVideo->currentFrame;
+    size_t size = sizeof(quad);
+    size_t offset = hVideo->dynVboOffset[f];
+    offset = (offset + 15) & ~(size_t)15;
+    if (!hVideo->isRecording || hVideo->dynVboMapped[f] == NULL ||
+        offset + size > hVideo->dynVboCapacity)
+        return;
+    memcpy((char*)hVideo->dynVboMapped[f] + offset, quad, size);
+    hVideo->dynVboOffset[f] = offset + size;
+    hVideo->dynVboWritten[f] = hVideo->dynVboOffset[f];
+
+    SDL_GPURenderPass* pass = hVideo->currentPass;
+
+    if (hVideo->lastPipeline != hVideo->overlayPipeline) {
+        SDL3_BindGPUGraphicsPipeline(pass, hVideo->overlayPipeline);
+        hVideo->lastPipeline = hVideo->overlayPipeline;
+    }
+
+    SDL_GPUBufferBinding vbo = { hVideo->dynVbo[f], offset };
+    if (hVideo->lastVbo != hVideo->dynVbo[f] || hVideo->lastVboOffset != offset) {
+        SDL3_BindGPUVertexBuffers(pass, 0, &vbo, 1);
+        hVideo->lastVbo = hVideo->dynVbo[f];
+        hVideo->lastVboOffset = offset;
+    }
+
+    SDL_GPUBufferBinding ibo = { hVideo->overlayQuadIbo, 0 };
+    if (hVideo->lastIbo != hVideo->overlayQuadIbo || hVideo->lastIboOffset != 0) {
+        SDL3_BindGPUIndexBuffer(pass, &ibo, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+        hVideo->lastIbo = hVideo->overlayQuadIbo;
+        hVideo->lastIboOffset = 0;
+    }
+
+    if (hVideo->lastTexture != tex || hVideo->lastSampler != hVideo->overlaySampler) {
+        SDL_GPUTextureSamplerBinding tsb = { tex, hVideo->overlaySampler };
+        SDL3_BindGPUFragmentSamplers(pass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+        hVideo->lastTexture = tex;
+        hVideo->lastSampler = hVideo->overlaySampler;
+    }
+
+    SDL3_DrawGPUIndexedPrimitives(pass, SDL3REND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
 }
 
 int SDL3REND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
