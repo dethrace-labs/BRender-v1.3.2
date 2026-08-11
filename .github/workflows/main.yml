@@ -21,6 +21,8 @@ jobs:
           - { name: 'Windows',  arch: 'Win32',      os: windows-latest }
           - { name: 'Windows',  arch: 'x64',        os: windows-latest }
 
+    env:
+      SDL3_TAG: release-3.4.14
     defaults:
       run:
         shell: sh
@@ -50,11 +52,31 @@ jobs:
           Invoke-WebRequest -Uri https://github.com/KhronosGroup/glslang/releases/download/main-tot/glslang-main-windows-x86_64-release.zip -OutFile glslang.zip
           Expand-Archive glslang.zip -DestinationPath glslang
           echo "$((Resolve-Path glslang/bin).Path)" >> $env:GITHUB_PATH
+      - name: Build SDL3 from source
+        shell: bash
+        env:
+          SDL3_PREFIX: ${{ runner.temp }}/sdl3-prefix
+        run: |
+          git clone --depth 1 --branch "$SDL3_TAG" https://github.com/libsdl-org/SDL.git SDL3
+          arch_args=()
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            arch_args+=(-DCMAKE_OSX_ARCHITECTURES="x86_64;arm64")
+          fi
+          cmake -S SDL3 -B SDL3/build -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$SDL3_PREFIX" \
+            -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF \
+            "${arch_args[@]}"
+          cmake --build SDL3/build
+          cmake --install SDL3/build
       - name: 'Configure (CMake)'
         id: configure
+        env:
+          SDL3_PREFIX: ${{ runner.temp }}/sdl3-prefix
         run: |
           cmake -B build -GNinja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_PREFIX_PATH="$SDL3_PREFIX" \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.platform.cmake-toolchain-file }} \
             ${{ matrix.platform.cmake-args }}
       - name: 'Build (CMake)'

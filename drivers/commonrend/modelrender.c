@@ -95,9 +95,7 @@ void StoredSDL3RENDRenderGroup(br_geometry_stored* self, br_renderer* renderer, 
         StoredGLApplyProperties(hVideo, renderer->state.current,
             MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE, &model, default_tex);
 
-        byteswap_ubo(&model, sizeof(model));
         glBufferData(GL_UNIFORM_BUFFER, sizeof(model), &model, GL_STATIC_DRAW);
-        byteswap_ubo(&model, sizeof(model));
         glDrawElements(GL_TRIANGLES, groupinfo->count, GL_UNSIGNED_SHORT, groupinfo->offset);
         GL_CHECK_ERROR();
     }

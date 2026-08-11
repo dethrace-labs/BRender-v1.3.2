@@ -108,9 +108,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 
         glUseProgram(hVideo->brenderProgram.program);
         glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
-        byteswap_ubo(&self->state.cache.scene, sizeof(self->state.cache.scene));
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
-        byteswap_ubo(&self->state.cache.scene, sizeof(self->state.cache.scene));
 
         // OpenGL upside downness
         if (colour_target->pm_base_y != 0) {
