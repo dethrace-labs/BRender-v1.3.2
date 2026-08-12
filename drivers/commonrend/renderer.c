@@ -63,6 +63,20 @@ br_renderer* BREND_FN(Renderer, Allocate)(br_device* device, br_renderer_facilit
     return (br_renderer*)self;
 }
 
+/*
+ * Mirror a colour target's base_y about its containing surface's vertical
+ * extent, since both backends draw the frame inverted vs game coordinates.
+ * Full-screen targets (pm_base_y == 0) are unaffected; the non-sub path is
+ * parity-only.
+ */
+static br_uint_16 RendererFlipBaseY(br_device_pixelmap* colour_target, br_uint_16 screen_height) {
+    if (colour_target->pm_base_y == 0)
+        return 0;
+    if (colour_target->sub_pixelmap)
+        return colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
+    return screen_height - colour_target->pm_height - colour_target->pm_base_y;
+}
+
 static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer* self) {
     br_device_pixelmap* screen = self->pixelmap->screen;
     HVIDEO hVideo = &screen->asFront.video;
@@ -109,14 +123,8 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
         glBindBufferBase(GL_UNIFORM_BUFFER, hVideo->brenderProgram.blockBindingScene, hVideo->brenderProgram.uboScene);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(self->state.cache.scene), &self->state.cache.scene);
 
-        // OpenGL upside downness
-        if (colour_target->pm_base_y != 0) {
-            if (colour_target->sub_pixelmap) {
-                base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
-            } else {
-                base_y = colour_target->pm_height - colour_target->pm_base_y;
-            }
-        }
+        /* OpenGL upside downness: mirror sub-area base_y (shared with SDL3). */
+        base_y = RendererFlipBaseY(colour_target, screen->pm_height);
 
         BREND_FN(DevicePixelmap, GetViewport)(colour_target->screen, &x, &y, &rx, &ry);
         glViewport(colour_target->pm_base_x * rx + x, base_y * ry + y, colour_target->pm_width * rx, colour_target->pm_height * ry);
@@ -170,42 +178,14 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             int win_w = hVideo->windowWidth, win_h = hVideo->windowHeight;
 
             if (colour_target != NULL) {
-                /* Replicate the harness letterbox viewport (calculate_viewport in
-                 * sdl3.c) from the window size + screen pixelmap size so the 4:3
-                 * content is scaled aspect-preserving and centered (matching
-                 * glrend), with black pillarbox/letterbox bars when the window
-                 * shape differs. The offscreen transfer texture is window-sized,
-                 * so the viewport is in window pixels. */
-                if (screen->pm_height > 0 && win_h > 0) {
-                    float aspect = (float)win_w / (float)win_h;
-                    float target = (float)screen->pm_width / (float)screen->pm_height;
-                    int vp_width = win_w, vp_height = win_h;
-                    if (aspect > target) {
-                        vp_width = (int)((float)win_h * target + 0.5f);
-                    } else {
-                        vp_height = (int)((float)win_w / target + 0.5f);
-                    }
-                    x = (win_w - vp_width) / 2;
-                    y = (win_h - vp_height) / 2;
-                    rx = (float)vp_width / (float)screen->pm_width;
-                    ry = (float)vp_height / (float)screen->pm_height;
-                }
-                /* The present blit (SDL3REND_Present) flips the whole transfer
-                 * vertically, so a sub-area scene must render into the mirrored
-                 * transfer rows to land at its game rect on screen. This mirrors
-                 * the GL driver's base_y flip above: the full-screen scene has
-                 * pm_base_y == 0 and is unaffected; sub-areas (rear-view mirror,
-                 * 3D PIP, cockpit render window) shift so the on-screen position
-                 * matches their pm_base_y in game coordinates. The CPU-side purge
-                 * (sceneEnd) stays in game coordinates and needs no change. */
-                int32_t vp_base_y = colour_target->pm_base_y;
-                if (colour_target->pm_base_y != 0) {
-                    if (colour_target->sub_pixelmap) {
-                        vp_base_y = colour_target->parent_height - colour_target->pm_height - colour_target->pm_base_y;
-                    } else {
-                        vp_base_y = screen->pm_height - colour_target->pm_height - colour_target->pm_base_y;
-                    }
-                }
+                /* Letterbox the 4:3 screen into the window (shared helper, see
+                 * SDL3REND_LetterboxViewport); transfer is window-sized. */
+                SDL3REND_LetterboxViewport(win_w, win_h, screen->pm_width, screen->pm_height,
+                    &x, &y, NULL, NULL, &rx, &ry);
+                /* The present blit flips the transfer vertically, so sub-area
+                 * scenes render into mirrored rows (RendererFlipBaseY); the
+                 * CPU-side purge (sceneEnd) stays in game coordinates. */
+                int32_t vp_base_y = RendererFlipBaseY(colour_target, screen->pm_height);
                 vp_x = (float)colour_target->pm_base_x * rx + (float)x;
                 vp_y = (float)vp_base_y * ry + (float)y;
                 vp_w = (float)colour_target->pm_width * rx;

@@ -1000,6 +1000,29 @@ int SDL3REND_Present(HVIDEO hVideo) {
     return 0;
 }
 
+/* Letterbox: centre pm_w x pm_h in win_w x win_h, returning the scaled,
+ * centered rect and pm->window scale factors (rx, ry). Shared by sceneBegin
+ * and the overlay; any output may be NULL (full window, scale 1 if no size). */
+void SDL3REND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
+    int* vp_x, int* vp_y, int* vp_w, int* vp_h, float* rx, float* ry) {
+    int vp_width = win_w, vp_height = win_h;
+    if (pm_w > 0 && pm_h > 0 && win_h > 0) {
+        float aspect = (float)win_w / (float)win_h;
+        float target = (float)pm_w / (float)pm_h;
+        if (aspect > target) {
+            vp_width = (int)((float)win_h * target + 0.5f);
+        } else {
+            vp_height = (int)((float)win_w / target + 0.5f);
+        }
+    }
+    if (vp_x) *vp_x = (win_w - vp_width) / 2;
+    if (vp_y) *vp_y = (win_h - vp_height) / 2;
+    if (vp_w) *vp_w = vp_width;
+    if (vp_h) *vp_h = vp_height;
+    if (rx) *rx = (pm_w > 0 && vp_width > 0) ? (float)vp_width / (float)pm_w : 1.0f;
+    if (ry) *ry = (pm_h > 0 && vp_height > 0) ? (float)vp_height / (float)pm_h : 1.0f;
+}
+
 void SDL3REND_OverlayDraw(HVIDEO hVideo) {
     if (!hVideo->renderPassActive || !hVideo->currentPass) return;
     if (!hVideo->overlayDirty) return;
@@ -1010,20 +1033,13 @@ void SDL3REND_OverlayDraw(HVIDEO hVideo) {
     SDL_GPUViewport viewport = {0};
     viewport.max_depth = 1.0f;
     SDL_Rect scissor = {0, 0, hVideo->windowWidth, hVideo->windowHeight};
-    if (hVideo->pm_height > 0 && hVideo->windowHeight > 0) {
-        /* Same letterbox math as the scene viewport (renderer.c sceneBegin):
-         * centre the 4:3 overlay in the window and scale it aspect-preserving,
-         * matching glrend. The overlay texture is the game-screen size. */
-        float aspect = (float)hVideo->windowWidth / (float)hVideo->windowHeight;
-        float target = (float)hVideo->pm_width / (float)hVideo->pm_height;
-        int vp_width = hVideo->windowWidth, vp_height = hVideo->windowHeight;
-        if (aspect > target) {
-            vp_width = (int)((float)hVideo->windowHeight * target + 0.5f);
-        } else {
-            vp_height = (int)((float)hVideo->windowWidth / target + 0.5f);
-        }
-        int vp_x = (hVideo->windowWidth - vp_width) / 2;
-        int vp_y = (hVideo->windowHeight - vp_height) / 2;
+    {
+        /* Same letterbox as the scene viewport: centre the 4:3 overlay in the
+         * window, matching glrend. Overlay texture is game-screen sized. */
+        int vp_x, vp_y, vp_width, vp_height;
+        SDL3REND_LetterboxViewport(hVideo->windowWidth, hVideo->windowHeight,
+            hVideo->pm_width, hVideo->pm_height,
+            &vp_x, &vp_y, &vp_width, &vp_height, NULL, NULL);
         viewport.x = (float)vp_x;
         viewport.y = (float)vp_y;
         viewport.w = (float)vp_width;
@@ -1032,9 +1048,6 @@ void SDL3REND_OverlayDraw(HVIDEO hVideo) {
         scissor.y = vp_y;
         scissor.w = vp_width;
         scissor.h = vp_height;
-    } else {
-        viewport.w = (float)hVideo->windowWidth;
-        viewport.h = (float)hVideo->windowHeight;
     }
     SDL3_SetGPUViewport(pass, &viewport);
     SDL3_SetGPUScissor(pass, &scissor);

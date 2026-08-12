@@ -298,6 +298,12 @@ void SDL3REND_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
  * render pass. */
 void SDL3REND_OverlayDraw(HVIDEO hVideo);
 
+/* Letterbox: centre pm_w x pm_h in win_w x win_h, returning the scaled,
+ * centered rect and scale factors (rx, ry). Any output may be NULL. Shared by
+ * sceneBegin and the overlay draw. */
+void SDL3REND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
+    int* vp_x, int* vp_y, int* vp_w, int* vp_h, float* rx, float* ry);
+
 /* Snapshot the colour_target rect (gx,gy,gw,gh) of the CPU locked buffer
  * (lockedPixels) into a pooled BGRA texture and draw it as an opaque quad
  * mapped to the scene viewport, UNDER the 3D. Call from sceneBegin after the
