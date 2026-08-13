@@ -821,6 +821,7 @@ void SDL3GPUREND_EnsureRecording(HVIDEO hVideo) {
     hVideo->clearAreaCount = 0;
     hVideo->pratcamAreaCount = 0;
     hVideo->bgSceneIndex = 0;
+    hVideo->pendingMainPurge = 0;
 
     /* Resize detection. */
     {

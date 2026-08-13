@@ -169,17 +169,26 @@ typedef struct _VIDEO {
     int overlayDirty;
     /* Per-frame flag: the CPU overlay (lockedPixels) had been flushed to the
      * overlay texture before the FIRST scene of the frame began. Captured from
-     * overlayDirty once per frame (firstScene only) in sceneBegin. 2D-primary
-     * frames (the in-game map screen) set it; racing frames (whose first scene
-     * is the 3D view, overlayDirty==0) do not. It gates the main viewport purge
-     * and the dim-quad handling: on the map screen the flushed map image is
-     * dimmed in place and text drawn after stays bright, while racing dim quads
-     * purge the cockpit so the GPU dim dims the 3D underneath. The mid-frame
-     * flush before the pratcam also sets overlayDirty, but must NOT re-classify
-     * the frame, so sub-area background handling reads overlayDirty directly.
-     * This replaces the old get_map_mode host callback, so the driver no longer
-     * depends on any game logic. */
+     * overlayDirty once per frame (firstScene only) in sceneBegin, then
+     * RE-CLASSIFIED at the first model draw of that scene (see pendingMainPurge):
+     * a dim-quad first model keeps it (2D-primary map frame), any other first
+     * model clears it (racing frame whose pre-scene flush was only the sky/fog
+     * fill). It gates the dim-quad handling: on the map screen the flushed map
+     * image is dimmed in place and text drawn after stays bright, while racing
+     * dim quads purge the cockpit so the GPU dim dims the 3D underneath. The
+     * mid-frame flush before the pratcam also sets overlayDirty, but must NOT
+     * re-classify the frame, so sub-area background handling reads overlayDirty
+     * directly. This replaces the old get_map_mode host callback, so the driver
+     * no longer depends on any game logic. */
     int overlayPrimaryFrame;
+    /* Armed at the first scene's sceneBegin when that scene targets the full
+     * screen; consumed at the first model draw of that scene. Whether the purge
+     * runs is decided there, because a pre-first-scene flush means either a
+     * 2D-primary map frame (first model is a dim quad, which dims the flushed
+     * map in place — cancel the purge) or a racing frame with a pre-scene
+     * sky/fog fill that must not cover the 3D (purge the rect and clear the
+     * overlay-primary classification). Reset every frame. */
+    int pendingMainPurge;
     SDL_GPUTexture* overlayTexture;
     /* Background texture pool for sub-area scenes (see SDL3GPUREND_BG_POOL).
      * Created lazily at game-screen size when a sub-area scene first needs

@@ -142,21 +142,26 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
     {
         /* Whether this is the FIRST scene of the frame. renderingStarted is 0 at
          * frame start (reset by SDL3GPUREND_EnsureRecording) and set to 1 by the first
-         * sceneBegin. The mainViewport purge below must only run for that first
-         * scene: the dim quads (DimRectangle -> BrZbSceneRender) call sceneBegin
+         * sceneBegin. The mainViewport purge must only run for that first scene:
+         * the dim quads (DimRectangle -> BrZbSceneRender) call sceneBegin
          * mid-frame with a full-screen target, and purging there would erase the
          * post-scene 2D (headup text, damage meter, cockpit dashboard) already
          * written into lockedPixels. */
         int firstScene = !hVideo->renderingStarted;
 
-        /* 2D-primary frames (the in-game map screen) flush the CPU overlay to
-         * the overlay texture before the FIRST scene of the frame; the dim-quad
-         * scene that follows then dims it. Capture that ONCE PER FRAME (firstScene
-         * only): the mid-frame cockpit flush before the pratcam also sets
-         * overlayDirty, but re-capturing then would misclassify the racing HUD
-         * dims as overlay-primary and dim the yellow headup text. */
+        /* Capture whether the CPU overlay was flushed before this scene began,
+         * ONCE PER FRAME (firstScene only): the mid-frame cockpit flush before
+         * the pratcam also sets overlayDirty, but re-capturing then would
+         * misclassify the racing HUD dims as overlay-primary and dim the yellow
+         * headup text. This capture is PROVISIONAL — a pre-scene flush is either
+         * a 2D-primary map image (kept) or a racing sky/fog fill (purged), and
+         * they are told apart at the first model draw of this scene. */
         if (firstScene) {
             hVideo->overlayPrimaryFrame = hVideo->overlayDirty;
+        } else {
+            /* A scene after the first must never run the armed purge: if the
+             * first scene drew no models the flag would otherwise fire here. */
+            hVideo->pendingMainPurge = 0;
         }
 
         if (hVideo->sceneCount == 0) {
@@ -245,29 +250,27 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 
             if (colour_target != NULL &&
                 colour_target->pm_width >= screen->pm_width &&
-                colour_target->pm_height >= screen->pm_height &&
-                !hVideo->overlayPrimaryFrame) {
+                colour_target->pm_height >= screen->pm_height) {
                 hVideo->mainViewportX = (int)((vp_x - (float)x) / rx);
                 hVideo->mainViewportY = (int)((vp_y - (float)y) / ry);
                 hVideo->mainViewportW = (int)(vp_w / rx);
                 hVideo->mainViewportH = (int)(vp_h / ry);
 
-                /* Purge the main scene's rect from the CPU locked buffer NOW, using
-                 * the freshly-computed rect. The old flush-time purge relied on the
-                 * previous frame's mainViewport, so it fired on 2D-only frames (ESC
-                 * pause menu) and erased the whole menu. This mirrors the sceneEnd
-                 * sub-area purge: pre-scene 2D (fog/sky fill) inside the scene rect
-                 * is erased so the 3D scene shows through; post-scene 2D drawn into
-                 * the same rect lands on the magenta and survives to the composite.
-                 * Gated on firstScene so the mid-frame dim-quad sceneBegins (which
-                 * reuse a full-screen target) don't wipe that post-scene content. */
+                /* ARM the main scene's rect purge from the CPU locked buffer, to
+                 * run at the first model draw of this first scene (see
+                 * modelrender.c). Pre-scene 2D inside the scene rect (the fog/sky
+                 * fill when the sky texture is off) is erased so the 3D scene
+                 * shows through; post-scene 2D drawn into the same rect lands on
+                 * the magenta and survives to the composite. The purge must NOT
+                 * run unconditionally here: on a 2D-primary frame the pre-scene
+                 * content is the flushed map image and the first scene is a dim
+                 * quad that dims it in place. Gated on firstScene so the mid-frame
+                 * dim-quad sceneBegins (which reuse a full-screen target) don't
+                 * wipe that post-scene content. The old flush-time purge relied
+                 * on the previous frame's mainViewport, so it fired on 2D-only
+                 * frames (ESC pause menu) and erased the whole menu. */
                 if (firstScene && hVideo->lockedPixels != NULL && hVideo->mainViewportW > 0 && hVideo->mainViewportH > 0) {
-                    int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
-                    br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                    SDL3GPUREND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
-                        hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
-                        hVideo->mainViewportX, hVideo->mainViewportY,
-                        hVideo->mainViewportW, hVideo->mainViewportH);
+                    hVideo->pendingMainPurge = 1;
                 }
             }
         }

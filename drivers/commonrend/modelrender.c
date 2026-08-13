@@ -168,6 +168,28 @@ void StoredSDL3GPURENDRenderGroup(br_geometry_stored* self, br_renderer* rendere
         br_boolean is_dim = (renderer->state.current->surface.colour == 0 &&
             blending_on && depth_off &&
             renderer->state.current->prim.colour_map == NULL);
+
+        /* Consume the main viewport purge armed at the first scene's sceneBegin,
+         * now that the frame type is known from what this first scene draws. A
+         * dim-quad first model means 2D-primary (the game flushed the map image
+         * and the dim quad dims it in place): cancel the purge and keep the
+         * overlay-primary classification. Any other model means a racing frame
+         * whose pre-scene flush was only the sky/fog fill: purge the rect so the
+         * 3D shows through, and drop the classification so the mid-frame HUD dims
+         * purge instead of dimming the headup text in place. */
+        if (hVideo->pendingMainPurge) {
+            hVideo->pendingMainPurge = 0;
+            if (!is_dim) {
+                hVideo->overlayPrimaryFrame = 0;
+                int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
+                br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
+                SDL3GPUREND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                    hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
+                    hVideo->mainViewportX, hVideo->mainViewportY,
+                    hVideo->mainViewportW, hVideo->mainViewportH);
+            }
+        }
+
         if (is_dim && screen != NULL &&
             screen->pm_type == BR_PMT_RGB_565 && hVideo->lockedPixels != NULL) {
             br_matrix4 combined;
