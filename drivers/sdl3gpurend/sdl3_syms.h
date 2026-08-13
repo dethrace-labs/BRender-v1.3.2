@@ -117,6 +117,8 @@
        const SDL_GPUTextureRegion* destination, bool cycle))                \
     X(WaitForGPUFences, bool,                                               \
       (SDL_GPUDevice* device, bool wait_all, SDL_GPUFence* const* fences,   \
-       Uint32 num_fences))
+       Uint32 num_fences))                                                  \
+    X(WaitForGPUIdle, bool,                                                 \
+      (SDL_GPUDevice* device))
 
 #endif /* sdl3gpurend_syms_h */

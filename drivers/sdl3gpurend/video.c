@@ -707,6 +707,11 @@ void SDL3GPUREND_VideoClose(HVIDEO hVideo) {
         hVideo->uploadFence[f] = NULL;
     }
 
+    /* Drain any submitted command buffer whose fence we may no longer hold
+     * (e.g. an upload fence overwritten by a later upload) so every resource
+     * is released before the device is destroyed. */
+    SDL3_WaitForGPUIdle(hVideo->device);
+
     ReleaseRings(hVideo);
 
     if (hVideo->defaultFragShader && hVideo->defaultFragShader != hVideo->brenderFragShader)
