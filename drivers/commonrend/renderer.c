@@ -234,15 +234,19 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
              * erases the same content from the composite so it does not also
              * appear on top of the 3D. Full-screen scenes are skipped — their
              * pre-scene 2D is purged at firstScene and the 3D covers them.
-             * Also skipped when the CPU overlay was just flushed (overlayDirty):
-             * the pratcam flush uploads the cockpit, and re-drawing it as the
-             * PIP background would put it under the 3D inside the window. This
-             * must read the per-scene flag, not overlayPrimaryFrame (once per
-             * frame), because the pratcam flush happens mid-frame. */
+             * Also skipped when the CPU overlay was just flushed (overlayDirty)
+             * by a MID-FRAME flush: the rear-view mirror flush uploads the
+             * cockpit, and re-drawing it as the mirror's background would put it
+             * under the 3D inside the mirror window. This must read the per-scene
+             * flag, not overlayPrimaryFrame (once per frame), because the mirror
+             * flush happens mid-frame. The FIRST scene of the frame must still
+             * draw its background even if a flush preceded it: the wreck-gallery
+             * draw proc flushes the grey grid immediately before its (only)
+             * scene, and that grid must persist UNDER the 3D. */
             if (colour_target != NULL &&
                 (colour_target->pm_width < screen->pm_width ||
                  colour_target->pm_height < screen->pm_height) &&
-                !hVideo->overlayDirty) {
+                !(hVideo->overlayDirty && !firstScene)) {
                 SDL3GPUREND_DrawSceneBackground(hVideo,
                     colour_target->pm_base_x, colour_target->pm_base_y,
                     colour_target->pm_width, colour_target->pm_height);
