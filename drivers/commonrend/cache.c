@@ -65,7 +65,7 @@ static void ProcessClipPlanes(state_cache* cache, const state_clip* clips) {
     }
 }
 
-#if defined(BREND_DRIVER_SDL3REND)
+#if defined(BREND_DRIVER_SDL3GPUREND)
 /* Vulkan clip space has Z in [0, w] and Y down, so the BRender projection
  * matrix needs a z-column flip (perspective only) and a y-row flip. SDL3 GPU
  * uses the same NDC conventions. */
@@ -106,7 +106,7 @@ static void UpdateMatrices(state_cache* cache, state_matrix* matrix) {
 
 #if defined(BREND_DRIVER_GL)
     VIDEOI_D3DtoGLProjection(&cache->model.p);
-#elif defined(BREND_DRIVER_SDL3REND)
+#elif defined(BREND_DRIVER_SDL3GPUREND)
     if (matrix->view_to_screen_hint == BRT_PERSPECTIVE) {
         negate_z_column(&cache->model.p);
     }

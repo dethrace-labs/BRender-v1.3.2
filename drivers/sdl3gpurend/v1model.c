@@ -15,7 +15,7 @@
  * overlay compositing (dim areas / pratcam). Mirrors the old VK helper but
  * reads the window size from the SDL3 window rather than a swapchain extent.
  */
-br_boolean SDL3REND_ComputeScreenAABB(const br_matrix4* mvp, struct v11group* gp,
+br_boolean SDL3GPUREND_ComputeScreenAABB(const br_matrix4* mvp, struct v11group* gp,
     HVIDEO hVideo, br_device_pixelmap* colour_target, br_rectangle* out) {
     float dvp_x = 0, dvp_y = 0, dvp_w, dvp_h;
     if (colour_target != NULL) {
@@ -55,7 +55,7 @@ br_boolean SDL3REND_ComputeScreenAABB(const br_matrix4* mvp, struct v11group* gp
  * fills `texture`/`sampler` with the SDL3 GPU texture/sampler to bind on the
  * fragment sampler slot used by the draw. Called per group from modelrender.c.
  */
-void StoredSDL3RENDApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states,
+void StoredSDL3GPURENDApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t states,
     shader_data_model* model, br_buffer_stored* default_texture,
     SDL_GPUTexture** texture, SDL_GPUSampler** sampler) {
     (void)default_texture;
@@ -74,7 +74,7 @@ void StoredSDL3RENDApplyProperties(HVIDEO hVideo, state_stack* state, uint32_t s
     (void)palette_entries;
 
     if (colour_map) {
-        BufferStoredSDL3RENDReupload(colour_map);
+        BufferStoredSDL3GPURENDReupload(colour_map);
         if (colour_map->image != NULL && colour_map->sampler != NULL) {
             *texture = colour_map->image;
             *sampler = filter_linear ? hVideo->samplerLinear : hVideo->samplerNearest;

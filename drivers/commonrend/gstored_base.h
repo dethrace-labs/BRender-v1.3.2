@@ -1,5 +1,5 @@
 /*
- * Shared private geometry-stored structure for the glrend/sdl3rend drivers.
+ * Shared private geometry-stored structure for the glrend/sdl3gpurend drivers.
  * Compiled once per driver.
  */
 #ifndef REND_GSTORED_BASE_H_

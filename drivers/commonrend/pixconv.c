@@ -1,5 +1,5 @@
 /*
- * Shared br_pixelmap -> RGBA8888 CPU conversion (glrend/sdl3rend).
+ * Shared br_pixelmap -> RGBA8888 CPU conversion (glrend/sdl3gpurend).
  *
  * The SDL3 backend feeds the fragment sampler, which samples R8G8B8A8_UNORM,
  * so every source format is expanded here. The GL backend keeps its native

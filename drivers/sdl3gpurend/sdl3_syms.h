@@ -1,7 +1,7 @@
-#ifndef sdl3rend_syms_h
-#define sdl3rend_syms_h
+#ifndef sdl3gpurend_syms_h
+#define sdl3gpurend_syms_h
 
-/* Symbol table for the SDL3 GPU API as used by the sdl3rend driver.
+/* Symbol table for the SDL3 GPU API as used by the sdl3gpurend driver.
  *
  * This list is expanded with the X macro (see sdl3_dyn.h / sdl3_dyn.c) into:
  *   - a function-pointer typedef per SDL3 function,
@@ -19,7 +19,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 
-#define FOREACH_SDL3REND_SYM(X)                                             \
+#define FOREACH_SDL3GPUREND_SYM(X)                                             \
     X(AcquireGPUCommandBuffer, SDL_GPUCommandBuffer*,                       \
       (SDL_GPUDevice* device))                                              \
     X(AcquireGPUSwapchainTexture, bool,                                     \
@@ -119,4 +119,4 @@
       (SDL_GPUDevice* device, bool wait_all, SDL_GPUFence* const* fences,   \
        Uint32 num_fences))
 
-#endif /* sdl3rend_syms_h */
+#endif /* sdl3gpurend_syms_h */

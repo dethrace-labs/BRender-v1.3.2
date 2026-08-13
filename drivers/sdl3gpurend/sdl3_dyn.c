@@ -1,9 +1,9 @@
-/* SDL3 symbol resolution for the sdl3rend driver. */
+/* SDL3 symbol resolution for the sdl3gpurend driver. */
 #include "sdl3_dyn.h"
 
 #include <stdio.h>
 
-#if defined(SDL3REND_SDL_DYNAMIC)
+#if defined(SDL3GPUREND_SDL_DYNAMIC)
 
 /* Resolve SDL3 at runtime from a host-provided handle, loading the SDL3
  * library ourselves if none is given. The library being loaded is SDL itself,
@@ -43,13 +43,13 @@ static const char* const possible_locations[] = {
     NULL,
 };
 
-#endif /* SDL3REND_SDL_DYNAMIC */
+#endif /* SDL3GPUREND_SDL_DYNAMIC */
 
-#define SDL3REND_X_DEFINE(name, ret, args) tSDL3REND_##name##_fn* SDL3_##name;
-FOREACH_SDL3REND_SYM(SDL3REND_X_DEFINE)
+#define SDL3GPUREND_X_DEFINE(name, ret, args) tSDL3GPUREND_##name##_fn* SDL3_##name;
+FOREACH_SDL3GPUREND_SYM(SDL3GPUREND_X_DEFINE)
 
-int SDL3REND_LoadSDLSymbols(void* handle) {
-#if defined(SDL3REND_SDL_DYNAMIC)
+int SDL3GPUREND_LoadSDLSymbols(void* handle) {
+#if defined(SDL3GPUREND_SDL_DYNAMIC)
     if (handle == NULL) {
         for (int i = 0; possible_locations[i] != NULL; i++) {
             handle = LoadObject(possible_locations[i]);
@@ -59,21 +59,21 @@ int SDL3REND_LoadSDLSymbols(void* handle) {
         }
     }
     if (handle == NULL) {
-        fprintf(stderr, "sdl3rend: unable to load the SDL3 shared library\n");
+        fprintf(stderr, "sdl3gpurend: unable to load the SDL3 shared library\n");
         return 1;
     }
-#define SDL3REND_X_LOAD(name, ret, args)                                    \
-    SDL3_##name = (tSDL3REND_##name##_fn*)LoadFunction(handle, "SDL_" #name); \
+#define SDL3GPUREND_X_LOAD(name, ret, args)                                    \
+    SDL3_##name = (tSDL3GPUREND_##name##_fn*)LoadFunction(handle, "SDL_" #name); \
     if (SDL3_##name == NULL) {                                              \
-        fprintf(stderr, "sdl3rend: missing SDL3 symbol SDL_" #name "\n");   \
+        fprintf(stderr, "sdl3gpurend: missing SDL3 symbol SDL_" #name "\n");   \
         return 1;                                                           \
     }
 #else
     (void)handle;
     /* Linked against SDL3: bind the pointers straight to the functions. */
-#define SDL3REND_X_LOAD(name, ret, args) SDL3_##name = SDL_##name;
+#define SDL3GPUREND_X_LOAD(name, ret, args) SDL3_##name = SDL_##name;
 #endif
 
-    FOREACH_SDL3REND_SYM(SDL3REND_X_LOAD)
+    FOREACH_SDL3GPUREND_SYM(SDL3GPUREND_X_LOAD)
     return 0;
 }

@@ -1,7 +1,7 @@
 /*
  * Renderer methods
  *
- * Shared by the glrend/sdl3rend drivers. All methods are identical between
+ * Shared by the glrend/sdl3gpurend drivers. All methods are identical between
  * the two backends except sceneBegin/sceneEnd (backend-specific viewport/
  * program/UBO/render-pass setup), the frameBegin clear, partSet/partSetMany
  * (GL applies template actions), and the per-backend allocate functions.
@@ -141,7 +141,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 #else
     {
         /* Whether this is the FIRST scene of the frame. renderingStarted is 0 at
-         * frame start (reset by SDL3REND_EnsureRecording) and set to 1 by the first
+         * frame start (reset by SDL3GPUREND_EnsureRecording) and set to 1 by the first
          * sceneBegin. The mainViewport purge below must only run for that first
          * scene: the dim quads (DimRectangle -> BrZbSceneRender) call sceneBegin
          * mid-frame with a full-screen target, and purging there would erase the
@@ -149,9 +149,19 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
          * written into lockedPixels. */
         int firstScene = !hVideo->renderingStarted;
 
+        /* 2D-primary frames (the in-game map screen) flush the CPU overlay to
+         * the overlay texture before the FIRST scene of the frame; the dim-quad
+         * scene that follows then dims it. Capture that ONCE PER FRAME (firstScene
+         * only): the mid-frame cockpit flush before the pratcam also sets
+         * overlayDirty, but re-capturing then would misclassify the racing HUD
+         * dims as overlay-primary and dim the yellow headup text. */
+        if (firstScene) {
+            hVideo->overlayPrimaryFrame = hVideo->overlayDirty;
+        }
+
         if (hVideo->sceneCount == 0) {
             if (!hVideo->isRecording) {
-                SDL3REND_EnsureRecording(hVideo);
+                SDL3GPUREND_EnsureRecording(hVideo);
             }
             hVideo->renderingStarted = 1;
 
@@ -161,15 +171,15 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                 hVideo->primaryColourTarget = colour_target;
 
             if (!hVideo->renderPassActive) {
-                SDL3REND_BeginRenderPass(hVideo);
+                SDL3GPUREND_BeginRenderPass(hVideo);
                 hVideo->renderPassActive = 1;
             }
         }
 
         hVideo->sceneCount++;
 
-        SDL3REND_UpdateScene(hVideo, &self->state.cache.scene, sizeof(self->state.cache.scene));
-        SDL3REND_SceneBegin(hVideo);
+        SDL3GPUREND_UpdateScene(hVideo, &self->state.cache.scene, sizeof(self->state.cache.scene));
+        SDL3GPUREND_SceneBegin(hVideo);
 
         {
             int x = 0, y = 0;
@@ -179,8 +189,8 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
 
             if (colour_target != NULL) {
                 /* Letterbox the 4:3 screen into the window (shared helper, see
-                 * SDL3REND_LetterboxViewport); transfer is window-sized. */
-                SDL3REND_LetterboxViewport(win_w, win_h, screen->pm_width, screen->pm_height,
+                 * SDL3GPUREND_LetterboxViewport); transfer is window-sized. */
+                SDL3GPUREND_LetterboxViewport(win_w, win_h, screen->pm_width, screen->pm_height,
                     &x, &y, NULL, NULL, &rx, &ry);
                 /* The present blit flips the transfer vertically, so sub-area
                  * scenes render into mirrored rows (RendererFlipBaseY); the
@@ -218,12 +228,17 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
              * through where the 3D does not cover the rect. The sceneEnd purge
              * erases the same content from the composite so it does not also
              * appear on top of the 3D. Full-screen scenes are skipped — their
-             * pre-scene 2D is purged at firstScene and the 3D covers them. */
+             * pre-scene 2D is purged at firstScene and the 3D covers them.
+             * Also skipped when the CPU overlay was just flushed (overlayDirty):
+             * the pratcam flush uploads the cockpit, and re-drawing it as the
+             * PIP background would put it under the 3D inside the window. This
+             * must read the per-scene flag, not overlayPrimaryFrame (once per
+             * frame), because the pratcam flush happens mid-frame. */
             if (colour_target != NULL &&
                 (colour_target->pm_width < screen->pm_width ||
                  colour_target->pm_height < screen->pm_height) &&
-                !SDL3REND_IsMapMode(hVideo)) {
-                SDL3REND_DrawSceneBackground(hVideo,
+                !hVideo->overlayDirty) {
+                SDL3GPUREND_DrawSceneBackground(hVideo,
                     colour_target->pm_base_x, colour_target->pm_base_y,
                     colour_target->pm_width, colour_target->pm_height);
             }
@@ -231,7 +246,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
             if (colour_target != NULL &&
                 colour_target->pm_width >= screen->pm_width &&
                 colour_target->pm_height >= screen->pm_height &&
-                !SDL3REND_IsMapMode(hVideo)) {
+                !hVideo->overlayPrimaryFrame) {
                 hVideo->mainViewportX = (int)((vp_x - (float)x) / rx);
                 hVideo->mainViewportY = (int)((vp_y - (float)y) / ry);
                 hVideo->mainViewportW = (int)(vp_w / rx);
@@ -249,7 +264,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                 if (firstScene && hVideo->lockedPixels != NULL && hVideo->mainViewportW > 0 && hVideo->mainViewportH > 0) {
                     int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
                     br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                    SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                    SDL3GPUREND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
                         hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
                         hVideo->mainViewportX, hVideo->mainViewportY,
                         hVideo->mainViewportW, hVideo->mainViewportH);
@@ -308,7 +323,7 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneEnd)(br_renderer* 
                     if (hVideo->lockedPixels != NULL && hVideo->pm_width > 0) {
                         int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
                         br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
-                        SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+                        SDL3GPUREND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
                             hVideo->pm_width, hVideo->pm_height, hVideo->pm_row_bytes,
                             hVideo->clearAreas[idx].x, hVideo->clearAreas[idx].y,
                             hVideo->clearAreas[idx].w, hVideo->clearAreas[idx].h);
@@ -399,7 +414,7 @@ static br_error BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), bufferStoredNew)(br
 #if defined(BREND_DRIVER_GL)
     if ((sm = BufferStoredGLAllocate(self, use, pm, tv)) == NULL)
 #else
-    if ((sm = BufferStoredSDL3RENDAllocate(self, use, pm, tv)) == NULL)
+    if ((sm = BufferStoredSDL3GPURENDAllocate(self, use, pm, tv)) == NULL)
 #endif
         return BRE_FAIL;
 

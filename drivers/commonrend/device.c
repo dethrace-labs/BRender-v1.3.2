@@ -79,7 +79,7 @@ static const br_token insignificantMatchTokens[] = {
     BRT_OPENGL_VERTEX_SHADER_STR,
     BRT_OPENGL_FRAGMENT_SHADER_STR,
 #else
-    BRT_SDL3_CALLBACKS_P,
+    BRT_SDL3GPU_CALLBACKS_P,
 #endif
     BR_NULL_TOKEN,
 };

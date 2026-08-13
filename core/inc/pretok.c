@@ -408,7 +408,8 @@
 	{ {0,}, "SCREEN_DOOR_O",                BRT_OBJECT,             BRT_SCREEN_DOOR_O,                    11},
 	{ {0,}, "SCREEN_DOOR_TVL",              BRT_TOKEN_VALUE_LIST,   BRT_SCREEN_DOOR_TVL,                  11},
 	{ {0,}, "SDL_EXT_PROCS_P",              BRT_POINTER,            BRT_SDL_EXT_PROCS_P,                  13},
-	{ {0,}, "SDL3_CALLBACKS_P",             BRT_POINTER,            BRT_SDL3_CALLBACKS_P,                 18},
+	{ {0,}, "SDL3GPU_CALLBACKS_P",          BRT_POINTER,            BRT_SDL3GPU_CALLBACKS_P,              18},
+	{ {0,}, "SDL3GPU_DEBUG_MODE",              BRT_INT_32,             BRT_SDL3GPU_DEBUG_MODE,                  17},
 	{ {0,}, "SEPARATE_SPECULAR_B",          BRT_BOOLEAN,            BRT_SEPARATE_SPECULAR_B,              17},
 	{ {0,}, "SHARED_B",                     BRT_BOOLEAN,            BRT_SHARED_B,                          6},
 	{ {0,}, "SMOOTH_1_B",                   BRT_BOOLEAN,            BRT_SMOOTH_1_B,                        8},
@@ -539,4 +540,4 @@
 	{ {0,}, "YON_Z_X",                      BRT_FIXED,              BRT_YON_Z_X,                           5},
 	{ {0,}, "YUV_16",                       BRT_NONE,               BRT_YUV_16,                            6},
 	{ {0,}, "ZERO_IS_TRANSPARENT",          BRT_NONE,               BRT_ZERO_IS_TRANSPARENT,              19},
-#define NEXT_FREE_TOKEN 542
+#define NEXT_FREE_TOKEN 543

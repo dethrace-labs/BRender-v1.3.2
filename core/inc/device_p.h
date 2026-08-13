@@ -31,30 +31,28 @@ typedef struct br_device_gl_callback_procs {
     br_device_gl_free_cbfn                *free;
 } br_device_gl_callback_procs;
 
-// For use with `sdl3rend` device.
-typedef void BR_CALLBACK br_device_sdl3_swapbuffers_cbfn(br_pixelmap* pm);
-typedef void* BR_CALLBACK br_device_sdl3_getprocaddress_cbfn(const char* name);
-typedef void BR_CALLBACK br_device_sdl3_free_cbfn(br_pixelmap* pm, void* user);
-typedef void BR_CALLBACK br_device_sdl3_getviewport_cbfn(int *x, int *y, float *width_multiplier, float *height_multiplier);
-typedef int BR_CALLBACK br_device_sdl3_get_map_mode_cbfn(void);
-typedef void BR_CALLBACK br_device_sdl3_get_window_size_cbfn(int *width, int *height);
+// For use with `sdl3gpurend` device.
+typedef void BR_CALLBACK br_device_sdl3gpu_swapbuffers_cbfn(br_pixelmap* pm);
+typedef void* BR_CALLBACK br_device_sdl3gpu_getprocaddress_cbfn(const char* name);
+typedef void BR_CALLBACK br_device_sdl3gpu_free_cbfn(br_pixelmap* pm, void* user);
+typedef void BR_CALLBACK br_device_sdl3gpu_getviewport_cbfn(int *x, int *y, float *width_multiplier, float *height_multiplier);
+typedef void BR_CALLBACK br_device_sdl3gpu_get_window_size_cbfn(int *width, int *height);
 // For use with `sdl3gpu` device: returns the SDL_Window* the driver should
 // claim for the GPU device.
-typedef void* BR_CALLBACK br_device_sdl3_get_window_cbfn(void);
+typedef void* BR_CALLBACK br_device_sdl3gpu_get_window_cbfn(void);
 
-typedef struct br_device_sdl3_callback_procs {
-    br_device_sdl3_getprocaddress_cbfn             *get_proc_address;
-    br_device_sdl3_getviewport_cbfn                *get_viewport;
-    br_device_sdl3_swapbuffers_cbfn                *swap_buffers;
-    br_device_sdl3_free_cbfn                       *free;
-    br_device_sdl3_get_map_mode_cbfn               *get_map_mode;
-    br_device_sdl3_get_window_size_cbfn            *get_window_size;
-    br_device_sdl3_get_window_cbfn                 *get_window;
-    // Handle to the already-loaded SDL3 library, used by the sdl3rend driver
+typedef struct br_device_sdl3gpu_callback_procs {
+    br_device_sdl3gpu_getprocaddress_cbfn             *get_proc_address;
+    br_device_sdl3gpu_getviewport_cbfn                *get_viewport;
+    br_device_sdl3gpu_swapbuffers_cbfn                *swap_buffers;
+    br_device_sdl3gpu_free_cbfn                       *free;
+    br_device_sdl3gpu_get_window_size_cbfn            *get_window_size;
+    br_device_sdl3gpu_get_window_cbfn                 *get_window;
+    // Handle to the already-loaded SDL3 library, used by the sdl3gpurend driver
     // to resolve its SDL3 function pointers at runtime (dethrace
     // single-executable builds). May be NULL: the driver then loads SDL3
     // itself, and linked builds ignore it entirely.
     void                                       *sdl3_handle;
-} br_device_sdl3_callback_procs;
+} br_device_sdl3gpu_callback_procs;
 
 #endif

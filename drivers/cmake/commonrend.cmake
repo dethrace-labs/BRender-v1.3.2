@@ -1,7 +1,7 @@
-# Shared CMake scaffolding for the glrend/sdl3rend drivers.
+# Shared CMake scaffolding for the glrend/sdl3gpurend drivers.
 #
 # Both drivers compile the same drivers/commonrend sources under different
-# driver defines (BREND_DRIVER_GL vs BREND_DRIVER_SDL3REND). This file keeps
+# driver defines (BREND_DRIVER_GL vs BREND_DRIVER_SDL3GPUREND). This file keeps
 # those shared source lists and the target-level boilerplate in one place.
 
 # Sets BR_COMMON_STATE_FILES, BR_COMMON_RENDERER_FILES and BR_COMMON_OBJ_FILES

@@ -1,8 +1,8 @@
 /*
- * Shared stored-buffer (texture) support for the glrend/sdl3rend drivers:
+ * Shared stored-buffer (texture) support for the glrend/sdl3gpurend drivers:
  * template entries, identity methods, dispatch table, and the allocate
  * skeleton. The backend-specific update/free paths stay in each driver's
- * sbuffer.c (BufferStoredGL/SDL3REND InitFields/update/free).
+ * sbuffer.c (BufferStoredGL/SDL3GPUREND InitFields/update/free).
  */
 #include <stddef.h>
 
@@ -117,7 +117,7 @@ struct br_buffer_stored* BREND_FN(BufferStored, Allocate)(br_renderer* renderer,
 
     br_error r = self->dispatch->_update(self, pm, tv);
     (void)r;
-#if defined(BREND_DRIVER_SDL3REND)
+#if defined(BREND_DRIVER_SDL3GPUREND)
     if (r != BRE_OK) {
         BrResFreeNoCallback(self);
         return NULL;

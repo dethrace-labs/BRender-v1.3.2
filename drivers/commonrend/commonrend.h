@@ -2,10 +2,10 @@
 #define REND_COMMON_H_
 
 /*
- * Shared scaffolding for the glrend/sdl3rend renderer drivers.
+ * Shared scaffolding for the glrend/sdl3gpurend renderer drivers.
  *
  * This file is compiled twice — once per GL driver, once per SDL3-GPU driver:
- *   -DBREND_DRIVER_GL            (glrend)  or -DBREND_DRIVER_SDL3REND (sdl3rend)
+ *   -DBREND_DRIVER_GL            (glrend)  or -DBREND_DRIVER_SDL3GPUREND (sdl3gpurend)
  *   -DBREND_DRIVER_SUFFIX_UPPER=GL  or =SDL3
  *   -DBREND_DRIVER_SUFFIX_LOWER=gl  or =sdl3
  *

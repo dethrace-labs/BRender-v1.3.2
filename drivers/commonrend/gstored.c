@@ -1,5 +1,5 @@
 /*
- * Geometry format for version 1 models — shared glrend/sdl3rend.
+ * Geometry format for version 1 models — shared glrend/sdl3gpurend.
  *
  * The two drivers differ only in how they build and free the GPU-side
  * vertex/index storage and in GL's legacy order-table (bucket) divert path,
@@ -344,10 +344,10 @@ static br_boolean want_defer(const state_hidden* hidden) {
 }
 
 #else
-/* ------------------------------------------------------------ SDL3REND --- */
+/* ------------------------------------------------------------ SDL3GPUREND --- */
 
-#define SDL3REND_DYN_SMALL_MAX_VERTEX_BYTES (16u * 1024u)
-#define SDL3REND_DYN_SMALL_MAX_INDEX_BYTES (16u * 1024u)
+#define SDL3GPUREND_DYN_SMALL_MAX_VERTEX_BYTES (16u * 1024u)
+#define SDL3GPUREND_DYN_SMALL_MAX_INDEX_BYTES (16u * 1024u)
 
 static sdl3_vertex_f* GenerateVBOData(const struct v11model* model, size_t total_vertices) {
     sdl3_vertex_f* vtx = BrScratchAllocate(total_vertices * sizeof(sdl3_vertex_f));
@@ -410,7 +410,7 @@ static void UploadVBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const 
         BR_FATAL("SDL3GPU: Failed to create dedicated VBO.");
         return;
     }
-    SDL3REND_UploadBufferToBuffer(hVideo, self->vbo, vtx, size);
+    SDL3GPUREND_UploadBufferToBuffer(hVideo, self->vbo, vtx, size);
 }
 
 static void UploadIBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const br_uint_16* idx, size_t size) {
@@ -424,7 +424,7 @@ static void UploadIBOToDedicated(HVIDEO hVideo, br_geometry_stored* self, const 
         BR_FATAL("SDL3GPU: Failed to create dedicated IBO.");
         return;
     }
-    SDL3REND_UploadBufferToBuffer(hVideo, self->ibo, idx, size);
+    SDL3GPUREND_UploadBufferToBuffer(hVideo, self->ibo, idx, size);
 }
 
 static void build_vbo(HVIDEO hVideo, br_geometry_stored* self, const struct v11model* model, size_t total_vertices) {
@@ -442,7 +442,7 @@ static void build_vbo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
      * valid until the next frame's reset, so ringEpoch stamps the frame and a
      * stale model is re-uploaded at render time. */
     if (hVideo->isRecording && hVideo->dynVboMapped[f] != NULL &&
-        size <= SDL3REND_DYN_SMALL_MAX_VERTEX_BYTES &&
+        size <= SDL3GPUREND_DYN_SMALL_MAX_VERTEX_BYTES &&
         hVideo->dynVboOffset[f] + size <= hVideo->dynVboCapacity) {
         memcpy((char*)hVideo->dynVboMapped[f] + hVideo->dynVboOffset[f], vtx, size);
         self->vbo = hVideo->dynVbo[f];
@@ -464,7 +464,7 @@ static void build_ibo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
     int f = hVideo->currentFrame;
 
     if (hVideo->isRecording && hVideo->dynIboMapped[f] != NULL &&
-        size <= SDL3REND_DYN_SMALL_MAX_INDEX_BYTES &&
+        size <= SDL3GPUREND_DYN_SMALL_MAX_INDEX_BYTES &&
         hVideo->dynIboOffset[f] + size <= hVideo->dynIboCapacity) {
         memcpy((char*)hVideo->dynIboMapped[f] + hVideo->dynIboOffset[f], idx, size);
         self->ibo = hVideo->dynIbo[f];
@@ -481,7 +481,7 @@ static void build_ibo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
 }
 
 /* Re-uploads a stale ring sub-allocation into the current frame's ring slot.
- * The ring cursors are reset every frame in SDL3REND_EnsureRecording, so any
+ * The ring cursors are reset every frame in SDL3GPUREND_EnsureRecording, so any
  * ring model that is not rebuilt this frame (built during a previous frame's
  * recording and persisted) references clobbered data. This regenerates the
  * vertex/index data from the v11model and copies it into the current slot,
@@ -489,7 +489,7 @@ static void build_ibo(HVIDEO hVideo, br_geometry_stored* self, const struct v11m
  * full, permanently graduating the model out of the ring. Only the components
  * actually in the ring (inDynamicRing) are refreshed; a mixed
  * vbo-in-ring/ibo-dedicated model keeps its dedicated component. */
-void SDL3REND_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
+void SDL3GPUREND_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
     int f = hVideo->currentFrame;
     int wasInRing = self->inDynamicRing;
 
@@ -534,7 +534,7 @@ void SDL3REND_RefreshRingStored(HVIDEO hVideo, br_geometry_stored* self) {
     self->ringEpoch = hVideo->frameEpoch;
 }
 
-#endif /* BREND_DRIVER_GL / SDL3REND */
+#endif /* BREND_DRIVER_GL / SDL3GPUREND */
 
 /* --------------------------------------------------------- Allocate --- */
 
@@ -617,8 +617,8 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_geometry_stored), free)(br_object*
      * context, released in ReleaseRings) and must not be released here. */
     HVIDEO hVideo = self->hVideo;
     if (hVideo != NULL && !self->inDynamicRing) {
-        if (self->vbo) SDL3REND_DeferFreeBuffer(hVideo, self->vbo);
-        if (self->ibo) SDL3REND_DeferFreeBuffer(hVideo, self->ibo);
+        if (self->vbo) SDL3GPUREND_DeferFreeBuffer(hVideo, self->vbo);
+        if (self->ibo) SDL3GPUREND_DeferFreeBuffer(hVideo, self->ibo);
         self->vbo = NULL;
         self->ibo = NULL;
     }
@@ -724,7 +724,7 @@ static br_error V1Model_RenderStored(br_geometry_stored* self, br_renderer* rend
             StoredGLRenderGroup(self, renderer, groupinfo);
         }
 #else
-        StoredSDL3RENDRenderGroup(self, renderer, groupinfo);
+        StoredSDL3GPURENDRenderGroup(self, renderer, groupinfo);
 #endif
     }
     renderer->frame_stats.model_count++;

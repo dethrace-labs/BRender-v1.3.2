@@ -4,11 +4,11 @@
  * Textures are always uploaded as RGBA8888: the SDL3 GPU backend only needs to
  * feed the fragment sampler, and the shared GLSL samples R8G8B8A8_UNORM, so
  * every source format (INDEX_8, RGB_565/555/888, RGBA/RGBX_8888) is converted
- * to RGBA8888 on the CPU before SDL3REND_UploadBufferToImage.
+ * to RGBA8888 on the CPU before SDL3GPUREND_UploadBufferToImage.
  *
  * Offscreen device pixelmaps have no GPU image of their own — their pixels live
  * in the shared CPU locked buffer (hVideo->lockedPixels, see devpixmp.c). The
- * texture is created lazily from that region on first use (BufferStoredSDL3REND
+ * texture is created lazily from that region on first use (BufferStoredSDL3GPUREND
  * Reupload), which is what supports the pratcam quad sampling an offscreen
  * render target.
  */
@@ -19,9 +19,9 @@
 #include "drv.h"
 #include "pixconv.h"
 
-/* Backend-specific init for the fields written by BufferStoredSDL3RENDUpdate
+/* Backend-specific init for the fields written by BufferStoredSDL3GPURENDUpdate
  * (see commonrend/sbuffer_common.c allocate). */
-void BufferStoredSDL3RENDInitFields(struct br_buffer_stored* self) {
+void BufferStoredSDL3GPURENDInitFields(struct br_buffer_stored* self) {
     self->image = NULL;
     self->sampler = NULL;
     self->width = 0;
@@ -62,7 +62,7 @@ static HVIDEO BufferStoredVideo(struct br_buffer_stored* self) {
 /* (Re)creates the GPU texture + sampler for `rgba` and uploads it. */
 static br_error uploadRGBA(struct br_buffer_stored* self, HVIDEO hVideo, const void* rgba, int w, int h) {
     if (self->image) {
-        SDL3REND_DeferFreeImage(hVideo, self->image, self->sampler);
+        SDL3GPUREND_DeferFreeImage(hVideo, self->image, self->sampler);
         self->image = NULL;
         self->sampler = NULL;
     }
@@ -80,7 +80,7 @@ static br_error uploadRGBA(struct br_buffer_stored* self, HVIDEO hVideo, const v
     if (!self->image)
         return BRE_FAIL;
 
-    if (SDL3REND_UploadBufferToImage(hVideo, self->image, w, h, 0, 0, rgba, (size_t)w * h * 4) != 0)
+    if (SDL3GPUREND_UploadBufferToImage(hVideo, self->image, w, h, 0, 0, rgba, (size_t)w * h * 4) != 0)
         return BRE_FAIL;
 
     SDL_GPUSamplerCreateInfo si = {0};
@@ -150,7 +150,7 @@ static br_error updateMemory(struct br_buffer_stored* self, br_pixelmap* pm) {
     return BRE_OK;
 }
 
-br_error BufferStoredSDL3RENDUpdate(struct br_buffer_stored* self, struct br_device_pixelmap* pm, br_token_value* tv) {
+br_error BufferStoredSDL3GPURENDUpdate(struct br_buffer_stored* self, struct br_device_pixelmap* pm, br_token_value* tv) {
     br_device* pm_device;
     (void)tv;
 
@@ -187,7 +187,7 @@ br_error BufferStoredSDL3RENDUpdate(struct br_buffer_stored* self, struct br_dev
     }
 }
 
-br_boolean BufferStoredSDL3RENDReupload(struct br_buffer_stored* self) {
+br_boolean BufferStoredSDL3GPURENDReupload(struct br_buffer_stored* self) {
     if (!self || !self->source)
         return BR_FALSE;
 
@@ -259,7 +259,7 @@ br_boolean BufferStoredSDL3RENDReupload(struct br_buffer_stored* self) {
 
 br_error BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), update)(struct br_buffer_stored* self,
     struct br_device_pixelmap* pm, br_token_value* tv) {
-    return BufferStoredSDL3RENDUpdate(self, pm, tv);
+    return BufferStoredSDL3GPURENDUpdate(self, pm, tv);
 }
 
 void BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), free)(br_object* _self) {
@@ -268,7 +268,7 @@ void BREND_CMETHOD_DECL(BREND_CLASS(br_buffer_stored_), free)(br_object* _self) 
     ObjectContainerRemove(self->renderer, (br_object*)self);
 
     if (self->image) {
-        SDL3REND_DeferFreeImage(BufferStoredVideo(self), self->image, self->sampler);
+        SDL3GPUREND_DeferFreeImage(BufferStoredVideo(self), self->image, self->sampler);
         self->image = NULL;
         self->sampler = NULL;
     }

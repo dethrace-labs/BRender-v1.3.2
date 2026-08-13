@@ -1,5 +1,5 @@
-#ifndef _BRSDL3REND_H_
-#define _BRSDL3REND_H_
+#ifndef _BRSDL3GPUREND_H_
+#define _BRSDL3GPUREND_H_
 
 #ifndef _BRENDER_H_
 #error Please include brender.h first
@@ -15,20 +15,20 @@ extern "C" {
  *   window                   -> SDL_Window*
  *   swapchain_texture_format -> SDL_GPUTextureFormat (swapchain format)
  */
-typedef struct SDL3REND_DeviceInfo {
+typedef struct SDL3GPUREND_DeviceInfo {
     void* gpu_device;
     void* window;
     uint32_t swapchain_texture_format;
-} SDL3REND_DeviceInfo;
+} SDL3GPUREND_DeviceInfo;
 
-void SDL3REND_GetDeviceInfo(SDL3REND_DeviceInfo* info);
+void SDL3GPUREND_GetDeviceInfo(SDL3GPUREND_DeviceInfo* info);
 
 /*
  * External render callback, invoked inside the driver's frame while a
  * command buffer is active. The first argument is the active
  * SDL_GPUCommandBuffer*; the second is the opaque user pointer.
  */
-void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud);
+void SDL3GPUREND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud);
 
 #ifdef __cplusplus
 }
@@ -38,7 +38,7 @@ void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* u
  * Main entry point for device.
  */
 #ifndef _NO_PROTOTYPES
-struct br_device *BR_EXPORT BrDrv1SDL3RENDBegin(const char *arguments);
+struct br_device *BR_EXPORT BrDrv1SDL3GPURENDBegin(const char *arguments);
 #endif /* _NO_PROTOTYPES */
 
-#endif /* _BRSDL3REND_H_ */
+#endif /* _BRSDL3GPUREND_H_ */

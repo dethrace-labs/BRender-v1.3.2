@@ -59,7 +59,7 @@ void BREND_FN(State, FillModel)(state_stack* state, uint32_t states, shader_data
 
 /*
  * Shared material-texture decision used by StoredGLApplyProperties /
- * StoredSDL3RENDApplyProperties. Computes the texture-related model fields
+ * StoredSDL3GPURENDApplyProperties. Computes the texture-related model fields
  * (alpha, disable_texture/disable_colour_key), the effective colour map, the
  * filter mode, and the paletted-texture dirty/revision state. Texture binding,
  * palette upload and sampler choice stay in each driver.

@@ -20,7 +20,7 @@ extern "C" {
 
 #if defined(BREND_DRIVER_GL)
 #include "glad/glad.h"
-#elif defined(BREND_DRIVER_SDL3REND)
+#elif defined(BREND_DRIVER_SDL3GPUREND)
 #include <SDL3/SDL_gpu.h>
 #endif
 
@@ -43,7 +43,7 @@ extern "C" {
 #if defined(BREND_DRIVER_GL)
 #include "brglrend.h"
 #else
-#include "brsdl3rend.h"
+#include "brsdl3gpurend.h"
 #endif
 
 #include "formats.h"

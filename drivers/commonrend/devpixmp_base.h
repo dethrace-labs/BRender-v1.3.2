@@ -1,6 +1,6 @@
 /*
  * Shared private device pixelmap structure and method declarations for the
- * glrend/sdl3rend drivers. Compiled once per driver.
+ * glrend/sdl3gpurend drivers. Compiled once per driver.
  */
 #ifndef REND_DEVPIXMP_BASE_H_
 #define REND_DEVPIXMP_BASE_H_

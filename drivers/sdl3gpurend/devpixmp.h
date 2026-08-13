@@ -29,7 +29,7 @@ typedef struct br_device_pixelmap {
 
     union {
         struct {
-            br_device_sdl3_callback_procs callbacks;
+            br_device_sdl3gpu_callback_procs callbacks;
             VIDEO video;
             void* sdl3_context;
             const char* sdl3_version;

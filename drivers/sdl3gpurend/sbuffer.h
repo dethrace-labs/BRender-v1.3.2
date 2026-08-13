@@ -10,8 +10,8 @@ extern "C" {
 
 struct br_device_pixelmap;
 
-br_error BufferStoredSDL3RENDUpdate(struct br_buffer_stored* self, struct br_device_pixelmap* pm, br_token_value* tv);
-br_boolean BufferStoredSDL3RENDReupload(struct br_buffer_stored* self);
+br_error BufferStoredSDL3GPURENDUpdate(struct br_buffer_stored* self, struct br_device_pixelmap* pm, br_token_value* tv);
+br_boolean BufferStoredSDL3GPURENDReupload(struct br_buffer_stored* self);
 
 #ifdef BR_BUFFER_STORED_PRIVATE
 

@@ -6,16 +6,16 @@
 
 /*
  * Front-screen (device pixelmap) creation and the frame end (doubleBuffer)
- * path. The GPU-facing swap work lives in video.c (SDL3REND_EnsureRecording /
- * SDL3REND_BeginRenderPass / SDL3REND_OverlayDraw / SDL3REND_Present); this
+ * path. The GPU-facing swap work lives in video.c (SDL3GPUREND_EnsureRecording /
+ * SDL3GPUREND_BeginRenderPass / SDL3GPUREND_OverlayDraw / SDL3GPUREND_Present); this
  * file only owns the front's BRender object model, its template, and the
- * dispatch that routes most methods to the shared sdl3rend implementations
+ * dispatch that routes most methods to the shared sdl3gpurend implementations
  * in commonrend/devpixmp.c.
  */
 
 static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch;
 
-static br_uint_8 DeviceSDL3RENDTypeOrBits(br_uint_8 pixel_type, br_int_32 pixel_bits) {
+static br_uint_8 DeviceSDL3GPURENDTypeOrBits(br_uint_8 pixel_type, br_int_32 pixel_bits) {
     if (pixel_type != BR_PMT_MAX)
         return pixel_type;
 
@@ -42,7 +42,7 @@ static struct br_tv_template_entry devicePixelmapFrontTemplateEntries[] = {
     { BRT(FACILITY_O), F(output_facility), BRTV_QUERY, BRTV_CONV_COPY, 0 },
     { BRT(IDENTIFIER_CSTR), F(pm_identifier), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
     { BRT(MSAA_SAMPLES_I32), F(msaa_samples), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 },
-    { BRT(SDL3_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
+    { BRT(SDL3GPU_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_DIRECT },
     { BRT_CLUT_O, 0, F(clut), BRTV_QUERY | BRTV_ALL, BRTV_CONV_COPY, 0 }
 };
 #undef F
@@ -53,7 +53,8 @@ struct pixelmapNewTokens {
     br_int_32 pixel_bits;
     br_uint_8 pixel_type;
     int msaa_samples;
-    br_device_sdl3_callback_procs* callbacks;
+    int debug_mode;
+    br_device_sdl3gpu_callback_procs* callbacks;
 };
 
 #define F(f) offsetof(struct pixelmapNewTokens, f)
@@ -63,7 +64,8 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
     { BRT(PIXEL_BITS_I32), F(pixel_bits), BRTV_SET, BRTV_CONV_COPY },
     { BRT(PIXEL_TYPE_U8), F(pixel_type), BRTV_SET, BRTV_CONV_COPY },
     { BRT(MSAA_SAMPLES_I32), F(msaa_samples), BRTV_SET, BRTV_CONV_COPY },
-    { BRT(SDL3_CALLBACKS_P), F(callbacks), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(SDL3GPU_DEBUG_MODE), F(debug_mode), BRTV_SET, BRTV_CONV_COPY },
+    { BRT(SDL3GPU_CALLBACKS_P), F(callbacks), BRTV_SET, BRTV_CONV_COPY },
 };
 #undef F
 
@@ -71,7 +73,7 @@ static struct br_tv_template_entry pixelmapNewTemplateEntries[] = {
  * Frame end: flush the offscreen 2D content, composite the overlay inside the
  * frame's render pass, present, and hand control back to the host.
  */
-static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, doubleBuffer)(br_device_pixelmap* self,
+static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl3gpurendf, doubleBuffer)(br_device_pixelmap* self,
     br_device_pixelmap* src) {
     if (self == src)
         return BRE_OK;
@@ -86,17 +88,17 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, doubleBuffer)(br_d
 
     HVIDEO hVideo = &self->asFront.video;
 
-    SDL3REND_EnsureRecording(hVideo);
+    SDL3GPUREND_EnsureRecording(hVideo);
     if (!hVideo->renderPassActive)
-        SDL3REND_BeginRenderPass(hVideo);
+        SDL3GPUREND_BeginRenderPass(hVideo);
 
     /* Composite the 2D overlay (if any) inside the frame's render pass so it
      * lands on top of the GPU-rendered 3D content. */
     if (hVideo->overlayDirty)
-        SDL3REND_OverlayDraw(hVideo);
+        SDL3GPUREND_OverlayDraw(hVideo);
 
-    SDL3REND_EndRenderPass(hVideo);
-    SDL3REND_Present(hVideo);
+    SDL3GPUREND_EndRenderPass(hVideo);
+    SDL3GPUREND_Present(hVideo);
 
     hVideo->frameFlushed = 0;
     hVideo->renderingStarted = 0;
@@ -111,10 +113,10 @@ static br_error BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, doubleBuffer)(br_d
     return BRE_OK;
 }
 
-static void BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, free)(br_object* _self) {
+static void BR_CMETHOD_DECL(br_device_pixelmap_sdl3gpurendf, free)(br_object* _self) {
     br_device_pixelmap* self = (br_device_pixelmap*)_self;
 
-    SDL3REND_VideoClose(&self->asFront.video);
+    SDL3GPUREND_VideoClose(&self->asFront.video);
 
     if (self->asFront.video.lockedPixels) {
         BrMemFree(self->asFront.video.lockedPixels);
@@ -127,7 +129,7 @@ static void BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, free)(br_object* _self
     BrResFreeNoCallback(self);
 }
 
-struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, templateQuery)(br_object* _self) {
+struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_sdl3gpurendf, templateQuery)(br_object* _self) {
     br_device_pixelmap* self = (br_device_pixelmap*)_self;
 
     if (self->device->templates.devicePixelmapFrontTemplate == NULL)
@@ -137,7 +139,7 @@ struct br_tv_template* BR_CMETHOD_DECL(br_device_pixelmap_sdl3rendf, templateQue
     return self->device->templates.devicePixelmapFrontTemplate;
 }
 
-br_device_pixelmap* DevicePixelmapSDL3RENDAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {
+br_device_pixelmap* DevicePixelmapSDL3GPURENDAllocateFront(br_device* dev, br_output_facility* outfcty, br_token_value* tv) {
     br_device_pixelmap* self;
     br_int_32 count;
     struct pixelmapNewTokens pt = {
@@ -146,6 +148,7 @@ br_device_pixelmap* DevicePixelmapSDL3RENDAllocateFront(br_device* dev, br_outpu
         .pixel_bits = -1,
         .pixel_type = BR_PMT_MAX,
         .msaa_samples = 0,
+        .debug_mode = 0,
         .callbacks = NULL,
     };
     char tmp[80];
@@ -157,10 +160,11 @@ br_device_pixelmap* DevicePixelmapSDL3RENDAllocateFront(br_device* dev, br_outpu
 
     BrTokenValueSetMany(&pt, &count, NULL, tv, dev->templates.pixelmapNewTemplate);
 
-    if (pt.callbacks == NULL || pt.width <= 0 || pt.height <= 0)
+    if (pt.callbacks == NULL || pt.width <= 0 || pt.height <= 0) {
         return NULL;
+    }
 
-    if ((pt.pixel_type = DeviceSDL3RENDTypeOrBits(pt.pixel_type, pt.pixel_bits)) == BR_PMT_MAX)
+    if ((pt.pixel_type = DeviceSDL3GPURENDTypeOrBits(pt.pixel_type, pt.pixel_bits)) == BR_PMT_MAX)
         return NULL;
 
     self = BrResAllocate(dev->res, sizeof(br_device_pixelmap), BR_MEMORY_OBJECT);
@@ -182,9 +186,10 @@ br_device_pixelmap* DevicePixelmapSDL3RENDAllocateFront(br_device* dev, br_outpu
 
     self->asFront.callbacks = *pt.callbacks;
 
-    if (SDL3REND_VideoOpen(&self->asFront.video, self,
+    if (SDL3GPUREND_VideoOpen(&self->asFront.video, self,
             NULL, NULL, NULL,
-            &self->asFront.callbacks, pt.width, pt.height) == NULL) {
+            &self->asFront.callbacks, pt.width, pt.height,
+            pt.debug_mode != 0) == NULL) {
         BrResFree(self);
         return NULL;
     }
@@ -208,14 +213,14 @@ static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch = {
     .__reserved1 = NULL,
     .__reserved2 = NULL,
     .__reserved3 = NULL,
-    ._free = BR_CMETHOD_REF(br_device_pixelmap_sdl3rendf, free),
+    ._free = BR_CMETHOD_REF(br_device_pixelmap_sdl3gpurendf, free),
     ._identifier = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), identifier),
     ._type = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), type),
     ._isType = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), isType),
     ._device = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), device),
     ._space = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), space),
 
-    ._templateQuery = BR_CMETHOD_REF(br_device_pixelmap_sdl3rendf, templateQuery),
+    ._templateQuery = BR_CMETHOD_REF(br_device_pixelmap_sdl3gpurendf, templateQuery),
     ._query = BR_CMETHOD_REF(br_object, query),
     ._queryBuffer = BR_CMETHOD_REF(br_object, queryBuffer),
     ._queryMany = BR_CMETHOD_REF(br_object, queryMany),
@@ -232,7 +237,7 @@ static const struct br_device_pixelmap_dispatch devicePixelmapFrontDispatch = {
     ._copyTo = BR_CMETHOD_REF(br_device_pixelmap_gen, copyTo),
     ._copyFrom = BR_CMETHOD_REF(br_device_pixelmap_gen, copyFrom),
     ._fill = BREND_CMETHOD_REF(BREND_CLASS(br_device_pixelmap_), fill),
-    ._doubleBuffer = BR_CMETHOD_REF(br_device_pixelmap_sdl3rendf, doubleBuffer),
+    ._doubleBuffer = BR_CMETHOD_REF(br_device_pixelmap_sdl3gpurendf, doubleBuffer),
 
     ._copyDirty = BR_CMETHOD_REF(br_device_pixelmap_gen, copyDirty),
     ._copyToDirty = BR_CMETHOD_REF(br_device_pixelmap_gen, copyToDirty),

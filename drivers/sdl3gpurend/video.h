@@ -23,12 +23,12 @@ struct br_device_pixelmap;
  * because the uploads happen mid-frame while every draw of the main command
  * buffer executes at present — a single texture would be clobbered by the
  * next scene's upload before the earlier scene's draws sample it. */
-#define SDL3REND_BG_POOL 4
+#define SDL3GPUREND_BG_POOL 4
 
 /* Uniform slot / sampler slot mapping (matches the shared GLSL bindings). */
-#define SDL3REND_MODEL_UNIFORM_SLOT     0
-#define SDL3REND_SCENE_UNIFORM_SLOT     1
-#define SDL3REND_FRAGMENT_SAMPLER_SLOT  0
+#define SDL3GPUREND_MODEL_UNIFORM_SLOT     0
+#define SDL3GPUREND_SCENE_UNIFORM_SLOT     1
+#define SDL3GPUREND_FRAGMENT_SAMPLER_SLOT  0
 
 /*
  * SDL3 GPU uniform slot mapping (matches the shared GLSL bindings):
@@ -105,11 +105,11 @@ typedef struct _VIDEO {
     /* Fences per frame slot. frameFence signals the main submit; ringUploadFence
      * signals the ring upload submit. The queue is FIFO so waiting frameFence
      * also implies the ring upload completed, but both are waited before the
-     * slot's transfer buffers are reused in SDL3REND_EnsureRecording. */
+     * slot's transfer buffers are reused in SDL3GPUREND_EnsureRecording. */
     SDL_GPUFence* frameFence[MAX_FRAMES_IN_FLIGHT];
     SDL_GPUFence* ringUploadFence[MAX_FRAMES_IN_FLIGHT];
 
-    /* Per-frame CPU->GPU staging for texture uploads. SDL3REND_UploadBufferToImage
+    /* Per-frame CPU->GPU staging for texture uploads. SDL3GPUREND_UploadBufferToImage
      * memcpy's into the current slot's mapped transfer buffer, then records a
      * copy pass into the slot's own upload command buffer and submits it
      * immediately with uploadFence. The slot is never reused until that fence
@@ -122,12 +122,12 @@ typedef struct _VIDEO {
     SDL_GPUFence* uploadFence[MAX_FRAMES_IN_FLIGHT];
 
     /* Shared persistent dynamic VBO/IBO rings for small models (electro-ray
-     * segments, sparks, dim quads, pratcam quad), mirroring the sdl3rend
+     * segments, sparks, dim quads, pratcam quad), mirroring the sdl3gpurend
      * driver. SDL3 GPU cannot bind host-visible memory as vertex/index buffers,
      * so the ring is split in two halves:
      *
      *   dyn*Transfer (mapped SDL_GPUTransferBuffer)  — written by memcpy during
-     *       frame recording (build_vbo/build_ibo/SDL3REND_RefreshRingStored).
+     *       frame recording (build_vbo/build_ibo/SDL3GPUREND_RefreshRingStored).
      *   dynVbo/dynIbo (SDL_GPUBuffer, VERTEX/INDEX usage) — bound by draws.
      *
      * The cursors only advance within a frame. At present, before the main
@@ -152,14 +152,14 @@ typedef struct _VIDEO {
     size_t dynIboOffset[MAX_FRAMES_IN_FLIGHT];
     size_t dynIboWritten[MAX_FRAMES_IN_FLIGHT];
     size_t dynIboCapacity;
-    /* Monotonic counter bumped once per frame (in SDL3REND_EnsureRecording after
+    /* Monotonic counter bumped once per frame (in SDL3GPUREND_EnsureRecording after
      * the ring cursors reset). Stored geometries that sub-allocate from the ring
      * stamp ringEpoch with this value; a mismatch at render time means the ring
      * slot was reset since the model was built, so its geometry is stale and
      * must be re-uploaded. */
     uint32_t frameEpoch;
 
-    /* Overlay / 3DFX 2D composite state (unchanged semantics from sdl3rend).
+    /* Overlay / 3DFX 2D composite state (unchanged semantics from sdl3gpurend).
      * lockedPixels holds the CPU 2D surface; dirty regions are uploaded into
      * overlayTexture; the overlay quad (overlayPipeline) is drawn inside the
      * scene's render pass so the 2D content composites on top of the 3D. */
@@ -167,14 +167,25 @@ typedef struct _VIDEO {
     SDL_GPUBuffer* overlayQuadVbo;
     SDL_GPUBuffer* overlayQuadIbo;
     int overlayDirty;
+    /* Per-frame flag: the CPU overlay (lockedPixels) had been flushed to the
+     * overlay texture before the FIRST scene of the frame began. Captured from
+     * overlayDirty once per frame (firstScene only) in sceneBegin. 2D-primary
+     * frames (the in-game map screen) set it; racing frames (whose first scene
+     * is the 3D view, overlayDirty==0) do not. It gates the main viewport purge
+     * and the dim-quad handling: on the map screen the flushed map image is
+     * dimmed in place and text drawn after stays bright, while racing dim quads
+     * purge the cockpit so the GPU dim dims the 3D underneath. The mid-frame
+     * flush before the pratcam also sets overlayDirty, but must NOT re-classify
+     * the frame, so sub-area background handling reads overlayDirty directly.
+     * This replaces the old get_map_mode host callback, so the driver no longer
+     * depends on any game logic. */
+    int overlayPrimaryFrame;
     SDL_GPUTexture* overlayTexture;
-    /* Background texture pool for sub-area scenes (see SDL3REND_BG_POOL).
+    /* Background texture pool for sub-area scenes (see SDL3GPUREND_BG_POOL).
      * Created lazily at game-screen size when a sub-area scene first needs
-     * one; see SDL3REND_DrawSceneBackground. */
-    SDL_GPUTexture* bgTexture[SDL3REND_BG_POOL];
+     * one; see SDL3GPUREND_DrawSceneBackground. */
+    SDL_GPUTexture* bgTexture[SDL3GPUREND_BG_POOL];
     int bgSceneIndex;
-    int dimAreaCount;
-    br_rectangle dimAreas[8];
     int clearAreaCount;
     br_rectangle clearAreas[4];
     int pratcamAreaCount;
@@ -213,19 +224,14 @@ typedef struct _VIDEO {
     shader_data_model modelData;
     shader_data_light lightData;
 
-    /* Host-side hooks copied from br_device_sdl3_callback_procs at
-     * SDL3REND_VideoOpen. Optional — the driver tolerates NULL (no map mode,
-     * no resize detection), which is what keeps the driver buildable/runnable
-     * outside dethrace. */
-    br_device_sdl3_get_map_mode_cbfn      *get_map_mode;
-    br_device_sdl3_get_window_size_cbfn   *get_window_size;
+    /* Host-side hooks copied from br_device_sdl3gpu_callback_procs at
+     * SDL3GPUREND_VideoOpen. Optional — the driver tolerates NULL (no resize
+     * detection), which is what keeps the driver buildable/runnable outside
+     * dethrace. */
+    br_device_sdl3gpu_get_window_size_cbfn   *get_window_size;
 } VIDEO, *HVIDEO;
 
-static inline int SDL3REND_IsMapMode(HVIDEO hVideo) {
-    return hVideo->get_map_mode ? hVideo->get_map_mode() : 0;
-}
-
-static inline void SDL3REND_GetWindowSize(HVIDEO hVideo, int* width, int* height) {
+static inline void SDL3GPUREND_GetWindowSize(HVIDEO hVideo, int* width, int* height) {
     if (hVideo->get_window_size) {
         hVideo->get_window_size(width, height);
     } else {
@@ -234,22 +240,23 @@ static inline void SDL3REND_GetWindowSize(HVIDEO hVideo, int* width, int* height
     }
 }
 
-HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
-    const SDL3REND_ShaderSource* brender,
-    const SDL3REND_ShaderSource* overlay,
-    const SDL3REND_ShaderSource* defaultShaders,
-    br_device_sdl3_callback_procs* callbacks, int width, int height);
+HVIDEO SDL3GPUREND_VideoOpen(HVIDEO hVideo, void* parent,
+    const SDL3GPUREND_ShaderSource* brender,
+    const SDL3GPUREND_ShaderSource* overlay,
+    const SDL3GPUREND_ShaderSource* defaultShaders,
+    br_device_sdl3gpu_callback_procs* callbacks, int width, int height,
+    bool debug_mode);
 
-void SDL3REND_VideoClose(HVIDEO hVideo);
+void SDL3GPUREND_VideoClose(HVIDEO hVideo);
 
-void SDL3REND_VideoResize(HVIDEO hVideo);
+void SDL3GPUREND_VideoResize(HVIDEO hVideo);
 
 /* Creates a shader for the device's backend. Picks the matching format from
  * `source` (SPIR-V / MSL / DXIL) and fails with BR_FATAL if the format the
  * device needs was not produced by this build. */
-SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const SDL3REND_ShaderSource* source, SDL_GPUShaderStage stage);
+SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderSource* source, SDL_GPUShaderStage stage);
 
-SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
+SDL_GPUGraphicsPipeline* SDL3GPUREND_CreateGraphicsPipeline(HVIDEO hVideo,
     SDL_GPUShader* vertModule, SDL_GPUShader* fragModule,
     const SDL_GPUVertexBufferDescription* bindingDesc,
     const SDL_GPUVertexAttribute* attrDescs, uint32_t attrCount,
@@ -257,21 +264,21 @@ SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
     bool depthTestEnable, bool depthWriteEnable);
 
 /* Copies the scene UBO payload into hVideo->sceneData. The actual push to the
- * GPU happens in SDL3REND_SceneBegin (uniform slot 1 on both stages), so the
+ * GPU happens in SDL3GPUREND_SceneBegin (uniform slot 1 on both stages), so the
  * scene only needs one push per pass, not one per draw. */
-void SDL3REND_UpdateScene(HVIDEO hVideo, void* data, size_t size);
+void SDL3GPUREND_UpdateScene(HVIDEO hVideo, void* data, size_t size);
 
 /* Pushes the current scene UBO (hVideo->sceneData) to uniform slot 1 on both
  * stages. Called once per scene before the first model draw. */
-void SDL3REND_SceneBegin(HVIDEO hVideo);
+void SDL3GPUREND_SceneBegin(HVIDEO hVideo);
 
 /* Pushes the per-draw model payload to uniform slot 0 on both stages. Called
  * by modelrender.c immediately before the draw. */
-void SDL3REND_PushModel(HVIDEO hVideo, const void* data, size_t size);
+void SDL3GPUREND_PushModel(HVIDEO hVideo, const void* data, size_t size);
 
-void SDL3REND_BeginRenderPass(HVIDEO hVideo);
+void SDL3GPUREND_BeginRenderPass(HVIDEO hVideo);
 
-void SDL3REND_EndRenderPass(HVIDEO hVideo);
+void SDL3GPUREND_EndRenderPass(HVIDEO hVideo);
 
 /* Clears the frame's shared depth attachment to 1.0 mid-frame. SDL3 GPU has no
  * in-pass clear (unlike VK's vkCmdClearAttachments), so this ends the current
@@ -281,27 +288,27 @@ void SDL3REND_EndRenderPass(HVIDEO hVideo);
  * before every z-buffered scene (rear-view mirror, wreck summary), and all
  * scenes share the one depth texture, so without this the mirror/wreck scenes
  * would depth-test against stale main-view depth. */
-void SDL3REND_ClearDepthAttachment(HVIDEO hVideo);
+void SDL3GPUREND_ClearDepthAttachment(HVIDEO hVideo);
 
-void SDL3REND_EnsureRecording(HVIDEO hVideo);
+void SDL3GPUREND_EnsureRecording(HVIDEO hVideo);
 
 /* Uploads the current render pass's framebuffer contents to the swapchain and
  * submits the frame. First submits the ring upload (copy ring transfer buffer
  * -> ring GPU buffer) so the main submit's draws see this frame's ring data,
  * then submits the main command buffer. Returns nonzero on error. */
-int SDL3REND_Present(HVIDEO hVideo);
+int SDL3GPUREND_Present(HVIDEO hVideo);
 
 struct br_geometry_stored;
-void SDL3REND_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
+void SDL3GPUREND_RefreshRingStored(HVIDEO hVideo, struct br_geometry_stored* self);
 
 /* Draws the overlay quad (samples overlayTexture) into the currently active
  * render pass. */
-void SDL3REND_OverlayDraw(HVIDEO hVideo);
+void SDL3GPUREND_OverlayDraw(HVIDEO hVideo);
 
 /* Letterbox: centre pm_w x pm_h in win_w x win_h, returning the scaled,
  * centered rect and scale factors (rx, ry). Any output may be NULL. Shared by
  * sceneBegin and the overlay draw. */
-void SDL3REND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
+void SDL3GPUREND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
     int* vp_x, int* vp_y, int* vp_w, int* vp_h, float* rx, float* ry);
 
 /* Snapshot the colour_target rect (gx,gy,gw,gh) of the CPU locked buffer
@@ -310,7 +317,7 @@ void SDL3REND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
  * viewport is set, before the first model draw. The sceneEnd purge erases the
  * same rect from the 2D composite, so the content only appears behind the 3D.
  * No-op when there is nothing to draw or the pool is exhausted. */
-void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh);
+void SDL3GPUREND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh);
 
 /* Uploads `hostDataSize` bytes of host memory into `texture` (width x height
  * at dstX,dstY) through the current frame slot's staging transfer buffer. The
@@ -320,27 +327,27 @@ void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh)
  * uploads are safe from the frame loop or out-of-frame track/asset loading.
  * SDL3 GPU handles the layout transitions. Returns 0 on success, nonzero on
  * failure. */
-int SDL3REND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
+int SDL3GPUREND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
     uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY,
     const void* hostData, size_t hostDataSize);
 
 /* Uploads host memory into a GPU-local buffer (vertex/index/any) through the
  * current frame slot's staging transfer buffer. Same lifecycle as
- * SDL3REND_UploadBufferToImage; safe from the frame loop or out-of-frame
+ * SDL3GPUREND_UploadBufferToImage; safe from the frame loop or out-of-frame
  * asset loading. Returns 0 on success, nonzero on failure. */
-int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer,
+int SDL3GPUREND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer,
     const void* hostData, size_t hostDataSize);
 
 /* Releases a texture/sampler/buffer/pipeline that may still be in use by the
  * GPU. SDL3 GPU resources are reference-counted and SDL_ReleaseGPU* schedules
  * the safe destruction, so this is just a direct release — no deferred-free
  * lists needed (unlike the VK driver's manual memory management). */
-void SDL3REND_DeferFreeImage(HVIDEO hVideo, SDL_GPUTexture* texture, SDL_GPUSampler* sampler);
-void SDL3REND_DeferFreeBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer);
+void SDL3GPUREND_DeferFreeImage(HVIDEO hVideo, SDL_GPUTexture* texture, SDL_GPUSampler* sampler);
+void SDL3GPUREND_DeferFreeBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer);
 
 /* Fills a screen-space rectangle in the CPU locked buffer with the transparent
  * magenta sentinel so it isn't composited over GPU-rendered content. */
-static inline void SDL3REND_PurgeRect(int bpp, br_uint_32 magenta, void* pixels,
+static inline void SDL3GPUREND_PurgeRect(int bpp, br_uint_32 magenta, void* pixels,
     int pm_width, int pm_height, int pm_row_bytes,
     int x, int y, int w, int h) {
     int row_w = pm_row_bytes / bpp;
@@ -357,6 +364,31 @@ static inline void SDL3REND_PurgeRect(int bpp, br_uint_32 magenta, void* pixels,
                 ((br_uint_16*)pixels)[off + dx] = (br_uint_16)magenta;
             else
                 ((br_uint_32*)pixels)[off + dx] = magenta;
+        }
+    }
+}
+
+/* Halves the RGB channels of every non-magenta pixel in a screen-space
+ * rectangle of the CPU locked buffer (RGB565 only), simulating the game's
+ * DimRectangle quad for 2D-primary frames where the CPU map image sits on top
+ * of the GPU dim quad and must be dimmed in place. */
+static inline void SDL3GPUREND_DimRect(void* pixels,
+    int pm_width, int pm_height, int pm_row_bytes,
+    int x, int y, int w, int h) {
+    int row_w = pm_row_bytes / 2;
+    for (int dy = 0; dy < h; dy++) {
+        int py = y + dy;
+        if (py < 0 || py >= pm_height) continue;
+        int px = x;
+        int cw = w;
+        if (px < 0) { px = 0; cw = w + x; }
+        if (px + cw > pm_width) cw = pm_width - px;
+        br_uint_16* row = &((br_uint_16*)pixels)[py * row_w];
+        for (int dx = 0; dx < cw; dx++) {
+            br_uint_16 p = row[px + dx];
+            if (p == BR_COLOUR_565(31, 0, 31)) continue;
+            int r5 = (p >> 11) & 0x1F, g6 = (p >> 5) & 0x3F, b5 = p & 0x1F;
+            row[px + dx] = (br_uint_16)(((r5 >> 1) << 11) | ((g6 >> 1) << 5) | (b5 >> 1));
         }
     }
 }

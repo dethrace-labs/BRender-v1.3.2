@@ -36,7 +36,7 @@ static struct {
 
 // sdl3 gpu renderer
 static struct {
-    br_device_sdl3_callback_procs sdl3_callbacks;
+    br_device_sdl3gpu_callback_procs sdl3_callbacks;
 } sdl3_props;
 
 static enum {
@@ -53,13 +53,13 @@ void BR_CALLBACK _BrBeginHook(void) {
     struct br_device* BR_EXPORT BrDrv1SoftRendBegin(char* arguments);
     struct br_device* BR_EXPORT BrDrv1VirtualFramebufferBegin(char* arguments);
     struct br_device* BR_EXPORT BrDrv1GLBegin(char* arguments);
-    struct br_device* BR_EXPORT BrDrv1SDL3RENDBegin(char* arguments);
+    struct br_device* BR_EXPORT BrDrv1SDL3GPURENDBegin(char* arguments);
 
     BrDevAddStatic(NULL, BrDrv1SoftPrimBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1SoftRendBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1VirtualFramebufferBegin, NULL);
     BrDevAddStatic(NULL, BrDrv1GLBegin, NULL);
-    BrDevAddStatic(NULL, BrDrv1SDL3RENDBegin, NULL);
+    BrDevAddStatic(NULL, BrDrv1SDL3GPURENDBegin, NULL);
 }
 
 void BR_CALLBACK _BrEndHook(void) {
@@ -182,7 +182,7 @@ static void destroy_opengl_renderer() {
 }
 
 static void BR_CALLBACK sdl3_swap_buffers(br_pixelmap* pm) {
-    /* The sdl3rend driver presents through its own swapchain + present queue;
+    /* The sdl3gpurend driver presents through its own swapchain + present queue;
      * this hook only fires after the driver has already presented. */
 }
 
@@ -195,10 +195,6 @@ static void BR_CALLBACK sdl3_get_viewport(int* x, int* y, float* width_multiplie
 
 static void BR_CALLBACK sdl3_get_window_size(int* width, int* height) {
     SDL_GetWindowSize(window, width, height);
-}
-
-static int BR_CALLBACK sdl3_get_map_mode(void) {
-    return 0;
 }
 
 static void* BR_CALLBACK sdl3_get_window(void) {
@@ -218,14 +214,13 @@ static int init_sdl3_gpu_renderer() {
 
     sdl3_props.sdl3_callbacks.get_viewport = sdl3_get_viewport;
     sdl3_props.sdl3_callbacks.swap_buffers = sdl3_swap_buffers;
-    sdl3_props.sdl3_callbacks.get_map_mode = sdl3_get_map_mode;
     sdl3_props.sdl3_callbacks.get_window_size = sdl3_get_window_size;
     sdl3_props.sdl3_callbacks.get_window = sdl3_get_window;
 
-    BrDevBeginVar(&screen, "sdl3rend",
+    BrDevBeginVar(&screen, "sdl3gpurend",
         BRT_WIDTH_I32, width,
         BRT_HEIGHT_I32, height,
-        BRT_SDL3_CALLBACKS_P, &sdl3_props.sdl3_callbacks,
+        BRT_SDL3GPU_CALLBACKS_P, &sdl3_props.sdl3_callbacks,
         BRT_PIXEL_TYPE_U8, BR_PMT_RGB_565,
         BR_NULL_TOKEN);
 

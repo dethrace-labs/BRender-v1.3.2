@@ -8,7 +8,7 @@ extern "C" {
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 
-/* Byte-identical vertex layout to glrend/sdl3rend: brender.vert (shared GLSL)
+/* Byte-identical vertex layout to glrend/sdl3gpurend: brender.vert (shared GLSL)
  * consumes it, so the CPU-side struct must match on every backend. */
 typedef struct sdl3_vertex_f {
     br_vector3_f p;
@@ -45,7 +45,7 @@ typedef struct br_geometry_stored {
     /* Frame epoch when this stored's ring sub-allocations were last written.
      * The ring cursor resets every frame, so a ring model whose ringEpoch no
      * longer matches VIDEO.frameEpoch references clobbered data and must be
-     * re-uploaded (see SDL3REND_RefreshRingStored). */
+     * re-uploaded (see SDL3GPUREND_RefreshRingStored). */
     uint32_t ringEpoch;
 
     int num_groups;

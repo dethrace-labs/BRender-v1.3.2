@@ -1,5 +1,5 @@
 /*
- * Device pixelmap methods — shared glrend/sdl3rend.
+ * Device pixelmap methods — shared glrend/sdl3gpurend.
  *
  * The object bookkeeping (template/query/dispatch), allocateSub, the CPU
  * locked-buffer fallback loops in rectangleFill and directLock/directUnlock
@@ -44,7 +44,7 @@ static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_s
 static br_error custom_query(br_value* pvalue, void** extra, br_size_t* pextra_size, void* block, struct br_tv_template_entry* tep) {
     const br_device_pixelmap* self = block;
 
-    if (tep->token == BRT_SDL3_CALLBACKS_P) {
+    if (tep->token == BRT_SDL3GPU_CALLBACKS_P) {
         if (self->use_type == BRT_OFFSCREEN)
             pvalue->p = (void*)&self->asBack;
         else if (self->use_type == BRT_DEPTH)
@@ -80,7 +80,7 @@ static struct br_tv_template_entry devicePixelmapTemplateEntries[] = {
 #if defined(BREND_DRIVER_GL)
     { DEV(OPENGL_TEXTURE_U32), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
 #else
-    { BRT(SDL3_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
+    { BRT(SDL3GPU_CALLBACKS_P), 0, BRTV_QUERY | BRTV_ALL, BRTV_CONV_CUSTOM, (br_uintptr_t)&custom },
 #endif
 };
 #undef F
@@ -487,7 +487,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleFill)(br_
         if (self->screen != NULL) {
             HVIDEO hVideo = &self->screen->asFront.video;
             if (hVideo->renderPassActive && hVideo->commandBuffer != NULL)
-                SDL3REND_ClearDepthAttachment(hVideo);
+                SDL3GPUREND_ClearDepthAttachment(hVideo);
         }
 #endif
     } else {
@@ -500,7 +500,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), rectangleFill)(br_
     return BRE_OK;
 }
 
-#if defined(BREND_DRIVER_SDL3REND)
+#if defined(BREND_DRIVER_SDL3GPUREND)
 br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), fill)(br_device_pixelmap* self, br_uint_32 colour) {
     br_rectangle r;
     r.x = 0;
@@ -736,42 +736,18 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), allocateSub)(br_de
     return BRE_OK;
 }
 
-#if defined(BREND_DRIVER_SDL3REND)
+#if defined(BREND_DRIVER_SDL3GPUREND)
 /* Single entry point for all CPU locked-buffer region processing at flush time:
- * the map-mode dimArea dimming (565 only), the clearArea/pratcam/mainViewport
- * purges to transparent magenta, and the counter resets. Runs BEFORE the upload
- * so the overlay image is uploaded with the purged regions. */
-static void SDL3REND_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
+ * the clearArea/pratcam purges to transparent magenta and the counter resets.
+ * (The map-screen dim is applied at dim-draw time in modelrender.c, not here,
+ * so the map text drawn after the dim scene stays bright.) Runs BEFORE the
+ * upload so the overlay image is uploaded with the purged regions. */
+static void SDL3GPUREND_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self) {
     int bpp = (self->pm_type == BR_PMT_RGB_565 || self->pm_type == BR_PMT_RGB_555) ? 2 : 4;
     br_uint_32 magenta = (bpp == 2) ? BR_COLOUR_565(31, 0, 31) : BR_COLOUR_RGB(255, 0, 255);
 
-    if (bpp == 2) {
-        if (SDL3REND_IsMapMode(hVideo)) {
-            int row_w = self->pm_row_bytes / 2;
-            for (int i = 0; i < hVideo->dimAreaCount; i++) {
-                int ax = hVideo->dimAreas[i].x, ay = hVideo->dimAreas[i].y;
-                int aw = hVideo->dimAreas[i].w, ah = hVideo->dimAreas[i].h;
-                for (int dy = 0; dy < ah; dy++) {
-                    int py = ay + dy;
-                    if (py < 0 || py >= self->pm_height) continue;
-                    for (int dx = 0; dx < aw; dx++) {
-                        int px = ax + dx;
-                        if (px < 0 || px >= self->pm_width) continue;
-                        int off = py * row_w + px;
-                        br_uint_16 p = ((br_uint_16*)hVideo->lockedPixels)[off];
-                        if (p == BR_COLOUR_565(31, 0, 31)) continue;
-                        int r5 = (p >> 11) & 0x1F, g6 = (p >> 5) & 0x3F, b5 = p & 0x1F;
-                        r5 = r5 >> 1; g6 = g6 >> 1; b5 = b5 >> 1;
-                        ((br_uint_16*)hVideo->lockedPixels)[off] = (br_uint_16)((r5 << 11) | (g6 << 5) | b5);
-                    }
-                }
-            }
-        }
-        hVideo->dimAreaCount = 0;
-    }
-
     for (int i = 0; i < hVideo->clearAreaCount; i++) {
-        SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+        SDL3GPUREND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
             self->pm_width, self->pm_height, self->pm_row_bytes,
             hVideo->clearAreas[i].x, hVideo->clearAreas[i].y,
             hVideo->clearAreas[i].w, hVideo->clearAreas[i].h);
@@ -779,7 +755,7 @@ static void SDL3REND_PurgeLockedRegions(HVIDEO hVideo, br_device_pixelmap* self)
     hVideo->clearAreaCount = 0;
 
     if (bpp == 2 && hVideo->pratcamAreaCount) {
-        SDL3REND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
+        SDL3GPUREND_PurgeRect(bpp, magenta, hVideo->lockedPixels,
             self->pm_width, self->pm_height, self->pm_row_bytes,
             hVideo->pratcamArea.x, hVideo->pratcamArea.y,
             hVideo->pratcamArea.w, hVideo->pratcamArea.h);
@@ -845,7 +821,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
     if (hVideo->lockedPixels != NULL) {
         /* Ensure the overlay texture exists (BGRA8888 — universally supported).
          * The overlay is uploaded from the CPU locked buffer each frame and
-         * composited on top of the 3D content in SDL3REND_Present. */
+         * composited on top of the 3D content in SDL3GPUREND_Present. */
         if (hVideo->overlayTexture == NULL) {
             SDL_GPUTextureCreateInfo ti = {0};
             ti.type = SDL_GPU_TEXTURETYPE_2D;
@@ -863,7 +839,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
 
         size_t srcOffset = self->pm_base_y * self->pm_row_bytes + self->pm_base_x * 2;
 
-        SDL3REND_PurgeLockedRegions(hVideo, self);
+        SDL3GPUREND_PurgeLockedRegions(hVideo, self);
 
         if (self->pm_type == BR_PMT_RGB_565 || self->pm_type == BR_PMT_RGB_555) {
             /* 565/555 -> BGRA8888. The transparent magenta sentinel (0xF81F)
@@ -893,7 +869,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
                     }
                 }
             }
-            if (SDL3REND_UploadBufferToImage(hVideo, hVideo->overlayTexture,
+            if (SDL3GPUREND_UploadBufferToImage(hVideo, hVideo->overlayTexture,
                     self->pm_width, self->pm_height, 0, 0,
                     rgba, (size_t)self->pm_width * self->pm_height * 4) != 0) {
                 BrScratchFree(rgba);
@@ -902,7 +878,7 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_p
             BrScratchFree(rgba);
         } else {
             /* 4 bytes/pixel raw copy (RGBA_8888 / RGBX_888). */
-            if (SDL3REND_UploadBufferToImage(hVideo, hVideo->overlayTexture,
+            if (SDL3GPUREND_UploadBufferToImage(hVideo, hVideo->overlayTexture,
                     self->pm_width, self->pm_height, 0, 0,
                     (const char*)hVideo->lockedPixels + srcOffset,
                     (size_t)self->pm_width * self->pm_height * 4) != 0)

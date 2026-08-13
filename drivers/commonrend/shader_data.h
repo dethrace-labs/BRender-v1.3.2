@@ -4,7 +4,7 @@
 /*
  * std140 payloads for the shared GLSL uniform blocks (drivers/commonrend).
  *
- * These structs must be byte-identical between the glrend and sdl3rend
+ * These structs must be byte-identical between the glrend and sdl3gpurend
  * backends — the shaders are shared, so the CPU payload has to match their
  * std140 layout on every backend. Keep the field order in lockstep with the
  * corresponding uniform block in the GLSL.

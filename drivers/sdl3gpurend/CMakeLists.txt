@@ -1,6 +1,6 @@
-project(sdl3rend C)
+project(sdl3gpurend C)
 
-# This file is the target manifest for the sdl3rend driver. It is wired into the
+# This file is the target manifest for the sdl3gpurend driver. It is wired into the
 # top-level build via drivers/CMakeLists.txt. Files listed below were created
 # incrementally during the port.
 
@@ -8,8 +8,8 @@ project(sdl3rend C)
 # falling back to loading the SDL3 library) instead of linking against it. Used
 # by dethrace's single-executable builds, where SDL3 symbols live in the
 # harness. Set this option BEFORE add_subdirectory(BRender), e.g.:
-#     set(BRENDER_SDL3REND_DYNAMIC ON CACHE BOOL "" FORCE)
-option(BRENDER_SDL3REND_DYNAMIC
+#     set(BRENDER_SDL3GPUREND_DYNAMIC ON CACHE BOOL "" FORCE)
+option(BRENDER_SDL3GPUREND_DYNAMIC
     "Resolve SDL3 at runtime (sdl3_dyn.c) instead of linking against SDL3" OFF)
 
 # SDL3 dependency. Located via find_package(SDL3 CONFIG), as dethrace does, and
@@ -39,7 +39,7 @@ endif()
 #              (--hlsl --shader-model 60) and compiled to DXIL with dxc.
 # Every available format is embedded at build time; video.c requests exactly
 # the formats this build produced and selects the matching source per device
-# (see sdl3rend_shader_formats.h and SDL3REND_CreateShader).
+# (see sdl3gpurend_shader_formats.h and SDL3GPUREND_CreateShader).
 #
 # MSL is mandatory on Apple: SDL3 GPU picks the Metal backend there, and a
 # build that can only produce SPIR-V would not run without MoltenVK. Fail at
@@ -56,38 +56,38 @@ endif()
 
 if(APPLE AND NOT SPIRV_CROSS_COMPILER)
     message(FATAL_ERROR
-        "spirv-cross is required to build the sdl3rend driver on Apple "
+        "spirv-cross is required to build the sdl3gpurend driver on Apple "
         "(MSL shaders for the Metal backend). Install it with: "
         "brew install spirv-cross")
 endif()
 
 if(WIN32 AND NOT (SPIRV_CROSS_COMPILER AND DXC_COMPILER))
     message(WARNING
-        "spirv-cross and/or dxc not found; the sdl3rend driver will fall back "
+        "spirv-cross and/or dxc not found; the sdl3gpurend driver will fall back "
         "to the Vulkan backend on Windows. Install spirv-cross and dxc to "
         "enable the D3D12 (DXIL) backend.")
 endif()
 
 # Which shader formats does this build embed? Drives the device-create mask in
-# video.c (via sdl3rend_shader_formats.h). SPIR-V is always available: it is
+# video.c (via sdl3gpurend_shader_formats.h). SPIR-V is always available: it is
 # either compiled here or embedded from the source tree.
-set(SDL3REND_SHADERFORMAT_MSL_AVAILABLE 0)
-set(SDL3REND_SHADERFORMAT_DXIL_AVAILABLE 0)
+set(SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE 0)
+set(SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE 0)
 if(GLSL_COMPILER AND SPIRV_CROSS_COMPILER)
-    set(SDL3REND_SHADERFORMAT_MSL_AVAILABLE 1)
+    set(SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE 1)
     if(DXC_COMPILER)
-        set(SDL3REND_SHADERFORMAT_DXIL_AVAILABLE 1)
+        set(SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE 1)
     endif()
 endif()
 
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sdl3rend_shader_formats.h"
-    "#ifndef SDL3REND_SHADER_FORMATS_H_\n"
-    "#define SDL3REND_SHADER_FORMATS_H_\n"
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sdl3gpurend_shader_formats.h"
+    "#ifndef SDL3GPUREND_SHADER_FORMATS_H_\n"
+    "#define SDL3GPUREND_SHADER_FORMATS_H_\n"
     "\n"
     "/* Auto-generated; describes which shader formats this build embeds. */\n"
-    "#define SDL3REND_SHADERFORMAT_SPIRV_AVAILABLE 1\n"
-    "#define SDL3REND_SHADERFORMAT_MSL_AVAILABLE ${SDL3REND_SHADERFORMAT_MSL_AVAILABLE}\n"
-    "#define SDL3REND_SHADERFORMAT_DXIL_AVAILABLE ${SDL3REND_SHADERFORMAT_DXIL_AVAILABLE}\n"
+    "#define SDL3GPUREND_SHADERFORMAT_SPIRV_AVAILABLE 1\n"
+    "#define SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE ${SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE}\n"
+    "#define SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE ${SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE}\n"
     "\n"
     "#endif\n")
 
@@ -239,7 +239,7 @@ set(RENDERER_FILES
         )
 source_group("Renderer" FILES ${RENDERER_FILES})
 
-set(SDL3REND_FILES
+set(SDL3GPUREND_FILES
         ${BR_COMMON_OBJ_FILES}
 
         drv_ip.h
@@ -248,29 +248,29 @@ set(SDL3REND_FILES
         )
 
 set(INC_FILES
-        brsdl3rend.h
+        brsdl3gpurend.h
         )
 
-add_library(sdl3rend-headers INTERFACE)
-target_sources(sdl3rend-headers INTERFACE
+add_library(sdl3gpurend-headers INTERFACE)
+target_sources(sdl3gpurend-headers INTERFACE
         FILE_SET include
         TYPE HEADERS
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
         FILES ${INC_FILES}
         )
 
-target_include_directories(sdl3rend-headers INTERFACE
+target_include_directories(sdl3gpurend-headers INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/sdl3rend>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/brender/sdl3gpurend>
         )
 
-set_target_properties(sdl3rend-headers PROPERTIES
-        EXPORT_NAME "Drivers::SDL3REND::Headers"
+set_target_properties(sdl3gpurend-headers PROPERTIES
+        EXPORT_NAME "Drivers::SDL3GPUREND::Headers"
         FOLDER "BRender/Drivers"
         )
 
-add_library(sdl3rend
-        ${SDL3REND_FILES}
+add_library(sdl3gpurend
+        ${SDL3GPUREND_FILES}
         ${RENDERER_FILES}
         ${VIDEO_FILES}
         ${BR_COMMON_STATE_FILES}
@@ -280,36 +280,36 @@ add_library(sdl3rend
         ${DXIL_GENERATED}
         )
 
-brender_common_target_setup(sdl3rend BREND_DRIVER_SDL3REND SDL3REND sdl3rend "sdl3rend")
+brender_common_target_setup(sdl3gpurend BREND_DRIVER_SDL3GPUREND SDL3GPUREND sdl3gpurend "sdl3gpurend")
 
 if(SDL3_FOUND)
-    if(BRENDER_SDL3REND_DYNAMIC)
+    if(BRENDER_SDL3GPUREND_DYNAMIC)
         # dethrace single-executable build: the harness resolves SDL3 at runtime
-        # and hands the driver a library handle via br_device_sdl3_callback_procs.
+        # and hands the driver a library handle via br_device_sdl3gpu_callback_procs.
         # We only need the SDL3 headers here (the GPU enums/structs still come
         # from SDL3/SDL_gpu.h), not the library itself.
-        message(STATUS "sdl3rend: SDL3 resolved at runtime (no SDL3 link)")
-        target_compile_definitions(sdl3rend PRIVATE SDL3REND_SDL_DYNAMIC)
-        target_include_directories(sdl3rend PRIVATE
+        message(STATUS "sdl3gpurend: SDL3 resolved at runtime (no SDL3 link)")
+        target_compile_definitions(sdl3gpurend PRIVATE SDL3GPUREND_SDL_DYNAMIC)
+        target_include_directories(sdl3gpurend PRIVATE
                 $<TARGET_PROPERTY:SDL3::SDL3,INTERFACE_INCLUDE_DIRECTORIES>)
-        target_link_libraries(sdl3rend PRIVATE ${CMAKE_DL_LIBS})
+        target_link_libraries(sdl3gpurend PRIVATE ${CMAKE_DL_LIBS})
     else()
-        message(STATUS "sdl3rend: linked against SDL3")
-        target_link_libraries(sdl3rend PRIVATE SDL3::SDL3)
+        message(STATUS "sdl3gpurend: linked against SDL3")
+        target_link_libraries(sdl3gpurend PRIVATE SDL3::SDL3)
     endif()
 else()
-    if(BRENDER_SDL3REND_DYNAMIC)
+    if(BRENDER_SDL3GPUREND_DYNAMIC)
         message(FATAL_ERROR
-            "BRENDER_SDL3REND_DYNAMIC requires SDL3 headers; run with SDL3 "
+            "BRENDER_SDL3GPUREND_DYNAMIC requires SDL3 headers; run with SDL3 "
             "available to find_package(SDL3)")
     endif()
 endif()
-target_link_libraries(sdl3rend PUBLIC sdl3rend-headers)
+target_link_libraries(sdl3gpurend PUBLIC sdl3gpurend-headers)
 
-set_target_properties(sdl3rend PROPERTIES
+set_target_properties(sdl3gpurend PROPERTIES
         C_STANDARD 11
         C_STANDARD_REQUIRED TRUE
-        EXPORT_NAME "Drivers::SDL3REND"
+        EXPORT_NAME "Drivers::SDL3GPUREND"
         FOLDER "BRender/Drivers"
         )
 
@@ -317,11 +317,11 @@ if(BRENDER_ASAN_ENABLED)
     set(CMAKE_C_FLAGS
             "${CMAKE_C_FLAGS}  -fsanitize=undefined -fsanitize=address"
     )
-    target_compile_options(sdl3rend PUBLIC -fsanitize=address)
-    target_link_options(sdl3rend
+    target_compile_options(sdl3gpurend PUBLIC -fsanitize=address)
+    target_link_options(sdl3gpurend
             BEFORE PUBLIC -fsanitize=undefined PUBLIC -fsanitize=address,undefined
     )
 endif()
 
-add_library(BRender::Drivers::SDL3REND::Headers ALIAS sdl3rend-headers)
-add_library(BRender::Drivers::SDL3REND ALIAS sdl3rend)
+add_library(BRender::Drivers::SDL3GPUREND::Headers ALIAS sdl3gpurend-headers)
+add_library(BRender::Drivers::SDL3GPUREND ALIAS sdl3gpurend)

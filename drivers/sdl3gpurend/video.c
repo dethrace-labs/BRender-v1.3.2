@@ -12,22 +12,22 @@
 
 #include "drv.h"
 #include "drv_ip.h"
-#include "brsdl3rend.h"
+#include "brsdl3gpurend.h"
 #include "gstored.h"
 #include "sdl3_shaders.h"
-#include "sdl3rend_shader_formats.h"
+#include "sdl3gpurend_shader_formats.h"
 #include "video.h"
 
-#define SDL3REND_DEFAULT_RING_VBO_CAPACITY (512 * 1024)
-#define SDL3REND_DEFAULT_RING_IBO_CAPACITY (256 * 1024)
-#define SDL3REND_DEFAULT_STAGING_CAPACITY  (16 * 1024 * 1024)
+#define SDL3GPUREND_DEFAULT_RING_VBO_CAPACITY (512 * 1024)
+#define SDL3GPUREND_DEFAULT_RING_IBO_CAPACITY (256 * 1024)
+#define SDL3GPUREND_DEFAULT_STAGING_CAPACITY  (16 * 1024 * 1024)
 
-#define SDL3REND_OVERLAY_QUAD_VERTS   4
-#define SDL3REND_OVERLAY_QUAD_INDICES 6
+#define SDL3GPUREND_OVERLAY_QUAD_VERTS   4
+#define SDL3GPUREND_OVERLAY_QUAD_INDICES 6
 
-static HVIDEO g_sdl3rend_video = NULL;
-static void (*g_sdl3rend_external_cb)(void* cmd, void* ud) = NULL;
-static void* g_sdl3rend_external_ud = NULL;
+static HVIDEO g_sdl3gpurend_video = NULL;
+static void (*g_sdl3gpurend_external_cb)(void* cmd, void* ud) = NULL;
+static void* g_sdl3gpurend_external_ud = NULL;
 
 static void WaitFence(SDL_GPUDevice* device, SDL_GPUFence* fence) {
     if (!fence) return;
@@ -36,7 +36,7 @@ static void WaitFence(SDL_GPUDevice* device, SDL_GPUFence* fence) {
     SDL3_ReleaseGPUFence(device, fence);
 }
 
-int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const void* hostData, size_t size);
+int SDL3GPUREND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const void* hostData, size_t size);
 
 static int CreateOffscreenTargets(HVIDEO hVideo) {
     SDL_GPUTextureCreateInfo ti = {0};
@@ -114,7 +114,7 @@ static int CreateDefaultTexture(HVIDEO hVideo) {
     }
 
     const uint32_t white = 0xFFFFFFFF;
-    if (SDL3REND_UploadBufferToImage(hVideo, hVideo->defaultTexture, 1, 1, 0, 0,
+    if (SDL3GPUREND_UploadBufferToImage(hVideo, hVideo->defaultTexture, 1, 1, 0, 0,
             &white, sizeof(white)) != 0)
         return 0;
 
@@ -148,10 +148,10 @@ static int CreateOverlayQuad(HVIDEO hVideo) {
     }
 
     /* Static resources upload through the staging path (fills slot 0; its
-     * fence is waited in the first SDL3REND_EnsureRecording). */
-    if (SDL3REND_UploadBufferToBuffer(hVideo, hVideo->overlayQuadVbo, quad, sizeof(quad)) != 0)
+     * fence is waited in the first SDL3GPUREND_EnsureRecording). */
+    if (SDL3GPUREND_UploadBufferToBuffer(hVideo, hVideo->overlayQuadVbo, quad, sizeof(quad)) != 0)
         return 0;
-    if (SDL3REND_UploadBufferToBuffer(hVideo, hVideo->overlayQuadIbo, quadIdx, sizeof(quadIdx)) != 0)
+    if (SDL3GPUREND_UploadBufferToBuffer(hVideo, hVideo->overlayQuadIbo, quadIdx, sizeof(quadIdx)) != 0)
         return 0;
 
     return 1;
@@ -180,7 +180,7 @@ static int EnsureStagingCapacity(HVIDEO hVideo, size_t need) {
         hVideo->stagingMapped[f] = NULL;
     }
 
-    size_t newSize = hVideo->stagingSize ? hVideo->stagingSize * 2 : SDL3REND_DEFAULT_STAGING_CAPACITY;
+    size_t newSize = hVideo->stagingSize ? hVideo->stagingSize * 2 : SDL3GPUREND_DEFAULT_STAGING_CAPACITY;
     while (newSize < need) newSize *= 2;
 
     SDL_GPUTransferBufferCreateInfo tci = {0};
@@ -208,17 +208,17 @@ static int EnsureStagingCapacity(HVIDEO hVideo, size_t need) {
 static int EnsureStagingMapped(HVIDEO hVideo, uint32_t f) {
     if (hVideo->stagingMapped[f]) return 1;
     if (!hVideo->stagingTransfer[f])
-        return EnsureStagingCapacity(hVideo, SDL3REND_DEFAULT_STAGING_CAPACITY);
+        return EnsureStagingCapacity(hVideo, SDL3GPUREND_DEFAULT_STAGING_CAPACITY);
     hVideo->stagingMapped[f] = SDL3_MapGPUTransferBuffer(hVideo->device, hVideo->stagingTransfer[f], false);
     return hVideo->stagingMapped[f] != NULL;
 }
 
 /*
  * Uploads host data into a GPU buffer through the current frame slot's staging
- * transfer buffer. Same staging/fence discipline as SDL3REND_UploadBufferToImage.
+ * transfer buffer. Same staging/fence discipline as SDL3GPUREND_UploadBufferToImage.
  * Returns 0 on success, nonzero on failure.
  */
-int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const void* hostData, size_t size) {
+int SDL3GPUREND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const void* hostData, size_t size) {
     if (!hostData || size == 0) return -1;
 
     uint32_t f = hVideo->currentFrame;
@@ -266,8 +266,8 @@ int SDL3REND_UploadBufferToBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer, const vo
 }
 
 static int CreateRings(HVIDEO hVideo) {
-    hVideo->dynVboCapacity = SDL3REND_DEFAULT_RING_VBO_CAPACITY;
-    hVideo->dynIboCapacity = SDL3REND_DEFAULT_RING_IBO_CAPACITY;
+    hVideo->dynVboCapacity = SDL3GPUREND_DEFAULT_RING_VBO_CAPACITY;
+    hVideo->dynIboCapacity = SDL3GPUREND_DEFAULT_RING_IBO_CAPACITY;
 
     for (uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
         SDL_GPUBufferCreateInfo bi = {0};
@@ -313,7 +313,7 @@ static int CreateRings(HVIDEO hVideo) {
             return 0;
         }
 
-        tci.size = SDL3REND_DEFAULT_STAGING_CAPACITY;
+        tci.size = SDL3GPUREND_DEFAULT_STAGING_CAPACITY;
         hVideo->stagingTransfer[f] = SDL3_CreateGPUTransferBuffer(hVideo->device, &tci);
         if (!hVideo->stagingTransfer[f]) {
             BR_FATAL("SDL3GPU: Failed to create staging transfer buffer.");
@@ -324,7 +324,7 @@ static int CreateRings(HVIDEO hVideo) {
             BR_FATAL("SDL3GPU: Failed to map staging transfer buffer.");
             return 0;
         }
-        hVideo->stagingSize = SDL3REND_DEFAULT_STAGING_CAPACITY;
+        hVideo->stagingSize = SDL3GPUREND_DEFAULT_STAGING_CAPACITY;
     }
     return 1;
 }
@@ -344,7 +344,7 @@ static void ReleaseRings(HVIDEO hVideo) {
     }
 }
 
-SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const SDL3REND_ShaderSource* source, SDL_GPUShaderStage stage) {
+SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderSource* source, SDL_GPUShaderStage stage) {
     SDL_GPUShaderCreateInfo ci = {0};
 
     /* Select the source for the device's backend. The Metal backend always
@@ -399,7 +399,7 @@ SDL_GPUShader* SDL3REND_CreateShader(HVIDEO hVideo, const SDL3REND_ShaderSource*
     return shader;
 }
 
-SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
+SDL_GPUGraphicsPipeline* SDL3GPUREND_CreateGraphicsPipeline(HVIDEO hVideo,
     SDL_GPUShader* vertModule, SDL_GPUShader* fragModule,
     const SDL_GPUVertexBufferDescription* bindingDesc,
     const SDL_GPUVertexAttribute* attrDescs, uint32_t attrCount,
@@ -474,18 +474,19 @@ SDL_GPUGraphicsPipeline* SDL3REND_CreateGraphicsPipeline(HVIDEO hVideo,
     return pipeline;
 }
 
-static const char* SDL3REND_ShaderFormatName(SDL_GPUShaderFormat format) {
+static const char* SDL3GPUREND_ShaderFormatName(SDL_GPUShaderFormat format) {
     if (format & SDL_GPU_SHADERFORMAT_SPIRV) return "Vulkan (SPIR-V)";
     if (format & SDL_GPU_SHADERFORMAT_MSL) return "Metal (MSL)";
     if (format & SDL_GPU_SHADERFORMAT_DXIL) return "D3D12 (DXIL)";
     return "unknown";
 }
 
-HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
-    const SDL3REND_ShaderSource brender[2],
-    const SDL3REND_ShaderSource overlay[2],
-    const SDL3REND_ShaderSource defaultShaders[2],
-    br_device_sdl3_callback_procs* callbacks, int width, int height) {
+HVIDEO SDL3GPUREND_VideoOpen(HVIDEO hVideo, void* parent,
+    const SDL3GPUREND_ShaderSource brender[2],
+    const SDL3GPUREND_ShaderSource overlay[2],
+    const SDL3GPUREND_ShaderSource defaultShaders[2],
+    br_device_sdl3gpu_callback_procs* callbacks, int width, int height,
+    bool debug_mode) {
 
     if (hVideo == NULL) {
         BR_FATAL("VIDEO: Invalid handle.");
@@ -499,12 +500,11 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
      * builds bind the pointers at compile time; dynamic builds (dethrace)
      * resolve them from the SDL3 library handle the host passed in the
      * callbacks structure (or load SDL3 themselves if none was given). */
-    if (SDL3REND_LoadSDLSymbols(callbacks ? callbacks->sdl3_handle : NULL) != 0) {
+    if (SDL3GPUREND_LoadSDLSymbols(callbacks ? callbacks->sdl3_handle : NULL) != 0) {
         return NULL;
     }
 
     if (callbacks) {
-        hVideo->get_map_mode = callbacks->get_map_mode;
         hVideo->get_window_size = callbacks->get_window_size;
     }
 
@@ -525,17 +525,20 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
      * MSL | METALLIB; we create MSL shaders (SDL3 accepts MSL source whenever
      * the MSL bit is set). */
     SDL_GPUShaderFormat shaderFormats = SDL_GPU_SHADERFORMAT_SPIRV;
-#if SDL3REND_SHADERFORMAT_MSL_AVAILABLE
+#if SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE
     shaderFormats |= SDL_GPU_SHADERFORMAT_MSL;
 #endif
-#if SDL3REND_SHADERFORMAT_DXIL_AVAILABLE
+#if SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE
     shaderFormats |= SDL_GPU_SHADERFORMAT_DXIL;
 #endif
 
-    hVideo->device = SDL3_CreateGPUDevice(shaderFormats, true, NULL);
+    hVideo->device = SDL3_CreateGPUDevice(shaderFormats, debug_mode, NULL);
     if (!hVideo->device) {
         BR_FATAL("SDL3GPU: Failed to create GPU device.");
         return NULL;
+    }
+    if (debug_mode) {
+        BrLogPrintf("SDL3GPU: device created with debug/validation enabled\n");
     }
     hVideo->shaderFormat = SDL3_GetGPUShaderFormats(hVideo->device);
     if ((hVideo->shaderFormat & SDL_GPU_SHADERFORMAT_SPIRV) == 0 &&
@@ -571,10 +574,10 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
     if (!CreateDefaultTexture(hVideo))
         goto cleanup;
 
-    hVideo->brenderVertShader = SDL3REND_CreateShader(hVideo, &brender[SDL3REND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
-    hVideo->brenderFragShader = SDL3REND_CreateShader(hVideo, &brender[SDL3REND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
-    hVideo->overlayVertShader = SDL3REND_CreateShader(hVideo, &overlay[SDL3REND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
-    hVideo->overlayFragShader = SDL3REND_CreateShader(hVideo, &overlay[SDL3REND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->brenderVertShader = SDL3GPUREND_CreateShader(hVideo, &brender[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
+    hVideo->brenderFragShader = SDL3GPUREND_CreateShader(hVideo, &brender[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->overlayVertShader = SDL3GPUREND_CreateShader(hVideo, &overlay[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
+    hVideo->overlayFragShader = SDL3GPUREND_CreateShader(hVideo, &overlay[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
     if (!hVideo->brenderVertShader || !hVideo->brenderFragShader ||
         !hVideo->overlayVertShader || !hVideo->overlayFragShader)
         goto cleanup_shaders;
@@ -604,28 +607,28 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
         attrDescs[3].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
         attrDescs[3].offset = offsetof(sdl3_vertex_f, c);
 
-        hVideo->brenderPipeline = SDL3REND_CreateGraphicsPipeline(hVideo,
+        hVideo->brenderPipeline = SDL3GPUREND_CreateGraphicsPipeline(hVideo,
             hVideo->brenderVertShader, hVideo->brenderFragShader,
             &bindingDesc, attrDescs, 4,
             hVideo->windowWidth, hVideo->windowHeight, false, true, true);
         if (!hVideo->brenderPipeline)
             goto cleanup_shaders;
 
-        hVideo->brenderPipelineNoDepth = SDL3REND_CreateGraphicsPipeline(hVideo,
+        hVideo->brenderPipelineNoDepth = SDL3GPUREND_CreateGraphicsPipeline(hVideo,
             hVideo->brenderVertShader, hVideo->brenderFragShader,
             &bindingDesc, attrDescs, 4,
             hVideo->windowWidth, hVideo->windowHeight, false, false, false);
         if (!hVideo->brenderPipelineNoDepth)
             goto cleanup_shaders;
 
-        hVideo->brenderBlendPipeline = SDL3REND_CreateGraphicsPipeline(hVideo,
+        hVideo->brenderBlendPipeline = SDL3GPUREND_CreateGraphicsPipeline(hVideo,
             hVideo->brenderVertShader, hVideo->brenderFragShader,
             &bindingDesc, attrDescs, 4,
             hVideo->windowWidth, hVideo->windowHeight, true, true, false);
         if (!hVideo->brenderBlendPipeline)
             goto cleanup_shaders;
 
-        hVideo->brenderBlendPipelineNoDepth = SDL3REND_CreateGraphicsPipeline(hVideo,
+        hVideo->brenderBlendPipelineNoDepth = SDL3GPUREND_CreateGraphicsPipeline(hVideo,
             hVideo->brenderVertShader, hVideo->brenderFragShader,
             &bindingDesc, attrDescs, 4,
             hVideo->windowWidth, hVideo->windowHeight, true, false, false);
@@ -636,8 +639,8 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
     /* Default shaders/pipeline alias the brender ones unless the caller
      * supplied a distinct pair. */
     if (defaultShaders != brender_shaders) {
-        hVideo->defaultVertShader = SDL3REND_CreateShader(hVideo, &defaultShaders[SDL3REND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
-        hVideo->defaultFragShader = SDL3REND_CreateShader(hVideo, &defaultShaders[SDL3REND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+        hVideo->defaultVertShader = SDL3GPUREND_CreateShader(hVideo, &defaultShaders[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
+        hVideo->defaultFragShader = SDL3GPUREND_CreateShader(hVideo, &defaultShaders[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
     }
     hVideo->defaultPipeline = hVideo->brenderPipeline;
 
@@ -658,7 +661,7 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
         attrDescs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
         attrDescs[1].offset = 2 * sizeof(float);
 
-        hVideo->overlayPipeline = SDL3REND_CreateGraphicsPipeline(hVideo,
+        hVideo->overlayPipeline = SDL3GPUREND_CreateGraphicsPipeline(hVideo,
             hVideo->overlayVertShader, hVideo->overlayFragShader,
             &bindingDesc, attrDescs, 2,
             hVideo->windowWidth, hVideo->windowHeight, true, false, false);
@@ -667,10 +670,10 @@ HVIDEO SDL3REND_VideoOpen(HVIDEO hVideo, void* parent,
     }
 
     BrLogPrintf("SDL3GPU: GPU device initialized (%s, framebuffer %dx%d)\n",
-        SDL3REND_ShaderFormatName(hVideo->shaderFormat),
+        SDL3GPUREND_ShaderFormatName(hVideo->shaderFormat),
         hVideo->windowWidth, hVideo->windowHeight);
 
-    g_sdl3rend_video = hVideo;
+    g_sdl3gpurend_video = hVideo;
     return hVideo;
 
 cleanup_shaders:
@@ -692,7 +695,7 @@ cleanup:
     return NULL;
 }
 
-void SDL3REND_VideoClose(HVIDEO hVideo) {
+void SDL3GPUREND_VideoClose(HVIDEO hVideo) {
     if (!hVideo || !hVideo->device) return;
 
     for (uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++) {
@@ -721,7 +724,7 @@ void SDL3REND_VideoClose(HVIDEO hVideo) {
     if (hVideo->brenderFragShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->brenderFragShader); hVideo->brenderFragShader = NULL; }
     if (hVideo->brenderVertShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->brenderVertShader); hVideo->brenderVertShader = NULL; }
     if (hVideo->overlayTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
-    for (int i = 0; i < SDL3REND_BG_POOL; i++) {
+    for (int i = 0; i < SDL3GPUREND_BG_POOL; i++) {
         if (hVideo->bgTexture[i]) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->bgTexture[i]); hVideo->bgTexture[i] = NULL; }
     }
     if (hVideo->defaultTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->defaultTexture); hVideo->defaultTexture = NULL; }
@@ -737,10 +740,10 @@ void SDL3REND_VideoClose(HVIDEO hVideo) {
     hVideo->device = NULL;
     hVideo->window = NULL;
 
-    if (g_sdl3rend_video == hVideo) g_sdl3rend_video = NULL;
+    if (g_sdl3gpurend_video == hVideo) g_sdl3gpurend_video = NULL;
 }
 
-void SDL3REND_VideoResize(HVIDEO hVideo) {
+void SDL3GPUREND_VideoResize(HVIDEO hVideo) {
     int w = hVideo->windowWidth, h = hVideo->windowHeight;
     if (hVideo->get_window_size) {
         hVideo->get_window_size(&w, &h);
@@ -760,32 +763,32 @@ void SDL3REND_VideoResize(HVIDEO hVideo) {
     }
 }
 
-void SDL3REND_UpdateScene(HVIDEO hVideo, void* data, size_t size) {
+void SDL3GPUREND_UpdateScene(HVIDEO hVideo, void* data, size_t size) {
     if (size > sizeof(hVideo->sceneData)) size = sizeof(hVideo->sceneData);
     if (data) memcpy(&hVideo->sceneData, data, size);
 }
 
-void SDL3REND_SceneBegin(HVIDEO hVideo) {
-    SDL3REND_EnsureRecording(hVideo);
+void SDL3GPUREND_SceneBegin(HVIDEO hVideo) {
+    SDL3GPUREND_EnsureRecording(hVideo);
     if (!hVideo->commandBuffer) return;
-    SDL3_PushGPUVertexUniformData(hVideo->commandBuffer, SDL3REND_SCENE_UNIFORM_SLOT,
+    SDL3_PushGPUVertexUniformData(hVideo->commandBuffer, SDL3GPUREND_SCENE_UNIFORM_SLOT,
         &hVideo->sceneData, (Uint32)sizeof(hVideo->sceneData));
-    SDL3_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3REND_SCENE_UNIFORM_SLOT,
+    SDL3_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3GPUREND_SCENE_UNIFORM_SLOT,
         &hVideo->sceneData, (Uint32)sizeof(hVideo->sceneData));
 }
 
-void SDL3REND_PushModel(HVIDEO hVideo, const void* data, size_t size) {
+void SDL3GPUREND_PushModel(HVIDEO hVideo, const void* data, size_t size) {
     if (!data || size == 0) return;
     if (size > sizeof(hVideo->modelData)) size = sizeof(hVideo->modelData);
-    SDL3REND_EnsureRecording(hVideo);
+    SDL3GPUREND_EnsureRecording(hVideo);
     if (!hVideo->commandBuffer) return;
-    SDL3_PushGPUVertexUniformData(hVideo->commandBuffer, SDL3REND_MODEL_UNIFORM_SLOT,
+    SDL3_PushGPUVertexUniformData(hVideo->commandBuffer, SDL3GPUREND_MODEL_UNIFORM_SLOT,
         data, (Uint32)size);
-    SDL3_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3REND_MODEL_UNIFORM_SLOT,
+    SDL3_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3GPUREND_MODEL_UNIFORM_SLOT,
         data, (Uint32)size);
 }
 
-void SDL3REND_EnsureRecording(HVIDEO hVideo) {
+void SDL3GPUREND_EnsureRecording(HVIDEO hVideo) {
     if (hVideo->isRecording) return;
 
     uint32_t f = hVideo->currentFrame;
@@ -810,7 +813,6 @@ void SDL3REND_EnsureRecording(HVIDEO hVideo) {
 
     hVideo->frameEpoch++;
 
-    hVideo->dimAreaCount = 0;
     hVideo->clearAreaCount = 0;
     hVideo->pratcamAreaCount = 0;
     hVideo->bgSceneIndex = 0;
@@ -818,9 +820,9 @@ void SDL3REND_EnsureRecording(HVIDEO hVideo) {
     /* Resize detection. */
     {
         int w = hVideo->windowWidth, h = hVideo->windowHeight;
-        SDL3REND_GetWindowSize(hVideo, &w, &h);
+        SDL3GPUREND_GetWindowSize(hVideo, &w, &h);
         if (w > 0 && h > 0 && (w != hVideo->windowWidth || h != hVideo->windowHeight)) {
-            SDL3REND_VideoResize(hVideo);
+            SDL3GPUREND_VideoResize(hVideo);
             hVideo->mainViewportW = 0;
         }
     }
@@ -835,9 +837,9 @@ void SDL3REND_EnsureRecording(HVIDEO hVideo) {
     hVideo->currentPass = NULL;
 }
 
-void SDL3REND_BeginRenderPass(HVIDEO hVideo) {
+void SDL3GPUREND_BeginRenderPass(HVIDEO hVideo) {
     if (hVideo->renderPassActive) return;
-    SDL3REND_EnsureRecording(hVideo);
+    SDL3GPUREND_EnsureRecording(hVideo);
     if (!hVideo->commandBuffer) return;
 
     SDL_GPUColorTargetInfo color = {0};
@@ -871,18 +873,18 @@ void SDL3REND_BeginRenderPass(HVIDEO hVideo) {
     hVideo->lastSampler = NULL;
 }
 
-void SDL3REND_EndRenderPass(HVIDEO hVideo) {
+void SDL3GPUREND_EndRenderPass(HVIDEO hVideo) {
     if (!hVideo->renderPassActive || !hVideo->currentPass) return;
     SDL3_EndGPURenderPass(hVideo->currentPass);
     hVideo->currentPass = NULL;
     hVideo->renderPassActive = 0;
 }
 
-void SDL3REND_ClearDepthAttachment(HVIDEO hVideo) {
+void SDL3GPUREND_ClearDepthAttachment(HVIDEO hVideo) {
     if (!hVideo->renderPassActive || !hVideo->currentPass || !hVideo->commandBuffer)
         return;
 
-    SDL3REND_EndRenderPass(hVideo);
+    SDL3GPUREND_EndRenderPass(hVideo);
 
     SDL_GPUColorTargetInfo color = {0};
     color.texture = hVideo->transferTexture;
@@ -914,12 +916,12 @@ void SDL3REND_ClearDepthAttachment(HVIDEO hVideo) {
     hVideo->lastSampler = NULL;
 }
 
-int SDL3REND_Present(HVIDEO hVideo) {
+int SDL3GPUREND_Present(HVIDEO hVideo) {
     uint32_t f = hVideo->currentFrame;
     SDL_GPUDevice* device = hVideo->device;
 
     if (hVideo->renderPassActive)
-        SDL3REND_EndRenderPass(hVideo);
+        SDL3GPUREND_EndRenderPass(hVideo);
 
     if (!hVideo->commandBuffer || !hVideo->isRecording) {
         hVideo->currentFrame = (f + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -984,8 +986,8 @@ int SDL3REND_Present(HVIDEO hVideo) {
         BrLogPrintf("SDL3GPU: AcquireGPUSwapchainTexture failed: %s\n", SDL3_GetError());
     }
 
-    if (g_sdl3rend_external_cb)
-        g_sdl3rend_external_cb(hVideo->commandBuffer, g_sdl3rend_external_ud);
+    if (g_sdl3gpurend_external_cb)
+        g_sdl3gpurend_external_cb(hVideo->commandBuffer, g_sdl3gpurend_external_ud);
 
     hVideo->frameFence[f] = SDL3_SubmitGPUCommandBufferAndAcquireFence(hVideo->commandBuffer);
     if (!hVideo->frameFence[f])
@@ -1003,7 +1005,7 @@ int SDL3REND_Present(HVIDEO hVideo) {
 /* Letterbox: centre pm_w x pm_h in win_w x win_h, returning the scaled,
  * centered rect and pm->window scale factors (rx, ry). Shared by sceneBegin
  * and the overlay; any output may be NULL (full window, scale 1 if no size). */
-void SDL3REND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
+void SDL3GPUREND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
     int* vp_x, int* vp_y, int* vp_w, int* vp_h, float* rx, float* ry) {
     int vp_width = win_w, vp_height = win_h;
     if (pm_w > 0 && pm_h > 0 && win_h > 0) {
@@ -1023,7 +1025,7 @@ void SDL3REND_LetterboxViewport(int win_w, int win_h, int pm_w, int pm_h,
     if (ry) *ry = (pm_h > 0 && vp_height > 0) ? (float)vp_height / (float)pm_h : 1.0f;
 }
 
-void SDL3REND_OverlayDraw(HVIDEO hVideo) {
+void SDL3GPUREND_OverlayDraw(HVIDEO hVideo) {
     if (!hVideo->renderPassActive || !hVideo->currentPass) return;
     if (!hVideo->overlayDirty) return;
     if (!hVideo->overlayTexture || !hVideo->overlayPipeline) return;
@@ -1037,7 +1039,7 @@ void SDL3REND_OverlayDraw(HVIDEO hVideo) {
         /* Same letterbox as the scene viewport: centre the 4:3 overlay in the
          * window, matching glrend. Overlay texture is game-screen sized. */
         int vp_x, vp_y, vp_width, vp_height;
-        SDL3REND_LetterboxViewport(hVideo->windowWidth, hVideo->windowHeight,
+        SDL3GPUREND_LetterboxViewport(hVideo->windowWidth, hVideo->windowHeight,
             hVideo->pm_width, hVideo->pm_height,
             &vp_x, &vp_y, &vp_width, &vp_height, NULL, NULL);
         viewport.x = (float)vp_x;
@@ -1073,16 +1075,16 @@ void SDL3REND_OverlayDraw(HVIDEO hVideo) {
 
     if (hVideo->lastTexture != hVideo->overlayTexture || hVideo->lastSampler != hVideo->overlaySampler) {
         SDL_GPUTextureSamplerBinding tsb = { hVideo->overlayTexture, hVideo->overlaySampler };
-        SDL3_BindGPUFragmentSamplers(pass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+        SDL3_BindGPUFragmentSamplers(pass, SDL3GPUREND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
         hVideo->lastTexture = hVideo->overlayTexture;
         hVideo->lastSampler = hVideo->overlaySampler;
     }
 
-    SDL3_DrawGPUIndexedPrimitives(pass, SDL3REND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
+    SDL3_DrawGPUIndexedPrimitives(pass, SDL3GPUREND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
     hVideo->overlayDirty = 0;
 }
 
-void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh) {
+void SDL3GPUREND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh) {
     if (!hVideo->renderPassActive || !hVideo->currentPass) return;
     if (!hVideo->lockedPixels || gw <= 0 || gh <= 0) return;
     if (!hVideo->overlayPipeline || !hVideo->overlaySampler) return;
@@ -1092,7 +1094,7 @@ void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh)
     int bpp = (hVideo->pm_type == BR_PMT_RGB_565 || hVideo->pm_type == BR_PMT_RGB_555) ? 2 : 4;
 
     int slot = hVideo->bgSceneIndex;
-    hVideo->bgSceneIndex = (hVideo->bgSceneIndex + 1) % SDL3REND_BG_POOL;
+    hVideo->bgSceneIndex = (hVideo->bgSceneIndex + 1) % SDL3GPUREND_BG_POOL;
 
     SDL_GPUTexture* tex = hVideo->bgTexture[slot];
     if (!tex) {
@@ -1151,7 +1153,7 @@ void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh)
             memcpy(&bgra[y * gw], &src[(gy + y) * row_w + gx], (size_t)gw * 4);
     }
 
-    if (SDL3REND_UploadBufferToImage(hVideo, tex, (uint32_t)gw, (uint32_t)gh,
+    if (SDL3GPUREND_UploadBufferToImage(hVideo, tex, (uint32_t)gw, (uint32_t)gh,
             (uint32_t)gx, (uint32_t)gy, bgra, (size_t)gw * gh * 4) != 0) {
         BrScratchFree(bgra);
         return;
@@ -1214,15 +1216,15 @@ void SDL3REND_DrawSceneBackground(HVIDEO hVideo, int gx, int gy, int gw, int gh)
 
     if (hVideo->lastTexture != tex || hVideo->lastSampler != hVideo->overlaySampler) {
         SDL_GPUTextureSamplerBinding tsb = { tex, hVideo->overlaySampler };
-        SDL3_BindGPUFragmentSamplers(pass, SDL3REND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+        SDL3_BindGPUFragmentSamplers(pass, SDL3GPUREND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
         hVideo->lastTexture = tex;
         hVideo->lastSampler = hVideo->overlaySampler;
     }
 
-    SDL3_DrawGPUIndexedPrimitives(pass, SDL3REND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
+    SDL3_DrawGPUIndexedPrimitives(pass, SDL3GPUREND_OVERLAY_QUAD_INDICES, 1, 0, 0, 0);
 }
 
-int SDL3REND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
+int SDL3GPUREND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
     uint32_t width, uint32_t height, uint32_t dstX, uint32_t dstY,
     const void* hostData, size_t hostDataSize) {
 
@@ -1283,25 +1285,25 @@ int SDL3REND_UploadBufferToImage(HVIDEO hVideo, SDL_GPUTexture* texture,
     return 0;
 }
 
-void SDL3REND_DeferFreeImage(HVIDEO hVideo, SDL_GPUTexture* texture, SDL_GPUSampler* sampler) {
+void SDL3GPUREND_DeferFreeImage(HVIDEO hVideo, SDL_GPUTexture* texture, SDL_GPUSampler* sampler) {
     if (texture) SDL3_ReleaseGPUTexture(hVideo->device, texture);
     if (sampler) SDL3_ReleaseGPUSampler(hVideo->device, sampler);
 }
 
-void SDL3REND_DeferFreeBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer) {
+void SDL3GPUREND_DeferFreeBuffer(HVIDEO hVideo, SDL_GPUBuffer* buffer) {
     if (buffer) SDL3_ReleaseGPUBuffer(hVideo->device, buffer);
 }
 
-void SDL3REND_GetDeviceInfo(SDL3REND_DeviceInfo* info) {
+void SDL3GPUREND_GetDeviceInfo(SDL3GPUREND_DeviceInfo* info) {
     if (!info) return;
     memset(info, 0, sizeof(*info));
-    if (!g_sdl3rend_video) return;
-    info->gpu_device = g_sdl3rend_video->device;
-    info->window = g_sdl3rend_video->window;
-    info->swapchain_texture_format = (uint32_t)g_sdl3rend_video->swapchainTextureFormat;
+    if (!g_sdl3gpurend_video) return;
+    info->gpu_device = g_sdl3gpurend_video->device;
+    info->window = g_sdl3gpurend_video->window;
+    info->swapchain_texture_format = (uint32_t)g_sdl3gpurend_video->swapchainTextureFormat;
 }
 
-void SDL3REND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud) {
-    g_sdl3rend_external_cb = cb;
-    g_sdl3rend_external_ud = ud;
+void SDL3GPUREND_SetExternalRenderCallback(void (*cb)(void* cmd, void* ud), void* ud) {
+    g_sdl3gpurend_external_cb = cb;
+    g_sdl3gpurend_external_ud = ud;
 }
