@@ -232,9 +232,8 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
              * background texture and draw it here, before the 3D, so it shows
              * through where the 3D does not cover the rect. The sceneEnd purge
              * erases the same content from the composite so it does not also
-             * appear on top of the 3D. Full-screen scenes are skipped — their
-             * pre-scene 2D is purged at firstScene and the 3D covers them.
-             * Also skipped when the CPU overlay was just flushed (overlayDirty)
+             * appear on top of the 3D. Also skipped when the CPU overlay was
+             * just flushed (overlayDirty)
              * by a MID-FRAME flush: the rear-view mirror flush uploads the
              * cockpit, and re-drawing it as the mirror's background would put it
              * under the 3D inside the mirror window. This must read the per-scene
@@ -247,6 +246,28 @@ static void BREND_CMETHOD_DECL(BREND_CLASS(br_renderer), sceneBegin)(br_renderer
                 (colour_target->pm_width < screen->pm_width ||
                  colour_target->pm_height < screen->pm_height) &&
                 !(hVideo->overlayDirty && !firstScene)) {
+                SDL3GPUREND_DrawSceneBackground(hVideo,
+                    colour_target->pm_base_x, colour_target->pm_base_y,
+                    colour_target->pm_width, colour_target->pm_height);
+            }
+
+            /* Full-screen FIRST scene with a pre-scene flush: the flushed CPU
+             * content is the racing sky/fog fill, and the 3D does NOT cover the
+             * far-culling distance, so without a background the transfer's black
+             * clear shows there (glrend shows the fill colour). Snapshot the fill
+             * into a background texture and draw it under the 3D, confined to the
+             * scene viewport/scissor (the letterbox bars keep the black clear).
+             * The first-model purge (modelrender.c) erases the same content from
+             * the composite so it doesn't paint over the 3D. On 2D-primary frames
+             * (dim quad first scene) the flushed map image is dimmed in place and
+             * re-drawn by the composite on top, so this background is covered and
+             * harmless. Gated on firstScene (mid-frame dim-quad sceneBegins must
+             * not re-draw pre-scene content under the 3D) and overlayDirty (a
+             * flush actually preceded this scene; otherwise the buffer is stale). */
+            if (colour_target != NULL &&
+                colour_target->pm_width >= screen->pm_width &&
+                colour_target->pm_height >= screen->pm_height &&
+                firstScene && hVideo->overlayDirty) {
                 SDL3GPUREND_DrawSceneBackground(hVideo,
                     colour_target->pm_base_x, colour_target->pm_base_y,
                     colour_target->pm_width, colour_target->pm_height);
