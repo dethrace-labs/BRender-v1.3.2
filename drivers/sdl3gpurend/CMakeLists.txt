@@ -306,6 +306,7 @@ set(SDL3GPUREND_FILES
         drv_ip.h
         devpixmp.h
         devpmgpu.c
+        devpixmp.c
         )
 
 set(INC_FILES

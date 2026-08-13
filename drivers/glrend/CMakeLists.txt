@@ -60,6 +60,7 @@ set(GLREND_FILES
         drv_ip.h
         devpixmp.h
         devpmglf.c
+        devpixmp.c
 
         quad.c
         util.c

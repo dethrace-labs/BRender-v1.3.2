@@ -50,7 +50,10 @@ extern "C" {
     extern br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), allocateSub)(br_device_pixelmap* self, br_device_pixelmap** newpm, br_rectangle* rect); \
     extern br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_pixelmap* self); \
     extern br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), directLock)(br_device_pixelmap* self, br_boolean block); \
-    extern br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), directUnlock)(br_device_pixelmap* self)
+    extern br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), directUnlock)(br_device_pixelmap* self); \
+    /* Backend hooks: defined per driver (commonrend/devpixmp.c calls them). */ \
+    extern br_error BREND_FN(DevicePixelmap, RecreateRenderBuffers)(br_device_pixelmap* self); \
+    extern void BREND_FN(DevicePixelmap, DeleteResources)(br_device_pixelmap* self)
 
 #ifdef __cplusplus
 };
