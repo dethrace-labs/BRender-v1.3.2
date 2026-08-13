@@ -31,40 +31,50 @@ endif()
 # shader format:
 #   - Vulkan:  SPIR-V, produced by glslangValidator/glslang/glslc (-V) from the
 #              filtered commonrend GLSL (existing pipeline).
-#   - Metal:   MSL, cross-compiled from the SPIR-V with spirv-cross
-#              (--msl --msl-decoration-binding so the [[buffer(N)]] /
-#              [[texture(N)]] indices land on the SDL3-GPU slots: model=0,
-#              scene=1, texture/sampler=0).
-#   - D3D12:   DXIL, cross-compiled from the SPIR-V with spirv-cross
-#              (--hlsl --shader-model 60) and compiled to DXIL with dxc.
-# Every available format is embedded at build time; video.c requests exactly
-# the formats this build produced and selects the matching source per device
-# (see sdl3gpurend_shader_formats.h and SDL3GPUREND_CreateShader).
+#   - Metal:   MSL, cross-compiled from the SPIR-V with SDL_shadercross (or
+#              spirv-cross --msl --msl-decoration-binding as a fallback), which
+#              maps the [[buffer(N)]] / [[texture(N)]] indices onto the SDL3-GPU
+#              slots (model=0, scene=1, texture/sampler=0) and renames the entry
+#              point main -> main0.
+#   - D3D12:   DXIL, cross-compiled from the SPIR-V with SDL_shadercross (which
+#              bundles SPIRV-Cross + DXC), or spirv-cross (--hlsl --shader-model
+#              60) + dxc as a fallback.
+# SDL_shadercross is the preferred translator: it is the tool SDL3 itself uses,
+# and its MSL/DXIL output matches the SDL3-GPU conventions by construction.
+# Every available format is embedded at build time; video.c requests exactly the
+# formats this build produced and selects the matching source per device (see
+# sdl3gpurend_shader_formats.h and SDL3GPUREND_CreateShader).
 #
 # MSL is mandatory on Apple: SDL3 GPU picks the Metal backend there, and a
 # build that can only produce SPIR-V would not run without MoltenVK. Fail at
 # configure time instead of at runtime.
+find_program(SHADERCROSS_COMPILER NAMES shadercross)
+if(SHADERCROSS_COMPILER)
+    message(STATUS "Found SDL_shadercross: ${SHADERCROSS_COMPILER} (SPIR-V -> MSL / DXIL)")
+endif()
+
 find_program(SPIRV_CROSS_COMPILER NAMES spirv-cross)
 if(SPIRV_CROSS_COMPILER)
-    message(STATUS "Found spirv-cross: ${SPIRV_CROSS_COMPILER} (SPIR-V -> MSL / HLSL)")
+    message(STATUS "Found spirv-cross: ${SPIRV_CROSS_COMPILER} (SPIR-V -> MSL / HLSL; fallback)")
 endif()
 
 find_program(DXC_COMPILER NAMES dxc)
 if(DXC_COMPILER)
-    message(STATUS "Found dxc: ${DXC_COMPILER} (HLSL -> DXIL for D3D12)")
+    message(STATUS "Found dxc: ${DXC_COMPILER} (HLSL -> DXIL for D3D12; fallback)")
 endif()
 
-if(APPLE AND NOT SPIRV_CROSS_COMPILER)
+if(APPLE AND NOT (SPIRV_CROSS_COMPILER OR SHADERCROSS_COMPILER))
     message(FATAL_ERROR
-        "spirv-cross is required to build the sdl3gpurend driver on Apple "
-        "(MSL shaders for the Metal backend). Install it with: "
-        "brew install spirv-cross")
+        "SDL_shadercross or spirv-cross is required to build the sdl3gpurend "
+        "driver on Apple (MSL shaders for the Metal backend). Install SDL_shadercross "
+        "(https://github.com/libsdl-org/SDL_shadercross) or spirv-cross.")
 endif()
 
-if(WIN32 AND NOT (SPIRV_CROSS_COMPILER AND DXC_COMPILER))
+if(WIN32 AND NOT (SHADERCROSS_COMPILER OR (SPIRV_CROSS_COMPILER AND DXC_COMPILER)))
     message(WARNING
-        "spirv-cross and/or dxc not found; the sdl3gpurend driver will fall back "
-        "to the Vulkan backend on Windows. Install spirv-cross and dxc to "
+        "SDL_shadercross (or spirv-cross and dxc) not found; the sdl3gpurend "
+        "driver will fall back to the Vulkan backend on Windows. Install "
+        "SDL_shadercross (https://github.com/libsdl-org/SDL_shadercross) to "
         "enable the D3D12 (DXIL) backend.")
 endif()
 
@@ -73,9 +83,12 @@ endif()
 # either compiled here or embedded from the source tree.
 set(SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE 0)
 set(SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE 0)
-if(GLSL_COMPILER AND SPIRV_CROSS_COMPILER)
+if(GLSL_COMPILER AND (SPIRV_CROSS_COMPILER OR SHADERCROSS_COMPILER))
     set(SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE 1)
-    if(DXC_COMPILER)
+    # DXIL is only used by the D3D12 backend (Windows). SDL_shadercross produces
+    # it without dxc; the spirv-cross fallback still needs dxc for the final
+    # HLSL -> DXIL step.
+    if((SHADERCROSS_COMPILER AND WIN32) OR DXC_COMPILER)
         set(SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE 1)
     endif()
 endif()
@@ -113,8 +126,10 @@ foreach(spv_file
 
     if(spv_base MATCHES "vert$")
         set(shader_stage vert)
+        set(shadercross_stage vertex)
     else()
         set(shader_stage frag)
+        set(shadercross_stage fragment)
     endif()
 
     if(GLSL_COMPILER)
@@ -141,7 +156,53 @@ foreach(spv_file
         set(embed_source_dir "${CMAKE_CURRENT_BINARY_DIR}")
         set(embed_depends ${spv_path})
 
-        if(SPIRV_CROSS_COMPILER)
+        if(SHADERCROSS_COMPILER)
+            # Metal: MSL source, compiled by Metal at runtime. SDL_shadercross
+            # maps the SPIR-V binding numbers onto the MSL indices (matching
+            # spirv-cross --msl-decoration-binding), which for these shaders are
+            # exactly the SDL3-GPU uniform/sampler slots (model=0, scene=1,
+            # texture/sampler=0), and renames the entry point main -> main0.
+            # The Metal backend also treats the shader as MSL at all times
+            # (even when METALLIB is the format bit), so this source is
+            # embedded as bytes regardless.
+            set(metal_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.metal")
+            add_custom_command(
+                OUTPUT ${metal_path}
+                COMMAND ${SHADERCROSS_COMPILER} -s SPIRV -d MSL -t ${shadercross_stage} -e main -o ${metal_path} ${spv_path}
+                DEPENDS ${spv_path}
+                COMMENT "Cross-compiling ${spv_base} → MSL (SDL_shadercross)"
+            )
+            set(metal_h "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.metal.h")
+            add_custom_command(
+                OUTPUT ${metal_h}
+                COMMAND ${CMAKE_COMMAND} "-DSOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}" "-DFILE=${spv_base}.metal" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+                DEPENDS ${metal_path}
+                COMMENT "Embedding ${spv_base}.metal"
+            )
+            list(APPEND MSL_GENERATED ${metal_h})
+
+            # DXIL (D3D12, Windows only): SDL_shadercross transpiles to HLSL
+            # (SM6.0, with the register spaces SDL3's D3D12 backend expects:
+            # vertex b[0..1] space1; fragment t/s space2, b[0..1] space3) and
+            # compiles to DXIL via the bundled DXC in one step.
+            if(WIN32)
+                set(dxil_path "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.dxil")
+                add_custom_command(
+                    OUTPUT ${dxil_path}
+                    COMMAND ${SHADERCROSS_COMPILER} -s SPIRV -d DXIL -t ${shadercross_stage} -e main -o ${dxil_path} ${spv_path}
+                    DEPENDS ${spv_path}
+                    COMMENT "Compiling ${spv_base} → DXIL (SDL_shadercross)"
+                )
+                set(dxil_h "${CMAKE_CURRENT_BINARY_DIR}/${spv_base}.dxil.h")
+                add_custom_command(
+                    OUTPUT ${dxil_h}
+                    COMMAND ${CMAKE_COMMAND} "-DSOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}" "-DFILE=${spv_base}.dxil" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+                    DEPENDS ${dxil_path}
+                    COMMENT "Embedding ${spv_base}.dxil"
+                )
+                list(APPEND DXIL_GENERATED ${dxil_h})
+            endif()
+        elseif(SPIRV_CROSS_COMPILER)
             # Metal: MSL source, compiled by Metal at runtime.
             # --msl-decoration-binding maps the SPIR-V binding numbers onto the
             # MSL indices, which for these shaders are exactly the SDL3-GPU
