@@ -7,8 +7,8 @@ project(sdl3gpurend C)
 # Resolve SDL3 at runtime (via the sdl3_handle passed in the device callbacks,
 # falling back to loading the SDL3 library) instead of linking against it. Used
 # by dethrace's single-executable builds, where SDL3 symbols live in the
-# harness. Set this option BEFORE add_subdirectory(BRender), e.g.:
-#     set(BRENDER_SDL3GPUREND_DYNAMIC ON CACHE BOOL "" FORCE)
+# harness. Auto-enabled when DETHRACE_PLATFORM_SDL_DYNAMIC is set (dethrace's
+# own dynamic-SDL flag); may also be enabled explicitly for standalone builds.
 option(BRENDER_SDL3GPUREND_DYNAMIC
     "Resolve SDL3 at runtime (sdl3_dyn.c) instead of linking against SDL3" OFF)
 
@@ -347,7 +347,7 @@ add_library(sdl3gpurend
 brender_common_target_setup(sdl3gpurend BREND_DRIVER_SDL3GPUREND SDL3GPUREND sdl3gpurend "sdl3gpurend")
 
 if(SDL3_FOUND)
-    if(BRENDER_SDL3GPUREND_DYNAMIC)
+    if(BRENDER_SDL3GPUREND_DYNAMIC OR DETHRACE_PLATFORM_SDL_DYNAMIC)
         # dethrace single-executable build: the harness resolves SDL3 at runtime
         # and hands the driver a library handle via br_device_sdl3gpu_callback_procs.
         # We only need the SDL3 headers here (the GPU enums/structs still come
@@ -362,7 +362,7 @@ if(SDL3_FOUND)
         target_link_libraries(sdl3gpurend PRIVATE SDL3::SDL3)
     endif()
 else()
-    if(BRENDER_SDL3GPUREND_DYNAMIC)
+    if(BRENDER_SDL3GPUREND_DYNAMIC OR DETHRACE_PLATFORM_SDL_DYNAMIC)
         message(FATAL_ERROR
             "BRENDER_SDL3GPUREND_DYNAMIC requires SDL3 headers; run with SDL3 "
             "available to find_package(SDL3)")
