@@ -23,17 +23,21 @@ int glContextIsOpenGLES() {
 // Quick n dirty shader pre-processor
 // Wrap opengles only lines with ##ifdef GL_ES ... ##endif
 // Wrap opengl core only lines with ##ifdef GL_CORE ... ##endif
+// Wrap SDL3GPU only lines with ##ifdef SDL3GPU ... ##endif
+// ##else selects the complementary branch of the enclosing block.
 // Note the double "##" to avoid collision with the standard glsl preprocessor
-char* preprocessShader(char* shader, size_t size) {
+char* preprocessShader(const char* shader, size_t size) {
     int i;
     char *processed;
     int line_i;
     char line[2048];
     int is_context_opengles;
-    int filter_state;  // 0 - none, 1, only opengles, 2 only opengl core
+    int filter_state;  // 0 - none, 1 - GL_ES block, 2 - GL_CORE block, 3 - SDL3GPU block
+    int emit;          // whether the current block content should be kept
 
     line_i = 0;
     filter_state = 0;
+    emit = 1;
     is_context_opengles = glContextIsOpenGLES();
     processed = BrScratchAllocate(size);
     processed[0] = '\0';
@@ -46,16 +50,26 @@ char* preprocessShader(char* shader, size_t size) {
             // we've captured a whole line
             if (strcmp(line, "##ifdef GL_ES\n") == 0) {
                 filter_state = 1;
+                emit = is_context_opengles;
             } else if (strcmp(line, "##ifdef GL_CORE\n") == 0) {
                 filter_state = 2;
+                emit = !is_context_opengles;
+            } else if (strcmp(line, "##ifdef SDL3GPU\n") == 0) {
+                filter_state = 3;
+                emit = 0;
+            } else if (strcmp(line, "##else\n") == 0) {
+                if (filter_state == 1) {
+                    emit = !is_context_opengles;
+                } else if (filter_state == 2) {
+                    emit = is_context_opengles;
+                } else if (filter_state == 3) {
+                    emit = 1;
+                }
             } else if (strcmp(line, "##endif\n") == 0) {
                 filter_state = 0;
+                emit = 1;
             } else {
-                if (filter_state == 1 && is_context_opengles) {
-                    strcat(processed, line);
-                } else if (filter_state == 2 && !is_context_opengles) {
-                    strcat(processed, line);
-                } else if (filter_state == 0) {
+                if (emit) {
                     strcat(processed, line);
                 }
             }
@@ -193,11 +207,19 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
         return NULL;
     }
 
+    if (!VIDEOI_CompileTextShader(hVideo)) {
+        glDeleteProgram(hVideo->brenderProgram.program);
+        glDeleteProgram(hVideo->defaultProgram.program);
+        return NULL;
+    }
+
     GL_CHECK_ERROR();
     return hVideo;
 }
 
 void VIDEO_Close(HVIDEO hVideo) {
+    int i;
+
     if (!hVideo)
         return;
 
@@ -214,6 +236,12 @@ void VIDEO_Close(HVIDEO hVideo) {
         glDeleteBuffers(0, &hVideo->brenderProgram.uboModel);
 
     glDeleteProgram(hVideo->defaultProgram.program);
+    glDeleteProgram(hVideo->textProgram.program);
+
+    for (i = 0; i < TEXT_ATLAS_CACHE_MAX; i++) {
+        if (hVideo->textAtlas[i].texture != 0)
+            glDeleteTextures(1, &hVideo->textAtlas[i].texture);
+    }
 }
 
 br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat, GLenum* format, GLenum* type,
@@ -310,48 +338,10 @@ br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat
     return BRE_OK;
 }
 
-br_error VIDEOI_BrPixelmapToExistingTexture(GLuint tex, br_pixelmap* pm) {
-    GLint internalFormat;
-    GLenum format;
-    GLenum type;
-    GLsizeiptr elemBytes;
-    br_error r;
-
-    r = VIDEOI_BrPixelmapGetTypeDetails(pm->type, &internalFormat, &format, &type, &elemBytes, NULL);
-    if (r != BRE_OK)
-        return r;
-
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, pm->width, pm->height, 0, format, type, pm->pixels);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    GL_CHECK_ERROR();
-    return BRE_OK;
-}
-
-GLuint VIDEO_BrPixelmapToGLTexture(br_pixelmap* pm) {
-    if (pm == NULL)
-        return 0;
-
-    GLuint tex;
-    glGenTextures(1, &tex);
-
-    if (VIDEOI_BrPixelmapToExistingTexture(tex, pm) != BRE_OK)
-        return 0;
-
-    return tex;
-}
-
 void VIDEOI_BrRectToGL(const br_pixelmap* pm, br_rectangle* r) {
     br_rectangle out;
-    PixelmapRectangleClip(&out, r, pm);
+    /* PixelmapRectangleClip only reads pm; the const cast is safe. */
+    PixelmapRectangleClip(&out, r, (br_pixelmap *)pm);
 
     /* Flip the rect upside down to use (0, 0) at bottom-left. */
     *r = out;

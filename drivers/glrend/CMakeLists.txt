@@ -1,102 +1,71 @@
 ﻿project(glrend C)
 
-# Embed shaders
+# Embed shared shaders (drivers/commonrend)
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
+
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS default.vert.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=default.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/default.vert.glsl"
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/default.frag.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=default.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS default.frag.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=default.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/default.frag.glsl"
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/brender.vert.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS brender.vert.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=brender.vert.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/brender.vert.glsl"
 )
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/brender.frag.glsl.h"
-        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}" "-DFILE=brender.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
-        DEPENDS brender.frag.glsl
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=brender.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/brender.frag.glsl"
+)
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/text.frag.glsl.h"
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=text.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/text.frag.glsl"
 )
 
 
-set(GLSTATE_FILES
-        cache.c
-        state.c
-        state.h
-        state_clip.c
-        state_cull.c
-        state_hidden.c
-        state_light.c
-        state_matrix.c
-        state_output.c
-        state_primitive.c
-        state_surface.c
-        )
-source_group("STATE" FILES ${GLSTATE_FILES})
+set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/commonrend.cmake)
+brender_common_sources(${REND_COMMON_DIR})
 
 set(VIDEO_FILES
         checkboard64.c
         shader_brender.c
         shader_default.c
-        # shader_text.c
+        shader_text.c
         video.c
         video.h
+        ${REND_COMMON_DIR}/shader_data.h
         )
 source_group("VIDEO" FILES ${VIDEO_FILES})
 
 set(RENDERER_FILES
+        ${BR_COMMON_RENDERER_FILES}
+
         gv1buckt.c
         gv1buckt.h
 
-        gv1model.c
-        gv1model.h
-
-        gstored.c
         gstored.h
         v1model.c
 
-        onscreen.c
-
-        renderer.c
-        renderer.h
-
         sbuffer.h
         sbuffer.c
-
-        sstate.c
-        sstate.h
         )
 source_group("Renderer" FILES ${RENDERER_FILES})
 
 set(GLREND_FILES
-        drv.h
+        ${BR_COMMON_OBJ_FILES}
+
         drv_ip.h
-
-        driver.c
-
-        outfcty.c
-        outfcty.h
-
-        ext_procs.c
-
-        rendfcty.c
-        rendfcty.h
-
-        device.c
-        device.h
-
-        devpixmp.c
         devpixmp.h
         devpmglf.c
-
-        devclut.c
-        devclut.h
-
-        template.h
+        devpixmp.c
 
         quad.c
         util.c
@@ -137,23 +106,17 @@ add_library(glrend
         ${GLREND_FILES}
         ${RENDERER_FILES}
         ${VIDEO_FILES}
-        ${GLSTATE_FILES}
+        ${BR_COMMON_STATE_FILES}
         ${INC_FILES}
 
         "${CMAKE_CURRENT_BINARY_DIR}/default.vert.glsl.h"
         "${CMAKE_CURRENT_BINARY_DIR}/default.frag.glsl.h"
         "${CMAKE_CURRENT_BINARY_DIR}/brender.vert.glsl.h"
         "${CMAKE_CURRENT_BINARY_DIR}/brender.frag.glsl.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/text.frag.glsl.h"
         )
 
-get_target_property(target_type glrend TYPE)
-if(target_type STREQUAL SHARED_LIBRARY)
-    target_compile_definitions(glrend PRIVATE -DDEFINE_BR_ENTRY_POINT)
-endif()
-
-target_include_directories(glrend PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-target_link_libraries(glrend PRIVATE BRender::DDI)
+brender_common_target_setup(glrend BREND_DRIVER_GL GL gl "glrend")
 target_link_libraries(glrend PUBLIC glrend-headers)
 
 set_target_properties(glrend PROPERTIES

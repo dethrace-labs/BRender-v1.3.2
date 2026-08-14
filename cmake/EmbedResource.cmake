@@ -12,11 +12,17 @@ endif()
 
 file(READ "${resource_file_name}" hex_content HEX)
 
-string(REPEAT "[0-9a-f]" 32 pattern)
-string(REGEX REPLACE "(${pattern})" "\\1\n" content "${hex_content}")
-string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1, " content "${content}")
-string(REGEX REPLACE ", $" "" content "${content}")
-set(array_definition "static const char ${variable_name}[] =\n{\n${content}\n};")
+if(hex_content STREQUAL "")
+    # Empty input (e.g. a tool produced no output). Emit a valid zero-length
+    # array so the generated header still compiles; consumers can size-check.
+    set(array_definition "static const char ${variable_name}[1] = { 0 };")
+else()
+    string(REPEAT "[0-9a-f]" 32 pattern)
+    string(REGEX REPLACE "(${pattern})" "\\1\n" content "${hex_content}")
+    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1, " content "${content}")
+    string(REGEX REPLACE ", $" "" content "${content}")
+    set(array_definition "static const char ${variable_name}[] =\n{\n${content}\n};")
+endif()
 set(source "// Auto generated file.\n${array_definition}\n")
 file(WRITE "${source_file_name}" "${source}")
 

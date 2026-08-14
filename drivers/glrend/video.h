@@ -8,8 +8,19 @@
 extern "C" {
 #endif
 
+#include "shader_data.h"
 
-#define BR_STATIC_ASSERT(cond, msg) _Static_assert((cond), msg)
+struct br_font;
+
+/* Maximum number of font atlases cached in the VIDEO instance. */
+#define TEXT_ATLAS_CACHE_MAX 8
+
+typedef struct {
+    struct br_font* font;
+    GLuint texture;
+    int atlasWidth;
+    int atlasHeight;
+} text_atlas_cache_entry;
 
 typedef struct _VIDEO {
     GLint maxUniformBlockSize;
@@ -54,72 +65,21 @@ typedef struct _VIDEO {
 
         GLint mainTextureBinding;
     } brenderProgram;
+
+    struct {
+        GLuint program;
+
+        GLint aPosition;     /* Position, vec2 */
+        GLint aUV;           /* UV, vec2 */
+        GLint uSampler;      /* Sampler, sampler2D */
+        GLint uTextColour;   /* Text colour, vec4 */
+    } textProgram;
+
+    /* Lazily-built font atlases (16x16 glyph grid). */
+    text_atlas_cache_entry textAtlas[TEXT_ATLAS_CACHE_MAX];
+    int textAtlasCount;
+    int textAtlasReplace;
 } VIDEO, *HVIDEO;
-
-#pragma pack(push, 16)
-/* std140-compatible light structure */
-typedef struct shader_data_light {
-    /* (X, Y, Z, T), if T == 0, direct, otherwise point/spot */
-    alignas(16) br_vector4 position;
-    /* (X, Y, Z, 0), normalised */
-    alignas(16) br_vector4 direction;
-    /* (X, Y, Z, 0), normalised */
-    alignas(16) br_vector4 half;
-    /* (R, G, B, 0) */
-    alignas(16) br_vector4 colour;
-    /* (intensity, constant, linear, attenutation) */
-    alignas(16) br_vector4 iclq;
-    /* (inner, outer), if (0.0, 0.0), then this is a point light. */
-    alignas(16) br_vector2 spot_angles;
-
-    /* Pad out the structure to maintain alignment. */
-    alignas(4) float _pad0, _pad1;
-} shader_data_light;
-BR_STATIC_ASSERT(sizeof(shader_data_light) % 16 == 0, "shader_data_light is not aligned");
-
-typedef struct shader_data_scene {
-    alignas(16) br_vector4 eye_view;
-    alignas(16) shader_data_light lights[BR_MAX_LIGHTS];
-    alignas(4) uint32_t num_lights;
-
-    alignas(16) br_vector4 clip_planes[BR_MAX_CLIP_PLANES];
-    alignas(4) uint32_t num_clip_planes;
-    alignas(4) float hither_z;
-    alignas(4) float yon_z;
-
-} shader_data_scene;
-BR_STATIC_ASSERT(sizeof(((shader_data_scene*)NULL)->lights) == sizeof(shader_data_light) * BR_MAX_LIGHTS,
-    "std::array<shader_data_light> fucked up");
-
-typedef struct shader_data_model {
-    alignas(16) br_matrix4 model_view;
-    alignas(16) br_matrix4 projection;
-    alignas(16) br_matrix4 projection_brender;
-    alignas(16) br_matrix4 mvp;
-    alignas(16) br_matrix4 normal_matrix;
-    alignas(16) br_matrix4 environment_matrix;
-    alignas(16) br_matrix4 map_transform;
-    alignas(16) br_vector4 surface_colour;
-    alignas(16) br_vector4 clear_colour;
-    alignas(16) br_vector4 eye_m;
-    alignas(4) float ka;
-    alignas(4) float ks;
-    alignas(4) float kd;
-    alignas(4) float power;
-    alignas(4) uint32_t lighting;
-    alignas(4) uint32_t uv_source;
-    alignas(4) uint32_t disable_colour_key;
-    alignas(4) uint32_t disable_texture;
-    alignas(4) uint32_t fog_enabled;
-    alignas(16) br_vector3 fog_colour;
-    alignas(4) float fog_min;
-    alignas(4) float fog_max;
-    alignas(4) float alpha;
-    alignas(4) uint32_t prelit;
-
-
-} shader_data_model;
-#pragma pack(pop)
 
 #ifdef __cplusplus
 };
