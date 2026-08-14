@@ -207,11 +207,19 @@ HVIDEO VIDEO_Open(HVIDEO hVideo, const char* vertShader, const char* fragShader)
         return NULL;
     }
 
+    if (!VIDEOI_CompileTextShader(hVideo)) {
+        glDeleteProgram(hVideo->brenderProgram.program);
+        glDeleteProgram(hVideo->defaultProgram.program);
+        return NULL;
+    }
+
     GL_CHECK_ERROR();
     return hVideo;
 }
 
 void VIDEO_Close(HVIDEO hVideo) {
+    int i;
+
     if (!hVideo)
         return;
 
@@ -228,6 +236,12 @@ void VIDEO_Close(HVIDEO hVideo) {
         glDeleteBuffers(0, &hVideo->brenderProgram.uboModel);
 
     glDeleteProgram(hVideo->defaultProgram.program);
+    glDeleteProgram(hVideo->textProgram.program);
+
+    for (i = 0; i < TEXT_ATLAS_CACHE_MAX; i++) {
+        if (hVideo->textAtlas[i].texture != 0)
+            glDeleteTextures(1, &hVideo->textAtlas[i].texture);
+    }
 }
 
 br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat, GLenum* format, GLenum* type,

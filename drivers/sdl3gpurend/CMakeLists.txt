@@ -118,6 +118,8 @@ foreach(spv_file
     brender.frag.spv
     overlay.vert.spv
     overlay.frag.spv
+    text.vert.spv
+    text.frag.spv
 )
     get_filename_component(spv_base ${spv_file} NAME)
     string(REPLACE ".spv" "" spv_base ${spv_base})

@@ -11,6 +11,7 @@
 
 #include "drv.h"
 #include <brassert.h>
+#include <brfont.h>
 #include <string.h>
 
 /*
@@ -405,14 +406,276 @@ br_error BR_CMETHOD(br_device_pixelmap_gl, rectangleStretchCopyTo)(br_device_pix
     return BRE_FAIL;
 }
 
+/*
+ * Font atlas management. Glyphs are stamped into a 16x16 grid of
+ * glyph_x*glyph_y cells (cell c = column c&15, row c>>4); glyph bit 0x80 is
+ * the left-most pixel, the glyph's top row is the first row of its cell. Set
+ * pixels are opaque white, empty pixels transparent, so the fragment shader
+ * can blend glyph coverage over the scene.
+ */
+static GLuint DeviceGLTextBuildAtlas(HVIDEO hVideo, br_font* font, int* outW, int* outH) {
+    int gw = font->glyph_x;
+    int gh = font->glyph_y;
+    int aw = gw * 16;
+    int ah = gh * 16;
+    br_uint_8* rgba;
+    GLuint tex;
+    int c, px, py;
+
+    rgba = BrScratchAllocate((size_t)aw * (size_t)ah * 4);
+    memset(rgba, 0, (size_t)aw * (size_t)ah * 4);
+
+    for (c = 0; c < 256; c++) {
+        int col = c & 15;
+        int row = c >> 4;
+        int w = (font->flags & BR_FONTF_PROPORTIONAL) ? font->width[c] : gw;
+        int stride = (w + 7) / 8;
+        const br_uint_8* glyph = font->glyphs + font->encoding[c];
+        for (py = 0; py < gh; py++) {
+            for (px = 0; px < w; px++) {
+                if (glyph[(py * stride) + (px / 8)] & (0x80 >> (px % 8))) {
+                    br_uint_8* dst = &rgba[((row * gh + py) * aw + (col * gw + px)) * 4];
+                    dst[0] = 0xFF;
+                    dst[1] = 0xFF;
+                    dst[2] = 0xFF;
+                    dst[3] = 0xFF;
+                }
+            }
+        }
+    }
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, aw, ah, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    BrScratchFree(rgba);
+
+    {
+        int slot = hVideo->textAtlasCount < TEXT_ATLAS_CACHE_MAX ? hVideo->textAtlasCount++ : hVideo->textAtlasReplace;
+        if (hVideo->textAtlas[slot].texture != 0)
+            glDeleteTextures(1, &hVideo->textAtlas[slot].texture);
+        hVideo->textAtlas[slot].font = font;
+        hVideo->textAtlas[slot].texture = tex;
+        hVideo->textAtlas[slot].atlasWidth = aw;
+        hVideo->textAtlas[slot].atlasHeight = ah;
+        hVideo->textAtlasReplace = (hVideo->textAtlasReplace + 1) % TEXT_ATLAS_CACHE_MAX;
+    }
+
+    *outW = aw;
+    *outH = ah;
+    GL_CHECK_ERROR();
+    return tex;
+}
+
+static GLuint DeviceGLTextEnsureAtlas(HVIDEO hVideo, br_font* font, int* outW, int* outH) {
+    int i;
+
+    for (i = 0; i < hVideo->textAtlasCount; i++) {
+        if (hVideo->textAtlas[i].font == font) {
+            *outW = hVideo->textAtlas[i].atlasWidth;
+            *outH = hVideo->textAtlas[i].atlasHeight;
+            return hVideo->textAtlas[i].texture;
+        }
+    }
+
+    return DeviceGLTextBuildAtlas(hVideo, font, outW, outH);
+}
+
+static void DeviceGLTextColour(br_device_pixelmap* self, br_uint_32 colour, float* out) {
+    float r, g, b, a;
+    br_uint_32* entries = self->clut != NULL ? self->clut->entries : ObjectDevice(self)->clut->entries;
+
+    /* Palette-index colours (0-255, as used by BrPixelmapText on palette-based
+     * games such as Carmageddon) are resolved through the device CLUT on any
+     * pixel type, matching the software renderer where the palette is applied
+     * when the INDEX_8 screen is displayed. Larger values are direct RGB. */
+    if ((self->pm_type == BR_PMT_INDEX_8 || colour <= 0xFF) && entries != NULL) {
+        br_uint_32 entry = entries[colour & 0xFF];
+        r = BR_RED(entry) / 255.0f;
+        g = BR_GRN(entry) / 255.0f;
+        b = BR_BLU(entry) / 255.0f;
+        a = 1.0f;
+    } else {
+        r = BR_RED(colour) / 255.0f;
+        g = BR_GRN(colour) / 255.0f;
+        b = BR_BLU(colour) / 255.0f;
+        /* Sub-24bpp pixelmaps do not store alpha. */
+        a = (self->pm_type == BR_PMT_RGBA_8888 || self->pm_type == BR_PMT_RGBA_4444 ||
+                self->pm_type == BR_PMT_ARGB_4444) ?
+            BR_ALPHA(colour) / 255.0f :
+            1.0f;
+    }
+
+    out[0] = r;
+    out[1] = g;
+    out[2] = b;
+    out[3] = a;
+}
+
 br_error BR_CMETHOD(br_device_pixelmap_gl, text)(br_device_pixelmap* self, br_point* point, br_font* font,
     const char* text, br_uint_32 colour) {
-    (void)self;
-    (void)point;
-    (void)font;
-    (void)text;
-    (void)colour;
-    return BRE_FAIL;
+    /* The text quad lives for the process lifetime (the GL device holds a
+     * single context for its whole life); it is lazily initialised below. */
+    static br_device_pixelmap_gl_quad s_textQuad;
+    HVIDEO hVideo;
+    GLuint atlas;
+    int x, y, gw, gh, aw, ah;
+    float colour4[4];
+    int vx, vy;
+    float rx, ry;
+    GLint prevProgram, prevViewport[4];
+    GLboolean blendEnabled, depthEnabled;
+    GLint prevTexture;
+    int count;
+    const unsigned char* s;
+
+    if (self->screen == NULL)
+        return BRE_FAIL;
+
+    hVideo = &self->screen->asFront.video;
+
+    if (font == NULL || text == NULL)
+        return BRE_OK;
+
+    x = point->x + self->pm_origin_x;
+    y = point->y + self->pm_origin_y;
+
+    if (y <= -(int)font->glyph_y || y >= self->pm_height || x >= self->pm_width)
+        return BRE_OK;
+
+    atlas = DeviceGLTextEnsureAtlas(hVideo, font, &aw, &ah);
+    if (atlas == 0)
+        return BRE_FAIL;
+
+    DeviceGLTextColour(self, colour, colour4);
+
+    if (s_textQuad.buffers[0] == 0)
+        DeviceGLInitQuad(&s_textQuad, hVideo);
+    if (s_textQuad.buffers[0] == 0)
+        return BRE_FAIL;
+
+    /* Save the GL state we are about to touch. */
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
+    blendEnabled = glIsEnabled(GL_BLEND);
+    depthEnabled = glIsEnabled(GL_DEPTH_TEST);
+    glGetIntegerv(GL_VIEWPORT, prevViewport);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
+
+    /* Text is addressed in game pixels, like the scene output. */
+    BREND_FN(DevicePixelmap, GetViewport)(self->screen, &vx, &vy, &rx, &ry);
+    glViewport(vx, vy, (GLsizei)(self->pm_width * rx), (GLsizei)(self->pm_height * ry));
+
+    glUseProgram(hVideo->textProgram.program);
+    glUniform4f(hVideo->textProgram.uTextColour, colour4[0], colour4[1], colour4[2], colour4[3]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, atlas);
+    glUniform1i(hVideo->textProgram.uSampler, 0);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+
+    glBindVertexArray(s_textQuad.defaultVao);
+
+    gw = font->glyph_x;
+    gh = font->glyph_y;
+
+    count = 0;
+    for (s = (const unsigned char*)text; *s != '\0' && count < 256; s++) {
+        int c = *s;
+        int w = (font->flags & BR_FONTF_PROPORTIONAL) ? font->width[c] : gw;
+        float dx0, dy0, dx1, dy1, u0, v0, u1, v1;
+        int col, row;
+
+        if (x + w <= 0) {
+            x += w + 1;
+            continue;
+        }
+        if (x >= self->pm_width)
+            break;
+
+        col = c & 15;
+        row = c >> 4;
+        u0 = (float)(col * gw) / (float)aw;
+        u1 = (float)(col * gw + w) / (float)aw;
+        v0 = (float)(row * gh) / (float)ah;
+        v1 = (float)(row * gh + gh) / (float)ah;
+
+        /* OpenGL NDC is y-up: clip row 0 (game top) maps to NDC +1, and
+         * memory row 0 is sampled at v=0, so the glyph's top edge carries
+         * v = cell top. */
+        dx0 = 2.0f * (float)x / (float)self->pm_width - 1.0f;
+        dx1 = 2.0f * (float)(x + w) / (float)self->pm_width - 1.0f;
+        dy0 = 1.0f - 2.0f * (float)(y + gh) / (float)self->pm_height;
+        dy1 = 1.0f - 2.0f * (float)y / (float)self->pm_height;
+
+        /* Bottom-left, top-left, top-right, bottom-right (matches defaultVao
+         * and the quad index buffer). */
+        s_textQuad.tris[0].x = dx0;
+        s_textQuad.tris[0].y = dy0;
+        s_textQuad.tris[0].z = 0.5f;
+        s_textQuad.tris[0].r = 1.0f;
+        s_textQuad.tris[0].g = 1.0f;
+        s_textQuad.tris[0].b = 1.0f;
+        s_textQuad.tris[0].u = u0;
+        s_textQuad.tris[0].v = v1;
+
+        s_textQuad.tris[1].x = dx0;
+        s_textQuad.tris[1].y = dy1;
+        s_textQuad.tris[1].z = 0.5f;
+        s_textQuad.tris[1].r = 1.0f;
+        s_textQuad.tris[1].g = 1.0f;
+        s_textQuad.tris[1].b = 1.0f;
+        s_textQuad.tris[1].u = u0;
+        s_textQuad.tris[1].v = v0;
+
+        s_textQuad.tris[2].x = dx1;
+        s_textQuad.tris[2].y = dy1;
+        s_textQuad.tris[2].z = 0.5f;
+        s_textQuad.tris[2].r = 1.0f;
+        s_textQuad.tris[2].g = 1.0f;
+        s_textQuad.tris[2].b = 1.0f;
+        s_textQuad.tris[2].u = u1;
+        s_textQuad.tris[2].v = v0;
+
+        s_textQuad.tris[3].x = dx1;
+        s_textQuad.tris[3].y = dy0;
+        s_textQuad.tris[3].z = 0.5f;
+        s_textQuad.tris[3].r = 1.0f;
+        s_textQuad.tris[3].g = 1.0f;
+        s_textQuad.tris[3].b = 1.0f;
+        s_textQuad.tris[3].u = u1;
+        s_textQuad.tris[3].v = v1;
+
+        glBindBuffer(GL_ARRAY_BUFFER, s_textQuad.buffers[0]);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(s_textQuad.tris), s_textQuad.tris);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+
+        x += w + 1;
+        count++;
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(prevProgram);
+    glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
+    if (blendEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+    if (depthEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    GL_CHECK_ERROR();
+    return BRE_OK;
 }
 
 br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), flush)(br_device_pixelmap* self) {

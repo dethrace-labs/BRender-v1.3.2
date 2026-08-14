@@ -13,6 +13,7 @@ extern "C" {
 #include "sdl3_dyn.h"
 
 struct br_device_pixelmap;
+struct br_font;
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
@@ -28,7 +29,18 @@ struct br_device_pixelmap;
 /* Uniform slot / sampler slot mapping (matches the shared GLSL bindings). */
 #define SDL3GPUREND_MODEL_UNIFORM_SLOT     0
 #define SDL3GPUREND_SCENE_UNIFORM_SLOT     1
+#define SDL3GPUREND_TEXT_UNIFORM_SLOT      2
 #define SDL3GPUREND_FRAGMENT_SAMPLER_SLOT  0
+
+/* Maximum number of font atlases cached in the VIDEO instance. */
+#define TEXT_ATLAS_CACHE_MAX 8
+
+typedef struct {
+    struct br_font* font;
+    SDL_GPUTexture* texture;
+    int atlasWidth;
+    int atlasHeight;
+} text_atlas_cache_entry;
 
 /*
  * SDL3 GPU uniform slot mapping (matches the shared GLSL bindings):
@@ -82,6 +94,8 @@ typedef struct _VIDEO {
     SDL_GPUShader* overlayFragShader;
     SDL_GPUShader* defaultVertShader;
     SDL_GPUShader* defaultFragShader;
+    SDL_GPUShader* textVertShader;
+    SDL_GPUShader* textFragShader;
 
     SDL_GPUGraphicsPipeline* brenderPipeline;
     SDL_GPUGraphicsPipeline* brenderPipelineNoDepth;
@@ -89,6 +103,12 @@ typedef struct _VIDEO {
     SDL_GPUGraphicsPipeline* brenderBlendPipelineNoDepth;
     SDL_GPUGraphicsPipeline* defaultPipeline;
     SDL_GPUGraphicsPipeline* overlayPipeline;
+    SDL_GPUGraphicsPipeline* textPipeline;
+
+    /* Lazily-built font atlases (16x16 glyph grid) for device BrPixelmapText. */
+    text_atlas_cache_entry textAtlas[TEXT_ATLAS_CACHE_MAX];
+    int textAtlasCount;
+    int textAtlasReplace;
 
     /* Command recording: one SDL_GPUCommandBuffer per frame, alternating copy
      * passes and render passes (SDL3 GPU forbids nesting but allows
@@ -263,7 +283,13 @@ void SDL3GPUREND_VideoResize(HVIDEO hVideo);
 /* Creates a shader for the device's backend. Picks the matching format from
  * `source` (SPIR-V / MSL / DXIL) and fails with BR_FATAL if the format the
  * device needs was not produced by this build. */
-SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderSource* source, SDL_GPUShaderStage stage);
+/* Creates a shader for the device's backend. Picks the matching format from
+ * `source` (SPIR-V / MSL / DXIL) and fails with BR_FATAL if the format the
+ * device needs was not produced by this build. `fragUniformBuffers` sizes the
+ * fragment stage's uniform-slot count (3 for the text shader, whose colour
+ * block lives at slot 2; the vertex stage always reserves 2). */
+SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderSource* source, SDL_GPUShaderStage stage,
+    Uint32 fragUniformBuffers);
 
 SDL_GPUGraphicsPipeline* SDL3GPUREND_CreateGraphicsPipeline(HVIDEO hVideo,
     SDL_GPUShader* vertModule, SDL_GPUShader* fragModule,

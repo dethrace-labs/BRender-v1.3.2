@@ -23,6 +23,11 @@ add_custom_command(
         COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=brender.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
         DEPENDS "${SHADER_DIR}/brender.frag.glsl"
 )
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/text.frag.glsl.h"
+        COMMAND "${CMAKE_COMMAND}" "-DSOURCE_DIR=${SHADER_DIR}" "-DFILE=text.frag.glsl" -P "${BRender_SOURCE_DIR}/cmake/EmbedResource.cmake"
+        DEPENDS "${SHADER_DIR}/text.frag.glsl"
+)
 
 
 set(REND_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../commonrend")
@@ -33,7 +38,7 @@ set(VIDEO_FILES
         checkboard64.c
         shader_brender.c
         shader_default.c
-        # shader_text.c
+        shader_text.c
         video.c
         video.h
         ${REND_COMMON_DIR}/shader_data.h
@@ -108,6 +113,7 @@ add_library(glrend
         "${CMAKE_CURRENT_BINARY_DIR}/default.frag.glsl.h"
         "${CMAKE_CURRENT_BINARY_DIR}/brender.vert.glsl.h"
         "${CMAKE_CURRENT_BINARY_DIR}/brender.frag.glsl.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/text.frag.glsl.h"
         )
 
 brender_common_target_setup(glrend BREND_DRIVER_GL GL gl "glrend")

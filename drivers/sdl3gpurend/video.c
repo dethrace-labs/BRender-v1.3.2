@@ -344,7 +344,8 @@ static void ReleaseRings(HVIDEO hVideo) {
     }
 }
 
-SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderSource* source, SDL_GPUShaderStage stage) {
+SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderSource* source, SDL_GPUShaderStage stage,
+    Uint32 fragUniformBuffers) {
     SDL_GPUShaderCreateInfo ci = {0};
 
     /* Select the source for the device's backend. The Metal backend always
@@ -386,9 +387,10 @@ SDL_GPUShader* SDL3GPUREND_CreateShader(HVIDEO hVideo, const SDL3GPUREND_ShaderS
         /* set1: model + scene UBOs. */
         ci.num_uniform_buffers = 2;
     } else {
-        /* set2: main_texture sampler; set3: model + scene UBOs. */
+        /* set2: main_texture sampler; set3: model + scene UBOs (+ text colour
+         * at slot 2 for the text shader). */
         ci.num_samplers = 1;
-        ci.num_uniform_buffers = 2;
+        ci.num_uniform_buffers = fragUniformBuffers;
     }
 
     SDL_GPUShader* shader = SDL3_CreateGPUShader(hVideo->device, &ci);
@@ -574,10 +576,10 @@ HVIDEO SDL3GPUREND_VideoOpen(HVIDEO hVideo, void* parent,
     if (!CreateDefaultTexture(hVideo))
         goto cleanup;
 
-    hVideo->brenderVertShader = SDL3GPUREND_CreateShader(hVideo, &brender[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
-    hVideo->brenderFragShader = SDL3GPUREND_CreateShader(hVideo, &brender[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
-    hVideo->overlayVertShader = SDL3GPUREND_CreateShader(hVideo, &overlay[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
-    hVideo->overlayFragShader = SDL3GPUREND_CreateShader(hVideo, &overlay[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+    hVideo->brenderVertShader = SDL3GPUREND_CreateShader(hVideo, &brender[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX, 2);
+    hVideo->brenderFragShader = SDL3GPUREND_CreateShader(hVideo, &brender[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT, 2);
+    hVideo->overlayVertShader = SDL3GPUREND_CreateShader(hVideo, &overlay[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX, 2);
+    hVideo->overlayFragShader = SDL3GPUREND_CreateShader(hVideo, &overlay[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT, 2);
     if (!hVideo->brenderVertShader || !hVideo->brenderFragShader ||
         !hVideo->overlayVertShader || !hVideo->overlayFragShader)
         goto cleanup_shaders;
@@ -639,8 +641,8 @@ HVIDEO SDL3GPUREND_VideoOpen(HVIDEO hVideo, void* parent,
     /* Default shaders/pipeline alias the brender ones unless the caller
      * supplied a distinct pair. */
     if (defaultShaders != brender_shaders) {
-        hVideo->defaultVertShader = SDL3GPUREND_CreateShader(hVideo, &defaultShaders[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX);
-        hVideo->defaultFragShader = SDL3GPUREND_CreateShader(hVideo, &defaultShaders[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT);
+        hVideo->defaultVertShader = SDL3GPUREND_CreateShader(hVideo, &defaultShaders[SDL3GPUREND_STAGE_VERTEX], SDL_GPU_SHADERSTAGE_VERTEX, 2);
+        hVideo->defaultFragShader = SDL3GPUREND_CreateShader(hVideo, &defaultShaders[SDL3GPUREND_STAGE_FRAGMENT], SDL_GPU_SHADERSTAGE_FRAGMENT, 2);
     }
     hVideo->defaultPipeline = hVideo->brenderPipeline;
 
@@ -669,6 +671,41 @@ HVIDEO SDL3GPUREND_VideoOpen(HVIDEO hVideo, void* parent,
             goto cleanup_shaders;
     }
 
+    /* Text pipeline: glyph quads (same vertex layout as the overlay) sampled
+     * through text.vert/text.frag. The text colour block lives at fragment
+     * uniform slot 2, so the fragment shader needs 3 uniform slots. */
+    hVideo->textVertShader = SDL3GPUREND_CreateShader(hVideo, &text_shaders[SDL3GPUREND_STAGE_VERTEX],
+        SDL_GPU_SHADERSTAGE_VERTEX, 2);
+    hVideo->textFragShader = SDL3GPUREND_CreateShader(hVideo, &text_shaders[SDL3GPUREND_STAGE_FRAGMENT],
+        SDL_GPU_SHADERSTAGE_FRAGMENT, 3);
+    if (!hVideo->textVertShader || !hVideo->textFragShader)
+        goto cleanup_shaders;
+
+    {
+        SDL_GPUVertexBufferDescription bindingDesc = {0};
+        bindingDesc.slot = 0;
+        bindingDesc.pitch = 4 * sizeof(float);
+        bindingDesc.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        bindingDesc.instance_step_rate = 0;
+
+        SDL_GPUVertexAttribute attrDescs[2] = {0};
+        attrDescs[0].location = 0;
+        attrDescs[0].buffer_slot = 0;
+        attrDescs[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        attrDescs[0].offset = 0;
+        attrDescs[1].location = 1;
+        attrDescs[1].buffer_slot = 0;
+        attrDescs[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        attrDescs[1].offset = 2 * sizeof(float);
+
+        hVideo->textPipeline = SDL3GPUREND_CreateGraphicsPipeline(hVideo,
+            hVideo->textVertShader, hVideo->textFragShader,
+            &bindingDesc, attrDescs, 2,
+            hVideo->windowWidth, hVideo->windowHeight, true, false, false);
+        if (!hVideo->textPipeline)
+            goto cleanup_shaders;
+    }
+
     BrLogPrintf("SDL3GPU: GPU device initialized (%s, framebuffer %dx%d)\n",
         SDL3GPUREND_ShaderFormatName(hVideo->shaderFormat),
         hVideo->windowWidth, hVideo->windowHeight);
@@ -677,6 +714,9 @@ HVIDEO SDL3GPUREND_VideoOpen(HVIDEO hVideo, void* parent,
     return hVideo;
 
 cleanup_shaders:
+    if (hVideo->textPipeline) { SDL3_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->textPipeline); hVideo->textPipeline = NULL; }
+    if (hVideo->textFragShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->textFragShader); hVideo->textFragShader = NULL; }
+    if (hVideo->textVertShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->textVertShader); hVideo->textVertShader = NULL; }
     if (hVideo->overlayVertShader) SDL3_ReleaseGPUShader(hVideo->device, hVideo->overlayVertShader);
     if (hVideo->overlayFragShader) SDL3_ReleaseGPUShader(hVideo->device, hVideo->overlayFragShader);
     if (hVideo->brenderFragShader) SDL3_ReleaseGPUShader(hVideo->device, hVideo->brenderFragShader);
@@ -724,6 +764,9 @@ void SDL3GPUREND_VideoClose(HVIDEO hVideo) {
     if (hVideo->brenderPipelineNoDepth) { SDL3_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->brenderPipelineNoDepth); hVideo->brenderPipelineNoDepth = NULL; }
     if (hVideo->brenderPipeline) { SDL3_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->brenderPipeline); hVideo->brenderPipeline = NULL; }
     hVideo->defaultPipeline = NULL;
+    if (hVideo->textPipeline) { SDL3_ReleaseGPUGraphicsPipeline(hVideo->device, hVideo->textPipeline); hVideo->textPipeline = NULL; }
+    if (hVideo->textFragShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->textFragShader); hVideo->textFragShader = NULL; }
+    if (hVideo->textVertShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->textVertShader); hVideo->textVertShader = NULL; }
     if (hVideo->overlayFragShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->overlayFragShader); hVideo->overlayFragShader = NULL; }
     if (hVideo->overlayVertShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->overlayVertShader); hVideo->overlayVertShader = NULL; }
     if (hVideo->brenderFragShader) { SDL3_ReleaseGPUShader(hVideo->device, hVideo->brenderFragShader); hVideo->brenderFragShader = NULL; }
@@ -731,6 +774,9 @@ void SDL3GPUREND_VideoClose(HVIDEO hVideo) {
     if (hVideo->overlayTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->overlayTexture); hVideo->overlayTexture = NULL; }
     for (int i = 0; i < SDL3GPUREND_BG_POOL; i++) {
         if (hVideo->bgTexture[i]) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->bgTexture[i]); hVideo->bgTexture[i] = NULL; }
+    }
+    for (int i = 0; i < TEXT_ATLAS_CACHE_MAX; i++) {
+        if (hVideo->textAtlas[i].texture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->textAtlas[i].texture); hVideo->textAtlas[i].texture = NULL; }
     }
     if (hVideo->defaultTexture) { SDL3_ReleaseGPUTexture(hVideo->device, hVideo->defaultTexture); hVideo->defaultTexture = NULL; }
     if (hVideo->overlayQuadIbo) { SDL3_ReleaseGPUBuffer(hVideo->device, hVideo->overlayQuadIbo); hVideo->overlayQuadIbo = NULL; }

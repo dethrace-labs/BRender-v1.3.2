@@ -11,6 +11,7 @@
 
 #include "drv.h"
 #include <brassert.h>
+#include <brfont.h>
 #include <string.h>
 
 /*
@@ -543,6 +544,289 @@ br_error BREND_CMETHOD_DECL(BREND_CLASS(br_device_pixelmap_), directLock)(br_dev
 }
 
 /*
+ * Device BrPixelmapText — GPU font atlas + tinted glyph-quad blits.
+ */
+
+/*
+ * Builds the 16x16-glyph atlas for `font` (glyph_x cells across, glyph_y
+ * down, bit 0x80 = leftmost column, glyph top row = first row of its cell).
+ * The atlas is cached in the VIDEO instance and the shared textures are
+ * released at video close.
+ */
+static SDL_GPUTexture* DeviceSDL3TextBuildAtlas(HVIDEO hVideo, br_font* font, int* outW, int* outH) {
+    int gw = font->glyph_x;
+    int gh = font->glyph_y;
+    int aw = gw * 16;
+    int ah = gh * 16;
+    br_uint_8* atlas = BrMemAllocate(aw * ah * 4, BR_MEMORY_PIXELS);
+    SDL_GPUTexture* texture = NULL;
+    int c, px, py;
+
+    if (atlas == NULL)
+        return NULL;
+    memset(atlas, 0, (size_t)aw * (size_t)ah * 4);
+
+    for (c = 0; c < 256; c++) {
+        int col = c & 15;
+        int row = c >> 4;
+        int w = (font->flags & BR_FONTF_PROPORTIONAL) ? font->width[c] : gw;
+        int stride = (w + 7) / 8;
+        const br_uint_8* glyph = font->glyphs + font->encoding[c];
+        for (py = 0; py < gh; py++) {
+            for (px = 0; px < w; px++) {
+                if (glyph[(py * stride) + (px / 8)] & (0x80 >> (px % 8))) {
+                    br_uint_8* dst = &atlas[((row * gh + py) * aw + (col * gw + px)) * 4];
+                    dst[0] = 0xFF;
+                    dst[1] = 0xFF;
+                    dst[2] = 0xFF;
+                    dst[3] = 0xFF;
+                }
+            }
+        }
+    }
+
+    {
+        SDL_GPUTextureCreateInfo tci = {0};
+        tci.type = SDL_GPU_TEXTURETYPE_2D;
+        tci.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+        tci.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+        tci.width = aw;
+        tci.height = ah;
+        tci.layer_count_or_depth = 1;
+        tci.num_levels = 1;
+        tci.sample_count = SDL_GPU_SAMPLECOUNT_1;
+        texture = SDL3_CreateGPUTexture(hVideo->device, &tci);
+        if (texture == NULL)
+            goto end;
+
+        if (SDL3GPUREND_UploadBufferToImage(hVideo, texture, aw, ah, 0, 0, (const char*)atlas, (size_t)aw * ah * 4) != 0) {
+            SDL3_ReleaseGPUTexture(hVideo->device, texture);
+            texture = NULL;
+            goto end;
+        }
+    }
+
+end:
+    BrMemFree(atlas);
+    if (texture != NULL) {
+        *outW = aw;
+        *outH = ah;
+    }
+    return texture;
+}
+
+/*
+ * Returns the cached atlas texture for `font`, building and caching it on the
+ * first use. Up to TEXT_ATLAS_CACHE_MAX fonts are kept; older entries are
+ * evicted round-robin when the cache is full.
+ */
+static SDL_GPUTexture* DeviceSDL3TextEnsureAtlas(HVIDEO hVideo, br_font* font, int* outW, int* outH) {
+    int i;
+    int slot;
+
+    for (i = 0; i < hVideo->textAtlasCount; i++) {
+        if (hVideo->textAtlas[i].font == font) {
+            *outW = hVideo->textAtlas[i].atlasWidth;
+            *outH = hVideo->textAtlas[i].atlasHeight;
+            return hVideo->textAtlas[i].texture;
+        }
+    }
+
+    if (hVideo->textAtlasCount < TEXT_ATLAS_CACHE_MAX) {
+        slot = hVideo->textAtlasCount++;
+    } else {
+        slot = hVideo->textAtlasReplace;
+        hVideo->textAtlasReplace = (hVideo->textAtlasReplace + 1) % TEXT_ATLAS_CACHE_MAX;
+        if (hVideo->textAtlas[slot].texture) {
+            SDL3_ReleaseGPUTexture(hVideo->device, hVideo->textAtlas[slot].texture);
+            hVideo->textAtlas[slot].texture = NULL;
+        }
+    }
+
+    hVideo->textAtlas[slot].font = font;
+    hVideo->textAtlas[slot].texture = DeviceSDL3TextBuildAtlas(hVideo, font, &hVideo->textAtlas[slot].atlasWidth,
+        &hVideo->textAtlas[slot].atlasHeight);
+    if (hVideo->textAtlas[slot].texture == NULL)
+        return NULL;
+
+    *outW = hVideo->textAtlas[slot].atlasWidth;
+    *outH = hVideo->textAtlas[slot].atlasHeight;
+    return hVideo->textAtlas[slot].texture;
+}
+
+/*
+ * Decodes a BRender text colour into a (r, g, b, a) tint. Palette-index
+ * colours (0-255) are looked up in the pixelmap's CLUT on any pixel type; the
+ * alpha is honoured for the RGBA/RGBX pixel types and ignored otherwise
+ * (matching BrPixelmapText's contract for 8/16bpp targets).
+ */
+static void DeviceSDL3TextColour(br_device_pixelmap* self, br_uint_32 colour, float* out) {
+    br_uint_32* entries = self->clut != NULL ? self->clut->entries : ObjectDevice(self)->clut->entries;
+
+    /* Palette-index colours (0-255, as used by BrPixelmapText on palette-based
+     * games such as Carmageddon) are resolved through the device CLUT on any
+     * pixel type, matching the software renderer where the palette is applied
+     * when the INDEX_8 screen is displayed. Larger values are direct RGB. */
+    if ((self->pm_type == BR_PMT_INDEX_8 || colour <= 0xFF) && entries != NULL) {
+        br_colour c = entries[colour & 0xFF];
+        out[0] = BR_RED(c) / 255.0f;
+        out[1] = BR_GRN(c) / 255.0f;
+        out[2] = BR_BLU(c) / 255.0f;
+        out[3] = 1.0f;
+    } else {
+        out[0] = BR_RED(colour) / 255.0f;
+        out[1] = BR_GRN(colour) / 255.0f;
+        out[2] = BR_BLU(colour) / 255.0f;
+        if (self->pm_type == BR_PMT_RGBA_8888 || self->pm_type == BR_PMT_RGBA_4444 || self->pm_type == BR_PMT_ARGB_4444)
+            out[3] = BR_ALPHA(colour) / 255.0f;
+        else
+            out[3] = 1.0f;
+    }
+}
+
+br_error BR_CMETHOD(br_device_pixelmap_sdl3gpurend, text)(br_device_pixelmap* self, br_point* point, br_font* font,
+    const char* text, br_uint_32 colour) {
+    HVIDEO hVideo;
+    SDL_GPUTexture* atlas;
+    SDL_GPURenderPass* pass;
+    int x, y, gw, gh, aw, ah;
+    float colour4[4];
+    const unsigned char* s;
+
+    if (self->screen == NULL)
+        return BRE_FAIL;
+
+    hVideo = &self->screen->asFront.video;
+
+    if (font == NULL || text == NULL)
+        return BRE_OK;
+
+    x = point->x + self->pm_origin_x;
+    y = point->y + self->pm_origin_y;
+
+    if (y <= -(int)font->glyph_y || y >= self->pm_height || x >= self->pm_width)
+        return BRE_OK;
+
+    gw = font->glyph_x;
+    gh = font->glyph_y;
+
+    atlas = DeviceSDL3TextEnsureAtlas(hVideo, font, &aw, &ah);
+    if (atlas == NULL)
+        return BRE_OK;
+
+    DeviceSDL3TextColour(self, colour, colour4);
+
+    /* Draw through the active render pass, starting one if none is running. */
+    SDL3GPUREND_EnsureRecording(hVideo);
+    if (!hVideo->renderPassActive)
+        SDL3GPUREND_BeginRenderPass(hVideo);
+    if (!hVideo->renderPassActive)
+        return BRE_OK;
+    pass = hVideo->currentPass;
+
+    /* The game screen may be letterboxed in a larger window; text is drawn in
+     * game pixels so clip and position it to the game-screen viewport. */
+    {
+        SDL_GPUViewport viewport = {0};
+        SDL_Rect scissor = {0, 0, hVideo->windowWidth, hVideo->windowHeight};
+        int vp_x, vp_y, vp_width, vp_height;
+        viewport.max_depth = 1.0f;
+        SDL3GPUREND_LetterboxViewport(hVideo->windowWidth, hVideo->windowHeight,
+            self->pm_width, self->pm_height,
+            &vp_x, &vp_y, &vp_width, &vp_height, NULL, NULL);
+        viewport.x = (float)vp_x;
+        viewport.y = (float)vp_y;
+        viewport.w = (float)vp_width;
+        viewport.h = (float)vp_height;
+        scissor.x = vp_x;
+        scissor.y = vp_y;
+        scissor.w = vp_width;
+        scissor.h = vp_height;
+        SDL3_SetGPUViewport(pass, &viewport);
+        SDL3_SetGPUScissor(pass, &scissor);
+    }
+
+    if (hVideo->lastPipeline != hVideo->textPipeline) {
+        SDL3_BindGPUGraphicsPipeline(pass, hVideo->textPipeline);
+        hVideo->lastPipeline = hVideo->textPipeline;
+    }
+
+    SDL3_PushGPUFragmentUniformData(hVideo->commandBuffer, SDL3GPUREND_TEXT_UNIFORM_SLOT, colour4, sizeof(colour4));
+
+    if (hVideo->lastSampler != hVideo->samplerNearest || hVideo->lastTexture != atlas) {
+        SDL_GPUTextureSamplerBinding tsb = { atlas, hVideo->samplerNearest };
+        SDL3_BindGPUFragmentSamplers(pass, SDL3GPUREND_FRAGMENT_SAMPLER_SLOT, &tsb, 1);
+        hVideo->lastSampler = hVideo->samplerNearest;
+        hVideo->lastTexture = atlas;
+    }
+
+    for (s = (const unsigned char*)text; *s; s++) {
+        int w;
+        float dx0, dx1, dy0, dy1, u0, u1, v0, v1;
+        float quad[4][4];
+        int f;
+        size_t size = 64;
+        size_t offset;
+
+        if (x + gw <= 0) {
+            x += gw + 1;
+            continue;
+        }
+
+        if (x >= self->pm_width)
+            break;
+
+        if ((font->flags & BR_FONTF_PROPORTIONAL) != 0)
+            w = font->width[*s];
+        else
+            w = gw;
+
+        dx0 = 2.0f * (float)x / (float)self->pm_width - 1.0f;
+        dx1 = 2.0f * (float)(x + w) / (float)self->pm_width - 1.0f;
+        dy0 = 2.0f * (float)(y + gh) / (float)self->pm_height - 1.0f;
+        dy1 = 2.0f * (float)y / (float)self->pm_height - 1.0f;
+        u0 = (float)((*s % 16) * gw) / (float)aw;
+        u1 = (float)((*s % 16) * gw + w) / (float)aw;
+        v0 = (float)((*s / 16) * gh) / (float)ah;
+        v1 = (float)((*s / 16) * gh + gh) / (float)ah;
+
+        /* Triangle-strip order (BR, TR, TL, BL) matching overlayQuadIbo. */
+        quad[0][0] = dx1; quad[0][1] = dy0; quad[0][2] = u1; quad[0][3] = v1;
+        quad[1][0] = dx1; quad[1][1] = dy1; quad[1][2] = u1; quad[1][3] = v0;
+        quad[2][0] = dx0; quad[2][1] = dy1; quad[2][2] = u0; quad[2][3] = v0;
+        quad[3][0] = dx0; quad[3][1] = dy0; quad[3][2] = u0; quad[3][3] = v1;
+
+        f = hVideo->currentFrame;
+        offset = hVideo->dynVboOffset[f];
+        offset = (offset + 15) & ~(size_t)15;
+        if (!hVideo->isRecording || hVideo->dynVboMapped[f] == NULL || offset + size > hVideo->dynVboCapacity)
+            break;
+        memcpy((char*)hVideo->dynVboMapped[f] + offset, quad, size);
+        hVideo->dynVboOffset[f] = offset + size;
+        hVideo->dynVboWritten[f] = hVideo->dynVboOffset[f];
+
+        if (hVideo->lastVbo != hVideo->dynVbo[f] || hVideo->lastVboOffset != offset) {
+            SDL_GPUBufferBinding vbo = { hVideo->dynVbo[f], offset };
+            SDL3_BindGPUVertexBuffers(pass, 0, &vbo, 1);
+            hVideo->lastVbo = hVideo->dynVbo[f];
+            hVideo->lastVboOffset = offset;
+        }
+        if (hVideo->lastIbo != hVideo->overlayQuadIbo || hVideo->lastIboOffset != 0) {
+            SDL_GPUBufferBinding ibo = { hVideo->overlayQuadIbo, 0 };
+            SDL3_BindGPUIndexBuffer(pass, &ibo, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+            hVideo->lastIbo = hVideo->overlayQuadIbo;
+            hVideo->lastIboOffset = 0;
+        }
+
+        SDL3_DrawGPUIndexedPrimitives(pass, 6, 1, 0, 0, 0);
+
+        x += w + 1;
+    }
+
+    return BRE_OK;
+}
+
+/*
  * Default dispatch table for device pixelmap
  */
 static const struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
@@ -595,7 +879,7 @@ static const struct br_device_pixelmap_dispatch devicePixelmapDispatch = {
     ._line = BR_CMETHOD_REF(br_device_pixelmap_mem, line),
     ._copyBits = BR_CMETHOD_REF(br_device_pixelmap_fail, copyBits),
 
-    ._text = BR_CMETHOD_REF(br_device_pixelmap_fail, text),
+    ._text = BR_CMETHOD_REF(br_device_pixelmap_sdl3gpurend, text),
     ._textBounds = BR_CMETHOD_REF(br_device_pixelmap_gen, textBounds),
 
     ._rowSize = BR_CMETHOD_REF(br_device_pixelmap_fail, rowSize),

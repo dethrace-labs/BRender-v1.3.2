@@ -6,12 +6,16 @@
 #include "brender.frag.spv.h"
 #include "overlay.vert.spv.h"
 #include "overlay.frag.spv.h"
+#include "text.vert.spv.h"
+#include "text.frag.spv.h"
 
 #if SDL3GPUREND_SHADERFORMAT_MSL_AVAILABLE
 #include "brender.vert.metal.h"
 #include "brender.frag.metal.h"
 #include "overlay.vert.metal.h"
 #include "overlay.frag.metal.h"
+#include "text.vert.metal.h"
+#include "text.frag.metal.h"
 #endif
 
 #if SDL3GPUREND_SHADERFORMAT_DXIL_AVAILABLE
@@ -19,6 +23,8 @@
 #include "brender.frag.dxil.h"
 #include "overlay.vert.dxil.h"
 #include "overlay.frag.dxil.h"
+#include "text.vert.dxil.h"
+#include "text.frag.dxil.h"
 #endif
 
 /* The msl/dxil members of SDL3GPUREND_ShaderSource for a data-array prefix (e.g.
@@ -59,4 +65,10 @@ const SDL3GPUREND_ShaderSource overlay_shaders[2] = {
 const SDL3GPUREND_ShaderSource default_shaders[2] = {
     SDL3GPUREND_SOURCE(BRENDER_VERT),
     SDL3GPUREND_SOURCE(BRENDER_FRAG),
+};
+
+/* Glyph-quad pair for device BrPixelmapText. */
+const SDL3GPUREND_ShaderSource text_shaders[2] = {
+    SDL3GPUREND_SOURCE(TEXT_VERT),
+    SDL3GPUREND_SOURCE(TEXT_FRAG),
 };

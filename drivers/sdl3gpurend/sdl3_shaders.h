@@ -23,9 +23,11 @@ typedef struct SDL3GPUREND_ShaderSource {
 #define SDL3GPUREND_STAGE_FRAGMENT 1
 
 /* Embedded shader pairs: { vertex, fragment }. default_shaders aliases the
- * brender pair (the driver's 2D content uses the same vertex/fragment). */
+ * brender pair (the driver's 2D content uses the same vertex/fragment).
+ * text_shaders is the glyph-quad pair used by device BrPixelmapText. */
 extern const SDL3GPUREND_ShaderSource brender_shaders[2];
 extern const SDL3GPUREND_ShaderSource overlay_shaders[2];
 extern const SDL3GPUREND_ShaderSource default_shaders[2];
+extern const SDL3GPUREND_ShaderSource text_shaders[2];
 
 #endif

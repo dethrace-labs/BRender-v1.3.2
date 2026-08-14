@@ -29,6 +29,8 @@ br_boolean VIDEOI_CompileDefaultShader(HVIDEO hVideo);
 
 br_boolean VIDEOI_CompileBRenderShader(HVIDEO hVideo, const char* vertPath, const char* fragPath);
 
+br_boolean VIDEOI_CompileTextShader(HVIDEO hVideo);
+
 br_error VIDEOI_BrPixelmapGetTypeDetails(br_uint_8 pmType, GLint* internalFormat, GLenum* format, GLenum* type,
     GLsizeiptr* elemBytes, br_boolean* blended);
 

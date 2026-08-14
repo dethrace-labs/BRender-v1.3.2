@@ -10,6 +10,18 @@ extern "C" {
 
 #include "shader_data.h"
 
+struct br_font;
+
+/* Maximum number of font atlases cached in the VIDEO instance. */
+#define TEXT_ATLAS_CACHE_MAX 8
+
+typedef struct {
+    struct br_font* font;
+    GLuint texture;
+    int atlasWidth;
+    int atlasHeight;
+} text_atlas_cache_entry;
+
 typedef struct _VIDEO {
     GLint maxUniformBlockSize;
     GLint maxUniformBufferBindings;
@@ -53,6 +65,20 @@ typedef struct _VIDEO {
 
         GLint mainTextureBinding;
     } brenderProgram;
+
+    struct {
+        GLuint program;
+
+        GLint aPosition;     /* Position, vec2 */
+        GLint aUV;           /* UV, vec2 */
+        GLint uSampler;      /* Sampler, sampler2D */
+        GLint uTextColour;   /* Text colour, vec4 */
+    } textProgram;
+
+    /* Lazily-built font atlases (16x16 glyph grid). */
+    text_atlas_cache_entry textAtlas[TEXT_ATLAS_CACHE_MAX];
+    int textAtlasCount;
+    int textAtlasReplace;
 } VIDEO, *HVIDEO;
 
 #ifdef __cplusplus
