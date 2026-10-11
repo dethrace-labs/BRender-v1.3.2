@@ -292,10 +292,15 @@ static void apply_stored_properties(HVIDEO hVideo, state_stack* state, uint32_t 
 void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const gl_groupinfo* groupinfo) {
     state_cache* cache = &renderer->state.cache;
     br_device_pixelmap* screen = renderer->pixelmap->screen;
+    br_device_pixelmap* colour_target = renderer->state.current->output.colour;
     HVIDEO hVideo = &screen->asFront.video;
     br_renderer_state_stored* stored = groupinfo->stored;
     br_boolean unlit;
     shader_data_model model;
+
+    ASSERT(screen->use_type == BRT_NONE);
+    ASSERT(colour_target != NULL);
+    ASSERT(colour_target->use_type == BRT_OFFSCREEN);
 
     /* Update the per-model cache (matrices and lights) */
     StateGLUpdateModel(cache, &renderer->state.current->matrix);
@@ -338,7 +343,7 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
         if (groupinfo->default_state->state.prim.colour_map) {
             default_tex = groupinfo->default_state->state.prim.colour_map->gl_tex;
         } else {
-            default_tex = renderer->pixelmap->asFront.tex_white;
+            default_tex = screen->asFront.tex_white;
         }
 
         renderer->state.current->surface = groupinfo->default_state->state.surface;
@@ -348,8 +353,8 @@ void StoredGLRenderGroup(br_geometry_stored* self, br_renderer* renderer, const 
         apply_stored_properties(hVideo, renderer->state.current, MASK_STATE_PRIMITIVE | MASK_STATE_SURFACE /*| MASK_STATE_CULL */, &model, default_tex);
     }
 
-    BrVector4Set(&model.clear_colour, renderer->pixelmap->asBack.clearColour[0], renderer->pixelmap->asBack.clearColour[1],
-        renderer->pixelmap->asBack.clearColour[2], renderer->pixelmap->asBack.clearColour[3]);
+    BrVector4Set(&model.clear_colour, colour_target->asBack.clearColour[0], colour_target->asBack.clearColour[1],
+        colour_target->asBack.clearColour[2], colour_target->asBack.clearColour[3]);
 
     glBufferData(GL_UNIFORM_BUFFER, sizeof(model), &model, GL_STATIC_DRAW);
     glDrawElements(GL_TRIANGLES, groupinfo->count, GL_UNSIGNED_SHORT, groupinfo->offset);
