@@ -205,7 +205,8 @@ void main() {
     vec2 mappedUV = SurfaceMap(rawPosition, rawNormal, uv);
 
     if (disable_texture) {
-        textureColour = surface_colour;
+        // Lit, non-prelit vertices already include the material colour.
+        textureColour = (lighting == 1u && prelit == 0u) ? vec4(1.0) : surface_colour;
     } else {
         textureColour = texture(main_texture, mappedUV);
         // full black pixel is transparent
