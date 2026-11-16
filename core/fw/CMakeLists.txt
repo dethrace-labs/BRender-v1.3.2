@@ -71,10 +71,12 @@ set(DDI_FILES
 set(INC_FILES
         include/brlists.h
         include/brstdlib.h
+
 )
 
 set(FW_FILES
         assocarr.c
+        blockops.c
         brbegin.c
         brbhook.c
         brlists.c
